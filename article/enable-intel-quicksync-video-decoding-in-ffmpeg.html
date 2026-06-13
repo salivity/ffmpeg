@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enable Intel QuickSync Video Decoding in FFmpeg - ffmpeg</title>
+    <meta name="description" content="Enabling Intel QuickSync Video (QSV) hardware-accelerated decoding in FFmpeg on Linux significantly offloads video processing workloads from your CPU to an integrated or discrete Intel GPU. This configuration requires properly mapping system permissions,">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/enable-intel-quicksync-video-decoding-in-ffmpeg">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Enable Intel QuickSync Video Decoding in FFmpeg - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/enable-intel-quicksync-video-decoding-in-ffmpeg" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Enabling Intel QuickSync Video (QSV) hardware-accelerated decoding in FFmpeg on Linux significantly offloads video processing workloads from your CPU to an integrated or discrete Intel GPU. This configuration requires properly mapping system permissions," />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="enable-intel-quicksync-video-decoding-in-ffmpeg">Enable Intel
+QuickSync Video Decoding in FFmpeg</h1>
+<p>Enabling Intel QuickSync Video (QSV) hardware-accelerated decoding in
+FFmpeg on Linux significantly offloads video processing workloads from
+your CPU to an integrated or discrete Intel GPU. This configuration
+requires properly mapping system permissions, installing compatible
+Intel driver stacks like <code>intel-media-driver</code> or
+<code>oneVPL</code>, and constructing an FFmpeg command using the
+explicit QSV device initializers and wrapper decoders. Implementing this
+workflow optimizes system efficiency and speeds up high-throughput
+transcoding tasks.</p>
+<h2 id="prerequisites-and-driver-setup">Prerequisites and Driver
+Setup</h2>
+<p>Before running FFmpeg with QSV, your Linux environment must have
+access to the correct kernel interfaces and user-space libraries.</p>
+<h3 id="verify-user-permissions">1. Verify User Permissions</h3>
+<p>Your user account must belong to the video or render groups to
+communicate with the GPU graphics compute layers. Add your user to these
+groups using the following commands:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> usermod <span class="at">-aG</span> video <span class="va">$USER</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> usermod <span class="at">-aG</span> render <span class="va">$USER</span></span></code></pre></div>
+<p>Log out and back in for these group changes to take effect.</p>
+<h3 id="install-intel-drivers-and-runtimes">2. Install Intel Drivers and
+Runtimes</h3>
+<p>Depending on your generation of Intel hardware, install the necessary
+underlying open-source drivers and runtime stacks. On modern Debian or
+Ubuntu-based systems, you can install these components via the package
+manager:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> apt update</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> apt install intel-media-va-driver-non-free libmfx1 libvpl2</span></code></pre></div>
+<p>For distributions that separate runtime dispatchers, ensure you
+install the appropriate VPL (Video Processing Library) or legacy Media
+SDK components (<code>intel-media-sdk</code>).</p>
+<h3 id="set-environment-variables">3. Set Environment Variables</h3>
+<p>Instruct the Video Acceleration API (VA-API) layer to prioritize the
+native Intel media driver by adding the driver designation variable to
+your environment:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="bu">export</span> <span class="va">LIBVA_DRIVER_NAME</span><span class="op">=</span>iHD</span></code></pre></div>
+<h2 id="running-qsv-decoding-in-ffmpeg">Running QSV Decoding in
+FFmpeg</h2>
+<p>To utilize Intel QuickSync hardware decoding inside FFmpeg, you must
+explicitly declare the hardware acceleration framework
+(<code>-hwaccel qsv</code>), specify the hardware device path, and
+invoke a QSV-supported codec wrapper.</p>
+<h3 id="pure-hardware-decoding-example">Pure Hardware Decoding
+Example</h3>
+<p>If you want to decode an H.264 video file entirely in hardware and
+dump the raw decoded video frames to a file without utilizing the CPU
+for rendering or re-encoding, execute the following command
+structure:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-hwaccel</span> qsv <span class="at">-qsv_device</span> /dev/dri/renderD128 <span class="at">-c:v</span> h264_qsv <span class="at">-i</span> input.mp4 <span class="at">-vf</span> hwdownload,format=nv12 output.yuv</span></code></pre></div>
+<h3 id="deciphering-the-command-flags">Deciphering the Command
+Flags</h3>
+<ul>
+<li><strong><code>-hwaccel qsv</code></strong>: Tells FFmpeg to
+initialize the hardware acceleration infrastructure utilizing Intel’s
+QuickSync interface.</li>
+<li><strong><code>-qsv_device /dev/dri/renderD128</code></strong>:
+Points directly to the GPU render node. If your system features multiple
+graphics processors, check <code>/dev/dri/</code> to match your target
+Intel device.</li>
+<li><strong><code>-c:v h264_qsv</code></strong>: Forces the input stream
+decoder layer to use the dedicated hardware-wrapped
+<code>h264_qsv</code> codec rather than falling back to default
+CPU-bound software decoding (<code>h264</code>). For H.265 sources,
+replace this flag with <code>hevc_qsv</code>.</li>
+<li><strong><code>-vf hwdownload,format=nv12</code></strong>: Safely
+downloads the decoded video frames back out of GPU memory surfaces and
+translates them into system RAM for final output formatting.</li>
+</ul>
+<h2 id="full-qsv-hardware-transcoding-pipeline">Full QSV Hardware
+Transcoding Pipeline</h2>
+<p>For optimal efficiency, avoid copying frames back and forth between
+system RAM and GPU memory. You can keep the decoded frames locked
+entirely inside GPU memory surfaces, pass them directly to an encoder,
+and output a freshly transcoded file.</p>
+<p>The command below performs full-pipeline hardware decoding and
+encoding (converting H.264 into H.265/HEVC) entirely inside the GPU
+core:</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-hwaccel</span> qsv <span class="at">-qsv_device</span> /dev/dri/renderD128 <span class="at">-c:v</span> h264_qsv <span class="at">-i</span> input.mp4 <span class="at">-c:v</span> hevc_qsv <span class="at">-preset</span> slow output.mkv</span></code></pre></div></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'light' ? 'github-light' : 'github-dark'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

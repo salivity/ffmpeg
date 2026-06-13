@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blur a Specific Region of a Video Using FFmpeg - ffmpeg</title>
+    <meta name="description" content="This article provides a straightforward guide on how to isolate and blur a specific geographic area within a video frame using FFmpeg on a Linux system. You will learn the exact command-line syntax required to apply a localized blur, understand how the d">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/blur-a-specific-region-of-a-video-using-ffmpeg">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Blur a Specific Region of a Video Using FFmpeg - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/blur-a-specific-region-of-a-video-using-ffmpeg" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article provides a straightforward guide on how to isolate and blur a specific geographic area within a video frame using FFmpeg on a Linux system. You will learn the exact command-line syntax required to apply a localized blur, understand how the d" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="blur-a-specific-region-of-a-video-using-ffmpeg">Blur a Specific
+Region of a Video Using FFmpeg</h1>
+<p>This article provides a straightforward guide on how to isolate and
+blur a specific geographic area within a video frame using FFmpeg on a
+Linux system. You will learn the exact command-line syntax required to
+apply a localized blur, understand how the <code>delogo</code> and
+<code>boxblur</code> filters work, and see practical examples for
+targeting exact coordinates.</p>
+<hr />
+<h3 id="understanding-the-ffmpeg-blur-method">Understanding the FFmpeg
+Blur Method</h3>
+<p>To blur a specific region instead of the entire video, FFmpeg relies
+on specialized video filters. While there are multiple ways to achieve
+this, the two most efficient methods involve the <code>delogo</code>
+filter for quick rectangular blurs, and a combination of
+<code>crop</code>, <code>boxblur</code>, and <code>overlay</code>
+filters for advanced, highly customizable blurring.</p>
+<h3 id="method-1-the-quick-way-using-the-delogo-filter">Method 1: The
+Quick Way Using the Delogo Filter</h3>
+<p>The <code>delogo</code> filter is traditionally used to remove
+station watermarks, but it doubles as an excellent, lightweight tool for
+blurring a specific rectangular region. It interpolates the pixels
+surrounding the specified rectangle to obscure the target area.</p>
+<p>The basic syntax is:
+<code>ffmpeg -i input.mp4 -vf "delogo=x=100:y=200:w=300:h=150" output.mp4</code></p>
+<p>In this command, the parameters define the bounding box:</p>
+<ul>
+<li><strong>x</strong>: The horizontal coordinate of the top-left corner
+of the blurred rectangle (in pixels).</li>
+<li><strong>y</strong>: The vertical coordinate of the top-left corner
+of the blurred rectangle (in pixels).</li>
+<li><strong>w</strong>: The width of the blurred rectangle (in
+pixels).</li>
+<li><strong>h</strong>: The height of the blurred rectangle (in
+pixels).</li>
+</ul>
+<h3 id="method-2-the-advanced-way-using-boxblur-and-overlay">Method 2:
+The Advanced Way Using Boxblur and Overlay</h3>
+<p>If you need a stronger, more traditional Gaussian-style blur, you can
+create a filter graph that duplicates the video, crops it to the target
+area, applies a blur, and overlays it back onto the original video.</p>
+<p>The syntax for this advanced method is:
+<code>ffmpeg -i input.mp4 -filter_complex "[0:v]crop=300:150:100:200,boxblur=10 [blurred]; [0:v][blurred]overlay=100:200" output.mp4</code></p>
+<p>Here is how this complex filter breaks down:</p>
+<ul>
+<li><strong>crop=300:150:100:200</strong>: This cuts out a piece of the
+video. The values represent <code>width:height:x:y</code>. It creates a
+box 300 pixels wide and 150 pixels high, starting at coordinates (100,
+200).</li>
+<li><strong>boxblur=10</strong>: This applies a box blur power of 10 to
+the cropped area. You can increase this number for a heavier blur. The
+result is temporarily named <code>[blurred]</code>.</li>
+<li><strong>overlay=100:200</strong>: This takes the original video
+<code>[0:v]</code> and places the <code>[blurred]</code> patch exactly
+back over the coordinates where it was cropped (x=100, y=200).</li>
+</ul>
+<h3 id="finding-the-exact-coordinates">Finding the Exact
+Coordinates</h3>
+<p>To make these commands work effectively, you must know the pixel
+dimensions of your video and the exact coordinates of the region you
+want to hide. You can find these coordinates by opening a screenshot of
+the video in an image editor like GIMP, hovering your mouse over the
+target area, and reading the pixel coordinates displayed in the status
+bar.</p></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'light' ? 'github-light' : 'github-dark'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

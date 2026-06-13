@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Linux FFmpeg Hardware Acceleration Guide - ffmpeg</title>
+    <meta name="description" content="This article provides a straightforward, technical guide on how to identify and verify the available hardware acceleration methods for FFmpeg on a Linux system. It covers the essential commands to list supported hardware encoders and decoders, check your">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/linux-ffmpeg-hardware-acceleration-guide">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Linux FFmpeg Hardware Acceleration Guide - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/linux-ffmpeg-hardware-acceleration-guide" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article provides a straightforward, technical guide on how to identify and verify the available hardware acceleration methods for FFmpeg on a Linux system. It covers the essential commands to list supported hardware encoders and decoders, check your" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="linux-ffmpeg-hardware-acceleration-guide">Linux FFmpeg Hardware
+Acceleration Guide</h1>
+<p>This article provides a straightforward, technical guide on how to
+identify and verify the available hardware acceleration methods for
+FFmpeg on a Linux system. It covers the essential commands to list
+supported hardware encoders and decoders, check your specific GPU
+capabilities, and troubleshoot common driver issues to ensure your video
+processing is fully hardware-accelerated.</p>
+<h2 id="step-1-list-ffmpegs-built-in-hardware-support">Step 1: List
+FFmpeg’s Built-In Hardware Support</h2>
+<p>Before checking your system’s actual hardware, you can ask FFmpeg to
+report which hardware acceleration APIs it was compiled to support. Run
+the following command in your terminal:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-hwaccels</span></span></code></pre></div>
+<p>This will output a list of hardware acceleration methods that your
+specific installation of FFmpeg understands. Common outputs on Linux
+include:</p>
+<ul>
+<li><strong>vaapi:</strong> Video Acceleration API (mainly for Intel and
+AMD)</li>
+<li><strong>vdpau:</strong> Video Decode and Presentation API for Unix
+(older NVIDIA/AMD standard)</li>
+<li><strong>cuda / nvenc / nvdec:</strong> NVIDIA’s proprietary hardware
+acceleration APIs</li>
+<li><strong>qsv:</strong> Intel Quick Sync Video</li>
+<li><strong>vulkan:</strong> Cross-platform graphics and compute API
+used for modern acceleration</li>
+</ul>
+<h2 id="step-2-verify-your-system-gpu-and-drivers">Step 2: Verify Your
+System GPU and Drivers</h2>
+<p>Just because FFmpeg supports an API doesn’t mean your hardware or
+drivers are ready. You need to check what GPU you have and if the
+correct libraries are installed.</p>
+<h3 id="for-intel-and-amd-graphics-vaapi">For Intel and AMD Graphics
+(VAAPI)</h3>
+<p>Most Linux distributions use VAAPI for Intel and integrated/dedicated
+AMD cards. To check if VAAPI is properly configured on your system,
+install the <code>vainfo</code> utility via your package manager and run
+it:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">vainfo</span></span></code></pre></div>
+<p>If successful, this command will print your graphic driver
+information followed by a list of supported entrypoints (e.g.,
+<code>VAProfileH264Main : VAEntrypointEncSlice</code> means your
+hardware supports H.264 encoding).</p>
+<h3 id="for-nvidia-graphics-cudanvenc">For NVIDIA Graphics
+(CUDA/NVENC)</h3>
+<p>If you are using an NVIDIA GPU with the proprietary drivers, you can
+verify that your system sees the graphics card and check the driver
+version by running:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">nvidia-smi</span></span></code></pre></div>
+<p>To see if FFmpeg can specifically access the NVIDIA encoders and
+decoders, you can filter FFmpeg’s full codecs list for NVIDIA-specific
+tools:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-codecs</span> <span class="kw">|</span> <span class="fu">grep</span> nv</span></code></pre></div>
+<h2 id="step-3-check-specific-codec-support-in-ffmpeg">Step 3: Check
+Specific Codec Support in FFmpeg</h2>
+<p>To see the exact hardware-accelerated decoders and encoders available
+for use right now in your FFmpeg binary, you can use the
+<code>-decoders</code> and <code>-encoders</code> flags.</p>
+<h3 id="find-hardware-decoders-decodingplayback">Find Hardware Decoders
+(Decoding/Playback)</h3>
+<p>To see which hardware decoders are available (for example, for
+HEVC/H.265 or H.264), run:</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-decoders</span> <span class="kw">|</span> <span class="fu">grep</span> <span class="at">-E</span> <span class="st">&quot;vaapi|nvdec|cuvid|qsv&quot;</span></span></code></pre></div>
+<h3 id="find-hardware-encoders-encodingcompression">Find Hardware
+Encoders (Encoding/Compression)</h3>
+<p>To see which hardware encoders are available for compressing video,
+run:</p>
+<div class="sourceCode" id="cb6"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-encoders</span> <span class="kw">|</span> <span class="fu">grep</span> <span class="at">-E</span> <span class="st">&quot;vaapi|nvenc|qsv&quot;</span></span></code></pre></div>
+<p>The output will show codes like <code>h264_nvenc</code> (NVIDIA H.264
+encoder) or <code>hevc_vaapi</code> (Intel/AMD HEVC encoder), confirming
+that you can now run your FFmpeg commands with hardware acceleration
+enabled.</p></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'light' ? 'github-light' : 'github-dark'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generating Continuous Test Tones with FFmpeg - ffmpeg</title>
+    <meta name="description" content="This article provides a quick overview and practical guide on how to generate continuous audio test tones directly from the Linux command line using the powerful FFmpeg multimedia framework. You will learn the essential commands to create standard sine w">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/generating-continuous-test-tones-with-ffmpeg">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Generating Continuous Test Tones with FFmpeg - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/generating-continuous-test-tones-with-ffmpeg" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article provides a quick overview and practical guide on how to generate continuous audio test tones directly from the Linux command line using the powerful FFmpeg multimedia framework. You will learn the essential commands to create standard sine w" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="generating-continuous-test-tones-with-ffmpeg">Generating
+Continuous Test Tones with FFmpeg</h1>
+<p>This article provides a quick overview and practical guide on how to
+generate continuous audio test tones directly from the Linux command
+line using the powerful FFmpeg multimedia framework. You will learn the
+essential commands to create standard sine waves, adjust frequencies,
+configure audio sample rates, and output the generated audio either to a
+saved file or as a live stream.</p>
+<h2 id="the-basic-command-for-a-sine-wave">The Basic Command for a Sine
+Wave</h2>
+<p>To generate a continuous test tone, FFmpeg utilizes the
+<code>lavfi</code> (Libavfilter) virtual input device along with the
+<code>sine</code> audio source filter. By default, this filter generates
+a 440 Hz sine wave (the musical note A4).</p>
+<p>The fundamental command structure to generate a 5-second test tone
+and save it as an MP3 file looks like this:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-f</span> lavfi <span class="at">-i</span> sine=duration=5 <span class="at">-c:a</span> libmp3lame output.mp3</span></code></pre></div>
+<p>In this command:</p>
+<ul>
+<li><strong>-f lavfi</strong>: Specifies that the input format is the
+Libavfilter virtual device.</li>
+<li><strong>-i sine=duration=5</strong>: Defines the input filter as a
+sine wave with a set duration of 5 seconds.</li>
+<li><strong>-c:a libmp3lame</strong>: Encodes the audio using the MP3
+codec.</li>
+</ul>
+<h2 id="generating-truly-infinite-or-continuous-tones">Generating Truly
+Infinite or Continuous Tones</h2>
+<p>If your goal is to generate an ongoing tone without a hardcoded
+expiration time—useful for live hardware testing or continuous signal
+loops—you can omit the duration parameter. To stop a truly continuous
+command, you simply press <code>Ctrl + C</code> in your terminal.</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-f</span> lavfi <span class="at">-i</span> sine <span class="at">-c:a</span> pcm_s16le output.wav</span></code></pre></div>
+<h2 id="customizing-frequency-and-sample-rate">Customizing Frequency and
+Sample Rate</h2>
+<p>You can precisely control the pitch of the tone and the quality of
+the audio stream by passing additional arguments to the sine filter. The
+<code>frequency</code> (or <code>f</code>) parameter dictates the pitch
+in Hz, while the <code>sample_rate</code> (or <code>r</code>) parameter
+dictates the audio sampling frequency.</p>
+<p>For example, to generate a 1000 Hz (1 kHz) test tone at a standard
+CD-quality sample rate of 44100 Hz, use the following syntax:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-f</span> lavfi <span class="at">-i</span> sine=frequency=1000:sample_rate=44100 <span class="at">-t</span> 10 output.wav</span></code></pre></div>
+<blockquote>
+<p><strong>Note:</strong> The <code>-t 10</code> flag is an alternative
+way to specify a duration limit of 10 seconds, placed as an output
+option rather than inside the filter itself.</p>
+</blockquote>
+<h2 id="real-time-audio-playback">Real-Time Audio Playback</h2>
+<p>If you want to hear the continuous test tone immediately through your
+system speakers instead of saving it to a file, you can pipe the FFmpeg
+output into a native Linux playback utility like <code>aplay</code>
+(part of the ALSA toolset).</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-f</span> lavfi <span class="at">-i</span> sine=frequency=440 <span class="at">-f</span> audiotoolbox <span class="at">-</span> <span class="kw">|</span> <span class="fu">aplay</span></span></code></pre></div>
+<p>Alternatively, if you have FFmpeg’s companion media player
+<strong>FFplay</strong> installed on your Linux system, you can achieve
+live playback natively in a single short command:</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffplay</span> <span class="at">-f</span> lavfi sine=frequency=440</span></code></pre></div></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'light' ? 'github-light' : 'github-dark'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

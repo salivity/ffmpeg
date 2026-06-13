@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Extract Audio From Video Using FFmpeg on Linux - ffmpeg</title>
+    <meta name="description" content="This guide provides a straightforward walkthrough on how to extract high-quality audio from a video file using FFmpeg on a Linux system. You will learn the essential commands to strip audio without re-encoding for a fast, lossless extraction, as well as">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/extract-audio-from-video-using-ffmpeg-on-linux">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Extract Audio From Video Using FFmpeg on Linux - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/extract-audio-from-video-using-ffmpeg-on-linux" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This guide provides a straightforward walkthrough on how to extract high-quality audio from a video file using FFmpeg on a Linux system. You will learn the essential commands to strip audio without re-encoding for a fast, lossless extraction, as well as" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="extract-audio-from-video-using-ffmpeg-on-linux">Extract Audio
+From Video Using FFmpeg on Linux</h1>
+<p>This guide provides a straightforward walkthrough on how to extract
+high-quality audio from a video file using FFmpeg on a Linux system. You
+will learn the essential commands to strip audio without re-encoding for
+a fast, lossless extraction, as well as how to convert the audio into
+popular formats like MP3 or WAV. Whether you need to process a single
+file or batch-process an entire directory, these practical examples will
+help you get the job done efficiently from your command line.</p>
+<h3 id="understanding-the-basic-command-structure">Understanding the
+Basic Command Structure</h3>
+<p>FFmpeg is a powerful command-line tool that handles audio and video
+manipulation seamlessly. To extract audio, you need to understand the
+core syntax of an FFmpeg command. The basic template looks like
+this:</p>
+<p><code>ffmpeg -i input_video.mp4 -vn output_audio.mp3</code></p>
+<p>Here is what each part of that command means:</p>
+<ul>
+<li><strong><code>-i input_video.mp4</code></strong>: Specifies the path
+to your source video file.</li>
+<li><strong><code>-vn</code></strong>: This flag explicitly tells FFmpeg
+to disable video recording or processing, effectively dropping the video
+stream and leaving only the audio.</li>
+<li><strong><code>output_audio.mp3</code></strong>: The name and format
+of your desired output file.</li>
+</ul>
+<h3
+id="method-1-extract-audio-without-re-encoding-fastest-lossless">Method
+1: Extract Audio Without Re-encoding (Fastest &amp; Lossless)</h3>
+<p>If you want to keep the original audio quality and finish the process
+instantly, you should copy the audio stream directly without re-encoding
+it. To do this, you first need to identify the audio codec used inside
+the video container.</p>
+<p>You can check the stream details using this command:
+<code>ffprobe -v error -select_streams a:0 -show_entries stream=codec_name -of default=noprint_wrappers=1:nokey=1 input_video.mp4</code></p>
+<p>Once you know the codec (for example, AAC), extract it using the
+<code>-c:a copy</code> flag:</p>
+<p><code>ffmpeg -i input_video.mp4 -vn -c:a copy output_audio.aac</code></p>
+<p>Using <code>-c:a copy</code> bypasses the decoding and encoding
+phases. This saves CPU cycles, preserves the exact original quality of
+the audio track, and completes the extraction in a matter of
+seconds.</p>
+<h3 id="method-2-extract-and-convert-to-mp3">Method 2: Extract and
+Convert to MP3</h3>
+<p>If you require maximum compatibility across different devices and
+media players, converting the extracted audio to MP3 is your best
+option. Because MP3 is a lossy format, you should specify the bitrate to
+ensure good sound quality.</p>
+<p>Run the following command to convert the video’s audio to a
+high-quality 320 kbps MP3:</p>
+<p><code>ffmpeg -i input_video.mp4 -vn -c:a libmp3lame -b:a 320k output_audio.mp3</code></p>
+<ul>
+<li><strong><code>-c:a libmp3lame</code></strong>: Uses the LAME MP3
+encoder to handle the conversion.</li>
+<li><strong><code>-b:a 320k</code></strong>: Sets the audio bitrate to
+320 kbps for optimal audio fidelity. You can lower this to
+<code>192k</code> or <code>128k</code> if you need to save disk
+space.</li>
+</ul>
+<h3 id="method-3-extract-to-uncompressed-wav-format">Method 3: Extract
+to Uncompressed WAV Format</h3>
+<p>For video editing or audio post-production, you might prefer an
+uncompressed, lossless format like WAV.</p>
+<p>Use this command to extract the audio stream into a standard 16-bit
+PCM WAV file:</p>
+<p><code>ffmpeg -i input_video.mp4 -vn -c:a pcm_s16le output_audio.wav</code></p>
+<ul>
+<li><strong><code>-c:a pcm_s16le</code></strong>: Tells FFmpeg to
+utilize the 16-bit little-endian PCM audio encoder, which is the
+standard format for high-fidelity WAV files.</li>
+</ul>
+<h3 id="advanced-how-to-batch-process-multiple-videos">Advanced: How to
+Batch Process Multiple Videos</h3>
+<p>If you have a folder full of video files and want to extract the
+audio from all of them at once, you can combine FFmpeg with a simple
+Linux <code>for</code> loop in your terminal.</p>
+<p>Navigate to the directory containing your videos and run the
+following script to convert all <code>.mp4</code> files into
+<code>.mp3</code> files:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> file <span class="kw">in</span> <span class="pp">*</span>.mp4<span class="kw">;</span> <span class="cf">do</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>    <span class="ex">ffmpeg</span> <span class="at">-i</span> <span class="st">&quot;</span><span class="va">$file</span><span class="st">&quot;</span> <span class="at">-vn</span> <span class="at">-c:a</span> libmp3lame <span class="at">-b:a</span> 256k <span class="st">&quot;</span><span class="va">${file</span><span class="op">%</span>.mp4<span class="va">}</span><span class="st">.mp3&quot;</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="cf">done</span></span></code></pre></div>
+<p>This shell loop takes every file ending in <code>.mp4</code>, strips
+the video stream, encodes the audio to a solid 256 kbps MP3, and saves
+it under the original filename but with an <code>.mp3</code>
+extension.</p></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'light' ? 'github-light' : 'github-dark'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stream Linux Desktop to Twitch or YouTube with FFmpeg - ffmpeg</title>
+    <meta name="description" content="This article provides a comprehensive, step-by-step guide on how to stream your Linux desktop screen directly to popular streaming platforms like Twitch or YouTube using the powerful command-line tool FFmpeg. You will learn how to capture your display, c">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/stream-linux-desktop-to-twitch-or-youtube-with-ffmpeg">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Stream Linux Desktop to Twitch or YouTube with FFmpeg - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/stream-linux-desktop-to-twitch-or-youtube-with-ffmpeg" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article provides a comprehensive, step-by-step guide on how to stream your Linux desktop screen directly to popular streaming platforms like Twitch or YouTube using the powerful command-line tool FFmpeg. You will learn how to capture your display, c" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="stream-linux-desktop-to-twitch-or-youtube-with-ffmpeg">Stream
+Linux Desktop to Twitch or YouTube with FFmpeg</h1>
+<p>This article provides a comprehensive, step-by-step guide on how to
+stream your Linux desktop screen directly to popular streaming platforms
+like Twitch or YouTube using the powerful command-line tool FFmpeg. You
+will learn how to capture your display, configure audio inputs via
+PulseAudio or PipeWire, optimize video settings for hardware
+acceleration, and assemble the final command to go live.</p>
+<h2 id="prerequisites-and-tools">Prerequisites and Tools</h2>
+<p>Before building your streaming command, you need to ensure you have
+the necessary tools installed and identify your system’s current display
+server.</p>
+<ul>
+<li><strong>FFmpeg:</strong> Ensure you have FFmpeg installed with
+support for <code>libx264</code> (for software encoding) or hardware
+encoders like <code>h264_vaapi</code> or <code>nvenc</code>.</li>
+<li><strong>Display Server:</strong> Identify whether you are running a
+<strong>X11</strong> or <strong>Wayland</strong> session, as this
+dictates which video grabber FFmpeg will use. You can check this by
+running <code>echo $XDG_SESSION_TYPE</code> in your terminal.</li>
+</ul>
+<h2 id="step-1-capture-your-screen-and-audio">Step 1: Capture Your
+Screen and Audio</h2>
+<p>FFmpeg uses specific input devices to capture your desktop and system
+audio depending on your environment.</p>
+<h3 id="for-x11-users-x11grab">For X11 Users (x11grab)</h3>
+<p>If you are on X11, you will use the <code>x11grab</code> device. To
+find your screen resolution and display name, use the
+<code>xdpyinfo</code> command. Usually, your primary display is
+<code>:0.0</code>.</p>
+<h3 id="for-wayland-users-pipewire">For Wayland Users (PipeWire)</h3>
+<p>Modern Linux distributions using Wayland rely on PipeWire for screen
+sharing. FFmpeg can capture this using the <code>libpipewire</code> or
+<code>kmsgrab</code> inputs, though many users prefer launching a
+virtual X11 display via Xwayland or using tools like
+<code>wf-recorder</code> for complex Wayland setups.</p>
+<h3 id="capturing-audio">Capturing Audio</h3>
+<p>To stream your desktop audio alongside your microphone, you will
+capture from PulseAudio or PipeWire’s pulse emulation layer using
+<code>-f pulse</code>. You can find your specific audio input names by
+running:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">pactl</span> list sources short</span></code></pre></div>
+<h2 id="step-2-configure-video-and-audio-encoding">Step 2: Configure
+Video and Audio Encoding</h2>
+<p>Streaming platforms require specific codecs and configurations to
+process your live feed smoothly without buffering.</p>
+<ul>
+<li><strong>Video Codec:</strong> <code>libx264</code> is the most
+compatible H.264 software encoder. Use the <code>cbr</code> (Constant
+Bitrate) rate control method, as streaming platforms reject variable
+bitrates.</li>
+<li><strong>Audio Codec:</strong> AAC (<code>-c:a aac</code>) is the
+standard audio format for RTMP streaming, usually set at a bitrate of
+128k or 192k.</li>
+<li><strong>Pixel Format:</strong> Most streaming services require the
+<code>yuv420p</code> pixel format to decode the video properly on player
+devices.</li>
+</ul>
+<h2 id="step-3-assemble-the-ffmpeg-streaming-command">Step 3: Assemble
+the FFmpeg Streaming Command</h2>
+<p>Combine your inputs, encoding parameters, and the streaming
+platform’s RTMP ingest URL into a single command.</p>
+<p>Replace <code>YOUR_STREAM_KEY</code> with the private key provided by
+YouTube Studio or your Twitch Creator Dashboard.</p>
+<h3 id="example-command-for-twitch-1080p-at-60fps">Example Command for
+Twitch (1080p at 60fps)</h3>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-f</span> x11grab <span class="at">-video_size</span> 1920x1080 <span class="at">-framerate</span> 60 <span class="at">-i</span> :0.0 <span class="dt">\</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>-f pulse <span class="at">-i</span> default <span class="dt">\</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>-c:v libx264 <span class="at">-preset</span> veryfast <span class="at">-b:v</span> 6000k <span class="at">-maxrate</span> 6000k <span class="at">-bufsize</span> 12000k <span class="dt">\</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>-pix_fmt yuv420p <span class="at">-g</span> 120 <span class="dt">\</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>-c:a aac <span class="at">-b:a</span> 128k <span class="at">-ar</span> 44100 <span class="dt">\</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>-f flv rtmp://live.twitch.tv/app/YOUR_STREAM_KEY</span></code></pre></div>
+<h3 id="example-command-for-youtube-1080p-at-60fps">Example Command for
+YouTube (1080p at 60fps)</h3>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-f</span> x11grab <span class="at">-video_size</span> 1920x1080 <span class="at">-framerate</span> 60 <span class="at">-i</span> :0.0 <span class="dt">\</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>-f pulse <span class="at">-i</span> default <span class="dt">\</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>-c:v libx264 <span class="at">-preset</span> veryfast <span class="at">-b:v</span> 9000k <span class="at">-maxrate</span> 9000k <span class="at">-bufsize</span> 18000k <span class="dt">\</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>-pix_fmt yuv420p <span class="at">-g</span> 120 <span class="dt">\</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>-c:a aac <span class="at">-b:a</span> 128k <span class="at">-ar</span> 44100 <span class="dt">\</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>-f flv rtmp://a.rtmp.youtube.com/live2/YOUR_STREAM_KEY</span></code></pre></div>
+<h2 id="key-parameter-breakdown">Key Parameter Breakdown</h2>
+<ul>
+<li><code>-g 120</code>: Sets the group of pictures (GOP) size.
+Streaming platforms strictly require a 2-second keyframe interval. At
+60fps, 60 x 2 = 120.</li>
+<li><code>-preset veryfast</code>: Balances CPU usage and video quality.
+If your CPU struggles and drops frames, change this to
+<code>superfast</code> or <code>ultrafast</code>.</li>
+<li><code>-bufsize</code>: The rate control buffer. Setting this to
+twice your video bitrate (<code>-b:v</code>) helps maintain a stable
+stream output over shifting network conditions.</li>
+</ul></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'light' ? 'github-light' : 'github-dark'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>
