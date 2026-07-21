@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FFmpeg Perspective Filter Coordinate Calculation - ffmpeg</title>
+    <meta name="description" content="The FFmpeg perspective filter allows you to alter the perspective of a video by mapping four source coordinates to four destination coordinates. This article provides a step-by-step guide on how to calculate these mapping coordinates to tilt, distort, or">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/ffmpeg-perspective-filter-coordinate-calculation">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="FFmpeg Perspective Filter Coordinate Calculation - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/ffmpeg-perspective-filter-coordinate-calculation" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="The FFmpeg perspective filter allows you to alter the perspective of a video by mapping four source coordinates to four destination coordinates. This article provides a step-by-step guide on how to calculate these mapping coordinates to tilt, distort, or" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="ffmpeg-perspective-filter-coordinate-calculation">FFmpeg
+Perspective Filter Coordinate Calculation</h1>
+<p>The FFmpeg <code>perspective</code> filter allows you to alter the
+perspective of a video by mapping four source coordinates to four
+destination coordinates. This article provides a step-by-step guide on
+how to calculate these mapping coordinates to tilt, distort, or correct
+the keystone effect in your video files.</p>
+<h2 id="understanding-the-coordinate-parameter-order">Understanding the
+Coordinate Parameter Order</h2>
+<p>The <code>perspective</code> filter uses 16 parameters representing
+the X and Y coordinates for four corners, first for the source (input)
+frame, and then for the destination (output) frame.</p>
+<p>The syntax is structured as follows:</p>
+<pre class="text"><code>perspective=x0:y0:x1:y1:x2:y2:x3:y3:px0:py0:px1:py1:px2:py2:px3:py3</code></pre>
+<p>The corners are mapped in a specific Z-shaped sequence: *
+<strong>0</strong>: Top-Left (TL) * <strong>1</strong>: Top-Right (TR) *
+<strong>2</strong>: Bottom-Left (BL) * <strong>3</strong>: Bottom-Right
+(BR)</p>
+<p>Therefore: * <code>x0:y0</code> to <code>x3:y3</code> are the
+<strong>source</strong> coordinates. * <code>px0:py0</code> to
+<code>px3:py3</code> are the <strong>destination</strong>
+coordinates.</p>
+<hr />
+<h2 id="step-1-define-your-source-coordinates">Step 1: Define Your
+Source Coordinates</h2>
+<p>If you want to process the entire input frame, your source
+coordinates will simply be the outermost corners of your input
+video.</p>
+<p>Using the width (<span class="math inline">\(W\)</span>) and height
+(<span class="math inline">\(H\)</span>) of your input video, define the
+source coordinates as: * <strong>Top-Left (x0, y0):</strong>
+<code>0:0</code> * <strong>Top-Right (x1, y1):</strong> <code>W:0</code>
+* <strong>Bottom-Left (x2, y2):</strong> <code>0:H</code> *
+<strong>Bottom-Right (x3, y3):</strong> <code>W:H</code></p>
+<hr />
+<h2 id="step-2-calculate-your-destination-coordinates">Step 2: Calculate
+Your Destination Coordinates</h2>
+<p>To distort or tilt the video, you must calculate where these four
+source corners should land in the output frame.</p>
+<h3 id="example-tilting-a-video-backward-keystone-correction">Example:
+Tilting a Video Backward (Keystone Correction)</h3>
+<p>To make a video look like it is leaning backward, you need to pull
+the top corners inward and slightly downward, while keeping the bottom
+corners fixed.</p>
+<p>Let’s assume an offset value of <span
+class="math inline">\(d_x\)</span> (horizontal shift) and <span
+class="math inline">\(d_y\)</span> (vertical shift): *
+<strong>Destination Top-Left (px0, py0):</strong>
+<code>0 + dx : 0 + dy</code> * <strong>Destination Top-Right (px1,
+py1):</strong> <code>W - dx : 0 + dy</code> * <strong>Destination
+Bottom-Left (px2, py2):</strong> <code>0 : H</code> (No change) *
+<strong>Destination Bottom-Right (px3, py3):</strong> <code>W : H</code>
+(No change)</p>
+<hr />
+<h2 id="step-3-put-it-into-practice-1920x1080-example">Step 3: Put It
+into Practice (1920x1080 Example)</h2>
+<p>If your input video is <span class="math inline">\(1920 \times
+1080\)</span> (<span class="math inline">\(W = 1920, H = 1080\)</span>),
+your source coordinates are: * <code>x0:y0</code> = <code>0:0</code> *
+<code>x1:y1</code> = <code>1920:0</code> * <code>x2:y2</code> =
+<code>0:1080</code> * <code>x3:y3</code> = <code>1920:1080</code></p>
+<p>If you want to tilt the top of the video inward by 150 pixels (<span
+class="math inline">\(d_x = 150\)</span>) and down by 50 pixels (<span
+class="math inline">\(d_y = 50\)</span>), calculate the destination
+coordinates: * <code>px0:py0</code> = <code>150:50</code> *
+<code>px1:py1</code> = <code>1770:50</code> (calculated as <span
+class="math inline">\(1920 - 150\)</span>) * <code>px2:py2</code> =
+<code>0:1080</code> * <code>px3:py3</code> = <code>1920:1080</code></p>
+<h3 id="the-final-ffmpeg-command">The Final FFmpeg Command</h3>
+<p>Combine the source and destination coordinates into the perspective
+filter command:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;perspective=0:0:1920:0:0:1080:1920:1080:150:50:1770:50:0:1080:1920:1080&quot;</span> output.mp4</span></code></pre></div></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

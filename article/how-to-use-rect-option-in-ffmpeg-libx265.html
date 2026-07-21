@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Use rect Option in FFmpeg libx265 - ffmpeg</title>
+    <meta name="description" content="This article explains how to configure the rect option in the FFmpeg libx265 encoder to optimize HEVC video compression. You will learn what the rect parameter does, how it impacts your encoding speed and quality, and the exact FFmpeg command-line syntax">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/how-to-use-rect-option-in-ffmpeg-libx265">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Use rect Option in FFmpeg libx265 - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/how-to-use-rect-option-in-ffmpeg-libx265" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article explains how to configure the rect option in the FFmpeg libx265 encoder to optimize HEVC video compression. You will learn what the rect parameter does, how it impacts your encoding speed and quality, and the exact FFmpeg command-line syntax" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="how-to-use-rect-option-in-ffmpeg-libx265">How to Use rect Option
+in FFmpeg libx265</h1>
+<p>This article explains how to configure the <code>rect</code> option
+in the FFmpeg <code>libx265</code> encoder to optimize HEVC video
+compression. You will learn what the <code>rect</code> parameter does,
+how it impacts your encoding speed and quality, and the exact FFmpeg
+command-line syntax required to apply this setting to your video
+files.</p>
+<h2 id="what-is-the-rect-option">What is the rect Option?</h2>
+<p>The <code>rect</code> option in the <code>libx265</code> encoder
+stands for “rectangular motion partitions.” When encoding video using
+the High Efficiency Video Coding (HEVC/H.265) standard, the encoder
+divides frames into blocks for motion analysis. By default, HEVC uses
+square prediction blocks (such as 64x64, 32x32, etc.).</p>
+<p>Enabling the <code>rect</code> option allows the encoder to also use
+rectangular partition shapes (such as 32x16, 16x32, 16x8, or 8x16).</p>
+<ul>
+<li><strong>Enabling <code>rect</code> (Value: 1):</strong> Improves
+compression efficiency, resulting in higher visual quality at a lower
+bitrate. However, searching for rectangular partitions requires more CPU
+power, which slows down the encoding speed.</li>
+<li><strong>Disabling <code>rect</code> (Value: 0):</strong> Restricts
+the encoder to square partition shapes. This significantly speeds up the
+encoding process but may result in slightly larger file sizes or reduced
+quality at equivalent bitrates.</li>
+</ul>
+<h2 id="how-to-configure-rect-in-ffmpeg">How to Configure rect in
+FFmpeg</h2>
+<p>In FFmpeg, parameters specific to the H.265 encoder are passed using
+the <code>-x265-params</code> flag. The syntax for the option is
+<code>rect=1</code> to enable it, or <code>rect=0</code> to disable
+it.</p>
+<h3 id="enabling-the-rect-option">Enabling the rect Option</h3>
+<p>To enable rectangular motion partitions for better compression
+quality, use the following command:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-c:v</span> libx265 <span class="at">-x265-params</span> rect=1 output.mp4</span></code></pre></div>
+<h3 id="disabling-the-rect-option">Disabling the rect Option</h3>
+<p>To disable rectangular motion partitions and speed up your encoding
+time, use this command:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-c:v</span> libx265 <span class="at">-x265-params</span> rect=0 output.mp4</span></code></pre></div>
+<h3 id="combining-rect-with-other-parameters">Combining rect with Other
+Parameters</h3>
+<p>If you are configuring multiple <code>libx265</code> parameters,
+separate them with a colon (<code>:</code>) within the
+<code>-x265-params</code> argument. For example, to disable both
+<code>rect</code> and <code>amp</code> (Asymmetric Motion Partitions)
+for maximum encoding speed, use:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-c:v</span> libx265 <span class="at">-x265-params</span> rect=0:amp=0 output.mp4</span></code></pre></div>
+<h2 id="preset-defaults">Preset Defaults</h2>
+<p>The <code>rect</code> option is enabled by default in most
+<code>libx265</code> presets. If you use presets like
+<code>medium</code>, <code>slow</code>, or <code>veryslow</code>,
+<code>rect</code> is automatically set to <code>1</code>. If you use
+fast presets like <code>ultrafast</code>, <code>superfast</code>, or
+<code>veryfast</code>, the encoder disables <code>rect</code>
+automatically to prioritize encoding speed. Manually setting
+<code>-x265-params rect=1</code> or <code>rect=0</code> allows you to
+override these preset defaults.</p></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Upmix Stereo to 5.1 in FFmpeg Using Pan - ffmpeg</title>
+    <meta name="description" content="This guide explains how to use the FFmpeg pan audio filter to upmix a stereo (2.0) audio track into a 5.1 surround sound channel layout. You will learn the command syntax, the channel mapping configurations, and how to apply custom weight coefficients to">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/how-to-upmix-stereo-to-5-1-in-ffmpeg-using-pan">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Upmix Stereo to 5.1 in FFmpeg Using Pan - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/how-to-upmix-stereo-to-5-1-in-ffmpeg-using-pan" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This guide explains how to use the FFmpeg pan audio filter to upmix a stereo (2.0) audio track into a 5.1 surround sound channel layout. You will learn the command syntax, the channel mapping configurations, and how to apply custom weight coefficients to" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="how-to-upmix-stereo-to-5.1-in-ffmpeg-using-pan">How to Upmix
+Stereo to 5.1 in FFmpeg Using Pan</h1>
+<p>This guide explains how to use the FFmpeg <code>pan</code> audio
+filter to upmix a stereo (2.0) audio track into a 5.1 surround sound
+channel layout. You will learn the command syntax, the channel mapping
+configurations, and how to apply custom weight coefficients to
+distribute the left and right stereo inputs across the six target
+surround sound channels.</p>
+<h3 id="understanding-the-5.1-channel-layout">Understanding the 5.1
+Channel Layout</h3>
+<p>A standard 5.1 surround sound layout consists of six distinct
+channels. When mapping channels in FFmpeg, they are identified by the
+following labels:</p>
+<ul>
+<li><strong>FL</strong>: Front Left</li>
+<li><strong>FR</strong>: Front Right</li>
+<li><strong>FC</strong>: Front Center</li>
+<li><strong>LFE</strong>: Low-Frequency Effects (Subwoofer)</li>
+<li><strong>BL</strong>: Back Left (Surround Left)</li>
+<li><strong>BR</strong>: Back Right (Surround Right)</li>
+</ul>
+<p>In a stereo input file, the audio channels are represented as
+<code>c0</code> (Left channel) and <code>c1</code> (Right channel).</p>
+<h3 id="the-pan-filter-syntax">The Pan Filter Syntax</h3>
+<p>The <code>pan</code> filter configuration requires you to specify the
+output channel layout followed by the specific mix equations for each
+output channel. The basic structure is:</p>
+<p><code>pan=layout|output_channel=equation|output_channel=equation|...</code></p>
+<p>For a 5.1 output, you start with <code>pan=5.1</code>. You then
+define how <code>c0</code> (Left) and <code>c1</code> (Right) map to the
+six output channels using multiplication factors (weights) ranging
+generally from <code>0.0</code> to <code>1.0</code>.</p>
+<h3 id="custom-weights-configuration">Custom Weights Configuration</h3>
+<p>To create a realistic surround sound experience from a stereo source,
+you can distribute the audio using these custom weights:</p>
+<ul>
+<li><strong>Front Left (FL)</strong>: 100% of the input Left channel
+(<code>1.0*c0</code>).</li>
+<li><strong>Front Right (FR)</strong>: 100% of the input Right channel
+(<code>1.0*c1</code>).</li>
+<li><strong>Front Center (FC)</strong>: A balanced mix of both Left and
+Right channels, attenuated to prevent clipping
+(<code>0.7*c0 + 0.7*c1</code>).</li>
+<li><strong>Subwoofer (LFE)</strong>: A combined mono signal of both
+channels focusing on low frequencies, typically heavily attenuated
+(<code>0.5*c0 + 0.5*c1</code>).</li>
+<li><strong>Back Left (BL)</strong>: A attenuated copy of the input Left
+channel to feed the rear left speaker (<code>0.7*c0</code>).</li>
+<li><strong>Back Right (BR)</strong>: A attenuated copy of the input
+Right channel to feed the rear right speaker (<code>0.7*c1</code>).</li>
+</ul>
+<h3 id="the-ffmpeg-command">The FFmpeg Command</h3>
+<p>To apply these custom weights, run the following FFmpeg command in
+your terminal:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.wav <span class="at">-af</span> <span class="st">&quot;pan=5.1|FL=c0|FR=c1|FC=0.7*c0+0.7*c1|LFE=0.5*c0+0.5*c1|BL=0.7*c0|BR=0.7*c1&quot;</span> output.wav</span></code></pre></div>
+<h3 id="key-considerations-for-adjusting-weights">Key Considerations for
+Adjusting Weights</h3>
+<ul>
+<li><strong>Clipping Prevention</strong>: If the sum of the weights for
+a single output channel (like the Center channel where
+<code>0.7 + 0.7 = 1.4</code>) exceeds <code>1.0</code>, the audio may
+clip and distort. FFmpeg automatically downscales the volume of the
+entire mix by default to prevent this.</li>
+<li><strong>Disabling Auto-Normalization</strong>: If you want to force
+FFmpeg to use your exact weights without automatic volume downscaling,
+prepend a negative sign to the channel layout (e.g.,
+<code>pan=-5.1|...</code>). If you do this, ensure your weights for any
+single channel do not sum to more than <code>1.0</code>.</li>
+</ul></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

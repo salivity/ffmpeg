@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Configure FFmpeg xfade Transition Duration and Easing - ffmpeg</title>
+    <meta name="description" content="This article explains how to configure the transition duration, start offset, and easing curves using the xfade filter in FFmpeg. You will learn the exact syntax required to apply smooth transitions between video clips, calculate timing offsets, and choo">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/configure-ffmpeg-xfade-transition-duration-and-easing">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Configure FFmpeg xfade Transition Duration and Easing - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/configure-ffmpeg-xfade-transition-duration-and-easing" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article explains how to configure the transition duration, start offset, and easing curves using the xfade filter in FFmpeg. You will learn the exact syntax required to apply smooth transitions between video clips, calculate timing offsets, and choo" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="configure-ffmpeg-xfade-transition-duration-and-easing">Configure
+FFmpeg xfade Transition Duration and Easing</h1>
+<p>This article explains how to configure the transition duration, start
+offset, and easing curves using the <code>xfade</code> filter in FFmpeg.
+You will learn the exact syntax required to apply smooth transitions
+between video clips, calculate timing offsets, and choose from various
+built-in transition curves to achieve professional visual effects.</p>
+<p>The <code>xfade</code> (crossfade) filter in FFmpeg is the standard
+tool for applying transitions between two video inputs. Unlike the older
+<code>fade</code> filter, <code>xfade</code> supports dozens of
+transition shapes and easing curves. To apply the filter successfully,
+you must define the transition type, the start time (offset), and the
+duration of the effect.</p>
+<h3 id="setting-duration-and-offset">Setting Duration and Offset</h3>
+<p>The two main parameters for controlling the timing of an
+<code>xfade</code> transition are <code>duration</code> and
+<code>offset</code>. Both values are expressed in seconds.</p>
+<ul>
+<li><strong><code>duration</code></strong>: The length of time the
+transition effect lasts.</li>
+<li><strong><code>offset</code></strong>: The exact timestamp in the
+timeline of the first video when the transition begins.</li>
+</ul>
+<p>To calculate the correct <code>offset</code>, use this formula:
+<code>Offset = (Duration of Video 1) - (Transition Duration)</code></p>
+<p>If Video 1 is 10 seconds long and you want a 2-second transition, the
+offset must be set to 8 seconds.</p>
+<p>Here is the basic command structure:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> video1.mp4 <span class="at">-i</span> video2.mp4 <span class="at">-filter_complex</span> <span class="st">&quot;[0:v][1:v]xfade=transition=fade:duration=2:offset=8[outv]&quot;</span> <span class="at">-map</span> <span class="st">&quot;[outv]&quot;</span> output.mp4</span></code></pre></div>
+<h3 id="choosing-transition-shapes-and-easing-curves">Choosing
+Transition Shapes and Easing Curves</h3>
+<p>FFmpeg does not use separate easing curve parameters (like Bezier
+curves); instead, it integrates easing styles and motion paths directly
+into its predefined <code>transition</code> options.</p>
+<p>Below are some of the most common transition curves available in the
+<code>xfade</code> filter:</p>
+<ul>
+<li><strong><code>fade</code></strong>: A standard linear crossfade
+where the first video fades out while the second fades in.</li>
+<li><strong><code>wipeleft</code> / <code>wiperight</code> /
+<code>wipeup</code> / <code>wipedown</code></strong>: Linear gradient
+wipes moving in the specified direction.</li>
+<li><strong><code>slideleft</code> / <code>slideright</code> /
+<code>slideup</code> / <code>slidedown</code></strong>: One video slides
+over the other, mimicking a linear motion curve.</li>
+<li><strong><code>circlecrop</code> / <code>rectcrop</code></strong>:
+Easing transitions that expand or shrink in circular or rectangular
+shapes.</li>
+<li><strong><code>dissolve</code></strong>: A pixelated noise-based
+transition curve.</li>
+</ul>
+<p>To change the easing curve or transition style, simply change the
+value of the <code>transition</code> parameter:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> video1.mp4 <span class="at">-i</span> video2.mp4 <span class="at">-filter_complex</span> <span class="st">&quot;[0:v][1:v]xfade=transition=slideleft:duration=1.5:offset=8[outv]&quot;</span> <span class="at">-map</span> <span class="st">&quot;[outv]&quot;</span> output.mp4</span></code></pre></div>
+<h3 id="handling-audio-transitions">Handling Audio Transitions</h3>
+<p>The <code>xfade</code> filter only processes video streams. To
+prevent abrupt audio cuts during the transition, you should pair the
+video <code>xfade</code> with the <code>acrossfade</code> audio filter.
+Match the audio transition’s <code>duration</code> and
+<code>overlap</code> to your video’s timing:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> video1.mp4 <span class="at">-i</span> video2.mp4 <span class="at">-filter_complex</span> <span class="dt">\</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="st">&quot;[0:v][1:v]xfade=transition=fade:duration=2:offset=8[outv]; </span><span class="dt">\</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="st"> [0:a][1:a]acrossfade=d=2:c1=tri:c2=tri[outa]&quot;</span> <span class="dt">\</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>-map <span class="st">&quot;[outv]&quot;</span> <span class="at">-map</span> <span class="st">&quot;[outa]&quot;</span> output.mp4</span></code></pre></div>
+<p>In this audio filter, <code>d=2</code> sets the duration to 2
+seconds, while <code>c1</code> and <code>c2</code> define the transition
+curves (e.g., <code>tri</code> for triangular, <code>log</code> for
+logarithmic, or <code>lin</code> for linear) to ensure the audio ease-in
+and ease-out match the video transition seamlessly.</p></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

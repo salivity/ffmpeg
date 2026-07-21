@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Run FFmpeg and Parse Progress in Python - ffmpeg</title>
+    <meta name="description" content="Running FFmpeg within Python allows you to automate video processing tasks, but tracking the progress of these operations is crucial for user experience. This article demonstrates how to use Python's built-in subprocess module to execute FFmpeg commands">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/how-to-run-ffmpeg-and-parse-progress-in-python">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Run FFmpeg and Parse Progress in Python - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/how-to-run-ffmpeg-and-parse-progress-in-python" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Running FFmpeg within Python allows you to automate video processing tasks, but tracking the progress of these operations is crucial for user experience. This article demonstrates how to use Python's built-in subprocess module to execute FFmpeg commands" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="how-to-run-ffmpeg-and-parse-progress-in-python">How to Run
+FFmpeg and Parse Progress in Python</h1>
+<p>Running FFmpeg within Python allows you to automate video processing
+tasks, but tracking the progress of these operations is crucial for user
+experience. This article demonstrates how to use Python’s built-in
+<code>subprocess</code> module to execute FFmpeg commands and parse its
+real-time output to calculate and display the conversion progress.</p>
+<h3 id="the-approach-ffmpeg--progress-flag">The Approach: FFmpeg
+<code>-progress</code> Flag</h3>
+<p>While you can parse FFmpeg’s standard error stream
+(<code>stderr</code>), its layout can change and is difficult to parse
+reliably. The most robust method is to use FFmpeg’s
+<code>-progress</code> option. By passing <code>-progress pipe:1</code>,
+FFmpeg writes easy-to-parse key-value pairs directly to standard output
+(<code>stdout</code>), which your Python script can read
+line-by-line.</p>
+<h3 id="python-implementation">Python Implementation</h3>
+<p>The following complete script first retrieves the total duration of
+the input video using <code>ffprobe</code> (part of the FFmpeg suite),
+then runs the conversion command and calculates the percentage
+completion in real-time.</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> subprocess</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> os</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> get_video_duration(input_file):</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>    <span class="co">&quot;&quot;&quot;Retrieve the total duration of the video in seconds using ffprobe.&quot;&quot;&quot;</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>    cmd <span class="op">=</span> [</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>        <span class="st">&#39;ffprobe&#39;</span>, </span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>        <span class="st">&#39;-v&#39;</span>, <span class="st">&#39;error&#39;</span>, </span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>        <span class="st">&#39;-show_entries&#39;</span>, <span class="st">&#39;format=duration&#39;</span>, </span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>        <span class="st">&#39;-of&#39;</span>, <span class="st">&#39;default=noprint_wrappers=1:nokey=1&#39;</span>, </span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>        input_file</span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>    ]</span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>    <span class="cf">try</span>:</span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>        result <span class="op">=</span> subprocess.run(cmd, stdout<span class="op">=</span>subprocess.PIPE, stderr<span class="op">=</span>subprocess.PIPE, text<span class="op">=</span><span class="va">True</span>, check<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="bu">float</span>(result.stdout.strip())</span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a>    <span class="cf">except</span> (subprocess.CalledProcessError, <span class="pp">ValueError</span>):</span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a>        <span class="cf">raise</span> <span class="pp">RuntimeError</span>(<span class="ss">f&quot;Could not retrieve duration for file: </span><span class="sc">{</span>input_file<span class="sc">}</span><span class="ss">&quot;</span>)</span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> convert_video_with_progress(input_file, output_file):</span>
+<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a>    <span class="co">&quot;&quot;&quot;Convert video using FFmpeg and print real-time progress to the console.&quot;&quot;&quot;</span></span>
+<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="kw">not</span> os.path.exists(input_file):</span>
+<span id="cb1-22"><a href="#cb1-22" aria-hidden="true" tabindex="-1"></a>        <span class="bu">print</span>(<span class="ss">f&quot;Error: Input file &#39;</span><span class="sc">{</span>input_file<span class="sc">}</span><span class="ss">&#39; does not exist.&quot;</span>)</span>
+<span id="cb1-23"><a href="#cb1-23" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span></span>
+<span id="cb1-24"><a href="#cb1-24" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-25"><a href="#cb1-25" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Get total duration to calculate percentage</span></span>
+<span id="cb1-26"><a href="#cb1-26" aria-hidden="true" tabindex="-1"></a>    total_duration <span class="op">=</span> get_video_duration(input_file)</span>
+<span id="cb1-27"><a href="#cb1-27" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f&quot;Total Duration: </span><span class="sc">{</span>total_duration<span class="sc">:.2f}</span><span class="ss"> seconds&quot;</span>)</span>
+<span id="cb1-28"><a href="#cb1-28" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-29"><a href="#cb1-29" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Command with -progress pipe:1 to output progress metrics to stdout</span></span>
+<span id="cb1-30"><a href="#cb1-30" aria-hidden="true" tabindex="-1"></a>    cmd <span class="op">=</span> [</span>
+<span id="cb1-31"><a href="#cb1-31" aria-hidden="true" tabindex="-1"></a>        <span class="st">&#39;ffmpeg&#39;</span>, <span class="st">&#39;-y&#39;</span>,</span>
+<span id="cb1-32"><a href="#cb1-32" aria-hidden="true" tabindex="-1"></a>        <span class="st">&#39;-i&#39;</span>, input_file,</span>
+<span id="cb1-33"><a href="#cb1-33" aria-hidden="true" tabindex="-1"></a>        <span class="st">&#39;-progress&#39;</span>, <span class="st">&#39;pipe:1&#39;</span>,</span>
+<span id="cb1-34"><a href="#cb1-34" aria-hidden="true" tabindex="-1"></a>        <span class="st">&#39;-nostats&#39;</span>,</span>
+<span id="cb1-35"><a href="#cb1-35" aria-hidden="true" tabindex="-1"></a>        output_file</span>
+<span id="cb1-36"><a href="#cb1-36" aria-hidden="true" tabindex="-1"></a>    ]</span>
+<span id="cb1-37"><a href="#cb1-37" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-38"><a href="#cb1-38" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Start the FFmpeg process</span></span>
+<span id="cb1-39"><a href="#cb1-39" aria-hidden="true" tabindex="-1"></a>    process <span class="op">=</span> subprocess.Popen(</span>
+<span id="cb1-40"><a href="#cb1-40" aria-hidden="true" tabindex="-1"></a>        cmd, </span>
+<span id="cb1-41"><a href="#cb1-41" aria-hidden="true" tabindex="-1"></a>        stdout<span class="op">=</span>subprocess.PIPE, </span>
+<span id="cb1-42"><a href="#cb1-42" aria-hidden="true" tabindex="-1"></a>        stderr<span class="op">=</span>subprocess.DEVNULL, </span>
+<span id="cb1-43"><a href="#cb1-43" aria-hidden="true" tabindex="-1"></a>        text<span class="op">=</span><span class="va">True</span>,</span>
+<span id="cb1-44"><a href="#cb1-44" aria-hidden="true" tabindex="-1"></a>        bufsize<span class="op">=</span><span class="dv">1</span></span>
+<span id="cb1-45"><a href="#cb1-45" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb1-46"><a href="#cb1-46" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-47"><a href="#cb1-47" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Read progress output line by line</span></span>
+<span id="cb1-48"><a href="#cb1-48" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> line <span class="kw">in</span> process.stdout:</span>
+<span id="cb1-49"><a href="#cb1-49" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="st">&#39;out_time_us&#39;</span> <span class="kw">in</span> line:</span>
+<span id="cb1-50"><a href="#cb1-50" aria-hidden="true" tabindex="-1"></a>            <span class="co"># out_time_us provides the current processed time in microseconds</span></span>
+<span id="cb1-51"><a href="#cb1-51" aria-hidden="true" tabindex="-1"></a>            <span class="cf">try</span>:</span>
+<span id="cb1-52"><a href="#cb1-52" aria-hidden="true" tabindex="-1"></a>                microseconds <span class="op">=</span> <span class="bu">int</span>(line.split(<span class="st">&#39;=&#39;</span>)[<span class="dv">1</span>].strip())</span>
+<span id="cb1-53"><a href="#cb1-53" aria-hidden="true" tabindex="-1"></a>                current_time <span class="op">=</span> microseconds <span class="op">/</span> <span class="fl">1_000_000.0</span></span>
+<span id="cb1-54"><a href="#cb1-54" aria-hidden="true" tabindex="-1"></a>                percentage <span class="op">=</span> (current_time <span class="op">/</span> total_duration) <span class="op">*</span> <span class="dv">100</span></span>
+<span id="cb1-55"><a href="#cb1-55" aria-hidden="true" tabindex="-1"></a>                </span>
+<span id="cb1-56"><a href="#cb1-56" aria-hidden="true" tabindex="-1"></a>                <span class="co"># Cap percentage at 100% (metadata processing can sometimes cause slight overflow)</span></span>
+<span id="cb1-57"><a href="#cb1-57" aria-hidden="true" tabindex="-1"></a>                percentage <span class="op">=</span> <span class="bu">min</span>(percentage, <span class="fl">100.0</span>)</span>
+<span id="cb1-58"><a href="#cb1-58" aria-hidden="true" tabindex="-1"></a>                </span>
+<span id="cb1-59"><a href="#cb1-59" aria-hidden="true" tabindex="-1"></a>                <span class="bu">print</span>(<span class="ss">f&quot;Progress: </span><span class="sc">{</span>percentage<span class="sc">:.2f}</span><span class="ss">%&quot;</span>, end<span class="op">=</span><span class="st">&#39;</span><span class="ch">\r</span><span class="st">&#39;</span>)</span>
+<span id="cb1-60"><a href="#cb1-60" aria-hidden="true" tabindex="-1"></a>            <span class="cf">except</span> <span class="pp">ValueError</span>:</span>
+<span id="cb1-61"><a href="#cb1-61" aria-hidden="true" tabindex="-1"></a>                <span class="cf">continue</span></span>
+<span id="cb1-62"><a href="#cb1-62" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-63"><a href="#cb1-63" aria-hidden="true" tabindex="-1"></a>    process.wait()</span>
+<span id="cb1-64"><a href="#cb1-64" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb1-65"><a href="#cb1-65" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> process.returncode <span class="op">==</span> <span class="dv">0</span>:</span>
+<span id="cb1-66"><a href="#cb1-66" aria-hidden="true" tabindex="-1"></a>        <span class="bu">print</span>(<span class="st">&quot;</span><span class="ch">\n</span><span class="st">Conversion completed successfully!&quot;</span>)</span>
+<span id="cb1-67"><a href="#cb1-67" aria-hidden="true" tabindex="-1"></a>    <span class="cf">else</span>:</span>
+<span id="cb1-68"><a href="#cb1-68" aria-hidden="true" tabindex="-1"></a>        <span class="bu">print</span>(<span class="ss">f&quot;</span><span class="ch">\n</span><span class="ss">Conversion failed with exit code </span><span class="sc">{</span>process<span class="sc">.</span>returncode<span class="sc">}</span><span class="ss">&quot;</span>)</span>
+<span id="cb1-69"><a href="#cb1-69" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-70"><a href="#cb1-70" aria-hidden="true" tabindex="-1"></a><span class="co"># Example Usage</span></span>
+<span id="cb1-71"><a href="#cb1-71" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> <span class="va">__name__</span> <span class="op">==</span> <span class="st">&quot;__main__&quot;</span>:</span>
+<span id="cb1-72"><a href="#cb1-72" aria-hidden="true" tabindex="-1"></a>    convert_video_with_progress(<span class="st">&quot;input.mp4&quot;</span>, <span class="st">&quot;output.mkv&quot;</span>)</span></code></pre></div>
+<h3 id="how-the-code-works">How the Code Works</h3>
+<ol type="1">
+<li><strong>Duration Detection:</strong> The
+<code>get_video_duration</code> function calls <code>ffprobe</code> to
+query the format metadata and returns the video duration as a float in
+seconds.</li>
+<li><strong>Subprocess Initialization:</strong>
+<code>subprocess.Popen</code> starts the FFmpeg process asynchronously.
+Setting <code>stdout=subprocess.PIPE</code> redirects the progress
+information to Python, while <code>stderr=subprocess.DEVNULL</code>
+suppresses the default diagnostic output. <code>bufsize=1</code> enables
+line-buffering to ensure real-time updates.</li>
+<li><strong>Progress Parsing:</strong> FFmpeg regularly outputs status
+lines. The script looks specifically for <code>out_time_us</code>
+(output time in microseconds). By dividing this value by
+<code>1,000,000</code>, the script gets the current elapsed playback
+time in seconds.</li>
+<li><strong>Percentage Calculation:</strong> The elapsed time is divided
+by the total duration and multiplied by 100 to yield the current
+completion percentage, which is printed in place using the carriage
+return (<code>\r</code>) character.</li>
+</ol></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

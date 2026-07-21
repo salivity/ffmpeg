@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Optimizing FFmpeg Compilation for WebAssembly - ffmpeg</title>
+    <meta name="description" content="Compiling FFmpeg for WebAssembly (Wasm) requires a careful balance between execution speed, output file size, and browser compatibility. This guide provides the essential Emscripten and compiler optimization flags necessary to produce a highly performant">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/optimizing-ffmpeg-compilation-for-webassembly">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Optimizing FFmpeg Compilation for WebAssembly - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/optimizing-ffmpeg-compilation-for-webassembly" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Compiling FFmpeg for WebAssembly (Wasm) requires a careful balance between execution speed, output file size, and browser compatibility. This guide provides the essential Emscripten and compiler optimization flags necessary to produce a highly performant" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="optimizing-ffmpeg-compilation-for-webassembly">Optimizing FFmpeg
+Compilation for WebAssembly</h1>
+<p>Compiling FFmpeg for WebAssembly (Wasm) requires a careful balance
+between execution speed, output file size, and browser compatibility.
+This guide provides the essential Emscripten and compiler optimization
+flags necessary to produce a highly performant and lightweight
+WebAssembly build of FFmpeg.</p>
+<h2 id="core-compiler-optimization-flags">Core Compiler Optimization
+Flags</h2>
+<p>When compiling the C source code of FFmpeg using the Emscripten
+toolchain, the following compiler flags should be passed via
+<code>cflags</code> and <code>ldflags</code>:</p>
+<ul>
+<li><strong><code>-O3</code></strong>: Enables aggressive optimizations
+for speed. This is highly recommended for CPU-heavy tasks like audio and
+video decoding. If minimizing the Wasm file size is your absolute
+priority, use <strong><code>-Os</code></strong> (optimize for size) or
+<strong><code>-Oz</code></strong> (optimize aggressively for size),
+though this will result in slower execution.</li>
+<li><strong><code>-flto</code> (Link-Time Optimization)</strong>:
+Enables LTO, which allows the compiler to perform optimizations across
+different source files. This significantly reduces the final Wasm binary
+size by removing unused code (dead code elimination) and inlining
+functions across compilation units.</li>
+</ul>
+<h2 id="webassembly-specific-performance-flags">WebAssembly-Specific
+Performance Flags</h2>
+<p>To unlock near-native execution speeds in modern web browsers, you
+must enable hardware-level optimizations:</p>
+<ul>
+<li><strong><code>-msimd128</code></strong>: Enables WebAssembly SIMD
+(Single Instruction, Multiple Data). This allows the compiler to
+vectorize loops, which is critical for the mathematical operations used
+in video and audio processing. This flag can yield up to a 2x to 10x
+performance improvement for supported codecs.</li>
+<li><strong><code>-pthread</code> and
+<code>-s USE_PTHREADS=1</code></strong>: Enables multi-threading
+support. FFmpeg is designed to decode media using multiple threads.
+Enabling pthreads allows WebAssembly to utilize Web Workers for parallel
+processing, greatly improving decoding frame rates. Note that this
+requires <code>SharedArrayBuffer</code> support on the hosting
+platform.</li>
+</ul>
+<h2 id="memory-and-runtime-configuration-flags">Memory and Runtime
+Configuration Flags</h2>
+<p>Emscripten requires specific linker flags to manage WebAssembly
+memory allocation efficiently during intensive media processing:</p>
+<ul>
+<li><strong><code>-s ALLOW_MEMORY_GROWTH=1</code></strong>: Allows the
+WebAssembly heap to expand dynamically at runtime. Without this, FFmpeg
+will crash with out-of-memory errors when processing larger media
+files.</li>
+<li><strong><code>-s INITIAL_MEMORY=64MB</code></strong> (or higher):
+Sets a larger initial memory footprint to prevent frequent memory
+allocation pauses during the initial phases of demuxing and
+decoding.</li>
+</ul>
+<h2 id="recommended-ffmpeg-configuration-flags">Recommended FFmpeg
+Configuration Flags</h2>
+<p>In addition to compiler flags, you must optimize the FFmpeg build
+itself during the <code>./configure</code> step. Unused features should
+be stripped to keep the Wasm payload minimal:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">emconfigure</span> ./configure <span class="dt">\</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">--prefix</span><span class="op">=</span>./build <span class="dt">\</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">--target-os</span><span class="op">=</span>none <span class="dt">\</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">--arch</span><span class="op">=</span>x86_32 <span class="dt">\</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">--enable-cross-compile</span> <span class="dt">\</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">--disable-x86asm</span> <span class="dt">\</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">--disable-inline-asm</span> <span class="dt">\</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>  <span class="at">--disable-stripping</span> <span class="dt">\</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>  <span class="at">--disable-programs</span> <span class="dt">\</span></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>  <span class="at">--disable-doc</span> <span class="dt">\</span></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>  <span class="at">--disable-everything</span> <span class="dt">\</span></span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>  <span class="at">--enable-decoder</span><span class="op">=</span>aac <span class="dt">\</span></span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>  <span class="at">--enable-decoder</span><span class="op">=</span>h264 <span class="dt">\</span></span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>  <span class="at">--enable-parser</span><span class="op">=</span>h264 <span class="dt">\</span></span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>  <span class="at">--enable-demuxer</span><span class="op">=</span>mov</span></code></pre></div>
+<p>By disabling everything (<code>--disable-everything</code>) and
+selectively enabling only the decoders, encoders, demuxers, and parsers
+required for your specific web application, you can reduce the final
+Wasm file size from dozens of megabytes down to less than 2MB.</p></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

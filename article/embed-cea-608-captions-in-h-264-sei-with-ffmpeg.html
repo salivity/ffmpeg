@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Embed CEA-608 Captions in H.264 SEI with FFmpeg - ffmpeg</title>
+    <meta name="description" content="This guide demonstrates how to construct an FFmpeg command to stream live H.264 video with embedded CEA-608 closed captions within the SEI (Supplemental Enhancement Information) NAL units. You will learn the required FFmpeg parameters, how to handle diff">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/embed-cea-608-captions-in-h-264-sei-with-ffmpeg">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Embed CEA-608 Captions in H.264 SEI with FFmpeg - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/embed-cea-608-captions-in-h-264-sei-with-ffmpeg" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This guide demonstrates how to construct an FFmpeg command to stream live H.264 video with embedded CEA-608 closed captions within the SEI (Supplemental Enhancement Information) NAL units. You will learn the required FFmpeg parameters, how to handle diff" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="embed-cea-608-captions-in-h.264-sei-with-ffmpeg">Embed CEA-608
+Captions in H.264 SEI with FFmpeg</h1>
+<p>This guide demonstrates how to construct an FFmpeg command to stream
+live H.264 video with embedded CEA-608 closed captions within the SEI
+(Supplemental Enhancement Information) NAL units. You will learn the
+required FFmpeg parameters, how to handle different caption sources, and
+the exact command-line syntax needed to deliver broadcast-compliant live
+streams to platforms like YouTube, AWS Elemental MediaLive, or Facebook
+Live.</p>
+<hr />
+<h3 id="the-core-parameter-a53cc">The Core Parameter:
+<code>a53cc</code></h3>
+<p>To embed CEA-608 captions into the H.264 video stream as SEI user
+data, you must use the <code>libx264</code> encoder with the
+<code>a53cc</code> option enabled. The A/53 specification defines how
+closed captions (specifically CEA-608 and CEA-708) are packaged inside
+the MPEG-2 and H.264 video bitstreams.</p>
+<p>By setting <code>-a53cc 1</code> (or
+<code>-x264-params a53cc=1</code>), FFmpeg looks for caption side data
+in the input stream and injects it directly into the output H.264 SEI
+NAL units.</p>
+<hr />
+<h3 id="scenario-1-streaming-with-an-external-scc-caption-file">Scenario
+1: Streaming with an External SCC Caption File</h3>
+<p>If you have a live video input and a synchronized SCC (Scenarist
+Closed Caption) file containing your CEA-608 data, use the following
+FFmpeg command to merge them and stream via RTMP:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-re</span> <span class="at">-i</span> input_video.mp4 <span class="at">-i</span> captions.scc <span class="dt">\</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">-map</span> 0:v:0 <span class="at">-map</span> 0:a:0 <span class="at">-map</span> 1:s:0 <span class="dt">\</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">-c:v</span> libx264 <span class="at">-pix_fmt</span> yuv420p <span class="at">-profile:v</span> main <span class="at">-g</span> 60 <span class="dt">\</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">-a53cc</span> 1 <span class="dt">\</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">-c:a</span> aac <span class="at">-b:a</span> 128k <span class="dt">\</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">-f</span> flv rtmp://live.server.com/app/stream_key</span></code></pre></div>
+<h4 id="command-breakdown">Command Breakdown:</h4>
+<ul>
+<li><code>-re</code>: Forces FFmpeg to read the input at native frame
+rate, which is required for live streaming.</li>
+<li><code>-i input_video.mp4 -i captions.scc</code>: Imports both the
+video/audio source and the external caption file.</li>
+<li><code>-map 0:v:0 -map 0:a:0 -map 1:s:0</code>: Maps the first video
+stream, the first audio stream, and the subtitle stream from the SCC
+file into the output.</li>
+<li><code>-c:v libx264</code>: Encodes the video to H.264.</li>
+<li><code>-a53cc 1</code>: Instructs the encoder to embed the mapped
+subtitle data as A/53 SEI closed captions.</li>
+<li><code>-c:a aac</code>: Encodes the audio to AAC, the standard for
+RTMP streaming.</li>
+<li><code>-f flv</code>: Formats the output container as FLV for RTMP
+ingest.</li>
+</ul>
+<hr />
+<h3
+id="scenario-2-streaming-from-a-source-with-pre-existing-captions">Scenario
+2: Streaming from a Source with Pre-Existing Captions</h3>
+<p>If your input source already contains caption side data (such as an
+SDI capture card, an MPEG-TS feed, or an MXF file with EIA-608 data),
+you do not need an external caption file. FFmpeg will automatically read
+the side data from the input and write it to the output:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-re</span> <span class="at">-i</span> input_with_captions.ts <span class="dt">\</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">-c:v</span> libx264 <span class="at">-pix_fmt</span> yuv420p <span class="at">-preset</span> medium <span class="dt">\</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">-x264-params</span> <span class="st">&quot;a53cc=1&quot;</span> <span class="dt">\</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">-c:a</span> aac <span class="at">-b:a</span> 128k <span class="dt">\</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">-f</span> flv rtmp://live.server.com/app/stream_key</span></code></pre></div>
+<h4 id="command-breakdown-1">Command Breakdown:</h4>
+<ul>
+<li><code>-x264-params "a53cc=1"</code>: An alternative syntax to pass
+the <code>a53cc</code> flag directly to the <code>libx264</code> encoder
+library, ensuring compliance across different FFmpeg builds.</li>
+</ul>
+<hr />
+<h3 id="verifying-the-captions-in-the-output">Verifying the Captions in
+the Output</h3>
+<p>To verify that your output stream successfully contains the CEA-608
+SEI captions, you can run a quick diagnostic command on a saved segment
+of your stream using the <code>ffprobe</code> tool:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffprobe</span> <span class="at">-show_entries</span> frame=side_data_list <span class="at">-select_streams</span> v <span class="at">-v</span> quiet output.mp4</span></code></pre></div>
+<p>Look for <code>"side_data_type": "Closed captions"</code> in the JSON
+output. If this block is present for your video frames, the CEA-608 data
+has been correctly embedded into the H.264 SEI NAL units.</p></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Force FFmpeg Input to Full Color Range - ffmpeg</title>
+    <meta name="description" content="When processing video files, FFmpeg sometimes incorrectly detects the color range of the input, leading to washed-out colors or clipped blacks and whites. This article provides a quick guide on how to explicitly force FFmpeg to interpret your input video">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/how-to-force-ffmpeg-input-to-full-color-range">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Force FFmpeg Input to Full Color Range - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/how-to-force-ffmpeg-input-to-full-color-range" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="When processing video files, FFmpeg sometimes incorrectly detects the color range of the input, leading to washed-out colors or clipped blacks and whites. This article provides a quick guide on how to explicitly force FFmpeg to interpret your input video" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="how-to-force-ffmpeg-input-to-full-color-range">How to Force
+FFmpeg Input to Full Color Range</h1>
+<p>When processing video files, FFmpeg sometimes incorrectly detects the
+color range of the input, leading to washed-out colors or clipped blacks
+and whites. This article provides a quick guide on how to explicitly
+force FFmpeg to interpret your input video as full color range (PC
+range, 0-255) rather than limited range (TV range, 16-235) using
+specific command-line arguments and video filters.</p>
+<h3 id="method-1-using-the--color_range-input-option">Method 1: Using
+the <code>-color_range</code> Input Option</h3>
+<p>The most direct way to force the input color range is to use the
+<code>-color_range</code> option. This option must be placed
+<em>before</em> the input file (<code>-i</code>) in your command line so
+that it applies to the demuxer/decoder.</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-color_range</span> pc <span class="at">-i</span> input.mp4 <span class="at">-c:v</span> libx264 <span class="at">-pix_fmt</span> yuv420p output.mp4</span></code></pre></div>
+<p>In this command: * <strong><code>-color_range pc</code></strong> (or
+<code>2</code>) forces the decoder to interpret the input stream as full
+range (0-255). * <strong><code>-pix_fmt yuv420p</code></strong> ensures
+the output is written in a widely compatible format, while preserving
+the color conversion.</p>
+<h3 id="method-2-using-the-setparams-video-filter">Method 2: Using the
+<code>setparams</code> Video Filter</h3>
+<p>If the decoder ignores the input flag, or if you want to flag the
+color range programmatically during the filtering stage without scaling
+the video, you can use the <code>setparams</code> filter.</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> setparams=range=full <span class="at">-c:v</span> libx264 output.mp4</span></code></pre></div>
+<p>The <code>setparams=range=full</code> filter forces FFmpeg to treat
+the video frames as full range during processing and tags the output
+metadata accordingly.</p>
+<h3 id="method-3-using-the-scale-filter-for-range-conversion">Method 3:
+Using the <code>scale</code> Filter for Range Conversion</h3>
+<p>If you need to convert or ensure that the pixel values themselves are
+correctly scaled and interpreted, use the <code>scale</code> software
+filter. This is highly effective when converting from an incorrectly
+flagged input to a specific output range.</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> scale=in_range=full:out_range=full <span class="at">-c:v</span> libx264 output.mp4</span></code></pre></div>
+<ul>
+<li><strong><code>in_range=full</code></strong> (or <code>pc</code>)
+forces FFmpeg to read the input pixels as full range (0-255).</li>
+<li><strong><code>out_range=full</code></strong> forces the output
+encoder to write the pixels as full range.</li>
+</ul>
+<h3 id="verifying-the-output-color-range">Verifying the Output Color
+Range</h3>
+<p>To verify if your output video has been correctly tagged as full
+range, you can run <code>ffprobe</code> on the generated file:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffprobe</span> <span class="at">-v</span> error <span class="at">-show_entries</span> stream=color_range <span class="at">-of</span> default=noprint_wrappers=1 input.mp4</span></code></pre></div>
+<p>If successful, the console output should display
+<code>color_range=pc</code>.</p></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

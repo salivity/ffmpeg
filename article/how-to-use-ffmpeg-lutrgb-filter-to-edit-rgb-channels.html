@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Use FFmpeg lutrgb Filter to Edit RGB Channels - ffmpeg</title>
+    <meta name="description" content="The lutrgb filter in FFmpeg is a powerful tool for pixel-level color manipulation, allowing you to independently adjust the red, green, and blue channels of a video using Look-Up Tables (LUTs). This article provides a straightforward guide on how the lut">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/how-to-use-ffmpeg-lutrgb-filter-to-edit-rgb-channels">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Use FFmpeg lutrgb Filter to Edit RGB Channels - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/how-to-use-ffmpeg-lutrgb-filter-to-edit-rgb-channels" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="The lutrgb filter in FFmpeg is a powerful tool for pixel-level color manipulation, allowing you to independently adjust the red, green, and blue channels of a video using Look-Up Tables (LUTs). This article provides a straightforward guide on how the lut" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="how-to-use-ffmpeg-lutrgb-filter-to-edit-rgb-channels">How to Use
+FFmpeg lutrgb Filter to Edit RGB Channels</h1>
+<p>The <code>lutrgb</code> filter in FFmpeg is a powerful tool for
+pixel-level color manipulation, allowing you to independently adjust the
+red, green, and blue channels of a video using Look-Up Tables (LUTs).
+This article provides a straightforward guide on how the
+<code>lutrgb</code> filter works, its syntax, and practical command-line
+examples for modifying specific color channels to achieve custom color
+grading and effects.</p>
+<h2 id="understanding-the-lutrgb-filter-syntax">Understanding the lutrgb
+Filter Syntax</h2>
+<p>The <code>lutrgb</code> filter works by applying an expression to one
+or more of the RGB channels: Red (<code>r</code>), Green
+(<code>g</code>), and Blue (<code>b</code>). If you omit a channel from
+the filter configuration, that channel remains unchanged.</p>
+<p>The basic syntax is:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">-vf</span> <span class="st">&quot;lutrgb=r=&#39;expression&#39;:g=&#39;expression&#39;:b=&#39;expression&#39;&quot;</span></span></code></pre></div>
+<p>Inside the expressions, you can use several built-in variables: *
+<strong><code>val</code></strong>: The input value of the current pixel
+(ranging from 0 to 255 for standard 8-bit video). *
+<strong><code>maxval</code></strong>: The maximum possible value for the
+channel (typically 255). * <strong><code>minval</code></strong>: The
+minimum possible value for the channel (typically 0).</p>
+<h2 id="practical-examples">Practical Examples</h2>
+<h3 id="adjusting-channel-brightness">1. Adjusting Channel
+Brightness</h3>
+<p>To boost or reduce the intensity of a specific color, you can add or
+subtract values from the input pixel value (<code>val</code>).</p>
+<p>To increase the red channel by 50 units while keeping green and blue
+the same:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;lutrgb=r=val+50&quot;</span> <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<p>To decrease the blue channel by 30 units:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;lutrgb=b=val-30&quot;</span> <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<h3 id="scaling-channel-values-contrast-and-tinting">2. Scaling Channel
+Values (Contrast and Tinting)</h3>
+<p>Multiplying the input value scales the channel’s intensity. This is
+useful for color tinting or shifting the white balance.</p>
+<p>To multiply the green channel by 1.2 (adding a green tint) and reduce
+the blue channel by multiplying by 0.8:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;lutrgb=g=val*1.2:b=val*0.8&quot;</span> <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<h3 id="inverting-color-channels">3. Inverting Color Channels</h3>
+<p>You can invert individual channels or the entire video by subtracting
+the current pixel value from the maximum value
+(<code>maxval</code>).</p>
+<p>To invert only the red channel:</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;lutrgb=r=maxval-val&quot;</span> <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<p>To invert all three RGB channels (creating a classic negative
+effect):</p>
+<div class="sourceCode" id="cb6"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;lutrgb=r=maxval-val:g=maxval-val:b=maxval-val&quot;</span> <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<h3 id="isolating-a-single-color-channel">4. Isolating a Single Color
+Channel</h3>
+<p>To view only a specific color channel, you can set the other two
+channels to a constant value of <code>0</code> (or
+<code>minval</code>).</p>
+<p>To isolate the red channel (rendering green and blue completely
+black):</p>
+<div class="sourceCode" id="cb7"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;lutrgb=g=0:b=0&quot;</span> <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<h2 id="negotiation-of-clip-limits">Negotiation of Clip Limits</h2>
+<p>FFmpeg automatically clips the output values of your expressions to
+ensure they stay within the valid 0 to 255 range. If an expression like
+<code>val+100</code> results in a value of 300 for a bright pixel,
+FFmpeg will automatically cap it at 255 to prevent rendering errors.</p></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

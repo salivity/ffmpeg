@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Convert Video to Amiga CDXL with FFmpeg - ffmpeg</title>
+    <meta name="description" content="This guide explains how to convert modern digital video files into the classic Amiga CDXL format using the FFmpeg command-line tool. You will learn the specific video and audio parameters required to ensure the output file plays smoothly on vintage Amiga">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/convert-video-to-amiga-cdxl-with-ffmpeg">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Convert Video to Amiga CDXL with FFmpeg - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/convert-video-to-amiga-cdxl-with-ffmpeg" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This guide explains how to convert modern digital video files into the classic Amiga CDXL format using the FFmpeg command-line tool. You will learn the specific video and audio parameters required to ensure the output file plays smoothly on vintage Amiga" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="convert-video-to-amiga-cdxl-with-ffmpeg">Convert Video to Amiga
+CDXL with FFmpeg</h1>
+<p>This guide explains how to convert modern digital video files into
+the classic Amiga CDXL format using the FFmpeg command-line tool. You
+will learn the specific video and audio parameters required to ensure
+the output file plays smoothly on vintage Amiga hardware, such as the
+Amiga CD32 or CDTV, along with a breakdown of the exact FFmpeg command
+needed to perform the conversion.</p>
+<h2 id="understanding-amiga-cdxl-constraints">Understanding Amiga CDXL
+Constraints</h2>
+<p>The CDXL format was designed in the early 1990s for low-bandwidth
+CD-ROM drives (specifically single-speed 150 KB/s drives). Because of
+these hardware limitations, you must downscale your source video and
+audio significantly. If your file exceeds the bandwidth limits of the
+Amiga’s CD-ROM drive, playback will stutter.</p>
+<p>To ensure compatibility, your target specifications should generally
+adhere to the following: * <strong>Resolution:</strong> 320x200 pixels
+(standard NTSC) or 320x256 pixels (PAL). You can also use lower
+resolutions like 160x100 to save bandwidth. * <strong>Frame
+Rate:</strong> 12 frames per second (fps) is standard. You can go up to
+15 fps, but 24 or 30 fps will overwhelm classic hardware. *
+<strong>Color Depth:</strong> CDXL uses an indexed color palette
+(usually 8-bit/256 colors or HAM6). * <strong>Audio:</strong> 8-bit
+mono, sampled at 11025 Hz or 22050 Hz.</p>
+<h2 id="the-ffmpeg-conversion-command">The FFmpeg Conversion
+Command</h2>
+<p>FFmpeg includes a native CDXL muxer and encoder. To convert your
+video, open your terminal or command prompt and run the following
+command:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-c:v</span> cdxl <span class="at">-pix_fmt</span> bgr8 <span class="at">-s</span> 320x200 <span class="at">-r</span> 12 <span class="at">-c:a</span> pcm_s8 <span class="at">-ar</span> 11025 <span class="at">-ac</span> 1 output.cdxl</span></code></pre></div>
+<h2 id="command-parameter-breakdown">Command Parameter Breakdown</h2>
+<p>Here is what each part of the FFmpeg command does:</p>
+<ul>
+<li><strong><code>-i input.mp4</code></strong>: Specifies your source
+video file.</li>
+<li><strong><code>-c:v cdxl</code></strong>: Sets the video codec to
+CDXL.</li>
+<li><strong><code>-pix_fmt bgr8</code></strong>: Sets the pixel format
+to 8-bit color. This is necessary because modern video formats use
+24-bit color or higher, which the CDXL encoder cannot process
+directly.</li>
+<li><strong><code>-s 320x200</code></strong>: Resizes the video frame.
+Change this to <code>320x256</code> if you are targeting PAL
+systems.</li>
+<li><strong><code>-r 12</code></strong>: Sets the output frame rate to
+12 frames per second.</li>
+<li><strong><code>-c:a pcm_s8</code></strong>: Sets the audio codec to
+8-bit signed PCM, which is the standard audio format compatible with the
+CDXL container.</li>
+<li><strong><code>-ar 11025</code></strong>: Downsamples the audio to
+11025 Hz. You can increase this to <code>22050</code> if you have a
+double-speed (2x) CD-ROM drive.</li>
+<li><strong><code>-ac 1</code></strong>: Redefines the audio channels to
+1 (mono) to save precious bandwidth. If stereo is absolutely necessary,
+change this to <code>2</code>.</li>
+<li><strong><code>output.cdxl</code></strong>: The name of your finished
+Amiga-compatible video file.</li>
+</ul>
+<h2 id="testing-and-playback">Testing and Playback</h2>
+<p>Once the conversion is complete, the resulting <code>.cdxl</code>
+file can be transferred to an Amiga-formatted media, such as a CF card,
+floppy disk, or CD-ROM image.</p>
+<p>You can play the video on a real Amiga using classic players like
+<strong>CDXLPlay</strong> or <strong>Multiview</strong> (with the
+appropriate datatypes installed). You can also test the file on modern
+computers using retro emulators like WinUAE or FS-UAE to verify that the
+frame rate and audio sync are correct before writing the file to
+physical media.</p></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

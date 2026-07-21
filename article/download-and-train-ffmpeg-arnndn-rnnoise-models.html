@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Download and Train FFmpeg arnndn RNNoise Models - ffmpeg</title>
+    <meta name="description" content="This article provides a concise guide on how to acquire and train neural network models for the arnndn (RNNoise) speech enhancement filter in FFmpeg. You will learn where to download pre-trained model files and the step-by-step process required to train">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/download-and-train-ffmpeg-arnndn-rnnoise-models">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Download and Train FFmpeg arnndn RNNoise Models - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/download-and-train-ffmpeg-arnndn-rnnoise-models" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article provides a concise guide on how to acquire and train neural network models for the arnndn (RNNoise) speech enhancement filter in FFmpeg. You will learn where to download pre-trained model files and the step-by-step process required to train" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="download-and-train-ffmpeg-arnndn-rnnoise-models">Download and
+Train FFmpeg arnndn RNNoise Models</h1>
+<p>This article provides a concise guide on how to acquire and train
+neural network models for the <code>arnndn</code> (RNNoise) speech
+enhancement filter in FFmpeg. You will learn where to download
+pre-trained model files and the step-by-step process required to train
+your own custom recurrent neural network (RNN) models for tailored noise
+reduction.</p>
+<h2 id="downloading-pre-trained-models">Downloading Pre-Trained
+Models</h2>
+<p>The FFmpeg <code>arnndn</code> filter is based on the RNNoise project
+by Xiph.Org. If you do not want to train a model from scratch, you can
+download pre-compiled <code>.rnnn</code> model files that have been
+trained on diverse speech and noise datasets.</p>
+<h3 id="where-to-download">Where to Download</h3>
+<p>Pre-trained models are hosted on various open-source repositories.
+The most common standard models include: * <strong>cb.rnnn</strong>:
+Combined model (general-purpose noise reduction). *
+<strong>bd.rnnn</strong>: Broad noise reduction. *
+<strong>mp.rnnn</strong>: Music and voice preservation. *
+<strong>sh.rnnn</strong>: Statistical speech enhancement.</p>
+<p>You can download these official files directly from the <a
+href="https://github.com/greg7sap/rnnoise-models">community-maintained
+RNNoise models GitHub repository</a> or the <a
+href="https://github.com/xiph/rnnoise">original RNNoise
+repository</a>.</p>
+<h3 id="how-to-use-a-downloaded-model-in-ffmpeg">How to Use a Downloaded
+Model in FFmpeg</h3>
+<p>Once you have downloaded a <code>.rnnn</code> file (for example,
+<code>cb.rnnn</code>), apply it to your audio file using the following
+FFmpeg command:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-af</span> arnndn=model=/path/to/cb.rnnn output.mp4</span></code></pre></div>
+<hr />
+<h2 id="training-a-custom-model">Training a Custom Model</h2>
+<p>If the pre-trained models do not sufficiently reduce your specific
+background noise, you can train a custom model. Training requires a
+Linux-based environment, C compilation tools, Python, and
+Keras/TensorFlow.</p>
+<h3 id="step-1-clone-the-rnnoise-repository">Step 1: Clone the RNNoise
+Repository</h3>
+<p>Clone the official RNNoise source code repository and navigate into
+the directory:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">git</span> clone https://github.com/xiph/rnnoise.git</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="bu">cd</span> rnnoise</span></code></pre></div>
+<h3 id="step-2-prepare-your-audio-training-data">Step 2: Prepare Your
+Audio Training Data</h3>
+<p>You need two large sets of audio files in raw, 16-bit, 48 kHz, mono
+PCM format: 1. <strong>Clean Speech:</strong> Hours of clear voice
+recordings without any background noise. 2. <strong>Noise:</strong>
+Hours of pure background noise (e.g., office hum, fan noise, street
+traffic).</p>
+<h3 id="step-3-compile-the-feature-extraction-tool">Step 3: Compile the
+Feature Extraction Tool</h3>
+<p>Before training, you must compile the C files to generate the feature
+extraction utility:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">./autogen.sh</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="ex">./configure</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="fu">make</span> src/denoise_training</span></code></pre></div>
+<p>This compilation creates the <code>src/denoise_training</code>
+executable, which extracts training features from your audio files.</p>
+<h3 id="step-4-extract-features">Step 4: Extract Features</h3>
+<p>Use the compiled binary to mix your clean speech and noise files,
+then extract the training features. Execute the binary by passing your
+clean speech and noise PCM files as arguments:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">./src/denoise_training</span> clean_speech.pcm noise.pcm 50000000 training_data.f32</span></code></pre></div>
+<p><em>Note: <code>50000000</code> is the number of training sequences
+to generate. <code>training_data.f32</code> is the output file
+containing the extracted features.</em></p>
+<h3 id="step-5-train-the-model-using-python">Step 5: Train the Model
+Using Python</h3>
+<p>Navigate to the training directory and run the Keras training script.
+Ensure you have TensorFlow and Keras installed in your Python
+environment.</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="bu">cd</span> training</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="ex">python</span> rnn_train.py ../training_data.f32</span></code></pre></div>
+<p>This script processes the extracted features and trains the recurrent
+neural network. It will output weight files (typically in
+<code>.h5</code> or <code>.py</code> structure format).</p>
+<h3 id="step-6-export-the-model-to-rnnoise-format">Step 6: Export the
+Model to RNNoise Format</h3>
+<p>After training is complete, compile the final weights back into the C
+source code structure to output the compatible <code>.rnnn</code>
+file.</p>
+<ol type="1">
+<li><p>Use the provided utility script in the <code>training</code>
+directory to convert the Keras weights into C header files:</p>
+<div class="sourceCode" id="cb6"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="ex">python</span> dump_rnn.py weights.h5 ../src/rnn_data.c ../src/rnn_data.h</span></code></pre></div></li>
+<li><p>Recompile the RNNoise library:</p>
+<div class="sourceCode" id="cb7"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="bu">cd</span> ..</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="fu">make</span> clean</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a><span class="fu">make</span></span></code></pre></div></li>
+<li><p>Use the compiled library or extraction scripts to serialize these
+weights into a single <code>.rnnn</code> file. You can now pass this
+newly created custom <code>.rnnn</code> file directly to FFmpeg’s
+<code>arnndn</code> filter.</p></li>
+</ol></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

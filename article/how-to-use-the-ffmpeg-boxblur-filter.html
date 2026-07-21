@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Use the FFmpeg Boxblur Filter - ffmpeg</title>
+    <meta name="description" content="This article provides a straightforward guide on how to use the boxblur filter in FFmpeg to apply blurring effects to video files. You will learn the syntax of the filter, understand its key parameters—such as radius and power for luma, chroma, and alp">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/how-to-use-the-ffmpeg-boxblur-filter">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Use the FFmpeg Boxblur Filter - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/how-to-use-the-ffmpeg-boxblur-filter" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article provides a straightforward guide on how to use the boxblur filter in FFmpeg to apply blurring effects to video files. You will learn the syntax of the filter, understand its key parameters—such as radius and power for luma, chroma, and alp" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="how-to-use-the-ffmpeg-boxblur-filter">How to Use the FFmpeg
+Boxblur Filter</h1>
+<p>This article provides a straightforward guide on how to use the
+<code>boxblur</code> filter in FFmpeg to apply blurring effects to video
+files. You will learn the syntax of the filter, understand its key
+parameters—such as radius and power for luma, chroma, and alpha
+channels—and see practical command-line examples to easily apply these
+effects to your projects.</p>
+<h3 id="understanding-boxblur-parameters">Understanding Boxblur
+Parameters</h3>
+<p>The <code>boxblur</code> filter in FFmpeg accepts six primary
+parameters. These parameters are grouped by video component:
+<strong>luma</strong> (brightness/grayscale), <strong>chroma</strong>
+(color), and <strong>alpha</strong> (transparency).</p>
+<ul>
+<li><strong>radius (r):</strong> Defines the size of the blur area in
+pixels. A larger radius results in a stronger blur.</li>
+<li><strong>power (p):</strong> Defines how many times the blur filter
+is sequentially applied. A higher power creates a smoother gradient blur
+but requires more processing power.</li>
+</ul>
+<p>The basic syntax for the filter is:
+<code>boxblur=luma_radius:luma_power:chroma_radius:chroma_power:alpha_radius:alpha_power</code></p>
+<p>You can also use the abbreviated parameter names: * <code>lr</code> /
+<code>lp</code> (Luma radius / power) * <code>cr</code> /
+<code>cp</code> (Chroma radius / power) * <code>ar</code> /
+<code>ap</code> (Alpha radius / power)</p>
+<hr />
+<h3 id="practical-ffmpeg-boxblur-examples">Practical FFmpeg Boxblur
+Examples</h3>
+<p>Below are standard command-line examples showing how to apply the
+<code>boxblur</code> filter to a video named <code>input.mp4</code>.</p>
+<h4 id="apply-a-simple-blur-to-the-entire-video">1. Apply a Simple Blur
+to the Entire Video</h4>
+<p>To blur both the details (luma) and colors (chroma) of a video, you
+can set the radius to <code>10</code> and the power to <code>2</code>
+for both components:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;boxblur=lr=10:lp=2:cr=10:cp=2&quot;</span> output.mp4</span></code></pre></div>
+<p>Alternatively, you can use the short-hand positional notation:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;boxblur=10:2:10:2&quot;</span> output.mp4</span></code></pre></div>
+<h4 id="apply-a-heavy-blur">2. Apply a Heavy Blur</h4>
+<p>If you want a highly obscured, dream-like effect, increase both the
+radius and the power settings:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;boxblur=lr=30:lp=5:cr=30:cp=5&quot;</span> output.mp4</span></code></pre></div>
+<h4 id="blur-only-the-details-keep-color-intact">3. Blur Only the
+Details (Keep Color Intact)</h4>
+<p>By applying the blur only to the luma channel and keeping the chroma
+settings at <code>0</code>, you can blur the details of the video while
+preserving the original color boundaries:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;boxblur=lr=15:lp=3:cr=0:cp=0&quot;</span> output.mp4</span></code></pre></div>
+<h4 id="using-expressions-for-dynamic-radius">4. Using Expressions for
+Dynamic Radius</h4>
+<p>FFmpeg allows you to use mathematical expressions for the radius. For
+example, you can set the blur radius based on the video width
+(<code>w</code>) or height (<code>h</code>). The following command sets
+the luma radius to 2% of the video’s width:</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;boxblur=lr=w*0.02:lp=2&quot;</span> output.mp4</span></code></pre></div></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

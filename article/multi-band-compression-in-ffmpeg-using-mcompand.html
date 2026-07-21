@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multi-Band Compression in FFmpeg Using mcompand - ffmpeg</title>
+    <meta name="description" content="This article provides a practical guide on how to use the mcompand (multi-band compander) filter in FFmpeg to process audio streams. You will learn the structure of the filter's syntax, how to define frequency crossover points, and how to configure attac">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/multi-band-compression-in-ffmpeg-using-mcompand">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Multi-Band Compression in FFmpeg Using mcompand - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/multi-band-compression-in-ffmpeg-using-mcompand" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article provides a practical guide on how to use the mcompand (multi-band compander) filter in FFmpeg to process audio streams. You will learn the structure of the filter's syntax, how to define frequency crossover points, and how to configure attac" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="multi-band-compression-in-ffmpeg-using-mcompand">Multi-Band
+Compression in FFmpeg Using mcompand</h1>
+<p>This article provides a practical guide on how to use the
+<code>mcompand</code> (multi-band compander) filter in FFmpeg to process
+audio streams. You will learn the structure of the filter’s syntax, how
+to define frequency crossover points, and how to configure attack,
+release, and volume threshold parameters for different audio bands to
+achieve a balanced and professional sound.</p>
+<hr />
+<h3 id="understanding-the-mcompand-filter-syntax">Understanding the
+mcompand Filter Syntax</h3>
+<p>The <code>mcompand</code> filter divides an audio signal into
+multiple frequency bands and applies compression or expansion to each
+band individually. The basic syntax for the filter requires defining the
+parameters for each band, separated by spaces, wrapped in single
+quotes:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.wav <span class="at">-af</span> <span class="st">&quot;mcompand=&#39;band1 band2 band3&#39;&quot;</span> output.wav</span></code></pre></div>
+<p>Each band is defined using the following sequence of parameters:</p>
+<pre class="text"><code>attacks releases [delay] points [crossover_frequency]</code></pre>
+<ul>
+<li><strong>attacks</strong>: A comma-separated list of attack times (in
+seconds) for each channel.</li>
+<li><strong>releases</strong>: A comma-separated list of release times
+(in seconds) for each channel.</li>
+<li><strong>delay</strong> (optional): Delay (in seconds) for the signal
+to allow look-ahead compression.</li>
+<li><strong>points</strong>: A list of input and output decibel (dB)
+transfer points defining the compression curve (e.g.,
+<code>input_dB,output_dB,input_dB,output_dB...</code>).</li>
+<li><strong>crossover_frequency</strong>: The upper limit of the
+frequency band in Hz. The last band does not require a crossover
+frequency, as it automatically extends to the highest available
+frequency.</li>
+</ul>
+<hr />
+<h3 id="step-by-step-implementation">Step-by-Step Implementation</h3>
+<p>To apply a 3-band compressor (Low, Mid, and High frequencies), you
+must construct three separate band definitions within the filter.</p>
+<h4 id="define-the-low-frequency-band-bass">1. Define the Low-Frequency
+Band (Bass)</h4>
+<p>For the low frequencies (0 Hz to 200 Hz), we want a fast attack to
+catch heavy transients and moderate compression:</p>
+<ul>
+<li><strong>Attack / Release</strong>: <code>0.005,0.005</code> seconds
+attack, <code>0.1,0.1</code> seconds release.</li>
+<li><strong>Transfer Points</strong>: <code>-60,-60,-20,-16,0,-10</code>
+(audio below -60 dB is untouched, -20 dB is compressed to -16 dB, and 0
+dB is limited to -10 dB).</li>
+<li><strong>Crossover Frequency</strong>: <code>200</code> Hz.</li>
+</ul>
+<h4 id="define-the-mid-frequency-band-vocalsinstruments">2. Define the
+Mid-Frequency Band (Vocals/Instruments)</h4>
+<p>For mid-range frequencies (200 Hz to 3000 Hz), we use a slightly
+slower attack to keep vocals sounding natural:</p>
+<ul>
+<li><strong>Attack / Release</strong>: <code>0.01,0.01</code> seconds
+attack, <code>0.15,0.15</code> seconds release.</li>
+<li><strong>Transfer Points</strong>:
+<code>-60,-60,-20,-18,0,-12</code></li>
+<li><strong>Crossover Frequency</strong>: <code>3000</code> Hz.</li>
+</ul>
+<h4 id="define-the-high-frequency-band-trebleair">3. Define the
+High-Frequency Band (Treble/Air)</h4>
+<p>For the high frequencies (3000 Hz and above), we use very fast
+settings to control sibilance:</p>
+<ul>
+<li><strong>Attack / Release</strong>: <code>0.003,0.003</code> seconds
+attack, <code>0.08,0.08</code> seconds release.</li>
+<li><strong>Transfer Points</strong>:
+<code>-60,-60,-20,-15,0,-10</code></li>
+<li><strong>Crossover Frequency</strong>: Omitted (covers everything
+above 3000 Hz).</li>
+</ul>
+<hr />
+<h3 id="complete-ffmpeg-command">Complete FFmpeg Command</h3>
+<p>Combining these three band definitions into a single FFmpeg command
+yields the following:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.wav <span class="at">-af</span> <span class="st">&quot;mcompand=&#39;0.005,0.005 0.1,0.1 -60,-60,-20,-16,0,-10 200 0.01,0.01 0.15,0.15 -60,-60,-20,-18,0,-12 3000 0.003,0.003 0.08,0.08 -60,-60,-20,-15,0,-10&#39;&quot;</span> output.wav</span></code></pre></div>
+<h3 id="key-considerations-for-tuning">Key Considerations for
+Tuning</h3>
+<ul>
+<li><strong>Stereo vs. Mono</strong>: In the example above,
+<code>0.005,0.005</code> specifies the attack time for both the left and
+right channels of a stereo stream. If you are processing a mono stream,
+use single values (e.g., <code>0.005</code> instead of
+<code>0.005,0.005</code>).</li>
+<li><strong>Look-ahead Delay</strong>: Adding a small delay (e.g.,
+<code>0.005</code> seconds) before the transfer points allows the
+compressor to “look ahead” and react to peaks before they occur,
+preventing digital clipping.</li>
+<li><strong>Level Matching</strong>: Adjust the final points of your
+transfer curves (e.g., the <code>0,-10</code> value) to balance the
+output volume across bands and prevent any single frequency range from
+dominating the mix.</li>
+</ul></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

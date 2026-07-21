@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Denoise HD Video with FFmpeg nlmeans on Multi-Core - ffmpeg</title>
+    <meta name="description" content="This article explains how to use the nlmeans (Non-Local Means) filter in FFmpeg to remove noise and grain from high-definition (HD) video. Because nlmeans is a highly effective but computationally expensive spatial denoising filter, we will focus on opti">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/denoise-hd-video-with-ffmpeg-nlmeans-on-multi-core">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Denoise HD Video with FFmpeg nlmeans on Multi-Core - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/denoise-hd-video-with-ffmpeg-nlmeans-on-multi-core" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article explains how to use the nlmeans (Non-Local Means) filter in FFmpeg to remove noise and grain from high-definition (HD) video. Because nlmeans is a highly effective but computationally expensive spatial denoising filter, we will focus on opti" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="denoise-hd-video-with-ffmpeg-nlmeans-on-multi-core">Denoise HD
+Video with FFmpeg nlmeans on Multi-Core</h1>
+<p>This article explains how to use the <code>nlmeans</code> (Non-Local
+Means) filter in FFmpeg to remove noise and grain from high-definition
+(HD) video. Because <code>nlmeans</code> is a highly effective but
+computationally expensive spatial denoising filter, we will focus on
+optimization techniques and command configurations that maximize
+multi-core processor performance to speed up render times.</p>
+<hr />
+<h3 id="understanding-the-nlmeans-filter">Understanding the nlmeans
+Filter</h3>
+<p>The <code>nlmeans</code> filter works by finding and averaging
+similar pixel patches across a search window. While this process
+preserves edges and fine details much better than simple blur filters,
+processing 1080p or 4K video using default settings can be incredibly
+slow.</p>
+<p>To run this efficiently on a multi-core CPU, you must balance the
+algorithm’s search parameters and leverage FFmpeg’s multi-threading
+capabilities.</p>
+<h3 id="the-basic-nlmeans-command">The Basic nlmeans Command</h3>
+<p>The basic syntax for applying the <code>nlmeans</code> filter is:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;nlmeans=s=1.0:p=7:r=15&quot;</span> <span class="at">-c:v</span> libx264 <span class="at">-crf</span> 18 output.mp4</span></code></pre></div>
+<ul>
+<li><strong><code>s</code> (Denoising Strength):</strong> Controls how
+aggressively the noise is filtered (default is 1.0).</li>
+<li><strong><code>p</code> (Patch Size):</strong> The size of the
+template patch (default is 7, representing a 7x7 grid).</li>
+<li><strong><code>r</code> (Research Size):</strong> The size of the
+search window (default is 15).</li>
+</ul>
+<h3 id="optimizing-parameters-for-speed-on-hd-video">Optimizing
+Parameters for Speed on HD Video</h3>
+<p>For HD video, the default patch and research sizes are often too
+demanding. You can significantly reduce processing time with minimal
+loss in visual quality by adjusting these parameters:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;nlmeans=s=1.5:p=5:r=11&quot;</span> <span class="at">-c:v</span> libx264 output.mp4</span></code></pre></div>
+<ul>
+<li>Reducing <strong><code>p</code> to 5</strong> and
+<strong><code>r</code> to 11</strong> dramatically reduces the number of
+mathematical calculations per pixel, allowing your multi-core processor
+to cycle through frames much faster.</li>
+</ul>
+<h3 id="maximizing-multi-core-processor-usage">Maximizing Multi-Core
+Processor Usage</h3>
+<p>FFmpeg automatically attempts to multi-thread video decoding,
+filtering, and encoding, but you can explicitly force optimized
+threading behavior to ensure all CPU cores are saturated.</p>
+<h4 id="enable-global-threading">1. Enable Global Threading</h4>
+<p>Use the <code>-threads</code> option to tell FFmpeg to use all
+available CPU threads for both the filtering pipeline and the
+encoder:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;nlmeans=s=1.0:p=5:r=11&quot;</span> <span class="at">-threads</span> 0 <span class="at">-c:v</span> libx264 <span class="at">-preset</span> slow output.mp4</span></code></pre></div>
+<p>Setting <code>-threads 0</code> forces FFmpeg to automatically spawn
+the optimal number of threads based on your processor’s logical core
+count.</p>
+<h4 id="specify-filter-threads">2. Specify Filter Threads</h4>
+<p>You can specifically allocate CPU threads to the filter graph itself
+by using the <code>-filter_threads</code> flag. This is highly
+beneficial when running heavy filters like <code>nlmeans</code>:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-filter_threads</span> 8 <span class="at">-vf</span> <span class="st">&quot;nlmeans=s=1.0:p=5:r=11&quot;</span> <span class="at">-c:v</span> libx264 output.mp4</span></code></pre></div>
+<p>Replace <code>8</code> with the number of physical cores or logical
+threads you wish to dedicate solely to the denoising process.</p>
+<h4 id="segmented-parallel-processing-advanced">3. Segmented parallel
+processing (Advanced)</h4>
+<p>If your CPU has a high core count (e.g., 16+ cores), a single FFmpeg
+process using <code>nlmeans</code> might still underutilize your system
+due to internal filtering bottlenecks. To fully saturate a high-end
+processor, you can split your video into segments, process them
+simultaneously in parallel, and concatenate them:</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Process segment 1 on threads 0-7</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-ss</span> 00:00:00 <span class="at">-t</span> 00:05:00 <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;nlmeans&quot;</span> <span class="at">-threads</span> 8 part1.mp4</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Process segment 2 on threads 8-15</span></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-ss</span> 00:05:00 <span class="at">-t</span> 00:10:00 <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;nlmeans&quot;</span> <span class="at">-threads</span> 8 part2.mp4</span></code></pre></div>
+<p>Using these optimization strategies ensures you achieve high-quality,
+detail-preserving denoising on HD video without stalling your
+post-production workflow.</p></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

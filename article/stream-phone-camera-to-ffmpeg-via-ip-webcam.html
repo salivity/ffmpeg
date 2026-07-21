@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stream Phone Camera to FFmpeg via IP Webcam - ffmpeg</title>
+    <meta name="description" content="Turning your mobile phone into an IP camera and processing its video feed with FFmpeg is a powerful way to set up low-cost surveillance, live streaming, or video testing environments. This article provides a straight-to-the-point guide on how to install">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/stream-phone-camera-to-ffmpeg-via-ip-webcam">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Stream Phone Camera to FFmpeg via IP Webcam - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/stream-phone-camera-to-ffmpeg-via-ip-webcam" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Turning your mobile phone into an IP camera and processing its video feed with FFmpeg is a powerful way to set up low-cost surveillance, live streaming, or video testing environments. This article provides a straight-to-the-point guide on how to install" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="stream-phone-camera-to-ffmpeg-via-ip-webcam">Stream Phone Camera
+to FFmpeg via IP Webcam</h1>
+<p>Turning your mobile phone into an IP camera and processing its video
+feed with FFmpeg is a powerful way to set up low-cost surveillance, live
+streaming, or video testing environments. This article provides a
+straight-to-the-point guide on how to install an IP camera app on your
+smartphone, locate your device’s network stream URL, and execute the
+correct FFmpeg commands to capture and transcode the video in
+real-time.</p>
+<h3 id="step-1-install-and-configure-an-ip-camera-app">Step 1: Install
+and Configure an IP Camera App</h3>
+<p>To turn your mobile phone into an IP camera, you need an app that
+broadcasts your camera feed over your local Wi-Fi network.</p>
+<ol type="1">
+<li>On Android, download and install <strong>IP Webcam</strong> (by
+Pavel Khlebovich) from the Google Play Store. On iOS, download
+<strong>Live-Reporter</strong> or a similar RTSP/MJPEG streaming app
+from the App Store.</li>
+<li>Open the app and adjust the video resolution and frame rate settings
+to fit your bandwidth.</li>
+<li>Scroll to the bottom and tap <strong>Start server</strong> (or the
+equivalent “Start Broadcast” button).</li>
+<li>The app will display an IP address and port number on your phone
+screen (for example, <code>http://192.168.1.50:8080</code>). Note this
+address down, as you will need your phone and computer to be connected
+to the same Wi-Fi network.</li>
+</ol>
+<h3 id="step-2-identify-the-stream-url">Step 2: Identify the Stream
+URL</h3>
+<p>FFmpeg requires the direct path to the video stream, not just the
+landing page of the web interface.</p>
+<ul>
+<li><strong>For MJPEG (HTTP) Streams:</strong> The stream URL is
+typically <code>http://&lt;YOUR_IP&gt;:8080/video</code> or
+<code>http://&lt;YOUR_IP&gt;:8080/videofeed</code>.</li>
+<li><strong>For H.264 (RTSP) Streams:</strong> If your app supports
+RTSP, the stream URL is typically
+<code>rtsp://&lt;YOUR_IP&gt;:554/h264_pcm.sdp</code> or
+<code>rtsp://&lt;YOUR_IP&gt;:8554/live</code>.</li>
+</ul>
+<p>Replace <code>&lt;YOUR_IP&gt;</code> with the actual IP address
+displayed on your mobile device.</p>
+<h3 id="step-3-transcode-the-video-with-ffmpeg">Step 3: Transcode the
+Video with FFmpeg</h3>
+<p>With FFmpeg installed on your computer, open your terminal or command
+prompt. Use one of the following commands depending on your use
+case.</p>
+<h4 id="convert-stream-and-save-to-mp4-file">Convert Stream and Save to
+MP4 File</h4>
+<p>To capture the live stream, transcode the video into the widely
+compatible H.264 codec, compress the audio to AAC, and save it as an MP4
+file, run:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> http://192.168.1.50:8080/video <span class="at">-c:v</span> libx264 <span class="at">-preset</span> fast <span class="at">-crf</span> 23 <span class="at">-c:a</span> aac <span class="at">-b:a</span> 128k output.mp4</span></code></pre></div>
+<ul>
+<li><code>-i</code>: Specifies the input URL of your mobile IP
+camera.</li>
+<li><code>-c:v libx264</code>: Transcodes the video to the H.264
+codec.</li>
+<li><code>-preset fast</code>: Balances encoding speed and compression
+efficiency.</li>
+<li><code>-crf 23</code>: Controls video quality (lower values mean
+better quality; 18-28 is standard).</li>
+<li><code>-c:a aac</code>: Transcodes the audio to AAC.</li>
+<li><code>output.mp4</code>: The output file name.</li>
+</ul>
+<h4
+id="low-latency-hardware-accelerated-transcoding-nvidia-gpu">Low-Latency
+Hardware Accelerated Transcoding (NVIDIA GPU)</h4>
+<p>If you have an NVIDIA graphics card and want to reduce CPU usage
+during real-time transcoding, use the hardware-accelerated NVENC
+encoder:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-hwaccel</span> cuda <span class="at">-i</span> http://192.168.1.50:8080/video <span class="at">-c:v</span> h264_nvenc <span class="at">-preset</span> fast output.mp4</span></code></pre></div>
+<h4 id="stream-to-an-external-rtmp-server-e.g.-youtube-or-twitch">Stream
+to an External RTMP Server (e.g., YouTube or Twitch)</h4>
+<p>To transcode the phone’s camera feed and push it to a live streaming
+platform, redirect the output to an RTMP URL:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-rtsp_transport</span> tcp <span class="at">-i</span> rtsp://192.168.1.50:8554/live <span class="at">-c:v</span> libx264 <span class="at">-preset</span> veryfast <span class="at">-b:v</span> 3000k <span class="at">-maxrate</span> 3000k <span class="at">-bufsize</span> 6000k <span class="at">-g</span> 60 <span class="at">-c:a</span> aac <span class="at">-f</span> flv rtmp://a.rtmp.youtube.com/live2/YOUR_STREAM_KEY</span></code></pre></div>
+<p>Using the <code>-rtsp_transport tcp</code> flag forces FFmpeg to use
+TCP for the input RTSP stream, which prevents packet loss and visual
+artifacts. Press <code>q</code> in your terminal window at any time to
+stop capturing and safely close the video file.</p></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

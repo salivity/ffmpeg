@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Configure SDP Output in FFmpeg RTSP Stream - ffmpeg</title>
+    <meta name="description" content="When streaming video or audio over RTP/RTSP using FFmpeg, the Session Description Protocol (SDP) file is essential for receivers to understand the media initialization parameters, codecs, and transport ports. This article explains how to configure and ou">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/configure-sdp-output-in-ffmpeg-rtsp-stream">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Configure SDP Output in FFmpeg RTSP Stream - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/configure-sdp-output-in-ffmpeg-rtsp-stream" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="When streaming video or audio over RTP/RTSP using FFmpeg, the Session Description Protocol (SDP) file is essential for receivers to understand the media initialization parameters, codecs, and transport ports. This article explains how to configure and ou" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="configure-sdp-output-in-ffmpeg-rtsp-stream">Configure SDP Output
+in FFmpeg RTSP Stream</h1>
+<p>When streaming video or audio over RTP/RTSP using FFmpeg, the Session
+Description Protocol (SDP) file is essential for receivers to understand
+the media initialization parameters, codecs, and transport ports. This
+article explains how to configure and output an SDP file using FFmpeg,
+covering command-line options, direct file redirection, and transport
+protocol configurations to ensure compatibility with your media player
+or streaming server.</p>
+<h3 id="method-1-exporting-sdp-using-the--sdp_file-flag">Method 1:
+Exporting SDP using the <code>-sdp_file</code> Flag</h3>
+<p>The most direct way to configure and output an SDP file during an RTP
+stream (which is the underlying transport for RTSP) is by using the
+<code>-sdp_file</code> option. This tells FFmpeg to write the SDP data
+directly to a specified path on your disk while the stream is
+active.</p>
+<p>Run the following command to encode an input file and output both the
+RTP stream and the corresponding SDP file:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-re</span> <span class="at">-i</span> input.mp4 <span class="at">-c:v</span> libx264 <span class="at">-an</span> <span class="at">-f</span> rtp rtp://127.0.0.1:5004 <span class="at">-sdp_file</span> stream.sdp</span></code></pre></div>
+<p>In this command: * <code>-re</code> reads the input at native frame
+rate. * <code>-f rtp</code> specifies the RTP muxer. *
+<code>rtp://127.0.0.1:5004</code> is the destination IP and port. *
+<code>-sdp_file stream.sdp</code> generates the SDP configuration file
+named <code>stream.sdp</code>.</p>
+<h3 id="method-2-redirecting-standard-output-stdout">Method 2:
+Redirecting Standard Output (stdout)</h3>
+<p>If you are using an older version of FFmpeg that does not support the
+<code>-sdp_file</code> option, or if you want to pipe the SDP data into
+another process, you can redirect standard output.</p>
+<p>By default, when streaming over RTP without specifying an output file
+name, FFmpeg prints the SDP definition to the console. You can redirect
+this output to a file:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-re</span> <span class="at">-i</span> input.mp4 <span class="at">-c:v</span> libx264 <span class="at">-an</span> <span class="at">-f</span> rtp rtp://127.0.0.1:5004 <span class="op">&gt;</span> stream.sdp</span></code></pre></div>
+<h3 id="configuring-sdp-transport-and-protocol-parameters">Configuring
+SDP Transport and Protocol Parameters</h3>
+<p>The SDP file is generated dynamically based on the arguments you pass
+to the FFmpeg command. You can customize the SDP output by adjusting the
+following streaming parameters:</p>
+<h4 id="setting-the-protocol-tcp-vs.-udp">1. Setting the Protocol (TCP
+vs. UDP)</h4>
+<p>By default, RTP streams use UDP. If you are publishing to an RTSP
+server and need to force TCP interleaved mode (which embeds the RTP/SDP
+data within the RTSP control connection), use the
+<code>-rtsp_transport</code> flag:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-re</span> <span class="at">-i</span> input.mp4 <span class="at">-c:v</span> libx264 <span class="at">-f</span> rtsp <span class="at">-rtsp_transport</span> tcp rtsp://localhost:8554/live/stream</span></code></pre></div>
+<h4 id="configuring-audio-and-video-payloads">2. Configuring Audio and
+Video Payloads</h4>
+<p>If your stream contains both audio and video, the SDP file must
+define both media streams. FFmpeg will automatically generate
+multi-stream SDP files if you include both codecs in the command:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-re</span> <span class="at">-i</span> input.mp4 <span class="at">-c:v</span> libx264 <span class="at">-c:a</span> aac <span class="at">-f</span> rtp rtp://127.0.0.1:5004 <span class="at">-sdp_file</span> multi_stream.sdp</span></code></pre></div>
+<p>The resulting <code>multi_stream.sdp</code> file will contain two
+separate <code>m=</code> blocks (one for video, one for audio) with
+their respective payload types, sampling rates, and port
+configurations.</p></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Control FFmpeg with Ruby via Standard I/O - ffmpeg</title>
+    <meta name="description" content="This article explains how to interface a Ruby application with the FFmpeg binary using redirected standard input (stdin), standard output (stdout), and standard error (stderr). By leveraging Ruby's built-in Open3 library, you can stream media data direct">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/control-ffmpeg-with-ruby-via-standard-i-o">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Control FFmpeg with Ruby via Standard I/O - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/control-ffmpeg-with-ruby-via-standard-i-o" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article explains how to interface a Ruby application with the FFmpeg binary using redirected standard input (stdin), standard output (stdout), and standard error (stderr). By leveraging Ruby's built-in Open3 library, you can stream media data direct" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="control-ffmpeg-with-ruby-via-standard-io">Control FFmpeg with
+Ruby via Standard I/O</h1>
+<p>This article explains how to interface a Ruby application with the
+FFmpeg binary using redirected standard input (stdin), standard output
+(stdout), and standard error (stderr). By leveraging Ruby’s built-in
+<code>Open3</code> library, you can stream media data directly into
+FFmpeg, process it in real-time, and capture the output stream and logs
+directly in your Ruby code without relying on intermediate disk
+files.</p>
+<hr />
+<h2 id="why-use-standard-io-with-ffmpeg">Why Use Standard I/O with
+FFmpeg?</h2>
+<p>Interfacing with FFmpeg via standard I/O (pipes) is highly efficient
+for web applications and data pipelines. Instead of saving an uploaded
+video to disk, calling FFmpeg on that file, and reading the output file
+back, you can stream the upload data directly to the FFmpeg process and
+stream the result to its final destination (such as cloud storage). This
+reduces disk I/O bottlenecks and minimizes latency.</p>
+<h2 id="setting-up-ffmpeg-for-piping">Setting Up FFmpeg for Piping</h2>
+<p>FFmpeg represents standard input and standard output using the
+<code>pipe:</code> protocol:</p>
+<ul>
+<li><strong><code>pipe:0</code></strong> (or <code>-</code>): Represents
+standard input (stdin).</li>
+<li><strong><code>pipe:1</code></strong> (or <code>-</code>): Represents
+standard output (stdout).</li>
+<li><strong><code>pipe:2</code></strong>: Represents standard error
+(stderr).</li>
+</ul>
+<p>When streaming container formats like MP4 over stdout, you must
+configure FFmpeg to write fragmented data (using
+<code>-movflags frag_keyframe+empty_moov</code>), because standard MP4
+requires seeking to write the metadata index (moov atom) at the end,
+which is impossible in a non-seekable stdout stream. Alternatively, you
+can use naturally streamable formats like MPEG-TS
+(<code>-f mpegts</code>).</p>
+<h2 id="the-ruby-implementation-using-open3">The Ruby Implementation
+Using <code>Open3</code></h2>
+<p>To manage stdin, stdout, and stderr simultaneously without causing
+system deadlocks, you should use Ruby’s <code>Open3.popen3</code>
+method. This method spawns the FFmpeg binary as a subprocess and yields
+independent IO objects for writing to stdin, reading from stdout, and
+reading from stderr.</p>
+<p>Using separate Ruby threads to handle the input writing, output
+reading, and error logging ensures that none of the pipe buffers
+overflow, which would otherwise freeze the process.</p>
+<p>Here is a complete, production-ready Ruby script demonstrating this
+workflow:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode ruby"><code class="sourceCode ruby"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">require</span> <span class="vs">&#39;open3&#39;</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Define the input and output file paths for this example</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>input_file_path <span class="op">=</span> <span class="st">&quot;input.mp4&quot;</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>output_file_path <span class="op">=</span> <span class="st">&quot;output.ts&quot;</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="co"># FFmpeg command:</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="co"># -i pipe:0  -&gt; Read input from stdin</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="co"># -f mpegts  -&gt; Use MPEG-TS format (ideal for streaming/piping)</span></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a><span class="co"># pipe:1     -&gt; Write output to stdout</span></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>ffmpeg_cmd <span class="op">=</span> <span class="st">&quot;ffmpeg -i pipe:0 -c:v copy -c:a copy -f mpegts pipe:1&quot;</span></span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a><span class="cf">begin</span></span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Spawn the FFmpeg subprocess</span></span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>  <span class="dt">Open3</span><span class="at">.popen3</span>(ffmpeg_cmd) <span class="cf">do</span> <span class="op">|</span>stdin, stdout, stderr, wait_thr<span class="op">|</span></span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Thread 1: Stream input data into FFmpeg&#39;s stdin</span></span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a>    writer <span class="op">=</span> <span class="dt">Thread</span><span class="at">.new</span> <span class="cf">do</span></span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a>      <span class="dt">File</span><span class="at">.open</span>(input_file_path, <span class="st">&quot;rb&quot;</span>) <span class="cf">do</span> <span class="op">|</span>file<span class="op">|</span></span>
+<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a>        <span class="cf">while</span> (chunk <span class="op">=</span> file<span class="at">.read</span>(<span class="dv">16384</span>)) <span class="co"># Read in 16KB chunks</span></span>
+<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a>          stdin<span class="at">.write</span>(chunk)</span>
+<span id="cb1-22"><a href="#cb1-22" aria-hidden="true" tabindex="-1"></a>        <span class="cf">end</span></span>
+<span id="cb1-23"><a href="#cb1-23" aria-hidden="true" tabindex="-1"></a>      <span class="cf">end</span></span>
+<span id="cb1-24"><a href="#cb1-24" aria-hidden="true" tabindex="-1"></a>      stdin<span class="at">.close</span> <span class="co"># Close stdin to signal EOF (End of File) to FFmpeg</span></span>
+<span id="cb1-25"><a href="#cb1-25" aria-hidden="true" tabindex="-1"></a>    <span class="cf">end</span></span>
+<span id="cb1-26"><a href="#cb1-26" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-27"><a href="#cb1-27" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Thread 2: Retrieve processed data from FFmpeg&#39;s stdout</span></span>
+<span id="cb1-28"><a href="#cb1-28" aria-hidden="true" tabindex="-1"></a>    reader <span class="op">=</span> <span class="dt">Thread</span><span class="at">.new</span> <span class="cf">do</span></span>
+<span id="cb1-29"><a href="#cb1-29" aria-hidden="true" tabindex="-1"></a>      <span class="dt">File</span><span class="at">.open</span>(output_file_path, <span class="st">&quot;wb&quot;</span>) <span class="cf">do</span> <span class="op">|</span>out_file<span class="op">|</span></span>
+<span id="cb1-30"><a href="#cb1-30" aria-hidden="true" tabindex="-1"></a>        <span class="cf">while</span> (chunk <span class="op">=</span> stdout<span class="at">.read</span>(<span class="dv">16384</span>)) <span class="co"># Read in 16KB chunks</span></span>
+<span id="cb1-31"><a href="#cb1-31" aria-hidden="true" tabindex="-1"></a>          out_file<span class="at">.write</span>(chunk)</span>
+<span id="cb1-32"><a href="#cb1-32" aria-hidden="true" tabindex="-1"></a>        <span class="cf">end</span></span>
+<span id="cb1-33"><a href="#cb1-33" aria-hidden="true" tabindex="-1"></a>      <span class="cf">end</span></span>
+<span id="cb1-34"><a href="#cb1-34" aria-hidden="true" tabindex="-1"></a>    <span class="cf">end</span></span>
+<span id="cb1-35"><a href="#cb1-35" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-36"><a href="#cb1-36" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Thread 3: Capture FFmpeg logs from stderr (essential for debugging)</span></span>
+<span id="cb1-37"><a href="#cb1-37" aria-hidden="true" tabindex="-1"></a>    logger <span class="op">=</span> <span class="dt">Thread</span><span class="at">.new</span> <span class="cf">do</span></span>
+<span id="cb1-38"><a href="#cb1-38" aria-hidden="true" tabindex="-1"></a>      <span class="cf">while</span> (line <span class="op">=</span> stderr<span class="at">.gets</span>)</span>
+<span id="cb1-39"><a href="#cb1-39" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Process or log FFmpeg output lines here</span></span>
+<span id="cb1-40"><a href="#cb1-40" aria-hidden="true" tabindex="-1"></a>        <span class="fu">puts</span> <span class="st">&quot;[FFmpeg Log] </span><span class="sc">#{</span>line<span class="at">.strip</span><span class="sc">}</span><span class="st">&quot;</span></span>
+<span id="cb1-41"><a href="#cb1-41" aria-hidden="true" tabindex="-1"></a>      <span class="cf">end</span></span>
+<span id="cb1-42"><a href="#cb1-42" aria-hidden="true" tabindex="-1"></a>    <span class="cf">end</span></span>
+<span id="cb1-43"><a href="#cb1-43" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-44"><a href="#cb1-44" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Wait for all streaming threads to complete</span></span>
+<span id="cb1-45"><a href="#cb1-45" aria-hidden="true" tabindex="-1"></a>    writer<span class="at">.join</span></span>
+<span id="cb1-46"><a href="#cb1-46" aria-hidden="true" tabindex="-1"></a>    reader<span class="at">.join</span></span>
+<span id="cb1-47"><a href="#cb1-47" aria-hidden="true" tabindex="-1"></a>    logger<span class="at">.join</span></span>
+<span id="cb1-48"><a href="#cb1-48" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-49"><a href="#cb1-49" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Check the exit status of the FFmpeg process</span></span>
+<span id="cb1-50"><a href="#cb1-50" aria-hidden="true" tabindex="-1"></a>    exit_status <span class="op">=</span> wait_thr<span class="at">.value</span></span>
+<span id="cb1-51"><a href="#cb1-51" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> exit_status<span class="at">.success?</span></span>
+<span id="cb1-52"><a href="#cb1-52" aria-hidden="true" tabindex="-1"></a>      <span class="fu">puts</span> <span class="st">&quot;FFmpeg processing completed successfully.&quot;</span></span>
+<span id="cb1-53"><a href="#cb1-53" aria-hidden="true" tabindex="-1"></a>    <span class="cf">else</span></span>
+<span id="cb1-54"><a href="#cb1-54" aria-hidden="true" tabindex="-1"></a>      <span class="fu">warn</span> <span class="st">&quot;FFmpeg failed with exit code: </span><span class="sc">#{</span>exit_status<span class="at">.exitstatus</span><span class="sc">}</span><span class="st">&quot;</span></span>
+<span id="cb1-55"><a href="#cb1-55" aria-hidden="true" tabindex="-1"></a>    <span class="cf">end</span></span>
+<span id="cb1-56"><a href="#cb1-56" aria-hidden="true" tabindex="-1"></a>  <span class="cf">end</span></span>
+<span id="cb1-57"><a href="#cb1-57" aria-hidden="true" tabindex="-1"></a><span class="cf">rescue</span> <span class="dt">Errno</span><span class="op">::</span><span class="cn">ENOENT</span></span>
+<span id="cb1-58"><a href="#cb1-58" aria-hidden="true" tabindex="-1"></a>  <span class="fu">warn</span> <span class="st">&quot;Error: The &#39;ffmpeg&#39; binary was not found in your system PATH.&quot;</span></span>
+<span id="cb1-59"><a href="#cb1-59" aria-hidden="true" tabindex="-1"></a><span class="cf">rescue</span> <span class="op">=&gt;</span> e</span>
+<span id="cb1-60"><a href="#cb1-60" aria-hidden="true" tabindex="-1"></a>  <span class="fu">warn</span> <span class="st">&quot;An error occurred: </span><span class="sc">#{</span>e<span class="at">.message</span><span class="sc">}</span><span class="st">&quot;</span></span>
+<span id="cb1-61"><a href="#cb1-61" aria-hidden="true" tabindex="-1"></a><span class="cf">end</span></span></code></pre></div>
+<h2 id="key-considerations">Key Considerations</h2>
+<ol type="1">
+<li><strong>Chunk Size:</strong> Reading and writing in chunks (e.g.,
+16KB to 64KB) balances memory usage and I/O performance. Avoid reading
+entire large media files into memory at once.</li>
+<li><strong>Closing Stdin:</strong> You must call
+<code>stdin.close</code> once all input data has been written. If you do
+not close the stdin stream, FFmpeg will wait indefinitely for more data,
+causing your application to hang.</li>
+<li><strong>Format Compatibility:</strong> Not all media codecs and
+containers support piping. If you must output MP4, ensure you pass the
+flags <code>-movflags frag_keyframe+empty_moov+default_base_moof</code>
+to FFmpeg so it writes a fragmented stream that does not require
+seeking.</li>
+</ol></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

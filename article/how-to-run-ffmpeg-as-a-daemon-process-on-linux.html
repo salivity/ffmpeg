@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Run FFmpeg as a Daemon Process on Linux - ffmpeg</title>
+    <meta name="description" content="Running FFmpeg in the background as a daemon process on Linux ensures that your media conversion, streaming, or recording tasks continue to run uninterrupted, even after you close your terminal session. This guide provides a straightforward tutorial on h">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/how-to-run-ffmpeg-as-a-daemon-process-on-linux">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Run FFmpeg as a Daemon Process on Linux - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/how-to-run-ffmpeg-as-a-daemon-process-on-linux" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Running FFmpeg in the background as a daemon process on Linux ensures that your media conversion, streaming, or recording tasks continue to run uninterrupted, even after you close your terminal session. This guide provides a straightforward tutorial on h" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="how-to-run-ffmpeg-as-a-daemon-process-on-linux">How to Run
+FFmpeg as a Daemon Process on Linux</h1>
+<p>Running FFmpeg in the background as a daemon process on Linux ensures
+that your media conversion, streaming, or recording tasks continue to
+run uninterrupted, even after you close your terminal session. This
+guide provides a straightforward tutorial on how to configure and run
+FFmpeg as a background service using systemd, which is the standard
+service manager for most modern Linux distributions, as well as a quick
+alternative method using command-line tools.</p>
+<h2 id="method-1-using-systemd-recommended">Method 1: Using systemd
+(Recommended)</h2>
+<p>Creating a systemd service is the most robust way to run FFmpeg as a
+daemon. It allows the system to manage the process, automatically
+restart it if it crashes, and start it automatically upon system
+boot.</p>
+<h3 id="step-1-create-a-systemd-service-file">Step 1: Create a systemd
+Service File</h3>
+<p>Open your terminal and create a new service configuration file using
+a text editor. You will need root or sudo privileges:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> nano /etc/systemd/system/ffmpeg-daemon.service</span></code></pre></div>
+<h3 id="step-2-configure-the-service">Step 2: Configure the Service</h3>
+<p>Paste the following configuration into the file. Make sure to replace
+<code>/usr/bin/ffmpeg</code> with the actual path to your FFmpeg binary
+(you can find this by running <code>which ffmpeg</code>) and customize
+the input/output arguments for your specific use case:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode ini"><code class="sourceCode ini"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">[Unit]</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="dt">Description</span><span class="ot">=</span><span class="st">FFmpeg Daemon Service</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="dt">After</span><span class="ot">=</span><span class="st">network.target</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="kw">[Service]</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a><span class="dt">Type</span><span class="ot">=</span><span class="st">simple</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a><span class="dt">ExecStart</span><span class="ot">=</span><span class="st">/usr/bin/ffmpeg -re -i http://example.com/live/stream.m3u8 -c copy /var/www/html/stream.mp4</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a><span class="dt">Restart</span><span class="ot">=</span><span class="st">always</span></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a><span class="dt">RestartSec</span><span class="ot">=</span><span class="dv">5</span></span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a><span class="dt">User</span><span class="ot">=</span><span class="st">nobody</span></span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a><span class="dt">Group</span><span class="ot">=</span><span class="st">nogroup</span></span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a><span class="kw">[Install]</span></span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a><span class="dt">WantedBy</span><span class="ot">=</span><span class="st">multi-user.target</span></span></code></pre></div>
+<p>Key directives in this configuration: * <strong>ExecStart</strong>:
+The exact command FFmpeg will run. Always use absolute paths for the
+executable and output files. * <strong>Restart=always</strong>:
+Automatically restarts the FFmpeg process if it stops or crashes. *
+<strong>User/Group</strong>: Runs the process under a non-root user for
+security.</p>
+<p>Save and close the file (in Nano, press <code>Ctrl+O</code>,
+<code>Enter</code>, then <code>Ctrl+X</code>).</p>
+<h3 id="step-3-enable-and-start-the-daemon">Step 3: Enable and Start the
+Daemon</h3>
+<p>Reload the systemd manager configuration to recognize the new
+service:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> systemctl daemon-reload</span></code></pre></div>
+<p>Start the FFmpeg service:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> systemctl start ffmpeg-daemon</span></code></pre></div>
+<p>Enable the service to start automatically at boot:</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> systemctl enable ffmpeg-daemon</span></code></pre></div>
+<h3 id="step-4-manage-the-service">Step 4: Manage the Service</h3>
+<p>To check the status of your daemon and ensure it is running
+successfully:</p>
+<div class="sourceCode" id="cb6"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> systemctl status ffmpeg-daemon</span></code></pre></div>
+<p>To stop or restart the daemon:</p>
+<div class="sourceCode" id="cb7"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> systemctl stop ffmpeg-daemon</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> systemctl restart ffmpeg-daemon</span></code></pre></div>
+<p>To view the output logs generated by FFmpeg:</p>
+<div class="sourceCode" id="cb8"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="ex">journalctl</span> <span class="at">-u</span> ffmpeg-daemon.service <span class="at">-f</span></span></code></pre></div>
+<hr />
+<h2 id="method-2-using-nohup-quick-alternative">Method 2: Using nohup
+(Quick Alternative)</h2>
+<p>If you need a quick, temporary way to run FFmpeg in the background
+without creating a systemd service, you can use the <code>nohup</code>
+command combined with an ampersand (<code>&amp;</code>). This prevents
+the process from terminated when you log out.</p>
+<p>Run the following command:</p>
+<div class="sourceCode" id="cb9"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="fu">nohup</span> ffmpeg <span class="at">-i</span> input.mp4 output.mkv <span class="op">&gt;</span> ffmpeg.log <span class="dv">2</span><span class="op">&gt;&amp;</span><span class="dv">1</span> <span class="kw">&amp;</span></span></code></pre></div>
+<ul>
+<li><strong>nohup</strong>: Ignores the HUP (hangup) signal sent to the
+process when the terminal closes.</li>
+<li><strong>&gt; ffmpeg.log 2&gt;&amp;1</strong>: Redirects standard
+output and standard error to a log file.</li>
+<li><strong>&amp;</strong>: Runs the command in the background.</li>
+</ul>
+<p>To stop a process started with <code>nohup</code>, you must find its
+Process ID (PID) and terminate it manually:</p>
+<div class="sourceCode" id="cb10"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="ex">pgrep</span> <span class="at">-f</span> ffmpeg</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="bu">kill</span> <span class="op">&lt;</span>PID<span class="op">&gt;</span></span></code></pre></div></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

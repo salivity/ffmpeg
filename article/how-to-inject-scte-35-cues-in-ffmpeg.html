@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Inject SCTE-35 Cues in FFmpeg - ffmpeg</title>
+    <meta name="description" content="This article provides a practical guide on how to inject and manage SCTE-35 ad insertion cues in video streams using FFmpeg. You will learn how to configure the MPEG-TS muxer, allocate SCTE-35 Program Map Table (PMT) descriptors, and preserve or inject a">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/how-to-inject-scte-35-cues-in-ffmpeg">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Inject SCTE-35 Cues in FFmpeg - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/how-to-inject-scte-35-cues-in-ffmpeg" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article provides a practical guide on how to inject and manage SCTE-35 ad insertion cues in video streams using FFmpeg. You will learn how to configure the MPEG-TS muxer, allocate SCTE-35 Program Map Table (PMT) descriptors, and preserve or inject a" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="how-to-inject-scte-35-cues-in-ffmpeg">How to Inject SCTE-35 Cues
+in FFmpeg</h1>
+<p>This article provides a practical guide on how to inject and manage
+SCTE-35 ad insertion cues in video streams using FFmpeg. You will learn
+how to configure the MPEG-TS muxer, allocate SCTE-35 Program Map Table
+(PMT) descriptors, and preserve or inject ad markers into your live and
+file-based video workflows.</p>
+<h2 id="understanding-scte-35-in-ffmpeg">Understanding SCTE-35 in
+FFmpeg</h2>
+<p>SCTE-35 is the industry standard for signaling cue tones, local ad
+insertion opportunities, and program splice points in MPEG Transport
+Streams (MPEG-TS).</p>
+<p>FFmpeg does not feature a dedicated video filter (like
+<code>-vf</code>) to dynamically generate SCTE-35 messages on the fly.
+Instead, SCTE-35 is treated as a metadata or data stream. FFmpeg handles
+SCTE-35 cues primarily at the muxer and demuxer level using the
+<code>mpegts</code> container format.</p>
+<p>To work with SCTE-35 in FFmpeg, you generally use one of three
+approaches: passing through existing cues, allocating an SCTE-35 PID for
+external injectors, or using timed metadata.</p>
+<hr />
+<h2 id="method-1-passing-through-existing-scte-35-cues">Method 1:
+Passing Through Existing SCTE-35 Cues</h2>
+<p>If your input stream (such as an SDI capture, UDP, or SRT stream)
+already contains SCTE-35 cues, you must instruct FFmpeg to copy the data
+stream to the output. By default, FFmpeg only maps video and audio
+streams.</p>
+<p>To preserve and pass through existing SCTE-35 cues, use the stream
+copy (<code>-c:s copy</code> or <code>-c:d copy</code>) and mapping
+flags:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.ts <span class="at">-map</span> 0:v <span class="at">-map</span> 0:a <span class="at">-map</span> 0:s<span class="pp">?</span> <span class="at">-c:v</span> libx264 <span class="at">-c:a</span> aac <span class="at">-c:s</span> copy <span class="at">-f</span> mpegts output.ts</span></code></pre></div>
+<ul>
+<li><code>-map 0:s?</code>: Maps all data/subtitle streams (including
+SCTE-35) if they exist in the input. The <code>?</code> prevents the
+command from failing if no SCTE-35 stream is found.</li>
+<li><code>-c:s copy</code>: Copies the data/subtitle stream packets
+without re-encoding them.</li>
+</ul>
+<hr />
+<h2 id="method-2-allocating-an-scte-35-pid-in-the-mpeg-ts-muxer">Method
+2: Allocating an SCTE-35 PID in the MPEG-TS Muxer</h2>
+<p>If you are broadcasting a live stream to an downstream hardware or
+software splicer (like an edge transcoder or ad-splicer), you must
+reserve a specific Program Identifier (PID) for SCTE-35 cues in the PMT
+of the output MPEG-TS.</p>
+<p>Use the <code>-scte35_pid</code> parameter inside the
+<code>mpegts</code> muxer:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-c:v</span> libx264 <span class="at">-c:a</span> aac <span class="at">-f</span> mpegts <span class="at">-scte35_pid</span> 0x104 output.ts</span></code></pre></div>
+<ul>
+<li><code>-f mpegts</code>: Forces the output format to MPEG Transport
+Stream.</li>
+<li><code>-scte35_pid 0x104</code>: Allocates PID <code>260</code>
+(decimal for <code>0x104</code>) specifically for SCTE-35 cue
+packets.</li>
+</ul>
+<p>Downstream ad injectors can now target this specific PID to insert
+splicing commands (<code>splice_info_section</code>) directly into your
+stream.</p>
+<hr />
+<h2 id="method-3-injecting-scte-35-via-hls-http-live-streaming">Method
+3: Injecting SCTE-35 via HLS (HTTP Live Streaming)</h2>
+<p>If your workflow involves packaging live streams into HLS (HTTP Live
+Streaming) for OTT delivery, SCTE-35 cues must be translated into HLS
+playlist tags, such as <code>#EXT-X-DATERANGE</code> or
+<code>#EXT-OATR-SCTE35</code>.</p>
+<p>FFmpeg’s HLS muxer can accept input SCTE-35 cues and convert them
+into standard HLS tags using the <code>-hls_flags</code> parameter.</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input_with_scte35.ts <span class="dt">\</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">-c:v</span> libx264 <span class="at">-c:a</span> aac <span class="dt">\</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">-f</span> hls <span class="dt">\</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">-hls_time</span> 6 <span class="dt">\</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">-hls_playlist_type</span> event <span class="dt">\</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">-hls_flags</span> scte35_byteout+independent_segments <span class="dt">\</span></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>  playlist.m3u8</span></code></pre></div>
+<ul>
+<li><code>scte35_byteout</code>: Instructs the HLS muxer to write
+SCTE-35 cues as base64-encoded binary data within
+<code>#EXT-X-DATERANGE</code> tags in the <code>.m3u8</code>
+manifest.</li>
+</ul>
+<hr />
+<h2 id="verifying-scte-35-cue-injection">Verifying SCTE-35 Cue
+Injection</h2>
+<p>To verify that your output stream contains the correct SCTE-35 PID
+and data, use <code>ffprobe</code> to inspect the stream structure:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffprobe</span> <span class="at">-i</span> output.ts <span class="at">-show_streams</span></span></code></pre></div>
+<p>Look for a stream entry with: * <code>codec_type=data</code> *
+<code>codec_name=scte_35</code></p>
+<p>This confirms that the SCTE-35 stream is successfully provisioned and
+ready for your ad insertion workflow.</p></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

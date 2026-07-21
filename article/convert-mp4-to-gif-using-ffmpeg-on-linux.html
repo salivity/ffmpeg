@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Convert MP4 to GIF Using FFmpeg on Linux - ffmpeg</title>
+    <meta name="description" content="This guide provides a straightforward, step-by-step walkthrough on how to convert an MP4 video file into a high-quality GIF image using FFmpeg on a Linux system. You will learn the basic conversion commands, how to optimize the output file size, and how">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/convert-mp4-to-gif-using-ffmpeg-on-linux">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Convert MP4 to GIF Using FFmpeg on Linux - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/convert-mp4-to-gif-using-ffmpeg-on-linux" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This guide provides a straightforward, step-by-step walkthrough on how to convert an MP4 video file into a high-quality GIF image using FFmpeg on a Linux system. You will learn the basic conversion commands, how to optimize the output file size, and how" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="convert-mp4-to-gif-using-ffmpeg-on-linux">Convert MP4 to GIF
+Using FFmpeg on Linux</h1>
+<p>This guide provides a straightforward, step-by-step walkthrough on
+how to convert an MP4 video file into a high-quality GIF image using
+FFmpeg on a Linux system. You will learn the basic conversion commands,
+how to optimize the output file size, and how to fine-tune the video
+quality by creating a custom color palette.</p>
+<p>Converting video files on Linux is incredibly efficient when using
+the command-line tool FFmpeg. If you do not have it installed yet, you
+can easily grab it via your system’s package manager. For Debian or
+Ubuntu-based distributions, use the command
+<code>sudo apt install ffmpeg</code>. Once installed, you can begin
+converting your files immediately.</p>
+<h3 id="the-basic-conversion-command">The Basic Conversion Command</h3>
+<p>If you just need a quick conversion without worrying too much about
+file size or advanced color matching, you can run a simple one-line
+command. Open your terminal and navigate to the folder containing your
+video, then execute the following:</p>
+<p><code>ffmpeg -i input.mp4 output.gif</code></p>
+<p>While this command is fast, the resulting GIF might have a large file
+size or look slightly pixelated because GIFs are limited to a 256-color
+palette by default.</p>
+<h3 id="optimizing-quality-with-a-two-pass-palette">Optimizing Quality
+with a Two-Pass Palette</h3>
+<p>To get a crisp, professional-looking GIF, the best method is to have
+FFmpeg analyze your video and generate a custom color palette first.
+This prevents the grainy look common in standard conversions. You can
+achieve this by running a two-pass command joined together:</p>
+<p><code>ffmpeg -i input.mp4 -vf "fps=15,scale=480:-1:flags=lanczos,palettegen" -y palette.png &amp;&amp; ffmpeg -i input.mp4 -i palette.png -filter_complex "fps=15,scale=480:-1:flags=lanczos[x];[x][1:v]paletteuse" output.gif</code></p>
+<h3 id="understanding-the-command-parameters">Understanding the Command
+Parameters</h3>
+<p>The advanced command uses specific filters to balance quality and
+file size. Here is what those components mean:</p>
+<ul>
+<li><strong>-i input.mp4</strong>: Specifies your source video
+file.</li>
+<li><strong>fps=15</strong>: Sets the frame rate of the GIF to 15 frames
+per second. Lowering this from a standard video frame rate (like 30 or
+60) drastically reduces the final GIF file size.</li>
+<li><strong>scale=480:-1</strong>: Resizes the width of the GIF to 480
+pixels. The <code>-1</code> tells FFmpeg to automatically adjust the
+height to maintain the original aspect ratio.</li>
+<li><strong>flags=lanczos</strong>: Uses a high-quality resampling
+algorithm for the resizing process.</li>
+<li><strong>palettegen and paletteuse</strong>: The first pass generates
+a custom 256-color palette based on the video’s exact colors, and the
+second pass applies that palette for a flawless visual result.</li>
+</ul>
+<h3 id="converting-a-specific-video-segment">Converting a Specific Video
+Segment</h3>
+<p>If your MP4 video is long and you only want to turn a small portion
+of it into an animated GIF, you can add time-cropping parameters to your
+command.</p>
+<p><code>ffmpeg -ss 00:00:05 -t 3 -i input.mp4 -vf "fps=10,scale=320:-1" output.gif</code></p>
+<p>In this example, <code>-ss 00:00:05</code> tells FFmpeg to seek to
+the 5-second mark of the video, and <code>-t 3</code> specifies that the
+output should only last for a duration of 3 seconds. Adjusting these
+numbers allows you to capture the exact highlight you need.</p></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

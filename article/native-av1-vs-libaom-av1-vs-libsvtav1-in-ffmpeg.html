@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Native AV1 vs libaom-av1 vs libsvtav1 in FFmpeg - ffmpeg</title>
+    <meta name="description" content="This article compares the three primary AV1 video encoders available in FFmpeg: the experimental native AV1 software encoder, the reference encoder libaom-av1, and the highly-optimized libsvtav1. We will examine their speed, compression efficiency, resou">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/native-av1-vs-libaom-av1-vs-libsvtav1-in-ffmpeg">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Native AV1 vs libaom-av1 vs libsvtav1 in FFmpeg - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/native-av1-vs-libaom-av1-vs-libsvtav1-in-ffmpeg" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article compares the three primary AV1 video encoders available in FFmpeg: the experimental native AV1 software encoder, the reference encoder libaom-av1, and the highly-optimized libsvtav1. We will examine their speed, compression efficiency, resou" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="native-av1-vs-libaom-av1-vs-libsvtav1-in-ffmpeg">Native AV1 vs
+libaom-av1 vs libsvtav1 in FFmpeg</h1>
+<p>This article compares the three primary AV1 video encoders available
+in FFmpeg: the experimental native AV1 software encoder, the reference
+encoder <code>libaom-av1</code>, and the highly-optimized
+<code>libsvtav1</code>. We will examine their speed, compression
+efficiency, resource usage, and ideal use cases to help you choose the
+best encoder for your video processing pipeline.</p>
+<h2 id="the-native-av1-encoder-av1">The Native AV1 Encoder
+(<code>av1</code>)</h2>
+<p>FFmpeg includes an experimental, native software AV1 encoder (invoked
+using <code>-c:v av1</code>).</p>
+<ul>
+<li><strong>Status:</strong> Highly experimental and under active
+development.</li>
+<li><strong>Performance:</strong> It is currently slow and lacks the
+deep performance optimizations found in mature external libraries.</li>
+<li><strong>Features:</strong> It supports basic encoding features but
+lacks advanced rate-control algorithms and psychovisual
+optimizations.</li>
+<li><strong>Best Use Case:</strong> Testing and environments where
+external libraries cannot be compiled or linked due to licensing or
+distribution constraints. It is not recommended for production use.</li>
+</ul>
+<h2 id="libaom-av1-the-reference-encoder">libaom-av1 (The Reference
+Encoder)</h2>
+<p>Developed by the Alliance for Open Media (AOMedia),
+<code>libaom-av1</code> is the official reference encoder for the AV1
+format.</p>
+<ul>
+<li><strong>Compression Efficiency:</strong> It offers the highest
+possible visual quality at the lowest bitrates. If file size
+minimization is your absolute priority, <code>libaom-av1</code> is the
+industry benchmark.</li>
+<li><strong>Performance:</strong> It is notoriously slow. Even with
+multi-threading enabled, it does not scale efficiently across modern
+high-core-count processors.</li>
+<li><strong>Features:</strong> Highly configurable with granular
+controls over encoding tools, partitioning, and tiling.</li>
+<li><strong>Best Use Case:</strong> Archiving, high-quality offline
+encoding, and scenarios where encoding time is not a constraint but
+bandwidth savings are critical.</li>
+</ul>
+<h2 id="libsvtav1-scalable-video-technology-av1">libsvtav1 (Scalable
+Video Technology AV1)</h2>
+<p>Developed primarily by Intel and Netflix, <code>libsvtav1</code> is a
+highly-optimized software encoder designed specifically for modern CPU
+architectures.</p>
+<ul>
+<li><strong>Performance:</strong> It is currently the fastest software
+AV1 encoder. It scales exceptionally well across multiple CPU cores and
+threads, utilizing AVX2 and AVX-512 instruction sets.</li>
+<li><strong>Compression Efficiency:</strong> While slightly behind
+<code>libaom-av1</code> at the absolute highest quality settings, it
+offers highly competitive efficiency at fractions of the encoding
+time.</li>
+<li><strong>Features:</strong> It features a user-friendly preset system
+(typically ranging from Preset 0 for highest quality/slowest speed to
+Preset 13 for fastest speed) that allows users to easily trade speed for
+quality.</li>
+<li><strong>Best Use Case:</strong> Video-on-demand (VOD) services, live
+streaming, general-purpose media transcoding, and any production
+environment requiring a practical balance of speed and efficiency.</li>
+</ul>
+<h2 id="summary-comparison">Summary Comparison</h2>
+<table>
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+</colgroup>
+<thead>
+<tr>
+<th style="text-align: left;">Feature</th>
+<th style="text-align: left;">Native AV1 (<code>av1</code>)</th>
+<th style="text-align: left;">libaom-av1</th>
+<th style="text-align: left;">libsvtav1</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><strong>Development Focus</strong></td>
+<td style="text-align: left;">Internal integration</td>
+<td style="text-align: left;">Reference quality</td>
+<td style="text-align: left;">Speed &amp; multi-core scaling</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Encoding Speed</strong></td>
+<td style="text-align: left;">Very Slow</td>
+<td style="text-align: left;">Slow</td>
+<td style="text-align: left;">Fast to Very Fast</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Efficiency
+(Quality/Bitrate)</strong></td>
+<td style="text-align: left;">Poor to Moderate</td>
+<td style="text-align: left;">Best</td>
+<td style="text-align: left;">Excellent</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>CPU Thread Scaling</strong></td>
+<td style="text-align: left;">Limited</td>
+<td style="text-align: left;">Moderate</td>
+<td style="text-align: left;">Excellent</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Production Ready</strong></td>
+<td style="text-align: left;">No</td>
+<td style="text-align: left;">Yes (for offline use)</td>
+<td style="text-align: left;">Yes (for general use)</td>
+</tr>
+</tbody>
+</table></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

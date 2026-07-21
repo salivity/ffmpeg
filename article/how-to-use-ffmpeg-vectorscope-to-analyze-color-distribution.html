@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Use FFmpeg Vectorscope to Analyze Color Distribution - ffmpeg</title>
+    <meta name="description" content="This guide explains how to use the vectorscope video filter in FFmpeg to analyze the color distribution, saturation, and hue of your video files. You will learn the essential command-line syntax, understand the key parameters of the filter, and see pract">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/how-to-use-ffmpeg-vectorscope-to-analyze-color-distribution">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Use FFmpeg Vectorscope to Analyze Color Distribution - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/how-to-use-ffmpeg-vectorscope-to-analyze-color-distribution" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This guide explains how to use the vectorscope video filter in FFmpeg to analyze the color distribution, saturation, and hue of your video files. You will learn the essential command-line syntax, understand the key parameters of the filter, and see pract" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="how-to-use-ffmpeg-vectorscope-to-analyze-color-distribution">How
+to Use FFmpeg Vectorscope to Analyze Color Distribution</h1>
+<p>This guide explains how to use the <code>vectorscope</code> video
+filter in FFmpeg to analyze the color distribution, saturation, and hue
+of your video files. You will learn the essential command-line syntax,
+understand the key parameters of the filter, and see practical examples
+of how to display a real-time color analysis alongside your video.</p>
+<h2 id="what-is-a-vectorscope">What is a Vectorscope?</h2>
+<p>A vectorscope is a professional monitoring tool that visualizes the
+chrominance (color) information of a video signal. It maps colors on a
+circular grid where the angle represents the hue (the color itself, like
+red, yellow, green, blue) and the distance from the center represents
+the saturation (the intensity of the color). The center of the circle
+represents zero saturation (black, white, or gray).</p>
+<h2 id="basic-ffmpeg-vectorscope-command">Basic FFmpeg Vectorscope
+Command</h2>
+<p>To quickly view the color distribution of a video using FFmpeg’s
+companion media player, <code>ffplay</code>, run the following command
+in your terminal:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffplay</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;vectorscope&quot;</span></span></code></pre></div>
+<p>If you want to render the vectorscope output directly into a new
+video file, use <code>ffmpeg</code>:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;vectorscope&quot;</span> output.mp4</span></code></pre></div>
+<h2 id="customizing-the-vectorscope-filter">Customizing the Vectorscope
+Filter</h2>
+<p>The <code>vectorscope</code> filter accepts several parameters to
+customize the visual output. The syntax follows the format
+<code>vectorscope=parameter1=value1:parameter2=value2</code>.</p>
+<p>Here are the most common parameters:</p>
+<ul>
+<li><strong><code>mode</code> (or <code>m</code>):</strong> Defines the
+visualization mode.
+<ul>
+<li><code>gray</code>: Displays the distribution in grayscale
+(default).</li>
+<li><code>color</code>: Displays the distribution using the actual
+colors.</li>
+<li><code>color2</code>: A vibrant color mode.</li>
+<li><code>color3</code>: Displays colors mapped to their respective
+coordinate positions.</li>
+<li><code>tint</code>: Colorizes the vector points based on their
+position.</li>
+</ul></li>
+<li><strong><code>intensity</code> (or <code>i</code>):</strong> Adjusts
+the brightness of the plotted color points. Value ranges from
+<code>0.0</code> to <code>1.0</code>. Default is
+<code>0.008</code>.</li>
+<li><strong><code>size</code> (or <code>s</code>):</strong> Sets the
+size of the vectorscope window. Common sizes are <code>256</code>
+(default) and <code>512</code>.</li>
+<li><strong><code>bgopacity</code> (or <code>g</code>):</strong> Sets
+the background grid opacity from <code>0.0</code> (transparent) to
+<code>1.0</code> (opaque). Default is <code>0.3</code>.</li>
+</ul>
+<h3 id="example-high-intensity-color-vectorscope">Example:
+High-Intensity Color Vectorscope</h3>
+<p>To display a larger, more intense colored vectorscope, use this
+command:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffplay</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;vectorscope=m=color3:i=0.1:s=512&quot;</span></span></code></pre></div>
+<h2 id="viewing-video-and-vectorscope-side-by-side">Viewing Video and
+Vectorscope Side-by-Side</h2>
+<p>To analyze your video in real-time, it is helpful to view the
+original video and the vectorscope side-by-side. You can achieve this by
+splitting the video stream, applying the vectorscope filter to one side,
+scaling the video to match, and stacking them horizontally.</p>
+<p>Run the following command to see the video and a <code>512x512</code>
+colored vectorscope side-by-side:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffplay</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;split [main][temp]; [temp] vectorscope=m=color3:s=512 [vector]; [main] scale=512:512 [video]; [video][vector] hstack&quot;</span></span></code></pre></div>
+<h3 id="command-breakdown">Command Breakdown:</h3>
+<ol type="1">
+<li><code>split [main][temp]</code>: Duplicates the input video stream
+into two identical paths named <code>main</code> and
+<code>temp</code>.</li>
+<li><code>[temp] vectorscope=m=color3:s=512 [vector]</code>: Takes the
+temporary stream and applies a 512x512 colored vectorscope to it, naming
+the output <code>vector</code>.</li>
+<li><code>[main] scale=512:512 [video]</code>: Scales the original video
+to a 512x512 resolution so it perfectly matches the height of the
+vectorscope.</li>
+<li><code>[video][vector] hstack</code>: Horizontally stacks the scaled
+video and the vectorscope output next to each other.</li>
+</ol></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

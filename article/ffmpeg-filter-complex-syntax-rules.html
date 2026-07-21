@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FFmpeg Filter Complex Syntax Rules - ffmpeg</title>
+    <meta name="description" content="Mastering the syntax of the FFmpeg -filtercomplex option is essential for building complex audio and video processing pipelines. This article explains the precise rules for separating individual filters, joining them into filterchains, and connecting mul">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/ffmpeg-filter-complex-syntax-rules">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="FFmpeg Filter Complex Syntax Rules - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/ffmpeg-filter-complex-syntax-rules" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Mastering the syntax of the FFmpeg -filtercomplex option is essential for building complex audio and video processing pipelines. This article explains the precise rules for separating individual filters, joining them into filterchains, and connecting mul" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="ffmpeg-filter-complex-syntax-rules">FFmpeg Filter Complex Syntax
+Rules</h1>
+<p>Mastering the syntax of the FFmpeg <code>-filter_complex</code>
+option is essential for building complex audio and video processing
+pipelines. This article explains the precise rules for separating
+individual filters, joining them into filterchains, and connecting
+multiple chains using semicolons, commas, and link labels.</p>
+<h2 id="the-hierarchy-of-ffmpeg-filtering">The Hierarchy of FFmpeg
+Filtering</h2>
+<p>An FFmpeg <code>-filter_complex</code> string is structured in a
+strict hierarchy:</p>
+<ol type="1">
+<li><strong>Filters:</strong> The individual processing blocks (e.g.,
+<code>scale</code>, <code>overlay</code>, <code>split</code>).</li>
+<li><strong>Filterchains:</strong> A sequence of filters applied one
+after another to a stream.</li>
+<li><strong>Filtergraph:</strong> The entire collection of filterchains
+that makes up the complex filter.</li>
+</ol>
+<hr />
+<h2 id="rule-1-use-commas-to-separate-filters-in-a-chain">Rule 1: Use
+Commas to Separate Filters in a Chain</h2>
+<p>Within a single filterchain, individual filters are executed
+sequentially from left to right. To pass the output of one filter
+directly into the input of the next, separate them with a <strong>comma
+(<code>,</code>)</strong>.</p>
+<ul>
+<li><strong>Syntax:</strong> <code>filter1,filter2,filter3</code></li>
+<li><strong>Example:</strong>
+<code>scale=1280:720,transpose=1</code></li>
+</ul>
+<p>In this example, the video is first scaled to 1280x720, and the
+resulting scaled video is immediately rotated 90 degrees clockwise by
+the transpose filter.</p>
+<hr />
+<h2 id="rule-2-use-semicolons-to-separate-filterchains">Rule 2: Use
+Semicolons to Separate Filterchains</h2>
+<p>If you need to process multiple independent streams or create
+parallel paths, you must use separate filterchains. Filterchains are
+separated from one another using a <strong>semicolon
+(<code>;</code>)</strong>.</p>
+<ul>
+<li><strong>Syntax:</strong> <code>chain1;chain2;chain3</code></li>
+<li><strong>Example:</strong>
+<code>[0:v]scale=640:360[lowres]; [0:v]scale=1920:1080[highres]</code></li>
+</ul>
+<p>Here, the input video <code>[0:v]</code> is processed in two
+independent paths: one scales the video to low resolution, and the other
+scales it to high resolution. The semicolon keeps these operations
+isolated.</p>
+<hr />
+<h2 id="rule-3-use-square-brackets-for-link-labels">Rule 3: Use Square
+Brackets for Link Labels</h2>
+<p>Link labels, enclosed in <strong>square brackets
+(<code>[...]</code>)</strong>, are used to route streams into and out of
+filters. They serve as the inputs and outputs of your filterchains.</p>
+<ul>
+<li><p><strong>Input Labels:</strong> Placed <em>before</em> a filter or
+filterchain to define what input stream it receives.</p></li>
+<li><p><strong>Output Labels:</strong> Placed <em>after</em> a filter or
+filterchain to name the resulting stream so it can be referenced
+later.</p></li>
+<li><p><strong>Example:</strong>
+<code>[0:v]scale=1280:720[scaled]; [1:v][scaled]overlay[out]</code></p></li>
+</ul>
+<p>In this syntax: 1. <code>[0:v]</code> (the video from the first input
+file) is scaled and assigned the label <code>[scaled]</code>. 2. The
+semicolon <code>;</code> ends the first chain. 3. The second chain takes
+<code>[1:v]</code> (the video from the second input file) and the newly
+created <code>[scaled]</code> stream, feeds them both into the
+<code>overlay</code> filter, and outputs the final result as
+<code>[out]</code>.</p>
+<hr />
+<h2 id="rule-4-escape-special-characters-when-necessary">Rule 4: Escape
+Special Characters When Necessary</h2>
+<p>If a filter argument contains characters that are part of the FFmpeg
+syntax (like commas, semicolons, or colons), you must enclose the
+argument in single quotes or escape the character with a backslash.</p>
+<ul>
+<li><strong>Example with Colons:</strong>
+<code>drawtext=text='Hello: World'</code></li>
+<li><strong>Example with Escaping:</strong>
+<code>drawtext=text=Hello\: World</code></li>
+</ul></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

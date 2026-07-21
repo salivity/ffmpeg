@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Use the FFmpeg Subtitles Filter - ffmpeg</title>
+    <meta name="description" content="This guide explains how to use the subtitles filter in FFmpeg to hardcode (burn) subtitles directly into your video files. You will learn the basic command syntax, how to handle path escaping issues, how to customize subtitle styles, and how to extract a">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/how-to-use-the-ffmpeg-subtitles-filter">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Use the FFmpeg Subtitles Filter - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/how-to-use-the-ffmpeg-subtitles-filter" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This guide explains how to use the subtitles filter in FFmpeg to hardcode (burn) subtitles directly into your video files. You will learn the basic command syntax, how to handle path escaping issues, how to customize subtitle styles, and how to extract a" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="how-to-use-the-ffmpeg-subtitles-filter">How to Use the FFmpeg
+Subtitles Filter</h1>
+<p>This guide explains how to use the <code>subtitles</code> filter in
+FFmpeg to hardcode (burn) subtitles directly into your video files. You
+will learn the basic command syntax, how to handle path escaping issues,
+how to customize subtitle styles, and how to extract and burn embedded
+subtitles from container files like MKV.</p>
+<h3 id="prerequisites">Prerequisites</h3>
+<p>To use the <code>subtitles</code> filter, your FFmpeg build must be
+compiled with the <code>--enable-libass</code> library. Most
+pre-compiled modern builds of FFmpeg include this by default. You can
+verify this by running <code>ffmpeg</code> in your terminal and looking
+for <code>--enable-libass</code> in the configuration output.</p>
+<h3 id="basic-syntax">Basic Syntax</h3>
+<p>The most straightforward way to burn external subtitles (such as
+<code>.srt</code> or <code>.ass</code> files) into a video is by using
+the <code>-vf</code> (video filter) flag followed by the
+<code>subtitles</code> filter.</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;subtitles=subtitle.srt&quot;</span> output.mp4</span></code></pre></div>
+<p>In this command: * <code>-i input.mp4</code> specifies the input
+video. * <code>-vf "subtitles=subtitle.srt"</code> applies the subtitle
+filter using the file <code>subtitle.srt</code>. *
+<code>output.mp4</code> is the resulting video file with the subtitles
+permanently burned in.</p>
+<h3 id="handling-file-paths-and-escaping">Handling File Paths and
+Escaping</h3>
+<p>FFmpeg’s filtergraph requires strict escaping for special characters,
+including colons and backslashes. This often causes errors when using
+absolute file paths on Windows.</p>
+<p>The easiest workaround is to place the subtitle file in the same
+directory as your command line prompt and use relative paths:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;subtitles=subs.srt&quot;</span> output.mp4</span></code></pre></div>
+<p>If you must use an absolute path, you must escape the colon and use
+forward slashes:</p>
+<ul>
+<li><strong>Windows absolute path:</strong>
+<code>C:\path\to\subs.srt</code> becomes
+<code>"subtitles='C\\:/path/to/subs.srt'"</code></li>
+<li><strong>Linux/macOS absolute path:</strong>
+<code>/path/to/subs.srt</code> becomes
+<code>"subtitles='/path/to/subs.srt'"</code></li>
+</ul>
+<p>Example command for Windows:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;subtitles=&#39;C</span><span class="dt">\\</span><span class="st">:/path/to/subs.srt&#39;&quot;</span> output.mp4</span></code></pre></div>
+<h3 id="burning-embedded-subtitles">Burning Embedded Subtitles</h3>
+<p>If your source video (such as an <code>.mkv</code> file) already
+contains soft subtitles, you can burn those existing subtitles into the
+video stream without pointing to an external file.</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mkv <span class="at">-vf</span> <span class="st">&quot;subtitles=input.mkv&quot;</span> output.mp4</span></code></pre></div>
+<p>If the input file contains multiple subtitle tracks, FFmpeg will
+default to the first one. You can select a specific subtitle stream
+using the stream index (<code>si</code>) parameter:</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mkv <span class="at">-vf</span> <span class="st">&quot;subtitles=input.mkv:si=1&quot;</span> output.mp4</span></code></pre></div>
+<p><em>(Note: <code>si=0</code> is the first subtitle track,
+<code>si=1</code> is the second, and so on.)</em></p>
+<h3 id="customizing-subtitle-style">Customizing Subtitle Style</h3>
+<p>If you are using SubRip (<code>.srt</code>) subtitles, you can
+customize the font, size, and colors using the <code>force_style</code>
+option. This option uses ASS (Advanced SubStation Alpha) style
+parameters.</p>
+<div class="sourceCode" id="cb6"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;subtitles=subs.srt:force_style=&#39;Fontname=Arial,Fontsize=20,PrimaryColour=&amp;H00FFFF,Alignment=2&#39;&quot;</span> output.mp4</span></code></pre></div>
+<p>Key style parameters include: * <strong>Fontname</strong>: The name
+of the font installed on your system (e.g., Arial, Verdana). *
+<strong>Fontsize</strong>: The size of the text. *
+<strong>PrimaryColour</strong>: The text color represented in BGR (Blue,
+Green, Red) hexadecimal format prefixed by <code>&amp;H</code>.
+<code>&amp;H00FFFF</code> represents yellow. *
+<strong>Alignment</strong>: The position of the text on the screen.
+<code>2</code> represents bottom-center, while <code>6</code> represents
+top-center.</p></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

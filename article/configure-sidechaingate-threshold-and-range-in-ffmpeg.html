@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Configure sidechaingate Threshold and Range in FFmpeg - ffmpeg</title>
+    <meta name="description" content="This article provides a straightforward guide on how to configure the threshold and range parameters in the FFmpeg sidechaingate audio filter. You will learn the exact syntax, the practical meaning of these parameters, and see real-world command-line exa">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/configure-sidechaingate-threshold-and-range-in-ffmpeg">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Configure sidechaingate Threshold and Range in FFmpeg - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/configure-sidechaingate-threshold-and-range-in-ffmpeg" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article provides a straightforward guide on how to configure the threshold and range parameters in the FFmpeg sidechaingate audio filter. You will learn the exact syntax, the practical meaning of these parameters, and see real-world command-line exa" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="configure-sidechaingate-threshold-and-range-in-ffmpeg">Configure
+sidechaingate Threshold and Range in FFmpeg</h1>
+<p>This article provides a straightforward guide on how to configure the
+threshold and range parameters in the FFmpeg <code>sidechaingate</code>
+audio filter. You will learn the exact syntax, the practical meaning of
+these parameters, and see real-world command-line examples to control
+your audio dynamics effectively using sidechain gating.</p>
+<h2 id="understanding-the-sidechaingate-filter">Understanding the
+sidechaingate Filter</h2>
+<p>The <code>sidechaingate</code> filter uses the audio level of a
+second audio stream (the sidechain input) to control a gate on the first
+audio stream (the main input). When the sidechain signal rises above a
+specified threshold, the gate opens and allows the main audio to pass
+through. When the sidechain signal falls below the threshold, the gate
+closes, attenuating the main audio.</p>
+<p>To use the filter, you must pass two audio inputs to
+<code>-filter_complex</code> in the following order:
+<code>[main_audio][sidechain_audio]sidechaingate=parameter1=value1:parameter2=value2[output_audio]</code></p>
+<h2 id="configuring-threshold">Configuring Threshold</h2>
+<p>The <strong>threshold</strong> parameter determines the audio level
+of the sidechain signal required to open the gate.</p>
+<ul>
+<li><strong>Option Name:</strong> <code>threshold</code> (or
+<code>level_in</code>)</li>
+<li><strong>Value Type:</strong> Double (decibels or linear
+amplitude)</li>
+<li><strong>Default Value:</strong> <code>0.125</code></li>
+<li><strong>Range:</strong> <code>0.00003</code> to
+<code>1.0</code></li>
+</ul>
+<h3 id="how-to-set-it">How to set it:</h3>
+<p>If you want the gate to open only when the sidechain audio is
+relatively loud, set a higher threshold. If you want it to open even
+with quiet sidechain signals, set a lower threshold.</p>
+<p>Example of setting threshold to <code>0.05</code>:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="va">sidechaingate</span><span class="op">=</span>threshold=0.05</span></code></pre></div>
+<h2 id="configuring-range">Configuring Range</h2>
+<p>The <strong>range</strong> parameter determines the amount of gain
+reduction (attenuation) applied to the main audio signal when the gate
+is closed.</p>
+<ul>
+<li><strong>Option Name:</strong> <code>range</code></li>
+<li><strong>Value Type:</strong> Double (linear amplitude reduction
+factor)</li>
+<li><strong>Default Value:</strong> <code>0.03125</code> (approximately
+-30 dB)</li>
+<li><strong>Range:</strong> <code>0.00003</code> to
+<code>1.0</code></li>
+</ul>
+<h3 id="how-to-set-it-1">How to set it:</h3>
+<p>A lower range value means more attenuation (a quieter background when
+the gate is closed). Setting the range to <code>0.0</code> would
+completely mute the main signal when the gate is closed, while setting
+it to <code>1.0</code> would result in no attenuation at all.</p>
+<p>Example of setting the range to <code>0.01</code> (for heavy
+attenuation):</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="va">sidechaingate</span><span class="op">=</span>range=0.01</span></code></pre></div>
+<h2 id="practical-ffmpeg-command-example">Practical FFmpeg Command
+Example</h2>
+<p>In the following example, we have a main audio track
+(<code>main.wav</code>) and a sidechain trigger track
+(<code>trigger.wav</code>). We configure the gate to open when the
+trigger signal crosses <code>0.1</code> amplitude, and we restrict the
+closed gate volume to <code>0.05</code> of the original signal:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> main.wav <span class="at">-i</span> trigger.wav <span class="at">-filter_complex</span> <span class="st">&quot;[0:a][1:a]sidechaingate=threshold=0.1:range=0.05[out]&quot;</span> <span class="at">-map</span> <span class="st">&quot;[out]&quot;</span> output.wav</span></code></pre></div>
+<h3 id="additional-useful-parameters">Additional Useful Parameters</h3>
+<p>To fine-tune how the gate opens and closes, you can combine
+<code>threshold</code> and <code>range</code> with these time-based
+parameters:</p>
+<ul>
+<li><strong>attack:</strong> The time in milliseconds it takes for the
+gate to fully open once the threshold is crossed (default is
+<code>20</code>).</li>
+<li><strong>release:</strong> The time in milliseconds it takes for the
+gate to fully close after the signal falls below the threshold (default
+is <code>250</code>).</li>
+<li><strong>makeup:</strong> The amount of signal boost applied to the
+output (default is <code>1.0</code>).</li>
+</ul>
+<p>Example with custom attack, release, threshold, and range:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> main.wav <span class="at">-i</span> trigger.wav <span class="at">-filter_complex</span> <span class="st">&quot;[0:a][1:a]sidechaingate=threshold=0.08:range=0.02:attack=10:release=150[out]&quot;</span> <span class="at">-map</span> <span class="st">&quot;[out]&quot;</span> output.wav</span></code></pre></div></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

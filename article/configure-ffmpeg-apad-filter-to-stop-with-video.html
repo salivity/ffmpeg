@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Configure FFmpeg apad Filter to Stop with Video - ffmpeg</title>
+    <meta name="description" content="When padding audio in FFmpeg using the apad filter, the output stream can run indefinitely because the filter pads the audio with infinite silence by default. This article provides a direct, step-by-step guide on how to configure FFmpeg so that the apad">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/configure-ffmpeg-apad-filter-to-stop-with-video">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Configure FFmpeg apad Filter to Stop with Video - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/configure-ffmpeg-apad-filter-to-stop-with-video" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="When padding audio in FFmpeg using the apad filter, the output stream can run indefinitely because the filter pads the audio with infinite silence by default. This article provides a direct, step-by-step guide on how to configure FFmpeg so that the apad" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="configure-ffmpeg-apad-filter-to-stop-with-video">Configure
+FFmpeg apad Filter to Stop with Video</h1>
+<p>When padding audio in FFmpeg using the <code>apad</code> filter, the
+output stream can run indefinitely because the filter pads the audio
+with infinite silence by default. This article provides a direct,
+step-by-step guide on how to configure FFmpeg so that the
+<code>apad</code> filter stops processing automatically the moment your
+video stream ends, preventing infinitely growing file sizes.</p>
+<h2 id="the-problem-why-apad-runs-forever">The Problem: Why apad Runs
+Forever</h2>
+<p>The <code>apad</code> (audio pad) filter is designed to add silence
+to the end of an audio stream. If you apply <code>apad</code> without
+any constraints, FFmpeg will continue generating silent audio frames
+forever, even after the video stream has finished. To stop this, you
+must instruct FFmpeg to terminate the output generation when the
+shortest input stream (the video) ends.</p>
+<h2 id="the-solution-using-the--shortest-flag">The Solution: Using the
+<code>-shortest</code> Flag</h2>
+<p>The most efficient way to stop the <code>apad</code> filter when the
+video ends is to use the global <code>-shortest</code> option. This
+tells FFmpeg to stop writing to the output file as soon as the shortest
+stream (typically the video) finishes.</p>
+<p>Here is the standard command structure:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input_video.mp4 <span class="at">-i</span> input_audio.wav <span class="at">-filter_complex</span> <span class="st">&quot;[1:a]apad[padded_audio]&quot;</span> <span class="at">-map</span> 0:v <span class="at">-map</span> <span class="st">&quot;[padded_audio]&quot;</span> <span class="at">-shortest</span> output.mp4</span></code></pre></div>
+<h3 id="how-this-command-works">How This Command Works:</h3>
+<ul>
+<li><strong><code>-i input_video.mp4</code></strong>: Defines the video
+source (Stream 0).</li>
+<li><strong><code>-i input_audio.wav</code></strong>: Defines the audio
+source (Stream 1).</li>
+<li><strong><code>-filter_complex "[1:a]apad[padded_audio]"</code></strong>:
+Takes the audio from the second input (<code>1:a</code>), applies the
+<code>apad</code> filter to add silence to the end, and labels the
+output stream as <code>[padded_audio]</code>.</li>
+<li><strong><code>-map 0:v</code></strong>: Maps the video from the
+first input to the final output.</li>
+<li><strong><code>-map "[padded_audio]"</code></strong>: Maps the padded
+audio stream to the final output.</li>
+<li><strong><code>-shortest</code></strong>: <strong>This is the key
+parameter.</strong> It forces FFmpeg to stop encoding the moment the
+video stream (<code>0:v</code>) ends, cutting off the infinite silence
+generated by <code>apad</code>.</li>
+</ul>
+<h2 id="alternative-limit-padding-by-sample-count">Alternative: Limit
+Padding by Sample Count</h2>
+<p>If you do not want to use the <code>-shortest</code> flag, you can
+configure the <code>apad</code> filter to add a specific amount of
+silence instead of an infinite amount. This is useful if you know the
+exact duration differences beforehand.</p>
+<ul>
+<li><strong><code>whole_len</code></strong>: Specifies the target
+minimum length of the audio stream in samples.</li>
+<li><strong><code>pad_len</code></strong>: Specifies the exact number of
+silent samples to append.</li>
+</ul>
+<p>Example of adding exactly 44,100 samples of silence (1 second of
+silence at 44.1 kHz):</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input_video.mp4 <span class="at">-i</span> input_audio.wav <span class="at">-filter_complex</span> <span class="st">&quot;[1:a]apad=pad_len=44100[padded_audio]&quot;</span> <span class="at">-map</span> 0:v <span class="at">-map</span> <span class="st">&quot;[padded_audio]&quot;</span> output.mp4</span></code></pre></div></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

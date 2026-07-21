@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Convert Video to PSP Format Using FFmpeg - ffmpeg</title>
+    <meta name="description" content="This guide provides a straightforward tutorial on how to encode videos for playback on the PlayStation Portable (PSP) using the powerful command-line tool FFmpeg. You will learn the specific video and audio codec requirements, resolution limitations, and">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/convert-video-to-psp-format-using-ffmpeg">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Convert Video to PSP Format Using FFmpeg - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/convert-video-to-psp-format-using-ffmpeg" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This guide provides a straightforward tutorial on how to encode videos for playback on the PlayStation Portable (PSP) using the powerful command-line tool FFmpeg. You will learn the specific video and audio codec requirements, resolution limitations, and" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="convert-video-to-psp-format-using-ffmpeg">Convert Video to PSP
+Format Using FFmpeg</h1>
+<p>This guide provides a straightforward tutorial on how to encode
+videos for playback on the PlayStation Portable (PSP) using the powerful
+command-line tool FFmpeg. You will learn the specific video and audio
+codec requirements, resolution limitations, and the exact FFmpeg command
+needed to successfully convert your media files for your handheld
+console.</p>
+<h2 id="psp-video-compatibility-requirements">PSP Video Compatibility
+Requirements</h2>
+<p>To play a video on a PSP, the file must adhere to strict hardware
+limitations. The standard specifications for PSP-compatible MP4 files
+are:</p>
+<ul>
+<li><strong>Video Codec:</strong> H.264 / AVC (Baseline Profile, Level
+3.0 or lower)</li>
+<li><strong>Audio Codec:</strong> AAC-LC (Low Complexity)</li>
+<li><strong>Resolution:</strong> 480x272 (the native screen resolution
+of the PSP)</li>
+<li><strong>Frame Rate:</strong> Up to 29.97 fps</li>
+<li><strong>Pixel Format:</strong> yuv420p</li>
+</ul>
+<h2 id="the-ffmpeg-command">The FFmpeg Command</h2>
+<p>Open your terminal or command prompt and run the following command to
+convert your video:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-c:v</span> libx264 <span class="at">-profile:v</span> baseline <span class="at">-level</span> 3.0 <span class="at">-pix_fmt</span> yuv420p <span class="at">-vf</span> <span class="st">&quot;scale=480:272:force_original_aspect_ratio=decrease,pad=480:272:(ow-iw)/2:(oh-ih)/2&quot;</span> <span class="at">-b:v</span> 500k <span class="at">-c:a</span> aac <span class="at">-b:a</span> 128k <span class="at">-ar</span> 44100 <span class="at">-ac</span> 2 output.mp4</span></code></pre></div>
+<h3 id="command-breakdown">Command Breakdown</h3>
+<ul>
+<li><code>-i input.mp4</code>: Specifies the input video file.</li>
+<li><code>-c:v libx264</code>: Sets the video encoder to H.264.</li>
+<li><code>-profile:v baseline -level 3.0</code>: Restricts the H.264
+profile to “Baseline Level 3.0,” which is required for the PSP’s
+hardware decoder.</li>
+<li><code>-pix_fmt yuv420p</code>: Sets the pixel format to YUV 4:2:0,
+ensuring compatibility.</li>
+<li><code>-vf "scale=480:272..."</code>: Resizes the video to fit the
+480x272 screen while maintaining the original aspect ratio and adding
+black bars (letterboxing/pillarboxing) where necessary.</li>
+<li><code>-b:v 500k</code>: Sets the video bitrate to 500 Kbps. This
+offers a good balance between video quality and file size for the small
+screen.</li>
+<li><code>-c:a aac</code>: Sets the audio encoder to AAC.</li>
+<li><code>-b:a 128k</code>: Sets the audio bitrate to 128 Kbps.</li>
+<li><code>-ar 44100</code>: Sets the audio sampling rate to 44.1
+kHz.</li>
+<li><code>-ac 2</code>: Forces the audio to 2 channels (stereo).</li>
+<li><code>output.mp4</code>: The final PSP-compatible output file.</li>
+</ul>
+<h2 id="transferring-the-video-to-your-psp">Transferring the Video to
+Your PSP</h2>
+<p>Once the conversion is complete, follow these steps to transfer the
+video to your console:</p>
+<ol type="1">
+<li>Connect your PSP to your computer using a USB cable.</li>
+<li>Enable <strong>USB Connection</strong> on your PSP.</li>
+<li>Open the PSP’s Memory Stick drive on your computer.</li>
+<li>Locate the directory named <code>MP_ROOT</code> or
+<code>VIDEO</code>. If you are using modern PSP firmware, simply copy
+the converted <code>output.mp4</code> file directly into the
+<strong><code>VIDEO</code></strong> folder in the root directory of your
+Memory Stick. If the folder does not exist, create it in the root
+directory (e.g., <code>G:\VIDEO</code>).</li>
+<li>Disconnect the USB cable and navigate to the <strong>Video</strong>
+menu on your PSP to play the file.</li>
+</ol></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

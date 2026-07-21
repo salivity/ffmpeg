@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fix Audio Video Sync Using FFmpeg itsoffset - ffmpeg</title>
+    <meta name="description" content="Audio and video desynchronization is a common issue in video processing, but it can be easily resolved using FFmpeg. This article provides a straightforward guide on how to use the -itsoffset option in FFmpeg to shift the audio stream relative to the vid">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/fix-audio-video-sync-using-ffmpeg-itsoffset">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Fix Audio Video Sync Using FFmpeg itsoffset - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/fix-audio-video-sync-using-ffmpeg-itsoffset" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Audio and video desynchronization is a common issue in video processing, but it can be easily resolved using FFmpeg. This article provides a straightforward guide on how to use the -itsoffset option in FFmpeg to shift the audio stream relative to the vid" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="fix-audio-video-sync-using-ffmpeg-itsoffset">Fix Audio Video
+Sync Using FFmpeg itsoffset</h1>
+<p>Audio and video desynchronization is a common issue in video
+processing, but it can be easily resolved using FFmpeg. This article
+provides a straightforward guide on how to use the
+<code>-itsoffset</code> option in FFmpeg to shift the audio stream
+relative to the video, allowing you to quickly restore perfect
+synchronization to your media files without the need for full
+re-encoding.</p>
+<h3 id="understanding--itsoffset">Understanding
+<code>-itsoffset</code></h3>
+<p>The <code>-itsoffset</code> option in FFmpeg applies a time offset to
+the input file that immediately follows it in the command line. The
+offset value is specified in seconds (e.g., <code>1.5</code>) or in the
+<code>hh:mm:ss.msecs</code> format.</p>
+<p>Because FFmpeg processes inputs sequentially, correcting sync issues
+requires loading the source file twice: once for the video stream and
+once for the audio stream. By applying <code>-itsoffset</code> to only
+one of these inputs and mapping the streams correctly, you can shift the
+audio forward or backward.</p>
+<h3 id="scenario-1-delaying-the-audio-audio-plays-too-early">Scenario 1:
+Delaying the Audio (Audio Plays Too Early)</h3>
+<p>If the audio is playing ahead of the video, you need to delay the
+audio stream. If the audio is 1.5 seconds too early, use the following
+command:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-itsoffset</span> 1.5 <span class="at">-i</span> input.mp4 <span class="at">-map</span> 0:v <span class="at">-map</span> 1:a <span class="at">-c</span> copy output.mp4</span></code></pre></div>
+<p><strong>How this command works:</strong> * <code>-i input.mp4</code>:
+This is the first input (index 0). The video will be taken from here
+without any offset. * <code>-itsoffset 1.5 -i input.mp4</code>: This is
+the second input (index 1). It is delayed by 1.5 seconds. *
+<code>-map 0:v</code>: Selects the video from the first, non-delayed
+input. * <code>-map 1:a</code>: Selects the audio from the second,
+delayed input. * <code>-c copy</code>: Copies both streams without
+re-encoding, preserving original quality and finishing the process
+almost instantly.</p>
+<h3 id="scenario-2-advancing-the-audio-audio-plays-too-late">Scenario 2:
+Advancing the Audio (Audio Plays Too Late)</h3>
+<p>If the audio is lagging behind the video, you need to make the audio
+play sooner. In FFmpeg, this is achieved by delaying the video stream
+instead of the audio stream. If the audio is 2 seconds too late, use
+this command:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-itsoffset</span> 2.0 <span class="at">-i</span> input.mp4 <span class="at">-i</span> input.mp4 <span class="at">-map</span> 0:v <span class="at">-map</span> 1:a <span class="at">-c</span> copy output.mp4</span></code></pre></div>
+<p><strong>How this command works:</strong> *
+<code>-itsoffset 2.0 -i input.mp4</code>: This is the first input (index
+0). The video will be taken from here, delayed by 2 seconds. *
+<code>-i input.mp4</code>: This is the second input (index 1), which has
+no delay. * <code>-map 0:v</code>: Selects the delayed video. *
+<code>-map 1:a</code>: Selects the non-delayed audio. *
+<code>-c copy</code>: Copies the streams instantly without
+re-encoding.</p>
+<p>By shifting the video forward relative to the audio, the lagging
+audio stream is successfully synchronized.</p></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

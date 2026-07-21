@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Fix Green Color Cast in Video with FFmpeg - ffmpeg</title>
+    <meta name="description" content="Correcting off-color footage is a common post-production task, and FFmpeg provides a powerful tool to achieve this programmatically. This article explains how to remove an unwanted green color cast from your video files using FFmpeg's colorbalance filter">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/how-to-fix-green-color-cast-in-video-with-ffmpeg">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Fix Green Color Cast in Video with FFmpeg - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/how-to-fix-green-color-cast-in-video-with-ffmpeg" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Correcting off-color footage is a common post-production task, and FFmpeg provides a powerful tool to achieve this programmatically. This article explains how to remove an unwanted green color cast from your video files using FFmpeg's colorbalance filter" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="how-to-fix-green-color-cast-in-video-with-ffmpeg">How to Fix
+Green Color Cast in Video with FFmpeg</h1>
+<p>Correcting off-color footage is a common post-production task, and
+FFmpeg provides a powerful tool to achieve this programmatically. This
+article explains how to remove an unwanted green color cast from your
+video files using FFmpeg’s <code>colorbalance</code> filter. You will
+learn the syntax of the filter, how to target specific tonal ranges, and
+see a practical command-line example to restore natural colors to your
+footage.</p>
+<h3 id="understanding-the-colorbalance-filter">Understanding the
+Colorbalance Filter</h3>
+<p>The <code>colorbalance</code> filter in FFmpeg allows you to adjust
+the levels of Red, Green, and Blue (RGB) across three distinct tonal
+ranges: Shadows (s), Midtones (m), and Highlights (h).</p>
+<p>The basic parameters are named using a two-letter system: *
+<strong>First letter (Color):</strong> <code>r</code> (Red),
+<code>g</code> (Green), <code>b</code> (Blue) * <strong>Second letter
+(Tonal Range):</strong> <code>s</code> (Shadows), <code>m</code>
+(Midtones), <code>h</code> (Highlights)</p>
+<p>Each parameter accepts a value between <code>-1.0</code> (minimum)
+and <code>1.0</code> (maximum), with <code>0.0</code> being no
+change.</p>
+<p>To neutralize a green color cast, you must decrease the green levels,
+increase the magenta levels (by boosting red and blue), or apply a
+combination of both.</p>
+<h3 id="the-command-to-fix-green-cast">The Command to Fix Green
+Cast</h3>
+<p>To remove a green cast, you will typically want to lower the green
+midtones (<code>gm</code>) and highlights (<code>gh</code>), as these
+areas are where color casts are most visible. You can also slightly
+boost red and blue to introduce magenta, the complementary color of
+green.</p>
+<p>Here is the standard command-line template:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;colorbalance=gm=-0.15:bm=0.05:rm=0.05&quot;</span> <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<h3 id="parameter-breakdown">Parameter Breakdown</h3>
+<ul>
+<li><strong><code>-i input.mp4</code></strong>: Specifies your source
+video file.</li>
+<li><strong><code>-vf "colorbalance=..."</code></strong>: Applies the
+video filter.
+<ul>
+<li><strong><code>gm=-0.15</code></strong>: Reduces green in the
+midtones by 15%. This is the primary adjustment for removing the green
+tint from skin tones and neutral areas.</li>
+<li><strong><code>bm=0.05</code></strong>: Slightly increases blue in
+the midtones by 5%.</li>
+<li><strong><code>rm=0.05</code></strong>: Slightly increases red in the
+midtones by 5%. Together with the blue increase, this creates a subtle
+magenta shift to counter the green.</li>
+</ul></li>
+<li><strong><code>-c:a copy</code></strong>: Copies the audio stream
+without re-encoding to save time and preserve quality.</li>
+<li><strong><code>output.mp4</code></strong>: The corrected output
+file.</li>
+</ul>
+<h3 id="fine-tuning-the-correction">Fine-Tuning the Correction</h3>
+<p>If the green cast persists in the dark or bright areas of your video,
+you can expand the filter parameters to target shadows and
+highlights:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;colorbalance=gs=-0.05:gm=-0.15:gh=-0.1&quot;</span> <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<p>In this adjusted command: * <code>gs=-0.05</code> gently reduces
+green in the shadows (dark areas). * <code>gh=-0.1</code> reduces green
+in the highlights (bright areas, like skies or bright walls).</p>
+<p>Adjust these decimal values in small increments (e.g., steps of
+<code>0.05</code>) until the colors in your output video look
+natural.</p></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

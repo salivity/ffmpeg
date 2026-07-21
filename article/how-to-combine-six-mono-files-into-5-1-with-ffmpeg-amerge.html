@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Combine Six Mono Files into 5.1 with FFmpeg amerge - ffmpeg</title>
+    <meta name="description" content="This article provides a straightforward guide on how to use the FFmpeg amerge filter to merge six separate mono audio files into a single, cohesive 5.1 surround sound track. You will learn the correct channel ordering required for standard 5.1 layouts, t">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/how-to-combine-six-mono-files-into-5-1-with-ffmpeg-amerge">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Combine Six Mono Files into 5.1 with FFmpeg amerge - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/how-to-combine-six-mono-files-into-5-1-with-ffmpeg-amerge" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article provides a straightforward guide on how to use the FFmpeg amerge filter to merge six separate mono audio files into a single, cohesive 5.1 surround sound track. You will learn the correct channel ordering required for standard 5.1 layouts, t" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="how-to-combine-six-mono-files-into-5.1-with-ffmpeg-amerge">How
+to Combine Six Mono Files into 5.1 with FFmpeg amerge</h1>
+<p>This article provides a straightforward guide on how to use the
+FFmpeg <code>amerge</code> filter to merge six separate mono audio files
+into a single, cohesive 5.1 surround sound track. You will learn the
+correct channel ordering required for standard 5.1 layouts, the exact
+command-line syntax to execute, and how to ensure your output file is
+correctly tagged for media players.</p>
+<h2 id="standard-5.1-channel-ordering">Standard 5.1 Channel
+Ordering</h2>
+<p>Before running the FFmpeg command, you must input your mono files in
+the specific order that FFmpeg expects for a standard 5.1 channel
+layout. The default layout order is:</p>
+<ol type="1">
+<li><strong>FL</strong>: Front Left</li>
+<li><strong>FR</strong>: Front Right</li>
+<li><strong>FC</strong>: Front Center</li>
+<li><strong>LFE</strong>: Low-Frequency Effects (Subwoofer)</li>
+<li><strong>BL</strong>: Back Left (or Surround Left)</li>
+<li><strong>BR</strong>: Back Right (or Surround Right)</li>
+</ol>
+<h2 id="the-ffmpeg-command">The FFmpeg Command</h2>
+<p>To merge these six mono inputs into a single 5.1 track, use the
+following <code>filter_complex</code> command:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> front_left.wav <span class="at">-i</span> front_right.wav <span class="at">-i</span> center.wav <span class="at">-i</span> lfe.wav <span class="at">-i</span> back_left.wav <span class="at">-i</span> back_right.wav <span class="at">-filter_complex</span> <span class="st">&quot;[0:a][1:a][2:a][3:a][4:a][5:a]amerge=inputs=6[a]&quot;</span> <span class="at">-map</span> <span class="st">&quot;[a]&quot;</span> <span class="at">-channel_layout</span> 5.1 output.wav</span></code></pre></div>
+<h3 id="command-breakdown">Command Breakdown</h3>
+<ul>
+<li><strong><code>-i front_left.wav ...</code></strong>: Specifies the
+six individual mono input files. Ensure they are listed in the exact 5.1
+layout order (FL, FR, FC, LFE, BL, BR).</li>
+<li><strong><code>-filter_complex</code></strong>: Calls FFmpeg’s
+complex filtergraph, which is required when handling multiple inputs and
+outputs.</li>
+<li><strong><code>[0:a][1:a]...[5:a]</code></strong>: Selects the audio
+streams of each of the six inputs (from index 0 to 5).</li>
+<li><strong><code>amerge=inputs=6[a]</code></strong>: Tells the
+<code>amerge</code> filter to combine the 6 specified audio streams into
+a single multi-channel stream named <code>[a]</code>.</li>
+<li><strong><code>-map "[a]"</code></strong>: Maps the merged audio
+stream <code>[a]</code> to the output file.</li>
+<li><strong><code>-channel_layout 5.1</code></strong>: Explicitly tags
+the output file’s metadata as a 5.1 surround sound layout. This step is
+crucial so that media players and receivers recognize the file as 5.1
+surround sound rather than generic 6-channel audio.</li>
+<li><strong><code>output.wav</code></strong>: The resulting 5.1
+multi-channel file.</li>
+</ul>
+<h2 id="important-considerations">Important Considerations</h2>
+<ul>
+<li><strong>Audio Properties</strong>: For the <code>amerge</code>
+filter to work seamlessly, all six input mono files should have the
+exact same sample rate (e.g., 48,000 Hz) and duration. If they differ,
+FFmpeg may truncate the output to the shortest file’s length or fail to
+merge them properly.</li>
+<li><strong>Alternative Codecs</strong>: If you are outputting to a
+video container like MP4 or MKV, you can encode the audio to AC-3 (Dolby
+Digital) or AAC by adding <code>-c:a ac3</code> or <code>-c:a aac</code>
+before the output filename.</li>
+</ul></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

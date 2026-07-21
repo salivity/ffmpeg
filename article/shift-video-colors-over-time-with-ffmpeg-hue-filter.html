@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shift Video Colors Over Time with FFmpeg Hue Filter - ffmpeg</title>
+    <meta name="description" content="Shifting the color spectrum of a video over time is a great way to create psychedelic visual effects, transition elements, or dynamic color corrections. By utilizing FFmpeg's built-in hue filter paired with time-based expressions, you can continuously ro">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/shift-video-colors-over-time-with-ffmpeg-hue-filter">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Shift Video Colors Over Time with FFmpeg Hue Filter - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/shift-video-colors-over-time-with-ffmpeg-hue-filter" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Shifting the color spectrum of a video over time is a great way to create psychedelic visual effects, transition elements, or dynamic color corrections. By utilizing FFmpeg's built-in hue filter paired with time-based expressions, you can continuously ro" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="shift-video-colors-over-time-with-ffmpeg-hue-filter">Shift Video
+Colors Over Time with FFmpeg Hue Filter</h1>
+<p>Shifting the color spectrum of a video over time is a great way to
+create psychedelic visual effects, transition elements, or dynamic color
+corrections. By utilizing FFmpeg’s built-in <code>hue</code> filter
+paired with time-based expressions, you can continuously rotate the hue
+of a video as it plays. This guide will show you how to write the exact
+FFmpeg command required to achieve this effect and how to customize the
+speed of the color shift.</p>
+<p>To shift the color spectrum over time, you must apply the
+<code>hue</code> filter and define the hue angle (<code>h</code>) using
+an expression containing the variable <code>t</code>, which represents
+the current timestamp of the video in seconds.</p>
+<p>Here is the basic command to continuously shift the video colors:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;hue=h=&#39;t*90&#39;&quot;</span> <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<h3 id="how-the-command-works">How the Command Works</h3>
+<ul>
+<li><strong><code>-i input.mp4</code></strong>: Specifies the input
+video file.</li>
+<li><strong><code>-vf "hue=h='t*90'"</code></strong>: Applies the video
+filter. The <code>hue</code> filter modifies the color, and the
+<code>h</code> parameter defines the hue angle in degrees. By setting
+<code>h</code> to <code>'t*90'</code>, the hue angle increases by 90
+degrees for every second of video playback.</li>
+<li><strong><code>-c:a copy</code></strong>: Copies the audio stream
+directly without re-encoding to save time and preserve quality.</li>
+<li><strong><code>output.mp4</code></strong>: The resulting video file
+with the shifting color effect.</li>
+</ul>
+<h3 id="controlling-the-speed-of-the-color-shift">Controlling the Speed
+of the Color Shift</h3>
+<p>You can easily adjust how quickly the colors cycle through the
+spectrum by changing the multiplier in the math expression:</p>
+<ul>
+<li><p><strong>Fast Color Cycle</strong>: To cycle through the entire
+color spectrum (360 degrees) every second, use a multiplier of
+<code>360</code>:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;hue=h=&#39;t*360&#39;&quot;</span> <span class="at">-c:a</span> copy output.mp4</span></code></pre></div></li>
+<li><p><strong>Slow Color Cycle</strong>: For a very slow, subtle
+transition of colors, use a lower multiplier like <code>10</code> or
+<code>20</code>:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;hue=h=&#39;t*20&#39;&quot;</span> <span class="at">-c:a</span> copy output.mp4</span></code></pre></div></li>
+</ul>
+<h3 id="advanced-oscillating-colors">Advanced: Oscillating Colors</h3>
+<p>If you want the colors to shift back and forth within a specific
+range rather than spinning infinitely through the spectrum, you can use
+the sine wave function (<code>sin</code>):</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;hue=h=&#39;sin(t)*180&#39;&quot;</span> <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<p>In this command, the hue angle will smoothly oscillate back and forth
+between -180 and 180 degrees over time.</p></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

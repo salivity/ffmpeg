@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Overlay Weather Image on RTSP Stream Using FFmpeg - ffmpeg</title>
+    <meta name="description" content="This article provides a step-by-step guide on how to capture a live RTSP camera feed, overlay a locally updated weather image onto the video in real-time, and output the processed stream using FFmpeg. You will learn the exact FFmpeg commands required to">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/overlay-weather-image-on-rtsp-stream-using-ffmpeg">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Overlay Weather Image on RTSP Stream Using FFmpeg - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/overlay-weather-image-on-rtsp-stream-using-ffmpeg" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article provides a step-by-step guide on how to capture a live RTSP camera feed, overlay a locally updated weather image onto the video in real-time, and output the processed stream using FFmpeg. You will learn the exact FFmpeg commands required to" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="overlay-weather-image-on-rtsp-stream-using-ffmpeg">Overlay
+Weather Image on RTSP Stream Using FFmpeg</h1>
+<p>This article provides a step-by-step guide on how to capture a live
+RTSP camera feed, overlay a locally updated weather image onto the video
+in real-time, and output the processed stream using FFmpeg. You will
+learn the exact FFmpeg commands required to merge these sources,
+position the overlay, and ensure the image dynamically updates as local
+weather conditions change.</p>
+<h3 id="prerequisites">Prerequisites</h3>
+<p>To get started, you will need: 1. <strong>An RTSP Stream URL</strong>
+from your IP camera (e.g.,
+<code>rtsp://username:password@ip_address:554/stream</code>). 2.
+<strong>FFmpeg</strong> installed on your system. 3. <strong>A
+transparent PNG weather image</strong> (e.g., <code>weather.png</code>)
+saved locally. To prevent stream buffering issues, keep the image
+dimensions reasonably small (e.g., 200x200 pixels).</p>
+<hr />
+<h3 id="the-ffmpeg-command">The FFmpeg Command</h3>
+<p>To overlay a local image that updates in real-time onto an RTSP
+stream, run the following command in your terminal:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-rtsp_transport</span> tcp <span class="at">-i</span> <span class="st">&quot;rtsp://username:password@ip_address:554/stream&quot;</span> <span class="dt">\</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>-f image2 <span class="at">-loop</span> 1 <span class="at">-reload</span> 1 <span class="at">-i</span> <span class="st">&quot;weather.png&quot;</span> <span class="dt">\</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>-filter_complex <span class="st">&quot;[0:v][1:v] overlay=W-w-10:10 [out]&quot;</span> <span class="dt">\</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>-map <span class="st">&quot;[out]&quot;</span> <span class="dt">\</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>-map 0:a<span class="pp">?</span> <span class="dt">\</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>-c:v libx264 <span class="at">-preset</span> ultrafast <span class="at">-tune</span> zerolatency <span class="dt">\</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>-c:a copy <span class="dt">\</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>-f rtsp <span class="st">&quot;rtsp://localhost:8554/live_output&quot;</span></span></code></pre></div>
+<hr />
+<h3 id="command-breakdown">Command Breakdown</h3>
+<ul>
+<li><strong><code>-rtsp_transport tcp</code></strong>: Forces FFmpeg to
+use TCP instead of UDP for the RTSP stream. This prevents packet loss
+and video corruption.</li>
+<li><strong><code>-i "rtsp://..."</code></strong>: Defines the primary
+input (Input 0), which is your live camera feed.</li>
+<li><strong><code>-f image2 -loop 1 -reload 1 -i "weather.png"</code></strong>:
+Defines the secondary input (Input 1).
+<ul>
+<li><code>-loop 1</code> loops the image infinitely.</li>
+<li><code>-reload 1</code> forces FFmpeg to reload the
+<code>weather.png</code> file from disk every time it loops. This allows
+an external weather script to overwrite <code>weather.png</code> with
+new weather graphics in real-time without restarting FFmpeg.</li>
+</ul></li>
+<li><strong><code>-filter_complex "[0:v][1:v] overlay=W-w-10:10 [out]"</code></strong>:
+This is the core filter. It takes the video from Input 0
+(<code>[0:v]</code>) and overlays Input 1 (<code>[1:v]</code>) on top of
+it.
+<ul>
+<li><code>W-w-10</code> sets the X-coordinate (horizontal).
+<code>W</code> is the video width, <code>w</code> is the overlay width,
+and <code>10</code> is a 10-pixel padding from the right edge.</li>
+<li><code>10</code> sets the Y-coordinate (vertical), placing the
+overlay 10 pixels from the top edge.</li>
+</ul></li>
+<li><strong><code>-map "[out]"</code></strong>: Maps the filtered video
+to the output.</li>
+<li><strong><code>-map 0:a?</code></strong>: Maps the audio from the
+camera stream to the output, if audio exists (the <code>?</code> makes
+it optional so the command won’t fail if there is no audio).</li>
+<li><strong><code>-c:v libx264 -preset ultrafast -tune zerolatency</code></strong>:
+Re-encodes the video stream to H.264. The <code>ultrafast</code> preset
+and <code>zerolatency</code> tuning minimize processing delay for live
+streaming.</li>
+<li><strong><code>-c:a copy</code></strong>: Copies the audio stream
+directly without re-encoding to save CPU cycles.</li>
+<li><strong><code>-f rtsp "rtsp://..."</code></strong>: Specifies the
+output format and destination. You can output to an RTSP media server,
+an RTMP server (like YouTube/Twitch), or save it to a local file by
+replacing this with a file path like <code>output.mp4</code>.</li>
+</ul>
+<hr />
+<h3 id="positioning-the-weather-overlay">Positioning the Weather
+Overlay</h3>
+<p>You can easily adjust the position of the weather image by changing
+the <code>overlay</code> coordinates in the <code>-filter_complex</code>
+flag:</p>
+<ul>
+<li><strong>Top Left</strong>: <code>overlay=10:10</code></li>
+<li><strong>Top Right</strong>: <code>overlay=W-w-10:10</code></li>
+<li><strong>Bottom Left</strong>: <code>overlay=10:H-h-10</code></li>
+<li><strong>Bottom Right</strong>:
+<code>overlay=W-w-10:H-h-10</code></li>
+</ul>
+<p><em>(Note: <code>W</code>/<code>H</code> refer to the main video
+dimensions, while <code>w</code>/<code>h</code> refer to the overlay
+image dimensions).</em></p>
+<hr />
+<h3 id="managing-real-time-weather-updates">Managing Real-Time Weather
+Updates</h3>
+<p>To keep the weather image current, set up a cron job or a Python
+script in the background that fetches local weather data from an API,
+generates a new <code>weather.png</code> graphic, and overwrites the
+existing file. Because of the <code>-reload 1</code> flag, FFmpeg will
+automatically display the updated image on the stream within seconds of
+the file being replaced.</p></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

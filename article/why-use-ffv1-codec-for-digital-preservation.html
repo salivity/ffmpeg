@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Why Use FFV1 Codec for Digital Preservation - ffmpeg</title>
+    <meta name="description" content="The FFV1 video codec, widely supported by FFmpeg, has become the preferred standard for long-term digital preservation and video archiving. This article explains why memory institutions, libraries, and archives worldwide recommend FFV1, focusing on its l">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/why-use-ffv1-codec-for-digital-preservation">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Why Use FFV1 Codec for Digital Preservation - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/why-use-ffv1-codec-for-digital-preservation" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="The FFV1 video codec, widely supported by FFmpeg, has become the preferred standard for long-term digital preservation and video archiving. This article explains why memory institutions, libraries, and archives worldwide recommend FFV1, focusing on its l" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="why-use-ffv1-codec-for-digital-preservation">Why Use FFV1 Codec
+for Digital Preservation</h1>
+<p>The FFV1 video codec, widely supported by FFmpeg, has become the
+preferred standard for long-term digital preservation and video
+archiving. This article explains why memory institutions, libraries, and
+archives worldwide recommend FFV1, focusing on its lossless compression,
+open-source standardization, exceptional error resilience, and
+significant storage cost savings.</p>
+<h3 id="mathematically-lossless-compression">Mathematically Lossless
+Compression</h3>
+<p>Unlike lossy formats that discard visual data to reduce file size,
+FFV1 is a mathematically lossless codec. This guarantees that every
+single pixel of the digitized video is preserved exactly as it was
+captured, with zero degradation over time. Crucially, FFV1 achieves this
+while compressing files to roughly 30% to 50% of the size of
+uncompressed video. This high compression ratio allows archives to save
+massive amounts of digital storage space without compromising the
+mathematical integrity of their master files.</p>
+<h3 id="open-source-and-standardized">Open-Source and Standardized</h3>
+<p>Digital preservation requires formats that will remain readable for
+decades. FFV1 is a fully open-source, royalty-free codec that has been
+formally standardized by the Internet Engineering Task Force (IETF)
+under RFC 7962. Because it is not tied to any proprietary company or
+software license, there is no risk of the format becoming obsolete due
+to corporate bankruptcy or licensing changes. The decoding source code
+is freely available, ensuring that future generations will always be
+able to build tools to play back the files.</p>
+<h3 id="superior-error-resilience">Superior Error Resilience</h3>
+<p>Bit rot and file corruption are constant threats in digital
+archiving. FFV1 addresses this by dividing video frames into independent
+“slices” and embedding cyclic redundancy check (CRC) checksums within
+the bitstream. If a sector on a storage drive degrades, the corruption
+is localized to a tiny fraction of a single frame rather than destroying
+the entire video stream. Archivists can also use these checksums to
+automatically detect and pinpoint file corruption during routine
+integrity checks.</p>
+<h3 id="flexibility-and-metadata-preservation">Flexibility and Metadata
+Preservation</h3>
+<p>FFV1 supports a wide range of video properties, including various
+color spaces (YUV, RGB, Greyscale), high bit depths (8-bit up to 16-bit
+per channel), and both interlaced and progressive scan types. It is
+commonly paired with the Matroska (MKV) container, an open-standard
+wrapper that supports unlimited audio, video, and subtitle tracks, as
+well as rich, embedded metadata. This flexibility allows institutions to
+preserve the exact technical characteristics of obsolete analog tapes
+and film transfers.</p></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

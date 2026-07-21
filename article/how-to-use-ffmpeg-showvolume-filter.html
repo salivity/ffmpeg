@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Use FFmpeg showvolume Filter - ffmpeg</title>
+    <meta name="description" content="This guide explains how to use the showvolume filter in FFmpeg to generate a real-time, visual volume meter overlay on top of your video. You will learn the basic command syntax, how to customize the meter's appearance—including its size, orientation,">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/how-to-use-ffmpeg-showvolume-filter">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Use FFmpeg showvolume Filter - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/how-to-use-ffmpeg-showvolume-filter" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This guide explains how to use the showvolume filter in FFmpeg to generate a real-time, visual volume meter overlay on top of your video. You will learn the basic command syntax, how to customize the meter's appearance—including its size, orientation," />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="how-to-use-ffmpeg-showvolume-filter">How to Use FFmpeg
+showvolume Filter</h1>
+<p>This guide explains how to use the <code>showvolume</code> filter in
+FFmpeg to generate a real-time, visual volume meter overlay on top of
+your video. You will learn the basic command syntax, how to customize
+the meter’s appearance—including its size, orientation, and
+responsiveness—and how to overlay this visual meter directly onto your
+video stream.</p>
+<h2 id="the-basic-command-structure">The Basic Command Structure</h2>
+<p>The <code>showvolume</code> filter converts an audio stream into a
+visual volume meter video stream. To display this meter on top of your
+existing video, you must use FFmpeg’s <code>filter_complex</code> to
+generate the meter and then overlay it on your video source.</p>
+<p>Here is the standard template command:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-filter_complex</span> <span class="st">&quot;[0:a]showvolume=f=0.5:w=400:h=20[volume]; [0:v][volume]overlay=10:10[outv]&quot;</span> <span class="at">-map</span> <span class="st">&quot;[outv]&quot;</span> <span class="at">-map</span> 0:a output.mp4</span></code></pre></div>
+<h3 id="how-this-command-works">How This Command Works</h3>
+<ol type="1">
+<li><strong><code>[0:a]showvolume...[volume]</code></strong>: This takes
+the audio from the input file (<code>0:a</code>), runs it through the
+<code>showvolume</code> filter, and saves the resulting visual meter
+stream as a temporary video label named <code>[volume]</code>.</li>
+<li><strong><code>[0:v][volume]overlay=10:10[outv]</code></strong>: This
+takes the original input video (<code>0:v</code>) and overlays the newly
+created <code>[volume]</code> video stream on top of it. The
+<code>10:10</code> parameters position the meter 10 pixels from the left
+and 10 pixels from the top of the video frame.</li>
+<li><strong><code>-map "[outv]"</code> and
+<code>-map 0:a</code></strong>: These arguments tell FFmpeg to use the
+newly generated overlay video and the original unmodified audio for the
+final output file.</li>
+</ol>
+<h2 id="customizing-the-volume-meter">Customizing the Volume Meter</h2>
+<p>The <code>showvolume</code> filter offers several options to change
+the behavior and look of the volume bar. You can add these options
+inside the <code>showvolume</code> filter separated by colons (e.g.,
+<code>showvolume=option1=value1:option2=value2</code>).</p>
+<ul>
+<li><strong><code>w</code> and <code>h</code> (Width and
+Height)</strong>: Sets the dimensions of the volume meter in pixels.
+<ul>
+<li><em>Example:</em> <code>showvolume=w=600:h=30</code></li>
+</ul></li>
+<li><strong><code>f</code> (Fade/Decay)</strong>: Controls how fast the
+volume meter bar falls back down when the audio gets quieter. The value
+ranges from <code>0</code> (instant drop) to <code>1</code> (no drop).
+The default is <code>0.95</code>. A value of <code>0.5</code> offers a
+highly responsive, fast-moving meter.
+<ul>
+<li><em>Example:</em> <code>showvolume=f=0.5</code></li>
+</ul></li>
+<li><strong><code>o</code> (Orientation)</strong>: Sets the direction of
+the meter. Use <code>h</code> for horizontal (default) or <code>v</code>
+for vertical.
+<ul>
+<li><em>Example:</em> <code>showvolume=o=v:w=50:h=300</code></li>
+</ul></li>
+<li><strong><code>t</code> (Show dB Text)</strong>: Displays the decibel
+(dB) text labels on the meter. Set to <code>1</code> to enable (default)
+or <code>0</code> to disable.
+<ul>
+<li><em>Example:</em> <code>showvolume=t=0</code></li>
+</ul></li>
+<li><strong><code>b</code> (Border)</strong>: Sets the thickness of the
+border around the meter in pixels. The default is <code>1</code>.
+<ul>
+<li><em>Example:</em> <code>showvolume=b=3</code></li>
+</ul></li>
+</ul>
+<h2 id="advanced-example-vertical-meter-on-the-right-side">Advanced
+Example: Vertical Meter on the Right Side</h2>
+<p>To create a vertical volume meter located on the right side of a
+1920x1080 video, you can adjust the orientation and the overlay
+coordinates:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-filter_complex</span> <span class="st">&quot;[0:a]showvolume=o=v:w=30:h=400:f=0.4[volume]; [0:v][volume]overlay=1850:100[outv]&quot;</span> <span class="at">-map</span> <span class="st">&quot;[outv]&quot;</span> <span class="at">-map</span> 0:a output.mp4</span></code></pre></div>
+<p>In this command, <code>o=v</code> changes the meter to a vertical
+layout, and <code>overlay=1850:100</code> positions it near the
+top-right corner of a standard 1080p video frame.</p></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

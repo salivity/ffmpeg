@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Capture OTA TV and Transcode on the Fly with FFmpeg - ffmpeg</title>
+    <meta name="description" content="Capturing over-the-air (OTA) television broadcasts and transcoding them in real-time is a highly efficient way to stream or archive live TV. This guide provides a direct, step-by-step walkthrough on how to use a TV tuner card on a Linux system to tune in">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/capture-ota-tv-and-transcode-on-the-fly-with-ffmpeg">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Capture OTA TV and Transcode on the Fly with FFmpeg - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/capture-ota-tv-and-transcode-on-the-fly-with-ffmpeg" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Capturing over-the-air (OTA) television broadcasts and transcoding them in real-time is a highly efficient way to stream or archive live TV. This guide provides a direct, step-by-step walkthrough on how to use a TV tuner card on a Linux system to tune in" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="capture-ota-tv-and-transcode-on-the-fly-with-ffmpeg">Capture OTA
+TV and Transcode on the Fly with FFmpeg</h1>
+<p>Capturing over-the-air (OTA) television broadcasts and transcoding
+them in real-time is a highly efficient way to stream or archive live
+TV. This guide provides a direct, step-by-step walkthrough on how to use
+a TV tuner card on a Linux system to tune into a broadcast channel and
+utilize FFmpeg to transcode the incoming MPEG-TS stream on the fly into
+a highly compatible H.264/AAC format.</p>
+<h2 id="prerequisites">Prerequisites</h2>
+<p>Before beginning, ensure you have the following hardware and software
+configured: * <strong>TV Tuner Card:</strong> An ATSC (North America) or
+DVB-T/T2 (Europe/other regions) USB dongle or PCIe card installed and
+recognized by your system. * <strong>Linux Drivers:</strong> The card
+should be registered under <code>/dev/dvb/adapter0/</code>. *
+<strong>FFmpeg:</strong> Installed with support for the H.264 encoder
+(<code>libx264</code>) and AAC audio encoder. * <strong>Tuning
+Utilities:</strong> Install <code>v4l-utils</code> (which includes
+<code>dvbv5-zap</code>) or <code>w_scan</code> to generate channel
+configuration files.</p>
+<hr />
+<h2 id="step-1-scan-and-generate-a-channel-list">Step 1: Scan and
+Generate a Channel List</h2>
+<p>You must first scan for available OTA frequencies to generate a
+configuration file. Use <code>w_scan</code> or <code>dvbv5-scan</code>
+depending on your region.</p>
+<p>For DVB-T (Europe):</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">w_scan</span> <span class="at">-ft</span> <span class="at">-c</span> US <span class="op">&gt;</span> channels.conf</span></code></pre></div>
+<p><em>(Replace <code>US</code> with your country code, e.g.,
+<code>DE</code> for Germany or <code>GB</code> for the United
+Kingdom).</em></p>
+<p>This command creates a <code>channels.conf</code> file containing the
+frequency, program ID (PID), and modulation details for every available
+channel in your area.</p>
+<hr />
+<h2 id="step-2-tune-the-channel-and-pipe-to-ffmpeg">Step 2: Tune the
+Channel and Pipe to FFmpeg</h2>
+<p>Because TV tuner cards output raw MPEG-TS streams, you need to tune
+the card to a specific channel first. The most efficient way to capture
+and transcode simultaneously is to use <code>dvbv5-zap</code> to tune
+the card, then pipe the output stream directly into FFmpeg.</p>
+<p>Run the following command to tune to a channel named “PBS” (replace
+this with a channel name from your <code>channels.conf</code> file) and
+transcode it:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">dvbv5-zap</span> <span class="at">-c</span> channels.conf <span class="at">-r</span> <span class="st">&quot;PBS&quot;</span> <span class="at">-o</span> <span class="at">-</span> <span class="kw">|</span> <span class="ex">ffmpeg</span> <span class="at">-i</span> <span class="at">-</span> <span class="dt">\</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">-c:v</span> libx264 <span class="at">-preset</span> veryfast <span class="at">-crf</span> 23 <span class="dt">\</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">-c:a</span> aac <span class="at">-b:a</span> 128k <span class="dt">\</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">-f</span> mp4 output.mp4</span></code></pre></div>
+<hr />
+<h2 id="command-breakdown">Command Breakdown</h2>
+<ul>
+<li><strong><code>dvbv5-zap -c channels.conf -r "PBS" -o -</code></strong>:
+Tunes the card to the channel named “PBS” using your channel list. The
+<code>-o -</code> flag redirects the raw MPEG-TS video stream to the
+standard output (stdout).</li>
+<li><strong><code>|</code> (Pipe)</strong>: Sends the stdout of the
+tuning utility directly to the stdin of FFmpeg.</li>
+<li><strong><code>-i -</code></strong>: Instructs FFmpeg to read the
+incoming stream from standard input.</li>
+<li><strong><code>-c:v libx264</code></strong>: Transcodes the incoming
+MPEG-2 video stream into H.264 video.</li>
+<li><strong><code>-preset veryfast</code></strong>: Balances CPU usage
+and encoding speed to ensure the transcoding keeps up with the live
+broadcast in real time.</li>
+<li><strong><code>-crf 23</code></strong>: Controls the video quality
+(Constant Rate Factor). Values between 18 and 28 offer a good balance of
+quality and file size.</li>
+<li><strong><code>-c:a aac -b:a 128k</code></strong>: Transcodes the
+audio to AAC format at a bitrate of 128kbps.</li>
+<li><strong><code>-f mp4 output.mp4</code></strong>: Formats and saves
+the final stream as an MP4 file.</li>
+</ul>
+<hr />
+<h2 id="hardware-accelerated-transcoding-optional">Hardware Accelerated
+Transcoding (Optional)</h2>
+<p>If your CPU struggles to keep up with real-time encoding, you can
+offload the processing to an NVIDIA GPU (using NVENC) or an Intel CPU
+(using VAAPI).</p>
+<h3 id="intel-vaapi-example">Intel VAAPI Example:</h3>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">dvbv5-zap</span> <span class="at">-c</span> channels.conf <span class="at">-r</span> <span class="st">&quot;PBS&quot;</span> <span class="at">-o</span> <span class="at">-</span> <span class="kw">|</span> <span class="ex">ffmpeg</span> <span class="at">-hwaccel</span> vaapi <span class="at">-hwaccel_device</span> /dev/dri/renderD128 <span class="at">-i</span> <span class="at">-</span> <span class="dt">\</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">-vf</span> <span class="st">&#39;format=nv12,hwupload&#39;</span> <span class="at">-c:v</span> h264_vaapi <span class="at">-qp</span> 24 <span class="dt">\</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">-c:a</span> aac <span class="at">-b:a</span> 128k <span class="dt">\</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">-f</span> mp4 output.mp4</span></code></pre></div>
+<h3 id="nvidia-nvenc-example">NVIDIA NVENC Example:</h3>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">dvbv5-zap</span> <span class="at">-c</span> channels.conf <span class="at">-r</span> <span class="st">&quot;PBS&quot;</span> <span class="at">-o</span> <span class="at">-</span> <span class="kw">|</span> <span class="ex">ffmpeg</span> <span class="at">-i</span> <span class="at">-</span> <span class="dt">\</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">-c:v</span> h264_nvenc <span class="at">-preset</span> fast <span class="at">-cq</span> 23 <span class="dt">\</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">-c:a</span> aac <span class="at">-b:a</span> 128k <span class="dt">\</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">-f</span> mp4 output.mp4</span></code></pre></div></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

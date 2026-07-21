@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Configure libaom Undershoot and Overshoot PCT in FFmpeg - ffmpeg</title>
+    <meta name="description" content="This guide explains how to configure the target bitrate undershoot and overshoot percentage parameters (undershoot-pct and overshoot-pct) using the libaom-av1 encoder in FFmpeg. Adjusting these parameters allows you to control bitrate fluctuations, ensur">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/configure-libaom-undershoot-and-overshoot-pct-in-ffmpeg">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Configure libaom Undershoot and Overshoot PCT in FFmpeg - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/configure-libaom-undershoot-and-overshoot-pct-in-ffmpeg" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This guide explains how to configure the target bitrate undershoot and overshoot percentage parameters (undershoot-pct and overshoot-pct) using the libaom-av1 encoder in FFmpeg. Adjusting these parameters allows you to control bitrate fluctuations, ensur" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1
+id="configure-libaom-undershoot-and-overshoot-pct-in-ffmpeg">Configure
+libaom Undershoot and Overshoot PCT in FFmpeg</h1>
+<p>This guide explains how to configure the target bitrate undershoot
+and overshoot percentage parameters (<code>undershoot-pct</code> and
+<code>overshoot-pct</code>) using the <code>libaom-av1</code> encoder in
+FFmpeg. Adjusting these parameters allows you to control bitrate
+fluctuations, ensuring the encoder adheres strictly to your target
+bitrate or allows flexibility for high-complexity scenes.</p>
+<h2 id="understanding-undershoot-and-overshoot-pct">Understanding
+Undershoot and Overshoot PCT</h2>
+<p>When encoding AV1 video using Variable Bitrate (VBR) or Constrained
+Quality (CQ) modes, the encoder dynamically adjusts the bitrate based on
+scene complexity. The undershoot and overshoot parameters define the
+boundaries of these adjustments:</p>
+<ul>
+<li><strong>Undershoot PCT (<code>-undershoot-pct</code>):</strong> Sets
+the maximum allowed bitrate undershoot as a percentage of the target
+bitrate. For example, if your target is 2000 kbps and you set
+<code>-undershoot-pct 50</code>, the encoder can drop the bitrate down
+to 1000 kbps during simple scenes to save space.</li>
+<li><strong>Overshoot PCT (<code>-overshoot-pct</code>):</strong> Sets
+the maximum allowed bitrate overshoot as a percentage of the target
+bitrate. For example, with a target of 2000 kbps and
+<code>-overshoot-pct 50</code>, the encoder can spike up to 3000 kbps
+during complex, fast-moving scenes to maintain visual quality.</li>
+</ul>
+<p>The values for both parameters range from <code>0</code> to
+<code>100</code> percent.</p>
+<h2 id="ffmpeg-command-syntax">FFmpeg Command Syntax</h2>
+<p>In FFmpeg, you can pass these parameters directly as private encoder
+flags.</p>
+<h3 id="basic-syntax">Basic Syntax</h3>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-c:v</span> libaom-av1 <span class="at">-b:v</span> 2M <span class="at">-undershoot-pct</span> 50 <span class="at">-overshoot-pct</span> 50 output.mkv</span></code></pre></div>
+<h3 id="alternative-syntax-using-aom-params">Alternative Syntax using
+AOM Params</h3>
+<p>You can also pass these settings inside the <code>-aom-params</code>
+option, separating the arguments with a colon:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-c:v</span> libaom-av1 <span class="at">-b:v</span> 2M <span class="at">-aom-params</span> <span class="st">&quot;undershoot-pct=50:overshoot-pct=50&quot;</span> output.mkv</span></code></pre></div>
+<h2 id="recommended-configurations">Recommended Configurations</h2>
+<p>Depending on your distribution network and playback requirements, you
+should configure these settings to balance quality and bandwidth
+stability.</p>
+<h3 id="strict-bitrate-control-low-delay-streaming">1. Strict Bitrate
+Control (Low Delay / Streaming)</h3>
+<p>If you are streaming video and have limited bandwidth, you need to
+prevent large bitrate spikes. Setting low percentages forces the encoder
+to stay very close to the target bitrate. * <strong>Undershoot:</strong>
+<code>0</code> to <code>10</code> * <strong>Overshoot:</strong>
+<code>0</code> to <code>15</code></p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-c:v</span> libaom-av1 <span class="at">-b:v</span> 3M <span class="at">-undershoot-pct</span> 10 <span class="at">-overshoot-pct</span> 15 output.mkv</span></code></pre></div>
+<h3 id="high-quality-archiving-flexible-vbr">2. High-Quality Archiving
+(Flexible VBR)</h3>
+<p>For offline viewing or archiving where file size predictability is
+less important than visual consistency, allow the encoder maximum
+freedom to allocate bits where they are needed. *
+<strong>Undershoot:</strong> <code>100</code> (allows maximum
+compression in static scenes) * <strong>Overshoot:</strong>
+<code>100</code> (allows double the target bitrate for intense
+motion)</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-c:v</span> libaom-av1 <span class="at">-b:v</span> 3M <span class="at">-undershoot-pct</span> 100 <span class="at">-overshoot-pct</span> 100 output.mkv</span></code></pre></div></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Adjust Adaptive Quantization Strength in FFmpeg - ffmpeg</title>
+    <meta name="description" content="This guide explains how to use the -aq-strength parameter in FFmpeg to adjust adaptive quantization strength during video encoding. You will learn what adaptive quantization is, how the strength parameter affects video quality and bitrate distribution, a">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/how-to-adjust-adaptive-quantization-strength-in-ffmpeg">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Adjust Adaptive Quantization Strength in FFmpeg - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/how-to-adjust-adaptive-quantization-strength-in-ffmpeg" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This guide explains how to use the -aq-strength parameter in FFmpeg to adjust adaptive quantization strength during video encoding. You will learn what adaptive quantization is, how the strength parameter affects video quality and bitrate distribution, a" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="how-to-adjust-adaptive-quantization-strength-in-ffmpeg">How to
+Adjust Adaptive Quantization Strength in FFmpeg</h1>
+<p>This guide explains how to use the <code>-aq-strength</code>
+parameter in FFmpeg to adjust adaptive quantization strength during
+video encoding. You will learn what adaptive quantization is, how the
+strength parameter affects video quality and bitrate distribution, and
+the exact commands needed to optimize your video encodes using the
+libx264 and libx265 library encoders.</p>
+<h2 id="what-is-adaptive-quantization-aq">What is Adaptive Quantization
+(AQ)?</h2>
+<p>Adaptive Quantization (AQ) is an encoding technique that
+redistributes bits within a single frame based on complexity. Instead of
+applying the same compression level to the entire image, AQ shifts bits
+away from high-complexity, high-motion areas (where human eyes are less
+likely to notice compression artifacts) and redirects them to flat,
+low-motion, or gradient areas (such as skies or dark walls) where
+banding and blocking are highly visible.</p>
+<h2 id="understanding-the--aq-strength-parameter">Understanding the
+-aq-strength Parameter</h2>
+<p>The <code>-aq-strength</code> flag controls how aggressively FFmpeg
+redistributes these bits.</p>
+<ul>
+<li><strong>Default Value:</strong> The default strength is typically
+<code>1.0</code>.</li>
+<li><strong>Range:</strong> The effective range is generally between
+<code>0.0</code> and <code>2.0</code>.</li>
+<li><strong>Lower Values (e.g., 0.5 to 0.8):</strong> Reduces the bias.
+This preserves more detail in high-texture or high-motion scenes but may
+introduce banding or blockiness in flat gradients and dark areas.</li>
+<li><strong>Higher Values (e.g., 1.1 to 1.5):</strong> Increases the
+bias. This cleans up color banding in flat areas and skies but can blur
+out fine textures in highly detailed areas.</li>
+</ul>
+<h2 id="prerequisite-setting-the-aq-mode">Prerequisite: Setting the AQ
+Mode</h2>
+<p>The <code>-aq-strength</code> parameter only works if Adaptive
+Quantization is enabled via the <code>-aq-mode</code> option. If
+<code>-aq-mode</code> is set to <code>0</code> (disabled), changes to
+<code>-aq-strength</code> will have no effect.</p>
+<p>Common AQ modes for <code>libx264</code> and <code>libx265</code>
+include: * <code>1</code> (Variance AQ - default) * <code>2</code>
+(Auto-Variance AQ) * <code>3</code> (Biased Variance AQ, optimized for
+dark scenes)</p>
+<h2 id="how-to-use--aq-strength-in-ffmpeg-commands">How to Use
+-aq-strength in FFmpeg Commands</h2>
+<p>To apply these settings, pass the <code>-aq-mode</code> and
+<code>-aq-strength</code> flags to your encoder.</p>
+<h3 id="example-for-libx264-h.264">Example for libx264 (H.264)</h3>
+<p>In this example, we set the AQ mode to <code>1</code> and increase
+the strength slightly to <code>1.3</code> to help reduce banding in a
+gradient-heavy video:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-c:v</span> libx264 <span class="at">-crf</span> 20 <span class="at">-aq-mode</span> 1 <span class="at">-aq-strength</span> 1.3 output.mp4</span></code></pre></div>
+<h3 id="example-for-libx265-hevc">Example for libx265 (HEVC)</h3>
+<p>For the H.265/HEVC encoder, you must pass these parameters inside the
+<code>-x265-params</code> argument:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-c:v</span> libx265 <span class="at">-crf</span> 22 <span class="at">-x265-params</span> aq-mode=1:aq-strength=1.2 output.mp4</span></code></pre></div>
+<h2 id="tips-for-tuning-aq-strength">Tips for Tuning AQ Strength</h2>
+<ul>
+<li><strong>For Animation and Flat Graphics:</strong> Use a slightly
+higher strength (e.g., <code>1.3</code> to <code>1.5</code>) alongside
+<code>-aq-mode 1</code> or <code>2</code> to keep flat-colored
+backgrounds smooth and free of compression blocks.</li>
+<li><strong>For High-Detail, Textured Content:</strong> If you are
+encoding video with highly detailed textures like gravel, foliage, or
+water, lower the strength (e.g., <code>0.7</code> to <code>0.9</code>)
+to prevent the encoder from smoothing out those fine details.</li>
+<li><strong>For Dark Scenes:</strong> Combine <code>-aq-mode 3</code>
+(which biases dark frames) with an <code>-aq-strength</code> of
+<code>1.0</code> to <code>1.2</code> to eliminate “color banding” in
+dark, shadowy scenes.</li>
+</ul></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Analyze Camera Shake with FFmpeg vidstabdetect - ffmpeg</title>
+    <meta name="description" content="This article explains how to use the vidstabdetect filter in FFmpeg to analyze camera shake in a video. You will learn the exact commands required to run the detection pass, understand what the configuration parameters do, and see how to generate the mot">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/how-to-analyze-camera-shake-with-ffmpeg-vidstabdetect">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Analyze Camera Shake with FFmpeg vidstabdetect - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/how-to-analyze-camera-shake-with-ffmpeg-vidstabdetect" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article explains how to use the vidstabdetect filter in FFmpeg to analyze camera shake in a video. You will learn the exact commands required to run the detection pass, understand what the configuration parameters do, and see how to generate the mot" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="how-to-analyze-camera-shake-with-ffmpeg-vidstabdetect">How to
+Analyze Camera Shake with FFmpeg vidstabdetect</h1>
+<p>This article explains how to use the <code>vidstabdetect</code>
+filter in FFmpeg to analyze camera shake in a video. You will learn the
+exact commands required to run the detection pass, understand what the
+configuration parameters do, and see how to generate the motion data
+file necessary for the stabilization process.</p>
+<h2 id="understanding-the-two-step-stabilization-process">Understanding
+the Two-Step Stabilization Process</h2>
+<p>Stabilizing a video in FFmpeg using the <code>vid.stab</code> library
+is a two-step process:</p>
+<ol type="1">
+<li><strong>Analysis (<code>vidstabdetect</code>):</strong> FFmpeg
+analyzes the video frames to detect positional shifts, rotations, and
+camera shake, saving this tracking data to a file (usually named
+<code>transforms.trf</code>).</li>
+<li><strong>Stabilization (<code>vidstabtransform</code>):</strong>
+FFmpeg reads the tracking data from the first step and applies a
+transform filter to create a stabilized output video.</li>
+</ol>
+<p>Using <code>vidstabdetect</code> is the essential first step that
+performs the heavy computational work of motion analysis.</p>
+<h2 id="the-basic-vidstabdetect-command">The Basic vidstabdetect
+Command</h2>
+<p>To analyze a video without wasting time rendering a dummy output
+video file, you can direct the output to a null muxer
+(<code>-f null -</code>). Run the following command in your
+terminal:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> vidstabdetect=result=transforms.trf <span class="at">-f</span> null <span class="at">-</span></span></code></pre></div>
+<h3 id="command-breakdown">Command Breakdown:</h3>
+<ul>
+<li><strong><code>-i input.mp4</code></strong>: Specifies your shaky
+source video.</li>
+<li><strong><code>-vf vidstabdetect</code></strong>: Activates the
+motion detection video filter.</li>
+<li><strong><code>result=transforms.trf</code></strong>: Tells FFmpeg to
+write the analyzed motion data to a file named
+<code>transforms.trf</code>.</li>
+<li><strong><code>-f null -</code></strong>: Runs the command and
+discards the video output, as we only need the generated
+<code>.trf</code> file from this step.</li>
+</ul>
+<h2 id="fine-tuning-the-detection-parameters">Fine-Tuning the Detection
+Parameters</h2>
+<p>You can customize <code>vidstabdetect</code> using several key-value
+parameters separated by colons. Here is an advanced configuration
+example:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> vidstabdetect=shakiness=5:accuracy=15:stepsize=6:result=transforms.trf <span class="at">-f</span> null <span class="at">-</span></span></code></pre></div>
+<h3 id="parameter-explanations">Parameter Explanations:</h3>
+<ul>
+<li><strong><code>shakiness</code> (1 to 10):</strong> Represents how
+shaky the original video is. A value of 1 means little to no shake,
+while 10 represents extreme, rapid camera movement. The default is
+<code>5</code>.</li>
+<li><strong><code>accuracy</code> (1 to 15):</strong> Determines the
+accuracy of the detection process. Higher numbers yield better results
+but require more processing time. The default is <code>15</code>.</li>
+<li><strong><code>stepsize</code> (1 to 32):</strong> Sets the step size
+of the search process in pixels. Smaller step sizes are more precise but
+slower. The default is <code>6</code>.</li>
+<li><strong><code>show</code> (0 or 1):</strong> If set to
+<code>1</code>, FFmpeg will output a visual representation of the
+detected motion vectors overlaid on top of your video. This is useful
+for debugging.</li>
+</ul>
+<h2 id="next-steps-applying-the-stabilization">Next Steps: Applying the
+Stabilization</h2>
+<p>Once the analysis is complete, you will find a new file named
+<code>transforms.trf</code> in your working directory. You can now use
+this file to stabilize your video using the
+<code>vidstabtransform</code> filter with the following command:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> vidstabtransform=input=transforms.trf:interpol=linear <span class="at">-c:v</span> libx264 <span class="at">-crf</span> 18 <span class="at">-c:a</span> copy stabilized_output.mp4</span></code></pre></div></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

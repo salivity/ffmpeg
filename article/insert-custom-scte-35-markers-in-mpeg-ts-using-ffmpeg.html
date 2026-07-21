@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Insert Custom SCTE-35 Markers in MPEG-TS Using FFmpeg - ffmpeg</title>
+    <meta name="description" content="This article provides a practical guide on how to inject custom SCTE-35 digital cue markers into an MPEG-TS (MPEG Transport Stream) using FFmpeg. We will cover the core command-line configurations, explain how to utilize the scte35async filter to dynamic">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/insert-custom-scte-35-markers-in-mpeg-ts-using-ffmpeg">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Insert Custom SCTE-35 Markers in MPEG-TS Using FFmpeg - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/insert-custom-scte-35-markers-in-mpeg-ts-using-ffmpeg" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article provides a practical guide on how to inject custom SCTE-35 digital cue markers into an MPEG-TS (MPEG Transport Stream) using FFmpeg. We will cover the core command-line configurations, explain how to utilize the scte35async filter to dynamic" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="insert-custom-scte-35-markers-in-mpeg-ts-using-ffmpeg">Insert
+Custom SCTE-35 Markers in MPEG-TS Using FFmpeg</h1>
+<p>This article provides a practical guide on how to inject custom
+SCTE-35 digital cue markers into an MPEG-TS (MPEG Transport Stream)
+using FFmpeg. We will cover the core command-line configurations,
+explain how to utilize the <code>scte35async</code> filter to
+dynamically inject cue-out and cue-in markers via network sockets, and
+discuss how to format your payloads to ensure compatibility with
+downstream ad insertion systems.</p>
+<h3 id="understanding-scte-35-in-mpeg-ts">Understanding SCTE-35 in
+MPEG-TS</h3>
+<p>SCTE-35 is the industry-standard signaling protocol used to identify
+splice points and advertisement opportunities in digital television and
+video streams. In an MPEG-TS container, SCTE-35 cues are carried in
+their own elementary stream, designated by the stream type
+<code>0x86</code> in the Program Map Table (PMT). To insert these
+markers using FFmpeg, you must define an SCTE-35 stream and provide a
+mechanism to deliver the splice commands.</p>
+<h3 id="method-1-dynamic-injection-using-the-scte35async-filter">Method
+1: Dynamic Injection using the <code>scte35async</code> Filter</h3>
+<p>The most flexible way to write custom SCTE-35 markers into a live or
+file-based MPEG-TS stream is by using FFmpeg’s <code>scte35async</code>
+filter. This filter opens a local socket (UDP or TCP) that listens for
+incoming SCTE-35 commands and multiplexes them into the output transport
+stream on the fly.</p>
+<h4 id="the-ffmpeg-command-syntax">1. The FFmpeg Command Syntax</h4>
+<p>To set up an FFmpeg process that listens for SCTE-35 payloads on a
+local port and injects them into an MPEG-TS output, use the following
+command structure:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-re</span> <span class="at">-i</span> input.mp4 <span class="dt">\</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">-c:v</span> libx264 <span class="at">-preset</span> veryfast <span class="at">-b:v</span> 3000k <span class="dt">\</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">-c:a</span> aac <span class="at">-b:a</span> 128k <span class="dt">\</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">-filter_complex</span> <span class="st">&quot;scte35async=port=9000:bind_address=127.0.0.1&quot;</span> <span class="dt">\</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">-f</span> mpegts <span class="at">-mpegts_flags</span> +system_b <span class="dt">\</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>  udp://239.0.0.1:1234<span class="pp">?</span>pkt_size=1316</span></code></pre></div>
+<p><strong>Key Parameters Explained:</strong> *
+<code>-filter_complex "scte35async=port=9000"</code>: Instructs FFmpeg
+to spin up an asynchronous SCTE-35 listener on port <code>9000</code>. *
+<code>-mpegts_flags +system_b</code>: Ensures proper packet alignment
+and metadata output structure within the MPEG-TS container. *
+<code>udp://239.0.0.1:1234</code>: The destination multicast or unicast
+address of your output MPEG-TS stream containing the video, audio, and
+newly created SCTE-35 PID.</p>
+<hr />
+<h3 id="sending-scte-35-commands-to-the-socket">2. Sending SCTE-35
+Commands to the Socket</h3>
+<p>Once FFmpeg is running and listening on port <code>9000</code>, you
+must send formatted commands to trigger the cues. The
+<code>scte35async</code> filter accepts simple string instructions
+containing a Presentation Time Stamp (PTS) offset and the base64-encoded
+SCTE-35 payload.</p>
+<p>The payload format sent to the socket should follow this syntax:</p>
+<pre class="text"><code>&lt;PTS_Offset_in_Microseconds&gt; &lt;Base64_Encoded_SCTE35_Command&gt;</code></pre>
+<h4 id="step-by-step-payload-generation">Step-by-Step Payload
+Generation:</h4>
+<ol type="1">
+<li><p><strong>Create the SCTE-35 Splice Info Section:</strong> Generate
+your target SCTE-35 binary command (e.g., a <code>splice_insert</code>
+cue-out for 30 seconds). <em>Example binary payload in Base64:</em>
+<code>/DA0AAAAAAAA///wBQb+AAAAAAA6AhRDVUVJQAAA+3/PAAEBAAAALMvYAA==</code></p></li>
+<li><p><strong>Send the command via Netcat (nc):</strong> To inject the
+marker immediately (using a <code>0</code> microsecond delay/offset
+relative to the current stream time), send the instruction to the open
+socket:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="bu">echo</span> <span class="st">&quot;0 /DA0AAAAAAAA///wBQb+AAAAAAA6AhRDVUVJQAAA+3/PAAEBAAAALMvYAA==&quot;</span> <span class="kw">|</span> <span class="ex">nc</span> <span class="at">-u</span> <span class="at">-w1</span> 127.0.0.1 9000</span></code></pre></div>
+<p><em>(Note: Use <code>-u</code> if your <code>scte35async</code>
+filter is configured to listen over UDP).</em></p></li>
+</ol>
+<hr />
+<h3
+id="method-2-static-inline-insertion-using-metadata-file-to-file">Method
+2: Static Inline Insertion Using Metadata (File-to-File)</h3>
+<p>If you are not working with a live stream and instead want to insert
+SCTE-35 markers at predefined, static timestamps during file transcodes,
+you can map pre-recorded SCTE-35 packet files directly into the MPEG-TS
+muxer.</p>
+<ol type="1">
+<li>Prepare a timed metadata file containing your SCTE-35 binary
+packets.</li>
+<li>Run FFmpeg to map the metadata stream as an independent PID:</li>
+</ol>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-i</span> scte_markers.bin <span class="dt">\</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">-map</span> 0:v <span class="at">-map</span> 0:a <span class="at">-map</span> 1:s <span class="dt">\</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">-c:v</span> copy <span class="at">-c:a</span> copy <span class="at">-c:s</span> copy <span class="dt">\</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">-streamid</span> 2:258 <span class="dt">\</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">-f</span> mpegts output.ts</span></code></pre></div>
+<p><em>Note: In this command, <code>-streamid 2:258</code> manually maps
+the third input stream (the SCTE-35 markers) to PID <code>258</code>
+within the transport stream, signaling it as a data/splice
+stream.</em></p></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

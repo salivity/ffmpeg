@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Set VP9 Min and Max Quantizer in FFmpeg - ffmpeg</title>
+    <meta name="description" content="Controlling the video quality and bitrate in FFmpeg when using the VP9 codec (libvpx-vp9) often requires restricting the quantizer range. This article provides a straightforward guide on how to configure the minimum and maximum quantizer limits using the">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/how-to-set-vp9-min-and-max-quantizer-in-ffmpeg">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Set VP9 Min and Max Quantizer in FFmpeg - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/how-to-set-vp9-min-and-max-quantizer-in-ffmpeg" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Controlling the video quality and bitrate in FFmpeg when using the VP9 codec (libvpx-vp9) often requires restricting the quantizer range. This article provides a straightforward guide on how to configure the minimum and maximum quantizer limits using the" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="how-to-set-vp9-min-and-max-quantizer-in-ffmpeg">How to Set VP9
+Min and Max Quantizer in FFmpeg</h1>
+<p>Controlling the video quality and bitrate in FFmpeg when using the
+VP9 codec (<code>libvpx-vp9</code>) often requires restricting the
+quantizer range. This article provides a straightforward guide on how to
+configure the minimum and maximum quantizer limits using the
+<code>-qmin</code> and <code>-qmax</code> flags to optimize your
+encoding balance between file size and visual fidelity.</p>
+<h3 id="understanding-vp9-quantizers">Understanding VP9 Quantizers</h3>
+<p>In VP9 encoding, the quantizer scale determines how much detail is
+discarded to save space. The VP9 quantizer scale ranges from <strong>0
+to 63</strong>: * <strong>0</strong> represents the highest quality
+(lossless, or near-lossless depending on profile settings). *
+<strong>63</strong> represents the lowest quality and highest
+compression.</p>
+<p>By default, FFmpeg allows the encoder to freely choose any quantizer
+within this 0–63 range to meet target bitrates. By setting a minimum
+(<code>-qmin</code>) and maximum (<code>-qmax</code>) limit, you prevent
+the encoder from making the video too low-quality during complex scenes,
+or wasting bitrate on simple scenes.</p>
+<h3 id="command-line-syntax">Command Line Syntax</h3>
+<p>To configure these limits, pass the <code>-qmin</code> and
+<code>-qmax</code> options directly after specifying the
+<code>libvpx-vp9</code> encoder.</p>
+<p>Here is a basic example of constrained bitrate encoding with
+quantizer limits:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-c:v</span> libvpx-vp9 <span class="at">-b:v</span> 2M <span class="at">-qmin</span> 10 <span class="at">-qmax</span> 42 output.webm</span></code></pre></div>
+<p>In this command: * <code>-c:v libvpx-vp9</code>: Selects the VP9
+encoder. * <code>-b:v 2M</code>: Sets a target bitrate of 2 Mbps. *
+<code>-qmin 10</code>: Prevents the quantizer from dropping below 10
+(capping maximum quality to avoid wasted bits). * <code>-qmax 42</code>:
+Prevents the quantizer from rising above 42 (ensuring the video quality
+does not degrade past a certain threshold).</p>
+<h3 id="using-quantizer-limits-with-crf-recommended">Using Quantizer
+Limits with CRF (Recommended)</h3>
+<p>When using Constant Rate Factor (CRF) mode—the recommended method for
+one-pass VP9 encoding—you can still use <code>-qmin</code> and
+<code>-qmax</code> to act as safety boundaries.</p>
+<p>To use CRF with quantizer limits, you must set the bitrate option
+<code>-b:v</code> to <code>0</code>:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-c:v</span> libvpx-vp9 <span class="at">-crf</span> 30 <span class="at">-b:v</span> 0 <span class="at">-qmin</span> 15 <span class="at">-qmax</span> 40 output.webm</span></code></pre></div>
+<ul>
+<li><code>-crf 30</code>: Targets a base quality level of 30.</li>
+<li><code>-b:v 0</code>: Required to enable pure CRF mode in
+<code>libvpx-vp9</code>.</li>
+<li><code>-qmin 15</code> and <code>-qmax 40</code>: Restricts the
+fluctuation of the encoder’s internal quantizer selection to stay
+strictly between 15 and 40.</li>
+</ul>
+<h3 id="recommended-values-for-general-use">Recommended Values for
+General Use</h3>
+<ul>
+<li><strong>High Quality / Archival:</strong> Set <code>-qmin 0</code>
+and <code>-qmax 30</code>.</li>
+<li><strong>Standard Web Distribution:</strong> Set
+<code>-qmin 15</code> and <code>-qmax 45</code>.</li>
+<li><strong>Low Bitrate / Streaming:</strong> Set <code>-qmin 20</code>
+and <code>-qmax 50</code>.</li>
+</ul></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

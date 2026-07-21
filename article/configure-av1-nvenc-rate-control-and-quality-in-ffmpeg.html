@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Configure av1_nvenc Rate Control and Quality in FFmpeg - ffmpeg</title>
+    <meta name="description" content="This article provides a practical guide on how to configure the rate control and quality settings for NVIDIA's hardware-accelerated AV1 encoder (av1nvenc) in FFmpeg. You will learn how to utilize different rate control modes—such as Constant Quality (C">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/configure-av1-nvenc-rate-control-and-quality-in-ffmpeg">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Configure av1_nvenc Rate Control and Quality in FFmpeg - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/configure-av1-nvenc-rate-control-and-quality-in-ffmpeg" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article provides a practical guide on how to configure the rate control and quality settings for NVIDIA's hardware-accelerated AV1 encoder (av1nvenc) in FFmpeg. You will learn how to utilize different rate control modes—such as Constant Quality (C" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1
+id="configure-av1_nvenc-rate-control-and-quality-in-ffmpeg">Configure
+av1_nvenc Rate Control and Quality in FFmpeg</h1>
+<p>This article provides a practical guide on how to configure the rate
+control and quality settings for NVIDIA’s hardware-accelerated AV1
+encoder (<code>av1_nvenc</code>) in FFmpeg. You will learn how to
+utilize different rate control modes—such as Constant Quality (CQ),
+Variable Bitrate (VBR), and Constant Bitrate (CBR)—along with
+NVENC-specific presets and tuning options to achieve the optimal balance
+between file size, encoding speed, and visual fidelity.</p>
+<h2 id="rate-control-modes-in-av1_nvenc">Rate Control Modes in
+av1_nvenc</h2>
+<p>Rate control determines how the encoder allocates bits to different
+parts of the video. The <code>av1_nvenc</code> encoder supports several
+rate control methods via the <code>-rc</code> private flag, which
+overrides standard FFmpeg rate control behavior.</p>
+<h3 id="constant-quality-cq-target-quality">1. Constant Quality (CQ /
+Target Quality)</h3>
+<p>For local recordings and archival purposes where file size is
+secondary to visual quality, the target-quality VBR mode is recommended.
+This mode maintains a consistent level of quality throughout the
+video.</p>
+<ul>
+<li><p><strong>Command options:</strong> Set <code>-rc</code> to
+<code>vbr</code> and define the quality level using
+<code>-cq</code>.</p></li>
+<li><p><strong>Example:</strong></p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-c:v</span> av1_nvenc <span class="at">-rc</span> vbr <span class="at">-cq</span> 25 <span class="at">-b:v</span> 0 output.mkv</span></code></pre></div>
+<p><em>Note: Setting <code>-b:v 0</code> is required when using
+<code>-cq</code> to prevent the encoder from targetting a default
+bitrate limit.</em></p></li>
+</ul>
+<h3 id="variable-bitrate-vbr">2. Variable Bitrate (VBR)</h3>
+<p>VBR is ideal when you want to target a specific average file size but
+allow the bitrate to spike during complex, high-motion scenes.</p>
+<ul>
+<li><p><strong>Command options:</strong> Specify the target bitrate with
+<code>-b:v</code> and a maximum limit with
+<code>-maxrate</code>.</p></li>
+<li><p><strong>Example:</strong></p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-c:v</span> av1_nvenc <span class="at">-rc</span> vbr <span class="at">-b:v</span> 5M <span class="at">-maxrate</span> 10M <span class="at">-bufsize</span> 20M output.mkv</span></code></pre></div></li>
+</ul>
+<h3 id="constant-bitrate-cbr">3. Constant Bitrate (CBR)</h3>
+<p>CBR is crucial for live streaming, where a predictable and steady
+stream of data is required to prevent buffering.</p>
+<ul>
+<li><p><strong>Command options:</strong> Set <code>-rc</code> to
+<code>cbr</code> and match <code>-b:v</code>, <code>-maxrate</code>, and
+<code>-bufsize</code>.</p></li>
+<li><p><strong>Example:</strong></p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-c:v</span> av1_nvenc <span class="at">-rc</span> cbr <span class="at">-b:v</span> 6M <span class="at">-maxrate</span> 6M <span class="at">-bufsize</span> 6M output.mkv</span></code></pre></div></li>
+</ul>
+<hr />
+<h2 id="configuring-quality-presets">Configuring Quality Presets</h2>
+<p>NVIDIA uses a standardized preset system ranging from <code>p1</code>
+(fastest, lowest quality) to <code>p7</code> (slowest, highest quality).
+The default preset is <code>p4</code>.</p>
+<p>To set the preset, use the <code>-preset</code> flag:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-c:v</span> av1_nvenc <span class="at">-preset</span> p6 <span class="at">-rc</span> vbr <span class="at">-cq</span> 24 <span class="at">-b:v</span> 0 output.mkv</span></code></pre></div>
+<ul>
+<li><strong>Use <code>p1</code> to <code>p3</code></strong> for
+low-latency, real-time applications where encoding speed is
+critical.</li>
+<li><strong>Use <code>p4</code> to <code>p5</code></strong> for balanced
+daily encoding.</li>
+<li><strong>Use <code>p6</code> to <code>p7</code></strong> for
+high-quality archival encoding where you want to squeeze out maximum
+efficiency.</li>
+</ul>
+<hr />
+<h2 id="advanced-fine-tuning-options">Advanced Fine-Tuning Options</h2>
+<p>To maximize the efficiency of the AV1 encoder, you can enable several
+NVENC-specific hardware features in your FFmpeg command.</p>
+<h3 id="multipass-encoding--multipass">Multipass Encoding
+(<code>-multipass</code>)</h3>
+<p>Multipass encoding allows the encoder to analyze the video frames
+before compressing them. This significantly improves quality at a given
+bitrate. * <code>0</code> or <code>disabled</code>: Single-pass
+encoding. * <code>1</code> or <code>qres</code>: Two-pass full
+resolution (slower, highest quality). * <code>2</code> or
+<code>fullres</code>: Two-pass quarter resolution (good balance of speed
+and quality).</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-c:v</span> av1_nvenc <span class="at">-multipass</span> fullres <span class="at">-b:v</span> 5M output.mkv</span></code></pre></div>
+<h3 id="adaptive-quantization--spatial_aq-and--temporal_aq">Adaptive
+Quantization (<code>-spatial_aq</code> and
+<code>-temporal_aq</code>)</h3>
+<p>Adaptive Quantization (AQ) optimizes bit distribution across the
+frame based on human visual perception. * <strong>Spatial AQ
+(<code>-spatial_aq 1</code>):</strong> Allocates more bits to flat areas
+(like skies or walls) to prevent color banding and blockiness. *
+<strong>Temporal AQ (<code>-temporal_aq 1</code>):</strong> Reduces
+blockiness in fast-moving scenes by tracking motion over time.</p>
+<div class="sourceCode" id="cb6"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-c:v</span> av1_nvenc <span class="at">-spatial_aq</span> 1 <span class="at">-temporal_aq</span> 1 output.mkv</span></code></pre></div>
+<hr />
+<h2 id="comprehensive-example-command">Comprehensive Example
+Command</h2>
+<p>For a high-quality, efficient AV1 encode suitable for offline viewing
+or uploading, use a command that combines two-pass VBR, spatial and
+temporal AQ, and a high-quality preset:</p>
+<div class="sourceCode" id="cb7"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-c:v</span> av1_nvenc <span class="at">-preset</span> p6 <span class="at">-rc</span> vbr <span class="at">-cq</span> 24 <span class="at">-b:v</span> 0 <span class="at">-multipass</span> fullres <span class="at">-spatial_aq</span> 1 <span class="at">-temporal_aq</span> 1 output.mkv</span></code></pre></div></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Split Audio with CUE Sheet Using FFmpeg - ffmpeg</title>
+    <meta name="description" content="This article provides a straightforward guide on how to split a single large audio file into individual tracks using a .cue sheet and FFmpeg. Because FFmpeg does not natively support direct, automatic CUE-based splitting in a single command, we will show">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/split-audio-with-cue-sheet-using-ffmpeg">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Split Audio with CUE Sheet Using FFmpeg - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/split-audio-with-cue-sheet-using-ffmpeg" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article provides a straightforward guide on how to split a single large audio file into individual tracks using a .cue sheet and FFmpeg. Because FFmpeg does not natively support direct, automatic CUE-based splitting in a single command, we will show" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="split-audio-with-cue-sheet-using-ffmpeg">Split Audio with CUE
+Sheet Using FFmpeg</h1>
+<p>This article provides a straightforward guide on how to split a
+single large audio file into individual tracks using a <code>.cue</code>
+sheet and FFmpeg. Because FFmpeg does not natively support direct,
+automatic CUE-based splitting in a single command, we will show you how
+to automate the process using a simple Bash script, as well as how to
+use the popular <code>shntool</code> utility alongside FFmpeg for a
+quick alternative.</p>
+<hr />
+<h3 id="method-1-automated-splitting-using-ffmpeg-and-bash">Method 1:
+Automated Splitting Using FFmpeg and Bash</h3>
+<p>To split an audio file using FFmpeg, you need to pass the start time
+(<code>-ss</code>) and stop time (<code>-to</code>) for each track. You
+can automate the parsing of the <code>.cue</code> file and execute the
+FFmpeg commands using the following Bash script.</p>
+<p>Save this script as <code>split_cue.sh</code> and run it in the
+folder containing your audio file and <code>.cue</code> sheet:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co">#!/bin/bash</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Input files</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="va">CUE_FILE</span><span class="op">=</span><span class="st">&quot;</span><span class="va">$1</span><span class="st">&quot;</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="va">AUDIO_FILE</span><span class="op">=</span><span class="st">&quot;</span><span class="va">$2</span><span class="st">&quot;</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> <span class="bu">[</span> <span class="ot">-z</span> <span class="st">&quot;</span><span class="va">$CUE_FILE</span><span class="st">&quot;</span> <span class="bu">]</span> <span class="kw">||</span> <span class="bu">[</span> <span class="ot">-z</span> <span class="st">&quot;</span><span class="va">$AUDIO_FILE</span><span class="st">&quot;</span> <span class="bu">]</span><span class="kw">;</span> <span class="cf">then</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>    <span class="bu">echo</span> <span class="st">&quot;Usage: </span><span class="va">$0</span><span class="st"> &lt;file.cue&gt; &lt;audio_file&gt;&quot;</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>    <span class="bu">exit</span> 1</span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a><span class="cf">fi</span></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a><span class="co"># Extract tracks, titles, and timestamps</span></span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a><span class="fu">grep</span> <span class="at">-E</span> <span class="st">&#39;TRACK|TITLE|INDEX 01&#39;</span> <span class="st">&quot;</span><span class="va">$CUE_FILE</span><span class="st">&quot;</span> <span class="kw">|</span> <span class="cf">while</span> <span class="bu">read</span> <span class="at">-r</span> <span class="va">line</span><span class="kw">;</span> <span class="cf">do</span></span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="kw">[[</span> <span class="va">$line</span> <span class="ot">=~</span> <span class="ss">TRACK</span> <span class="kw">]];</span> <span class="cf">then</span></span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>        <span class="va">track_num</span><span class="op">=</span><span class="va">$(</span><span class="bu">echo</span> <span class="st">&quot;</span><span class="va">$line</span><span class="st">&quot;</span> <span class="kw">|</span> <span class="fu">awk</span> <span class="st">&#39;{print $2}&#39;</span><span class="va">)</span></span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a>    <span class="cf">elif</span> <span class="kw">[[</span> <span class="va">$line</span> <span class="ot">=~</span> <span class="ss">TITLE</span> <span class="kw">]];</span> <span class="cf">then</span></span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Clean quotes from title</span></span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a>        <span class="va">track_title</span><span class="op">=</span><span class="va">$(</span><span class="bu">echo</span> <span class="st">&quot;</span><span class="va">$line</span><span class="st">&quot;</span> <span class="kw">|</span> <span class="fu">cut</span> <span class="at">-d</span><span class="st">&#39;&quot;&#39;</span> <span class="at">-f2</span><span class="va">)</span></span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a>    <span class="cf">elif</span> <span class="kw">[[</span> <span class="va">$line</span> <span class="ot">=~</span> <span class="st">&quot;INDEX 01&quot;</span> <span class="kw">]];</span> <span class="cf">then</span></span>
+<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a>        <span class="va">time_raw</span><span class="op">=</span><span class="va">$(</span><span class="bu">echo</span> <span class="st">&quot;</span><span class="va">$line</span><span class="st">&quot;</span> <span class="kw">|</span> <span class="fu">awk</span> <span class="st">&#39;{print $3}&#39;</span><span class="va">)</span></span>
+<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a>        </span>
+<span id="cb1-22"><a href="#cb1-22" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Convert CUE MM:SS:FF (minutes:seconds:frames) to FFmpeg HH:MM:SS.ms</span></span>
+<span id="cb1-23"><a href="#cb1-23" aria-hidden="true" tabindex="-1"></a>        <span class="va">m</span><span class="op">=</span><span class="va">$(</span><span class="bu">echo</span> <span class="st">&quot;</span><span class="va">$time_raw</span><span class="st">&quot;</span> <span class="kw">|</span> <span class="fu">cut</span> <span class="at">-d</span><span class="st">&#39;:&#39;</span> <span class="at">-f1</span><span class="va">)</span></span>
+<span id="cb1-24"><a href="#cb1-24" aria-hidden="true" tabindex="-1"></a>        <span class="va">s</span><span class="op">=</span><span class="va">$(</span><span class="bu">echo</span> <span class="st">&quot;</span><span class="va">$time_raw</span><span class="st">&quot;</span> <span class="kw">|</span> <span class="fu">cut</span> <span class="at">-d</span><span class="st">&#39;:&#39;</span> <span class="at">-f2</span><span class="va">)</span></span>
+<span id="cb1-25"><a href="#cb1-25" aria-hidden="true" tabindex="-1"></a>        <span class="va">f</span><span class="op">=</span><span class="va">$(</span><span class="bu">echo</span> <span class="st">&quot;</span><span class="va">$time_raw</span><span class="st">&quot;</span> <span class="kw">|</span> <span class="fu">cut</span> <span class="at">-d</span><span class="st">&#39;:&#39;</span> <span class="at">-f3</span><span class="va">)</span></span>
+<span id="cb1-26"><a href="#cb1-26" aria-hidden="true" tabindex="-1"></a>        </span>
+<span id="cb1-27"><a href="#cb1-27" aria-hidden="true" tabindex="-1"></a>        <span class="co"># 75 frames per second</span></span>
+<span id="cb1-28"><a href="#cb1-28" aria-hidden="true" tabindex="-1"></a>        <span class="va">ms</span><span class="op">=</span><span class="va">$((f</span> <span class="op">*</span> <span class="dv">1000</span> <span class="op">/</span> <span class="dv">75</span><span class="va">))</span></span>
+<span id="cb1-29"><a href="#cb1-29" aria-hidden="true" tabindex="-1"></a>        <span class="va">formatted_time</span><span class="op">=</span><span class="va">$(</span><span class="bu">printf</span> <span class="st">&quot;00:%02d:%02d.%03d&quot;</span> <span class="va">$m</span> <span class="va">$s</span> <span class="va">$ms)</span></span>
+<span id="cb1-30"><a href="#cb1-30" aria-hidden="true" tabindex="-1"></a>        </span>
+<span id="cb1-31"><a href="#cb1-31" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Store time and track info in a temporary array/file</span></span>
+<span id="cb1-32"><a href="#cb1-32" aria-hidden="true" tabindex="-1"></a>        <span class="bu">echo</span> <span class="st">&quot;</span><span class="va">$track_num</span><span class="st">|</span><span class="va">$track_title</span><span class="st">|</span><span class="va">$formatted_time</span><span class="st">&quot;</span> <span class="op">&gt;&gt;</span> temp_tracks.txt</span>
+<span id="cb1-33"><a href="#cb1-33" aria-hidden="true" tabindex="-1"></a>    <span class="cf">fi</span></span>
+<span id="cb1-34"><a href="#cb1-34" aria-hidden="true" tabindex="-1"></a><span class="cf">done</span></span>
+<span id="cb1-35"><a href="#cb1-35" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-36"><a href="#cb1-36" aria-hidden="true" tabindex="-1"></a><span class="co"># Read the temporary file to calculate durations and split</span></span>
+<span id="cb1-37"><a href="#cb1-37" aria-hidden="true" tabindex="-1"></a><span class="va">IFS</span><span class="op">=</span><span class="st">$&#39;</span><span class="dt">\n</span><span class="st">&#39;</span> <span class="bu">read</span> <span class="at">-d</span> <span class="st">&#39;&#39;</span> <span class="at">-r</span> <span class="at">-a</span> <span class="va">tracks</span> <span class="op">&lt;</span> temp_tracks.txt</span>
+<span id="cb1-38"><a href="#cb1-38" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-39"><a href="#cb1-39" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> <span class="kw">((</span><span class="va">i</span><span class="op">=</span><span class="dv">0</span><span class="kw">;</span> <span class="va">i</span><span class="op">&lt;</span><span class="va">${</span><span class="op">#</span><span class="va">tracks</span><span class="op">[@]</span><span class="va">}</span><span class="kw">;</span> <span class="va">i</span><span class="op">++</span><span class="kw">));</span> <span class="cf">do</span></span>
+<span id="cb1-40"><a href="#cb1-40" aria-hidden="true" tabindex="-1"></a>    <span class="va">current_track</span><span class="op">=</span><span class="st">&quot;</span><span class="va">${tracks</span><span class="op">[</span>i<span class="op">]</span><span class="va">}</span><span class="st">&quot;</span></span>
+<span id="cb1-41"><a href="#cb1-41" aria-hidden="true" tabindex="-1"></a>    <span class="va">next_track</span><span class="op">=</span><span class="st">&quot;</span><span class="va">${tracks</span><span class="op">[</span>i+1<span class="op">]</span><span class="va">}</span><span class="st">&quot;</span></span>
+<span id="cb1-42"><a href="#cb1-42" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb1-43"><a href="#cb1-43" aria-hidden="true" tabindex="-1"></a>    <span class="va">num</span><span class="op">=</span><span class="va">$(</span><span class="bu">echo</span> <span class="st">&quot;</span><span class="va">$current_track</span><span class="st">&quot;</span> <span class="kw">|</span> <span class="fu">cut</span> <span class="at">-d</span><span class="st">&#39;|&#39;</span> <span class="at">-f1</span><span class="va">)</span></span>
+<span id="cb1-44"><a href="#cb1-44" aria-hidden="true" tabindex="-1"></a>    <span class="va">title</span><span class="op">=</span><span class="va">$(</span><span class="bu">echo</span> <span class="st">&quot;</span><span class="va">$current_track</span><span class="st">&quot;</span> <span class="kw">|</span> <span class="fu">cut</span> <span class="at">-d</span><span class="st">&#39;|&#39;</span> <span class="at">-f2</span><span class="va">)</span></span>
+<span id="cb1-45"><a href="#cb1-45" aria-hidden="true" tabindex="-1"></a>    <span class="va">start</span><span class="op">=</span><span class="va">$(</span><span class="bu">echo</span> <span class="st">&quot;</span><span class="va">$current_track</span><span class="st">&quot;</span> <span class="kw">|</span> <span class="fu">cut</span> <span class="at">-d</span><span class="st">&#39;|&#39;</span> <span class="at">-f3</span><span class="va">)</span></span>
+<span id="cb1-46"><a href="#cb1-46" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb1-47"><a href="#cb1-47" aria-hidden="true" tabindex="-1"></a>    <span class="va">output_name</span><span class="op">=</span><span class="va">$(</span><span class="bu">printf</span> <span class="st">&quot;%02d - %s.</span><span class="va">${AUDIO_FILE</span><span class="op">##</span><span class="pp">*</span>.<span class="va">}</span><span class="st">&quot;</span> <span class="st">&quot;</span><span class="va">$((</span><span class="dt">10#</span><span class="va">$num))</span><span class="st">&quot;</span> <span class="st">&quot;</span><span class="va">$title</span><span class="st">&quot;</span><span class="va">)</span></span>
+<span id="cb1-48"><a href="#cb1-48" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb1-49"><a href="#cb1-49" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="bu">[</span> <span class="ot">-n</span> <span class="st">&quot;</span><span class="va">$next_track</span><span class="st">&quot;</span> <span class="bu">]</span><span class="kw">;</span> <span class="cf">then</span></span>
+<span id="cb1-50"><a href="#cb1-50" aria-hidden="true" tabindex="-1"></a>        <span class="va">end</span><span class="op">=</span><span class="va">$(</span><span class="bu">echo</span> <span class="st">&quot;</span><span class="va">$next_track</span><span class="st">&quot;</span> <span class="kw">|</span> <span class="fu">cut</span> <span class="at">-d</span><span class="st">&#39;|&#39;</span> <span class="at">-f3</span><span class="va">)</span></span>
+<span id="cb1-51"><a href="#cb1-51" aria-hidden="true" tabindex="-1"></a>        <span class="ex">ffmpeg</span> <span class="at">-y</span> <span class="at">-i</span> <span class="st">&quot;</span><span class="va">$AUDIO_FILE</span><span class="st">&quot;</span> <span class="at">-ss</span> <span class="st">&quot;</span><span class="va">$start</span><span class="st">&quot;</span> <span class="at">-to</span> <span class="st">&quot;</span><span class="va">$end</span><span class="st">&quot;</span> <span class="at">-acodec</span> copy <span class="st">&quot;</span><span class="va">$output_name</span><span class="st">&quot;</span></span>
+<span id="cb1-52"><a href="#cb1-52" aria-hidden="true" tabindex="-1"></a>    <span class="cf">else</span></span>
+<span id="cb1-53"><a href="#cb1-53" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Last track goes to the end of the file</span></span>
+<span id="cb1-54"><a href="#cb1-54" aria-hidden="true" tabindex="-1"></a>        <span class="ex">ffmpeg</span> <span class="at">-y</span> <span class="at">-i</span> <span class="st">&quot;</span><span class="va">$AUDIO_FILE</span><span class="st">&quot;</span> <span class="at">-ss</span> <span class="st">&quot;</span><span class="va">$start</span><span class="st">&quot;</span> <span class="at">-acodec</span> copy <span class="st">&quot;</span><span class="va">$output_name</span><span class="st">&quot;</span></span>
+<span id="cb1-55"><a href="#cb1-55" aria-hidden="true" tabindex="-1"></a>    <span class="cf">fi</span></span>
+<span id="cb1-56"><a href="#cb1-56" aria-hidden="true" tabindex="-1"></a><span class="cf">done</span></span>
+<span id="cb1-57"><a href="#cb1-57" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-58"><a href="#cb1-58" aria-hidden="true" tabindex="-1"></a><span class="co"># Clean up</span></span>
+<span id="cb1-59"><a href="#cb1-59" aria-hidden="true" tabindex="-1"></a><span class="fu">rm</span> temp_tracks.txt</span></code></pre></div>
+<h4 id="how-to-run-the-script">How to run the script:</h4>
+<ol type="1">
+<li><p>Make the script executable:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">chmod</span> +x split_cue.sh</span></code></pre></div></li>
+<li><p>Run the script by targeting your CUE sheet and audio file:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">./split_cue.sh</span> album.cue album.flac</span></code></pre></div></li>
+</ol>
+<p>Using <code>-acodec copy</code> ensures that the audio is split
+without re-encoding, preserving 100% of the original audio quality
+instantly.</p>
+<hr />
+<h3 id="method-2-the-command-line-alternative-shntool-ffmpeg">Method 2:
+The Command-Line Alternative (shntool + FFmpeg)</h3>
+<p>If you do not want to use a custom script, the industry-standard way
+to split CUE sheets on Linux and macOS is using <code>shntool</code>
+(which utilizes FFmpeg under the hood for decoding various formats like
+FLAC, APE, and WV).</p>
+<h4 id="install-the-required-tools">1. Install the required tools:</h4>
+<ul>
+<li><strong>Ubuntu/Debian:</strong>
+<code>sudo apt install shntool cuetools flac</code></li>
+<li><strong>macOS (via Homebrew):</strong>
+<code>brew install shntool cuetools</code></li>
+</ul>
+<h4 id="split-the-file">2. Split the file:</h4>
+<p>Run the following command to split your audio file using the timings
+from the CUE sheet:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">shnsplit</span> <span class="at">-f</span> album.cue <span class="at">-o</span> flac <span class="at">-t</span> <span class="st">&quot;%n - %t&quot;</span> album.flac</span></code></pre></div>
+<ul>
+<li><code>-f album.cue</code>: Specifies the CUE sheet file.</li>
+<li><code>-o flac</code>: Sets the output format to FLAC (you can use
+other formats like <code>wav</code>).</li>
+<li><code>-t "%n - %t"</code>: Names the output files automatically
+based on the Track Number (<code>%n</code>) and Title (<code>%t</code>)
+defined in the CUE sheet.</li>
+</ul>
+<h4 id="apply-metadata-tags">3. Apply metadata tags:</h4>
+<p><code>shnsplit</code> does not write the metadata tags (like Artist
+and Album) to the split tracks automatically. To copy the tags from the
+CUE sheet directly to your newly split FLAC files, run:</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="ex">cuetag.sh</span> album.cue <span class="pp">[</span><span class="ss">0</span><span class="pp">-</span><span class="ss">9</span><span class="pp">]*</span>.flac</span></code></pre></div></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

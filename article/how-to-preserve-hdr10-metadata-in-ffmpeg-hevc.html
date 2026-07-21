@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Preserve HDR10 Metadata in FFmpeg HEVC - ffmpeg</title>
+    <meta name="description" content="Transcoding HDR10 video using FFmpeg often results in a loss of dynamic range, causing the output video to look washed out because the essential HDR10 metadata is discarded by default. This guide provides a direct, step-by-step method to extract the orig">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/how-to-preserve-hdr10-metadata-in-ffmpeg-hevc">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Preserve HDR10 Metadata in FFmpeg HEVC - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/how-to-preserve-hdr10-metadata-in-ffmpeg-hevc" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Transcoding HDR10 video using FFmpeg often results in a loss of dynamic range, causing the output video to look washed out because the essential HDR10 metadata is discarded by default. This guide provides a direct, step-by-step method to extract the orig" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="how-to-preserve-hdr10-metadata-in-ffmpeg-hevc">How to Preserve
+HDR10 Metadata in FFmpeg HEVC</h1>
+<p>Transcoding HDR10 video using FFmpeg often results in a loss of
+dynamic range, causing the output video to look washed out because the
+essential HDR10 metadata is discarded by default. This guide provides a
+direct, step-by-step method to extract the original HDR10
+metadata—specifically the Mastering Display Color Volume and Content
+Light Level—and inject it back into your newly transcoded HEVC/x265
+video.</p>
+<h3 id="step-1-extract-the-original-hdr10-metadata">Step 1: Extract the
+Original HDR10 Metadata</h3>
+<p>Before transcoding, you must extract the metadata from the source
+file. Run the following <code>ffprobe</code> command to read the side
+data of the first frame:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffprobe</span> <span class="at">-v</span> error <span class="at">-select_streams</span> v:0 <span class="at">-show_frames</span> <span class="at">-read_intervals</span> <span class="st">&quot;%+#1&quot;</span> <span class="at">-show_entries</span> frame=side_data_list <span class="at">-of</span> default=noprint_wrappers=1 input.mp4</span></code></pre></div>
+<p>Look for two specific blocks in the output:</p>
+<ol type="1">
+<li><strong>Mastering Display Metadata</strong>: This looks like
+<code>G(x,y) B(x,y) R(x,y) WP(x,y) L(min,max)</code>.
+<ul>
+<li><em>Example output:</em>
+<code>G(13250,34500)B(7500,3000)R(34000,16000)WP(15635,16450)L(5,10000000)</code></li>
+</ul></li>
+<li><strong>Content Light Level Metadata</strong>: This contains the
+MaxCLL and MaxFALL values.
+<ul>
+<li><em>Example output:</em>
+<code>max_content=1000, max_average=400</code></li>
+</ul></li>
+</ol>
+<h3 id="step-2-format-the-metadata-for-ffmpeg">Step 2: Format the
+Metadata for FFmpeg</h3>
+<p>You must pass these values to the x265 encoder using the
+<code>-x265-params</code> flag. Format the values as follows:</p>
+<ul>
+<li><strong>Mastering Display</strong>: Replace the spaces in the
+<code>ffprobe</code> output with colons.
+<ul>
+<li><em>Formatted:</em>
+<code>master-display=G(13250,34500)B(7500,3000)R(34000,16000)WP(15635,16450)L(5,10000000)</code></li>
+</ul></li>
+<li><strong>Content Light Level</strong>: Format as
+<code>max-cll=MaxCLL,MaxFALL</code>.
+<ul>
+<li><em>Formatted:</em> <code>max-cll=1000,400</code></li>
+</ul></li>
+</ul>
+<h3 id="step-3-run-the-transcoding-command">Step 3: Run the Transcoding
+Command</h3>
+<p>To preserve the HDR10 color space and metadata, you must also specify
+the correct color primaries, transfer characteristics, and matrix
+coefficients (BT.2020 and PQ).</p>
+<p>Use the following complete FFmpeg command, substituting the metadata
+values you extracted in Step 1:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-c:v</span> libx265 <span class="at">-pix_fmt</span> yuv420p10le <span class="at">-color_primaries</span> bt2020 <span class="at">-color_trc</span> smpte2084 <span class="at">-colorspace</span> bt2020nc <span class="at">-x265-params</span> <span class="st">&quot;colorprim=bt2020:transfer=smpte2084:colormatrix=bt2020nc:master-display=G(13250,34500)B(7500,3000)R(34000,16000)WP(15635,16450)L(5,10000000):max-cll=1000,400:hdr10=1&quot;</span> <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<h3 id="command-parameter-breakdown">Command Parameter Breakdown</h3>
+<ul>
+<li><code>-pix_fmt yuv420p10le</code>: Forces 10-bit color depth, which
+is strictly required for HDR10.</li>
+<li><code>-color_primaries bt2020</code>: Sets the color primaries to
+BT.2020.</li>
+<li><code>-color_trc smpte2084</code>: Sets the transfer characteristics
+to SMPTE ST 2084 (PQ curve).</li>
+<li><code>-colorspace bt2020nc</code>: Sets the color space matrix.</li>
+<li><code>hdr10=1</code>: Enables the x265 encoder to write
+HDR10-compliant metadata and container-level flags.</li>
+</ul></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

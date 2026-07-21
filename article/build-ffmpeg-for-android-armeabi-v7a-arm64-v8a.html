@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Build FFmpeg for Android armeabi-v7a arm64-v8a - ffmpeg</title>
+    <meta name="description" content="Building FFmpeg for Android requires configuring the build script to target specific CPU architectures like armeabi-v7a (32-bit ARM) and arm64-v8a (64-bit ARM). This guide provides a straightforward, step-by-step tutorial on how to configure the Android">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/build-ffmpeg-for-android-armeabi-v7a-arm64-v8a">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Build FFmpeg for Android armeabi-v7a arm64-v8a - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/build-ffmpeg-for-android-armeabi-v7a-arm64-v8a" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Building FFmpeg for Android requires configuring the build script to target specific CPU architectures like armeabi-v7a (32-bit ARM) and arm64-v8a (64-bit ARM). This guide provides a straightforward, step-by-step tutorial on how to configure the Android" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="build-ffmpeg-for-android-armeabi-v7a-arm64-v8a">Build FFmpeg for
+Android armeabi-v7a arm64-v8a</h1>
+<p>Building FFmpeg for Android requires configuring the build script to
+target specific CPU architectures like <code>armeabi-v7a</code> (32-bit
+ARM) and <code>arm64-v8a</code> (64-bit ARM). This guide provides a
+straightforward, step-by-step tutorial on how to configure the Android
+NDK toolchain and set the appropriate compilation flags to compile
+FFmpeg successfully for these modern Android platforms.</p>
+<h2 id="prerequisites">Prerequisites</h2>
+<p>Before starting, ensure you have downloaded the following: 1.
+<strong>FFmpeg Source Code:</strong> Download and extract the source
+code from the official FFmpeg website. 2. <strong>Android NDK:</strong>
+Download and install the Android NDK (r19 or newer is recommended, as it
+standardizes the Clang toolchain).</p>
+<hr />
+<h2 id="step-1-set-up-environment-variables">Step 1: Set Up Environment
+Variables</h2>
+<p>First, define the paths to your NDK and define the host operating
+system. Run these commands in your terminal or include them at the
+beginning of your build script.</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Path to your Android NDK</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="bu">export</span> <span class="va">NDK</span><span class="op">=</span>/path/to/android-ndk-r25c</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Host OS (change &#39;linux-x86_64&#39; to &#39;darwin-x86_64&#39; for macOS or &#39;windows-x86_64&#39; for Windows)</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="bu">export</span> <span class="va">HOST_OS</span><span class="op">=</span>linux-x86_64</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="bu">export</span> <span class="va">TOOLCHAIN</span><span class="op">=</span><span class="va">$NDK</span>/toolchains/llvm/prebuilt/<span class="va">$HOST_OS</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="co"># Minimum Android API level</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="bu">export</span> <span class="va">API</span><span class="op">=</span>21</span></code></pre></div>
+<hr />
+<h2 id="step-2-configure-and-build-for-arm64-v8a-64-bit">Step 2:
+Configure and Build for arm64-v8a (64-bit)</h2>
+<p>The <code>arm64-v8a</code> architecture is the standard for modern
+64-bit Android devices. To configure the FFmpeg build for this target,
+use the following <code>./configure</code> script:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Create a build directory</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="va">OUT_DIR</span><span class="op">=</span>./android/arm64-v8a</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="ex">./configure</span> <span class="dt">\</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">--prefix</span><span class="op">=</span><span class="va">$OUT_DIR</span> <span class="dt">\</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">--target-os</span><span class="op">=</span>android <span class="dt">\</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">--arch</span><span class="op">=</span>aarch64 <span class="dt">\</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>  <span class="at">--cpu</span><span class="op">=</span>armv8-a <span class="dt">\</span></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>  <span class="at">--enable-cross-compile</span> <span class="dt">\</span></span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>  <span class="at">--cc</span><span class="op">=</span><span class="va">$TOOLCHAIN</span>/bin/aarch64-linux-android<span class="va">$API</span>-clang <span class="dt">\</span></span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>  <span class="at">--cxx</span><span class="op">=</span><span class="va">$TOOLCHAIN</span>/bin/aarch64-linux-android<span class="va">$API</span>-clang++ <span class="dt">\</span></span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a>  <span class="at">--cross-prefix</span><span class="op">=</span><span class="va">$TOOLCHAIN</span>/bin/llvm- <span class="dt">\</span></span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a>  <span class="at">--sysroot</span><span class="op">=</span><span class="va">$TOOLCHAIN</span>/sysroot <span class="dt">\</span></span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a>  <span class="at">--extra-cflags</span><span class="op">=</span><span class="st">&quot;-march=armv8-a&quot;</span> <span class="dt">\</span></span>
+<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a>  <span class="at">--extra-ldflags</span><span class="op">=</span><span class="st">&quot;&quot;</span> <span class="dt">\</span></span>
+<span id="cb2-16"><a href="#cb2-16" aria-hidden="true" tabindex="-1"></a>  <span class="at">--enable-shared</span> <span class="dt">\</span></span>
+<span id="cb2-17"><a href="#cb2-17" aria-hidden="true" tabindex="-1"></a>  <span class="at">--disable-static</span> <span class="dt">\</span></span>
+<span id="cb2-18"><a href="#cb2-18" aria-hidden="true" tabindex="-1"></a>  <span class="at">--disable-doc</span> <span class="dt">\</span></span>
+<span id="cb2-19"><a href="#cb2-19" aria-hidden="true" tabindex="-1"></a>  <span class="at">--disable-ffmpeg</span> <span class="dt">\</span></span>
+<span id="cb2-20"><a href="#cb2-20" aria-hidden="true" tabindex="-1"></a>  <span class="at">--disable-ffplay</span> <span class="dt">\</span></span>
+<span id="cb2-21"><a href="#cb2-21" aria-hidden="true" tabindex="-1"></a>  <span class="at">--disable-ffprobe</span> <span class="dt">\</span></span>
+<span id="cb2-22"><a href="#cb2-22" aria-hidden="true" tabindex="-1"></a>  <span class="at">--disable-avdevice</span></span>
+<span id="cb2-23"><a href="#cb2-23" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-24"><a href="#cb2-24" aria-hidden="true" tabindex="-1"></a><span class="co"># Compile and install</span></span>
+<span id="cb2-25"><a href="#cb2-25" aria-hidden="true" tabindex="-1"></a><span class="fu">make</span> clean</span>
+<span id="cb2-26"><a href="#cb2-26" aria-hidden="true" tabindex="-1"></a><span class="fu">make</span> <span class="at">-j</span><span class="va">$(</span><span class="fu">nproc</span><span class="va">)</span></span>
+<span id="cb2-27"><a href="#cb2-27" aria-hidden="true" tabindex="-1"></a><span class="fu">make</span> install</span></code></pre></div>
+<hr />
+<h2 id="step-3-configure-and-build-for-armeabi-v7a-32-bit">Step 3:
+Configure and Build for armeabi-v7a (32-bit)</h2>
+<p>The <code>armeabi-v7a</code> architecture supports older 32-bit ARM
+devices. The setup requires pointing to the <code>armv7a</code> compiler
+while setting the cross-prefix to the standard 32-bit toolchain.</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Create a build directory</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="va">OUT_DIR</span><span class="op">=</span>./android/armeabi-v7a</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="ex">./configure</span> <span class="dt">\</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">--prefix</span><span class="op">=</span><span class="va">$OUT_DIR</span> <span class="dt">\</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">--target-os</span><span class="op">=</span>android <span class="dt">\</span></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">--arch</span><span class="op">=</span>arm <span class="dt">\</span></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>  <span class="at">--cpu</span><span class="op">=</span>armv7-a <span class="dt">\</span></span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>  <span class="at">--enable-cross-compile</span> <span class="dt">\</span></span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>  <span class="at">--cc</span><span class="op">=</span><span class="va">$TOOLCHAIN</span>/bin/armv7a-linux-androideabi<span class="va">$API</span>-clang <span class="dt">\</span></span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>  <span class="at">--cxx</span><span class="op">=</span><span class="va">$TOOLCHAIN</span>/bin/armv7a-linux-androideabi<span class="va">$API</span>-clang++ <span class="dt">\</span></span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>  <span class="at">--cross-prefix</span><span class="op">=</span><span class="va">$TOOLCHAIN</span>/bin/llvm- <span class="dt">\</span></span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>  <span class="at">--sysroot</span><span class="op">=</span><span class="va">$TOOLCHAIN</span>/sysroot <span class="dt">\</span></span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a>  <span class="at">--extra-cflags</span><span class="op">=</span><span class="st">&quot;-march=armv7-a -mfloat-abi=softfp -mfpu=neon&quot;</span> <span class="dt">\</span></span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a>  <span class="at">--extra-ldflags</span><span class="op">=</span><span class="st">&quot;&quot;</span> <span class="dt">\</span></span>
+<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a>  <span class="at">--enable-shared</span> <span class="dt">\</span></span>
+<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a>  <span class="at">--disable-static</span> <span class="dt">\</span></span>
+<span id="cb3-18"><a href="#cb3-18" aria-hidden="true" tabindex="-1"></a>  <span class="at">--disable-doc</span> <span class="dt">\</span></span>
+<span id="cb3-19"><a href="#cb3-19" aria-hidden="true" tabindex="-1"></a>  <span class="at">--disable-ffmpeg</span> <span class="dt">\</span></span>
+<span id="cb3-20"><a href="#cb3-20" aria-hidden="true" tabindex="-1"></a>  <span class="at">--disable-ffplay</span> <span class="dt">\</span></span>
+<span id="cb3-21"><a href="#cb3-21" aria-hidden="true" tabindex="-1"></a>  <span class="at">--disable-ffprobe</span> <span class="dt">\</span></span>
+<span id="cb3-22"><a href="#cb3-22" aria-hidden="true" tabindex="-1"></a>  <span class="at">--disable-avdevice</span></span>
+<span id="cb3-23"><a href="#cb3-23" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-24"><a href="#cb3-24" aria-hidden="true" tabindex="-1"></a><span class="co"># Compile and install</span></span>
+<span id="cb3-25"><a href="#cb3-25" aria-hidden="true" tabindex="-1"></a><span class="fu">make</span> clean</span>
+<span id="cb3-26"><a href="#cb3-26" aria-hidden="true" tabindex="-1"></a><span class="fu">make</span> <span class="at">-j</span><span class="va">$(</span><span class="fu">nproc</span><span class="va">)</span></span>
+<span id="cb3-27"><a href="#cb3-27" aria-hidden="true" tabindex="-1"></a><span class="fu">make</span> install</span></code></pre></div>
+<hr />
+<h2 id="key-configuration-parameters-explained">Key Configuration
+Parameters Explained</h2>
+<ul>
+<li><strong><code>--target-os=android</code></strong>: Instructs FFmpeg
+that the target operating system is Android.</li>
+<li><strong><code>--arch</code></strong>: Specifies the target CPU
+architecture family (<code>arm</code> for 32-bit, <code>aarch64</code>
+for 64-bit).</li>
+<li><strong><code>--cpu</code></strong>: Instructs the compiler to
+optimize the code for the selected instruction set architecture
+(<code>armv7-a</code> or <code>armv8-a</code>).</li>
+<li><strong><code>--cc</code> and <code>--cxx</code></strong>: Points to
+the target-specific Clang compiler binaries inside the NDK toolchain
+directory. For 32-bit ARM, the target compiler is prefixed with
+<code>armv7a-linux-androideabi</code>, whereas for 64-bit, it is
+<code>aarch64-linux-android</code>.</li>
+<li><strong><code>--cross-prefix</code></strong>: Points to LLVM
+binutils (<code>llvm-</code>) for standard cross-compilation tools like
+<code>ar</code>, <code>as</code>, and <code>strip</code>.</li>
+<li><strong><code>--sysroot</code></strong>: Sets the logical root
+directory for headers and libraries inside the NDK.</li>
+</ul></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

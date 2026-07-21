@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Use ffmpeg.wasm in React for Client-Side Video Transcoding - ffmpeg</title>
+    <meta name="description" content="This article provides a step-by-step guide on how to integrate the ffmpeg.wasm library into a React application to perform client-side video transcoding. You will learn how to set up the environment, configure the required security headers, and write the">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/use-ffmpeg-wasm-in-react-for-client-side-video-transcoding">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Use ffmpeg.wasm in React for Client-Side Video Transcoding - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/use-ffmpeg-wasm-in-react-for-client-side-video-transcoding" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article provides a step-by-step guide on how to integrate the ffmpeg.wasm library into a React application to perform client-side video transcoding. You will learn how to set up the environment, configure the required security headers, and write the" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="use-ffmpeg.wasm-in-react-for-client-side-video-transcoding">Use
+ffmpeg.wasm in React for Client-Side Video Transcoding</h1>
+<p>This article provides a step-by-step guide on how to integrate the
+<code>ffmpeg.wasm</code> library into a React application to perform
+client-side video transcoding. You will learn how to set up the
+environment, configure the required security headers, and write the
+React code necessary to load FFmpeg, process a video file, and download
+the transcoded output directly from the browser.</p>
+<hr />
+<h3 id="step-1-install-the-dependencies">Step 1: Install the
+Dependencies</h3>
+<p>To get started, you need to install the latest versions of the FFmpeg
+WebAssembly library and its utility package. Run the following command
+in your React project directory:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">npm</span> install @ffmpeg/ffmpeg @ffmpeg/util</span></code></pre></div>
+<h3 id="step-2-configure-sharedarraybuffer-headers">Step 2: Configure
+SharedArrayBuffer Headers</h3>
+<p><code>ffmpeg.wasm</code> relies on <code>SharedArrayBuffer</code>,
+which requires your server to serve documents with specific HTTP headers
+for security reasons (cross-origin isolation). If these headers are
+missing, the browser will block the WebAssembly execution.</p>
+<p>If you are using <strong>Vite</strong>, add the following to your
+<code>vite.config.js</code>:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="im">export</span> <span class="im">default</span> {</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  <span class="dt">server</span><span class="op">:</span> {</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>    <span class="dt">headers</span><span class="op">:</span> {</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>      <span class="st">&quot;Cross-Origin-Opener-Policy&quot;</span><span class="op">:</span> <span class="st">&quot;same-origin&quot;</span><span class="op">,</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>      <span class="st">&quot;Cross-Origin-Embedder-Policy&quot;</span><span class="op">:</span> <span class="st">&quot;require-corp&quot;</span><span class="op">,</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>    }<span class="op">,</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>  }<span class="op">,</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>}<span class="op">;</span></span></code></pre></div>
+<p>If you are using <strong>Create React App (Webpack)</strong>, you can
+configure these headers in your local development server or set them up
+on your hosting provider (e.g., Netlify, Vercel, or Cloudflare Pages)
+for production.</p>
+<h3 id="step-3-implement-the-transcoding-component">Step 3: Implement
+the Transcoding Component</h3>
+<p>Create a React component to handle loading FFmpeg, accepting a video
+file input, running the transcoding process, and generating a
+downloadable preview of the output.</p>
+<p>Here is the complete implementation using modern functional React and
+the <code>@ffmpeg/ffmpeg</code> v0.12+ API:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode jsx"><code class="sourceCode javascriptreact"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> React<span class="op">,</span> { useState<span class="op">,</span> useRef } <span class="im">from</span> <span class="st">&#39;react&#39;</span><span class="op">;</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> { FFmpeg } <span class="im">from</span> <span class="st">&#39;@ffmpeg/ffmpeg&#39;</span><span class="op">;</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> { fetchFile<span class="op">,</span> toBlobURL } <span class="im">from</span> <span class="st">&#39;@ffmpeg/util&#39;</span><span class="op">;</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> <span class="fu">VideoTranscoder</span>() {</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> [loaded<span class="op">,</span> setLoaded] <span class="op">=</span> <span class="fu">useState</span>(<span class="kw">false</span>)<span class="op">;</span></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> [isLoading<span class="op">,</span> setIsLoading] <span class="op">=</span> <span class="fu">useState</span>(<span class="kw">false</span>)<span class="op">;</span></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> [videoFile<span class="op">,</span> setVideoFile] <span class="op">=</span> <span class="fu">useState</span>(<span class="kw">null</span>)<span class="op">;</span></span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> [transcodedUrl<span class="op">,</span> setTranscodedUrl] <span class="op">=</span> <span class="fu">useState</span>(<span class="st">&#39;&#39;</span>)<span class="op">;</span></span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> [status<span class="op">,</span> setStatus] <span class="op">=</span> <span class="fu">useState</span>(<span class="st">&#39;&#39;</span>)<span class="op">;</span></span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> ffmpegRef <span class="op">=</span> <span class="fu">useRef</span>(<span class="kw">new</span> <span class="fu">FFmpeg</span>())<span class="op">;</span></span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>  <span class="co">// Load FFmpeg from a CDN</span></span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> loadFFmpeg <span class="op">=</span> <span class="kw">async</span> () <span class="kw">=&gt;</span> {</span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a>    <span class="fu">setIsLoading</span>(<span class="kw">true</span>)<span class="op">;</span></span>
+<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a>    <span class="fu">setStatus</span>(<span class="st">&#39;Loading FFmpeg core...&#39;</span>)<span class="op">;</span></span>
+<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a>    <span class="kw">const</span> baseURL <span class="op">=</span> <span class="st">&#39;https://unpkg.com/@ffmpeg/core@0.12.6/dist/umd&#39;</span><span class="op">;</span></span>
+<span id="cb3-18"><a href="#cb3-18" aria-hidden="true" tabindex="-1"></a>    <span class="kw">const</span> ffmpeg <span class="op">=</span> ffmpegRef<span class="op">.</span><span class="at">current</span><span class="op">;</span></span>
+<span id="cb3-19"><a href="#cb3-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-20"><a href="#cb3-20" aria-hidden="true" tabindex="-1"></a>    <span class="cf">try</span> {</span>
+<span id="cb3-21"><a href="#cb3-21" aria-hidden="true" tabindex="-1"></a>      <span class="cf">await</span> ffmpeg<span class="op">.</span><span class="fu">load</span>({</span>
+<span id="cb3-22"><a href="#cb3-22" aria-hidden="true" tabindex="-1"></a>        <span class="dt">coreURL</span><span class="op">:</span> <span class="cf">await</span> <span class="fu">toBlobURL</span>(<span class="vs">`</span><span class="sc">${</span>baseURL<span class="sc">}</span><span class="vs">/ffmpeg-core.js`</span><span class="op">,</span> <span class="st">&#39;text/javascript&#39;</span>)<span class="op">,</span></span>
+<span id="cb3-23"><a href="#cb3-23" aria-hidden="true" tabindex="-1"></a>        <span class="dt">wasmURL</span><span class="op">:</span> <span class="cf">await</span> <span class="fu">toBlobURL</span>(<span class="vs">`</span><span class="sc">${</span>baseURL<span class="sc">}</span><span class="vs">/ffmpeg-core.wasm`</span><span class="op">,</span> <span class="st">&#39;application/wasm&#39;</span>)<span class="op">,</span></span>
+<span id="cb3-24"><a href="#cb3-24" aria-hidden="true" tabindex="-1"></a>      })<span class="op">;</span></span>
+<span id="cb3-25"><a href="#cb3-25" aria-hidden="true" tabindex="-1"></a>      <span class="fu">setLoaded</span>(<span class="kw">true</span>)<span class="op">;</span></span>
+<span id="cb3-26"><a href="#cb3-26" aria-hidden="true" tabindex="-1"></a>      <span class="fu">setStatus</span>(<span class="st">&#39;FFmpeg loaded successfully!&#39;</span>)<span class="op">;</span></span>
+<span id="cb3-27"><a href="#cb3-27" aria-hidden="true" tabindex="-1"></a>    } <span class="cf">catch</span> (error) {</span>
+<span id="cb3-28"><a href="#cb3-28" aria-hidden="true" tabindex="-1"></a>      <span class="bu">console</span><span class="op">.</span><span class="fu">error</span>(error)<span class="op">;</span></span>
+<span id="cb3-29"><a href="#cb3-29" aria-hidden="true" tabindex="-1"></a>      <span class="fu">setStatus</span>(<span class="st">&#39;Failed to load FFmpeg.&#39;</span>)<span class="op">;</span></span>
+<span id="cb3-30"><a href="#cb3-30" aria-hidden="true" tabindex="-1"></a>    } <span class="cf">finally</span> {</span>
+<span id="cb3-31"><a href="#cb3-31" aria-hidden="true" tabindex="-1"></a>      <span class="fu">setIsLoading</span>(<span class="kw">false</span>)<span class="op">;</span></span>
+<span id="cb3-32"><a href="#cb3-32" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb3-33"><a href="#cb3-33" aria-hidden="true" tabindex="-1"></a>  }<span class="op">;</span></span>
+<span id="cb3-34"><a href="#cb3-34" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-35"><a href="#cb3-35" aria-hidden="true" tabindex="-1"></a>  <span class="co">// Handle video transcoding (e.g., MP4 to WebM)</span></span>
+<span id="cb3-36"><a href="#cb3-36" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> transcodeVideo <span class="op">=</span> <span class="kw">async</span> () <span class="kw">=&gt;</span> {</span>
+<span id="cb3-37"><a href="#cb3-37" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> (<span class="op">!</span>videoFile) <span class="cf">return</span><span class="op">;</span></span>
+<span id="cb3-38"><a href="#cb3-38" aria-hidden="true" tabindex="-1"></a>    <span class="fu">setStatus</span>(<span class="st">&#39;Transcoding started...&#39;</span>)<span class="op">;</span></span>
+<span id="cb3-39"><a href="#cb3-39" aria-hidden="true" tabindex="-1"></a>    <span class="kw">const</span> ffmpeg <span class="op">=</span> ffmpegRef<span class="op">.</span><span class="at">current</span><span class="op">;</span></span>
+<span id="cb3-40"><a href="#cb3-40" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-41"><a href="#cb3-41" aria-hidden="true" tabindex="-1"></a>    <span class="co">// Write the file to FFmpeg&#39;s virtual file system</span></span>
+<span id="cb3-42"><a href="#cb3-42" aria-hidden="true" tabindex="-1"></a>    <span class="cf">await</span> ffmpeg<span class="op">.</span><span class="fu">writeFile</span>(<span class="st">&#39;input.mp4&#39;</span><span class="op">,</span> <span class="cf">await</span> <span class="fu">fetchFile</span>(videoFile))<span class="op">;</span></span>
+<span id="cb3-43"><a href="#cb3-43" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-44"><a href="#cb3-44" aria-hidden="true" tabindex="-1"></a>    <span class="co">// Execute the FFmpeg CLI command to transcode the video</span></span>
+<span id="cb3-45"><a href="#cb3-45" aria-hidden="true" tabindex="-1"></a>    <span class="co">// This example converts input.mp4 to output.webm</span></span>
+<span id="cb3-46"><a href="#cb3-46" aria-hidden="true" tabindex="-1"></a>    <span class="cf">await</span> ffmpeg<span class="op">.</span><span class="fu">exec</span>([<span class="st">&#39;-i&#39;</span><span class="op">,</span> <span class="st">&#39;input.mp4&#39;</span><span class="op">,</span> <span class="st">&#39;output.webm&#39;</span>])<span class="op">;</span></span>
+<span id="cb3-47"><a href="#cb3-47" aria-hidden="true" tabindex="-1"></a>    <span class="fu">setStatus</span>(<span class="st">&#39;Transcoding complete!&#39;</span>)<span class="op">;</span></span>
+<span id="cb3-48"><a href="#cb3-48" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-49"><a href="#cb3-49" aria-hidden="true" tabindex="-1"></a>    <span class="co">// Read the result from the virtual file system</span></span>
+<span id="cb3-50"><a href="#cb3-50" aria-hidden="true" tabindex="-1"></a>    <span class="kw">const</span> data <span class="op">=</span> <span class="cf">await</span> ffmpeg<span class="op">.</span><span class="fu">readFile</span>(<span class="st">&#39;output.webm&#39;</span>)<span class="op">;</span></span>
+<span id="cb3-51"><a href="#cb3-51" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-52"><a href="#cb3-52" aria-hidden="true" tabindex="-1"></a>    <span class="co">// Create a URL for the generated WebM file</span></span>
+<span id="cb3-53"><a href="#cb3-53" aria-hidden="true" tabindex="-1"></a>    <span class="kw">const</span> url <span class="op">=</span> URL<span class="op">.</span><span class="fu">createObjectURL</span>(<span class="kw">new</span> <span class="bu">Blob</span>([data<span class="op">.</span><span class="at">buffer</span>]<span class="op">,</span> { <span class="dt">type</span><span class="op">:</span> <span class="st">&#39;video/webm&#39;</span> }))<span class="op">;</span></span>
+<span id="cb3-54"><a href="#cb3-54" aria-hidden="true" tabindex="-1"></a>    <span class="fu">setTranscodedUrl</span>(url)<span class="op">;</span></span>
+<span id="cb3-55"><a href="#cb3-55" aria-hidden="true" tabindex="-1"></a>  }<span class="op">;</span></span>
+<span id="cb3-56"><a href="#cb3-56" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-57"><a href="#cb3-57" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> (</span>
+<span id="cb3-58"><a href="#cb3-58" aria-hidden="true" tabindex="-1"></a>    <span class="kw">&lt;div</span> <span class="ot">style</span><span class="op">=</span><span class="va">{</span>{ <span class="dt">padding</span><span class="op">:</span> <span class="st">&#39;20px&#39;</span><span class="op">,</span> <span class="dt">fontFamily</span><span class="op">:</span> <span class="st">&#39;sans-serif&#39;</span> }<span class="va">}</span><span class="kw">&gt;</span></span>
+<span id="cb3-59"><a href="#cb3-59" aria-hidden="true" tabindex="-1"></a>      <span class="kw">&lt;h2&gt;</span>Client-Side Video Transcoder<span class="kw">&lt;/h2&gt;</span></span>
+<span id="cb3-60"><a href="#cb3-60" aria-hidden="true" tabindex="-1"></a>      </span>
+<span id="cb3-61"><a href="#cb3-61" aria-hidden="true" tabindex="-1"></a>      <span class="va">{</span><span class="op">!</span>loaded <span class="op">?</span> (</span>
+<span id="cb3-62"><a href="#cb3-62" aria-hidden="true" tabindex="-1"></a>        <span class="kw">&lt;button</span> <span class="ot">onClick</span><span class="op">=</span><span class="va">{</span>loadFFmpeg<span class="va">}</span> <span class="ot">disabled</span><span class="op">=</span><span class="va">{</span>isLoading<span class="va">}</span><span class="kw">&gt;</span></span>
+<span id="cb3-63"><a href="#cb3-63" aria-hidden="true" tabindex="-1"></a>          <span class="va">{</span>isLoading <span class="op">?</span> <span class="st">&#39;Loading...&#39;</span> <span class="op">:</span> <span class="st">&#39;Load FFmpeg (WASM)&#39;</span><span class="va">}</span></span>
+<span id="cb3-64"><a href="#cb3-64" aria-hidden="true" tabindex="-1"></a>        <span class="kw">&lt;/button&gt;</span></span>
+<span id="cb3-65"><a href="#cb3-65" aria-hidden="true" tabindex="-1"></a>      ) <span class="op">:</span> (</span>
+<span id="cb3-66"><a href="#cb3-66" aria-hidden="true" tabindex="-1"></a>        <span class="kw">&lt;div&gt;</span></span>
+<span id="cb3-67"><a href="#cb3-67" aria-hidden="true" tabindex="-1"></a>          <span class="kw">&lt;p&gt;</span>FFmpeg is ready.<span class="kw">&lt;/p&gt;</span></span>
+<span id="cb3-68"><a href="#cb3-68" aria-hidden="true" tabindex="-1"></a>          <span class="kw">&lt;input</span> </span>
+<span id="cb3-69"><a href="#cb3-69" aria-hidden="true" tabindex="-1"></a>            <span class="ot">type</span><span class="op">=</span><span class="st">&quot;file&quot;</span> </span>
+<span id="cb3-70"><a href="#cb3-70" aria-hidden="true" tabindex="-1"></a>            <span class="ot">accept</span><span class="op">=</span><span class="st">&quot;video/*&quot;</span> </span>
+<span id="cb3-71"><a href="#cb3-71" aria-hidden="true" tabindex="-1"></a>            <span class="ot">onChange</span><span class="op">=</span><span class="va">{</span>(e) <span class="kw">=&gt;</span> <span class="fu">setVideoFile</span>(e<span class="op">.</span><span class="at">target</span><span class="op">.</span><span class="at">files</span>[<span class="dv">0</span>])<span class="va">}</span> </span>
+<span id="cb3-72"><a href="#cb3-72" aria-hidden="true" tabindex="-1"></a>          <span class="kw">/&gt;</span></span>
+<span id="cb3-73"><a href="#cb3-73" aria-hidden="true" tabindex="-1"></a>          <span class="kw">&lt;button</span> <span class="ot">onClick</span><span class="op">=</span><span class="va">{</span>transcodeVideo<span class="va">}</span> <span class="ot">disabled</span><span class="op">=</span><span class="va">{</span><span class="op">!</span>videoFile<span class="va">}</span><span class="kw">&gt;</span></span>
+<span id="cb3-74"><a href="#cb3-74" aria-hidden="true" tabindex="-1"></a>            Transcode to WebM</span>
+<span id="cb3-75"><a href="#cb3-75" aria-hidden="true" tabindex="-1"></a>          <span class="kw">&lt;/button&gt;</span></span>
+<span id="cb3-76"><a href="#cb3-76" aria-hidden="true" tabindex="-1"></a>        <span class="kw">&lt;/div&gt;</span></span>
+<span id="cb3-77"><a href="#cb3-77" aria-hidden="true" tabindex="-1"></a>      )<span class="va">}</span></span>
+<span id="cb3-78"><a href="#cb3-78" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-79"><a href="#cb3-79" aria-hidden="true" tabindex="-1"></a>      <span class="kw">&lt;p&gt;&lt;strong&gt;</span>Status:<span class="kw">&lt;/strong&gt;</span> <span class="va">{</span>status<span class="va">}</span><span class="kw">&lt;/p&gt;</span></span>
+<span id="cb3-80"><a href="#cb3-80" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-81"><a href="#cb3-81" aria-hidden="true" tabindex="-1"></a>      <span class="va">{</span>transcodedUrl <span class="op">&amp;&amp;</span> (</span>
+<span id="cb3-82"><a href="#cb3-82" aria-hidden="true" tabindex="-1"></a>        <span class="kw">&lt;div</span> <span class="ot">style</span><span class="op">=</span><span class="va">{</span>{ <span class="dt">marginTop</span><span class="op">:</span> <span class="st">&#39;20px&#39;</span> }<span class="va">}</span><span class="kw">&gt;</span></span>
+<span id="cb3-83"><a href="#cb3-83" aria-hidden="true" tabindex="-1"></a>          <span class="kw">&lt;h3&gt;</span>Transcoded Video Preview:<span class="kw">&lt;/h3&gt;</span></span>
+<span id="cb3-84"><a href="#cb3-84" aria-hidden="true" tabindex="-1"></a>          <span class="kw">&lt;video</span> <span class="ot">src</span><span class="op">=</span><span class="va">{</span>transcodedUrl<span class="va">}</span> <span class="ot">controls</span> <span class="ot">width</span><span class="op">=</span><span class="st">&quot;500&quot;</span><span class="kw">&gt;&lt;/video&gt;</span></span>
+<span id="cb3-85"><a href="#cb3-85" aria-hidden="true" tabindex="-1"></a>          <span class="kw">&lt;br</span> <span class="kw">/&gt;</span></span>
+<span id="cb3-86"><a href="#cb3-86" aria-hidden="true" tabindex="-1"></a>          <span class="kw">&lt;a</span> <span class="ot">href</span><span class="op">=</span><span class="va">{</span>transcodedUrl<span class="va">}</span> <span class="ot">download</span><span class="op">=</span><span class="st">&quot;transcoded.webm&quot;</span><span class="kw">&gt;</span></span>
+<span id="cb3-87"><a href="#cb3-87" aria-hidden="true" tabindex="-1"></a>            Download Transcoded Video</span>
+<span id="cb3-88"><a href="#cb3-88" aria-hidden="true" tabindex="-1"></a>          <span class="kw">&lt;/a&gt;</span></span>
+<span id="cb3-89"><a href="#cb3-89" aria-hidden="true" tabindex="-1"></a>        <span class="kw">&lt;/div&gt;</span></span>
+<span id="cb3-90"><a href="#cb3-90" aria-hidden="true" tabindex="-1"></a>      )<span class="va">}</span></span>
+<span id="cb3-91"><a href="#cb3-91" aria-hidden="true" tabindex="-1"></a>    <span class="kw">&lt;/div&gt;</span></span>
+<span id="cb3-92"><a href="#cb3-92" aria-hidden="true" tabindex="-1"></a>  )<span class="op">;</span></span>
+<span id="cb3-93"><a href="#cb3-93" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb3-94"><a href="#cb3-94" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-95"><a href="#cb3-95" aria-hidden="true" tabindex="-1"></a><span class="im">export</span> <span class="im">default</span> VideoTranscoder<span class="op">;</span></span></code></pre></div>
+<h3 id="step-4-how-the-code-works">Step 4: How the Code Works</h3>
+<ol type="1">
+<li><strong>Initialization (<code>loadFFmpeg</code>)</strong>: We load
+the WebAssembly binary from a public CDN (<code>unpkg.com</code>) to
+avoid bundling large WebAssembly files inside our main bundle.</li>
+<li><strong>Virtual File System (<code>writeFile</code>)</strong>:
+FFmpeg operates on a virtual in-memory file system. We must use
+<code>fetchFile</code> to convert our local React file state into a
+Uint8Array and write it into the virtual environment as
+<code>input.mp4</code>.</li>
+<li><strong>Execution (<code>exec</code>)</strong>: We call
+<code>ffmpeg.exec()</code> with standard command-line arguments. In this
+scenario, <code>['-i', 'input.mp4', 'output.webm']</code> takes the
+input file and transcodes it into WebM format.</li>
+<li><strong>Retrieval (<code>readFile</code>)</strong>: Once execution
+finishes, we read the output file <code>output.webm</code> from the
+virtual file system, wrap it in a JavaScript <code>Blob</code>, and
+generate a local URL using <code>URL.createObjectURL</code> for
+downloading or displaying inside an HTML5 <code>&lt;video&gt;</code>
+element.</li>
+</ol></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

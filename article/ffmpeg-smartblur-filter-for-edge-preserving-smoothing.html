@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FFmpeg Smartblur Filter for Edge Preserving Smoothing - ffmpeg</title>
+    <meta name="description" content="This guide explains how to use the smartblur filter in FFmpeg to smooth video frames while preserving sharp edges. You will learn the core parameters of this filter—including radius, strength, and threshold—and how to apply them using practical comma">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/ffmpeg-smartblur-filter-for-edge-preserving-smoothing">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="FFmpeg Smartblur Filter for Edge Preserving Smoothing - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/ffmpeg-smartblur-filter-for-edge-preserving-smoothing" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This guide explains how to use the smartblur filter in FFmpeg to smooth video frames while preserving sharp edges. You will learn the core parameters of this filter—including radius, strength, and threshold—and how to apply them using practical comma" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="ffmpeg-smartblur-filter-for-edge-preserving-smoothing">FFmpeg
+Smartblur Filter for Edge Preserving Smoothing</h1>
+<p>This guide explains how to use the <code>smartblur</code> filter in
+FFmpeg to smooth video frames while preserving sharp edges. You will
+learn the core parameters of this filter—including radius, strength, and
+threshold—and how to apply them using practical command-line examples to
+reduce noise without degrading overall image detail.</p>
+<p>The <code>smartblur</code> filter works by applying a blur effect
+only to pixels that do not form part of an edge. By defining what
+constitutes an “edge,” you can smooth out flat areas (like skin, walls,
+or skies) while keeping lines and boundaries sharp.</p>
+<h2 id="the-smartblur-syntax-and-parameters">The Smartblur Syntax and
+Parameters</h2>
+<p>The basic syntax for the <code>smartblur</code> filter in FFmpeg
+is:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">-vf</span> <span class="st">&quot;smartblur=luma_radius:luma_strength:luma_threshold:chroma_radius:chroma_strength:chroma_threshold&quot;</span></span></code></pre></div>
+<p>You can also use named parameters for better readability:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">-vf</span> <span class="st">&quot;smartblur=lr=value:ls=value:lt=value:cr=value:cs=value:ct=value&quot;</span></span></code></pre></div>
+<h3 id="parameter-breakdown">Parameter Breakdown</h3>
+<ul>
+<li><strong>Luma Radius (<code>lr</code>) / Chroma Radius
+(<code>cr</code>):</strong> Controls the size of the blur variance. It
+accepts a float value from <code>0.1</code> to <code>5.0</code>. A
+larger radius results in a wider blur area.</li>
+<li><strong>Luma Strength (<code>ls</code>) / Chroma Strength
+(<code>cs</code>):</strong> Controls how heavily the blur is applied. It
+accepts a float value from <code>-1.0</code> to <code>1.0</code>.
+Positive values blur the image, while negative values actually sharpen
+it.</li>
+<li><strong>Luma Threshold (<code>lt</code>) / Chroma Threshold
+(<code>ct</code>):</strong> This is the key to edge preservation. It
+accepts an integer value from <code>-30</code> to <code>30</code>. It
+determines the difference in pixel values required to identify an edge.
+<ul>
+<li>A <strong>lower threshold</strong> (e.g., <code>2</code> to
+<code>5</code>) preserves more edges, meaning only very flat areas get
+blurred.</li>
+<li>A <strong>higher threshold</strong> (e.g., <code>10</code> to
+<code>20</code>) treats fewer transitions as edges, resulting in a
+heavier, more uniform blur.</li>
+</ul></li>
+</ul>
+<p><em>Note: If you do not specify chroma parameters, they default to
+the values set for the luma parameters.</em></p>
+<h2 id="practical-examples">Practical Examples</h2>
+<h3 id="mild-noise-reduction-with-strict-edge-preservation">1. Mild
+Noise Reduction with Strict Edge Preservation</h3>
+<p>To apply a subtle smoothing effect that strictly preserves edges, use
+a small radius and a low threshold:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;smartblur=lr=1.5:ls=0.5:lt=5&quot;</span> <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<h3 id="strong-smoothing-for-a-soft-focus-look">2. Strong Smoothing for
+a “Soft-Focus” Look</h3>
+<p>If you want to smooth out a highly textured background while
+maintaining the main outlines of your subjects, increase the radius and
+threshold:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;smartblur=lr=3.0:ls=1.0:lt=10&quot;</span> <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<h3 id="independent-luma-and-chroma-control">3. Independent Luma and
+Chroma Control</h3>
+<p>To smooth out color noise (chroma) more aggressively than brightness
+detail (luma), configure the parameters independently:</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;smartblur=lr=1.0:ls=0.5:lt=5:cr=3.0:cs=1.0:ct=10&quot;</span> <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<h2 id="tips-for-tuning">Tips for Tuning</h2>
+<ul>
+<li><strong>Start with Luma:</strong> Begin by adjusting only the luma
+parameters (<code>lr</code>, <code>ls</code>, <code>lt</code>). Once the
+grayscale detail looks correct, adjust the chroma parameters if you
+notice color bleeding or color noise.</li>
+<li><strong>Fine-tune the Threshold First:</strong> If your output looks
+too blurry and loses detail, lower the threshold (<code>lt</code>). If
+the image remains too noisy, gradually increase the threshold until the
+noise in flat areas disappears.</li>
+</ul></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

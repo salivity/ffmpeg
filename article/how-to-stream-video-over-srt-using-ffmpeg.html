@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Stream Video Over SRT Using FFmpeg - ffmpeg</title>
+    <meta name="description" content="Secure Reliable Transport (SRT) is a modern video streaming protocol designed for low-latency, secure transmission over unpredictable networks like the public internet. This article provides a practical, step-by-step guide on how to configure and stream">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/how-to-stream-video-over-srt-using-ffmpeg">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Stream Video Over SRT Using FFmpeg - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/how-to-stream-video-over-srt-using-ffmpeg" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Secure Reliable Transport (SRT) is a modern video streaming protocol designed for low-latency, secure transmission over unpredictable networks like the public internet. This article provides a practical, step-by-step guide on how to configure and stream" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="how-to-stream-video-over-srt-using-ffmpeg">How to Stream Video
+Over SRT Using FFmpeg</h1>
+<p>Secure Reliable Transport (SRT) is a modern video streaming protocol
+designed for low-latency, secure transmission over unpredictable
+networks like the public internet. This article provides a practical,
+step-by-step guide on how to configure and stream live video over SRT
+using the versatile command-line tool FFmpeg. You will learn the basic
+FFmpeg syntax for SRT streaming, how to configure caller and listener
+modes, and how to optimize your stream settings for maximum
+stability.</p>
+<h3 id="prerequisites">Prerequisites</h3>
+<p>To stream over SRT, you must ensure that your version of FFmpeg is
+compiled with SRT support. You can verify this by running the following
+command in your terminal:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-protocols</span> <span class="kw">|</span> <span class="fu">grep</span> srt</span></code></pre></div>
+<p>If <code>srt</code> appears in the output under both input and output
+protocols, your FFmpeg build is ready. If not, you will need to download
+or compile a version of FFmpeg that includes the
+<code>--enable-libsrt</code> configuration flag.</p>
+<h3 id="understanding-srt-modes-caller-vs.-listener">Understanding SRT
+Modes: Caller vs. Listener</h3>
+<p>Unlike traditional protocols, SRT requires one peer to act as a
+<strong>listener</strong> (waiting for an incoming connection) and the
+other to act as a <strong>caller</strong> (initiating the connection).
+It does not matter which side is sending the video; either the sender or
+the receiver can be the caller or the listener.</p>
+<ul>
+<li><strong>Caller Mode:</strong> The default mode where FFmpeg
+initiates the connection to a specific IP address and port.</li>
+<li><strong>Listener Mode:</strong> FFmpeg opens a port and waits for an
+incoming connection from a remote caller.</li>
+</ul>
+<h3 id="how-to-stream-using-ffmpeg-caller-mode">How to Stream using
+FFmpeg (Caller Mode)</h3>
+<p>In most live streaming scenarios, your FFmpeg encoder will act as the
+<strong>caller</strong> and stream to a remote server or ingest point
+(such as OBS, vMix, or a media server) acting as the
+<strong>listener</strong>.</p>
+<p>Here is the standard command to encode a local video file and stream
+it over SRT:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-re</span> <span class="at">-i</span> input.mp4 <span class="at">-c:v</span> libx264 <span class="at">-preset</span> veryfast <span class="at">-b:v</span> 3000k <span class="at">-maxrate</span> 3000k <span class="at">-bufsize</span> 6000k <span class="at">-pix_fmt</span> yuv420p <span class="at">-g</span> 50 <span class="at">-c:a</span> aac <span class="at">-b:a</span> 128k <span class="at">-f</span> mpegts <span class="st">&quot;srt://receiver-ip-address:9000?mode=caller&quot;</span></span></code></pre></div>
+<p><strong>Command breakdown:</strong> * <code>-re</code>: Reads the
+input file in real-time (essential when streaming files instead of live
+feeds). * <code>-i input.mp4</code>: Specifies the input source. *
+<code>-c:v libx264 -preset veryfast</code>: Encodes the video to H.264
+using the “veryfast” preset to minimize CPU usage. *
+<code>-b:v 3000k -maxrate 3000k -bufsize 6000k</code>: Sets a constant
+bitrate (CBR) of 3 Mbps, which is ideal for streaming stability. *
+<code>-g 50</code>: Sets the keyframe interval (GOP size). For a 25fps
+video, <code>50</code> creates a keyframe every 2 seconds. *
+<code>-c:a aac -b:a 128k</code>: Encodes the audio to AAC at 128 kbps. *
+<code>-f mpegts</code>: Containers the stream in an MPEG-TS format,
+which is required for SRT transmission. *
+<code>"srt://receiver-ip-address:9000?mode=caller"</code>: The
+destination SRT URL. Replace <code>receiver-ip-address</code> with the
+IP of your receiving device and <code>9000</code> with your target
+port.</p>
+<h3 id="how-to-stream-using-ffmpeg-listener-mode">How to Stream using
+FFmpeg (Listener Mode)</h3>
+<p>If your receiving application is configured as a caller, you must set
+FFmpeg to run as a <strong>listener</strong>.</p>
+<p>To stream a video file while listening for a incoming receiver
+connection, use the following command:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-re</span> <span class="at">-i</span> input.mp4 <span class="at">-c:v</span> libx264 <span class="at">-preset</span> veryfast <span class="at">-c:a</span> aac <span class="at">-f</span> mpegts <span class="st">&quot;srt://0.0.0.0:9000?mode=listener&quot;</span></span></code></pre></div>
+<p>In this setup, <code>0.0.0.0</code> tells FFmpeg to bind to all
+available network interfaces on port <code>9000</code> and wait for the
+receiver to connect before it begins transmitting the stream.</p>
+<h3 id="advanced-srt-parameters">Advanced SRT Parameters</h3>
+<p>FFmpeg allows you to pass specific SRT parameters directly inside the
+connection string to optimize performance over unstable networks.
+Multiple parameters can be appended using the <code>&amp;</code>
+separator.</p>
+<h4 id="adjusting-latency">1. Adjusting Latency</h4>
+<p>Latency is the buffer time (in microseconds) used to recover lost
+packets. The default is 120ms (120000 microseconds). For long-distance
+or unstable connections, you should increase this value (e.g., to
+250ms):</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="st">&quot;srt://receiver-ip-address:9000?mode=caller&amp;latency=250000&quot;</span></span></code></pre></div>
+<h4 id="enabling-encryption">2. Enabling Encryption</h4>
+<p>SRT supports AES encryption to secure your stream. To enable it, you
+must define the passphrase and the key length (<code>pbkeylen</code> can
+be 16, 24, or 32 bytes, corresponding to AES-128, AES-192, and
+AES-256):</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="st">&quot;srt://receiver-ip-address:9000?mode=caller&amp;passphrase=YourSecretPassword&amp;pbkeylen=16&quot;</span></span></code></pre></div>
+<h4 id="defining-stream-id">3. Defining Stream ID</h4>
+<p>Some streaming servers and CDNs require a unique identifier
+(StreamID) to route your stream properly:</p>
+<div class="sourceCode" id="cb6"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="st">&quot;srt://receiver-ip-address:9000?mode=caller&amp;streamid=live/stream1&quot;</span></span></code></pre></div></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

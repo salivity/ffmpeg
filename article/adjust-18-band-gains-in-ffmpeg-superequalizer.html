@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Adjust 18-Band Gains in FFmpeg Superequalizer - ffmpeg</title>
+    <meta name="description" content="This article provides a practical guide on how to adjust individual band gains using the 18-band superequalizer audio filter in FFmpeg. You will learn the exact command-line syntax, understand how the gain values work, and see the frequency mapping for e">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/adjust-18-band-gains-in-ffmpeg-superequalizer">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Adjust 18-Band Gains in FFmpeg Superequalizer - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/adjust-18-band-gains-in-ffmpeg-superequalizer" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article provides a practical guide on how to adjust individual band gains using the 18-band superequalizer audio filter in FFmpeg. You will learn the exact command-line syntax, understand how the gain values work, and see the frequency mapping for e" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="adjust-18-band-gains-in-ffmpeg-superequalizer">Adjust 18-Band
+Gains in FFmpeg Superequalizer</h1>
+<p>This article provides a practical guide on how to adjust individual
+band gains using the 18-band <code>superequalizer</code> audio filter in
+FFmpeg. You will learn the exact command-line syntax, understand how the
+gain values work, and see the frequency mapping for each of the 18 bands
+so you can precisely shape your audio’s frequency response.</p>
+<h2 id="understanding-the-superequalizer-syntax">Understanding the
+Superequalizer Syntax</h2>
+<p>The <code>superequalizer</code> filter allows you to adjust 18
+specific frequency bands. The gain for each band is defined as a
+floating-point multiplier, where: * <strong>1.0</strong> is the default
+value (unity gain, meaning no change). * Values <strong>between 0.0 and
+1.0</strong> attenuate (lower) the volume of that frequency band. *
+Values <strong>above 1.0</strong> boost the volume of that frequency
+band (up to a maximum of 20.0).</p>
+<p>The basic syntax for the filter is:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">-af</span> <span class="st">&quot;superequalizer=b1=gain1:b2=gain2:...:b18=gain18&quot;</span></span></code></pre></div>
+<p>You do not need to specify all 18 bands in your command. Any band you
+omit will automatically remain at its default value of
+<code>1.0</code>.</p>
+<h2 id="frequency-band-mapping">Frequency Band Mapping</h2>
+<p>Each parameter from <code>b1</code> to <code>b18</code> corresponds
+to a specific center frequency:</p>
+<ul>
+<li><strong>b1</strong>: 65 Hz (Sub-bass)</li>
+<li><strong>b2</strong>: 92 Hz</li>
+<li><strong>b3</strong>: 131 Hz</li>
+<li><strong>b4</strong>: 185 Hz</li>
+<li><strong>b5</strong>: 263 Hz (Bass / Low-mids)</li>
+<li><strong>b6</strong>: 372 Hz</li>
+<li><strong>b7</strong>: 526 Hz</li>
+<li><strong>b8</strong>: 744 Hz</li>
+<li><strong>b9</strong>: 1052 Hz (Midrange)</li>
+<li><strong>b10</strong>: 1488 Hz</li>
+<li><strong>b11</strong>: 2104 Hz</li>
+<li><strong>b12</strong>: 2976 Hz (Upper-mids)</li>
+<li><strong>b13</strong>: 4209 Hz</li>
+<li><strong>b14</strong>: 5953 Hz</li>
+<li><strong>b15</strong>: 8419 Hz (Presence / Treble)</li>
+<li><strong>b16</strong>: 11907 Hz</li>
+<li><strong>b17</strong>: 16839 Hz</li>
+<li><strong>b18</strong>: 23814 Hz (Brilliance / Air)</li>
+</ul>
+<h2 id="practical-examples">Practical Examples</h2>
+<h3 id="example-1-boosting-the-bass">Example 1: Boosting the Bass</h3>
+<p>To boost the lowest bass frequencies (65 Hz and 92 Hz) by 50% while
+leaving the rest of the audio untouched, set <code>b1</code> and
+<code>b2</code> to <code>1.5</code>:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp3 <span class="at">-af</span> <span class="st">&quot;superequalizer=b1=1.5:b2=1.5&quot;</span> output.mp3</span></code></pre></div>
+<h3 id="example-2-cutting-high-frequency-hiss">Example 2: Cutting
+High-Frequency Hiss</h3>
+<p>To reduce high-frequency noise or hiss, you can attenuate the top
+bands (from 8.4 kHz up to 23.8 kHz) by setting them to
+<code>0.3</code>:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.wav <span class="at">-af</span> <span class="st">&quot;superequalizer=b15=0.3:b16=0.3:b17=0.3:b18=0.3&quot;</span> output.wav</span></code></pre></div>
+<h3 id="example-3-creating-a-custom-preset-classic-v-shape">Example 3:
+Creating a Custom Preset (Classic “V” Shape)</h3>
+<p>To boost both the bass and treble while slightly dipping the
+midrange, you can chain multiple band adjustments together:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.ogg <span class="at">-af</span> <span class="st">&quot;superequalizer=b1=1.5:b2=1.4:b3=1.3:b8=0.8:b9=0.7:b10=0.8:b16=1.3:b17=1.4:b18=1.5&quot;</span> output.ogg</span></code></pre></div></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

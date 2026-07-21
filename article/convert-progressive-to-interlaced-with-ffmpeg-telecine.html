@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Convert Progressive to Interlaced with FFmpeg Telecine - ffmpeg</title>
+    <meta name="description" content="This article explains how to use the telecine filter in FFmpeg to convert progressive video files into an interlaced format. You will learn the basic command syntax, key parameters for applying telecine patterns, and how to properly configure your encode">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/convert-progressive-to-interlaced-with-ffmpeg-telecine">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Convert Progressive to Interlaced with FFmpeg Telecine - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/convert-progressive-to-interlaced-with-ffmpeg-telecine" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article explains how to use the telecine filter in FFmpeg to convert progressive video files into an interlaced format. You will learn the basic command syntax, key parameters for applying telecine patterns, and how to properly configure your encode" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="convert-progressive-to-interlaced-with-ffmpeg-telecine">Convert
+Progressive to Interlaced with FFmpeg Telecine</h1>
+<p>This article explains how to use the <code>telecine</code> filter in
+FFmpeg to convert progressive video files into an interlaced format. You
+will learn the basic command syntax, key parameters for applying
+telecine patterns, and how to properly configure your encoder to output
+a broadcast-compliant interlaced video stream.</p>
+<p>The telecine process is commonly used to convert 24 frames per second
+(fps) progressive film content into a 29.97 fps (or 30 fps) interlaced
+video format, which is the standard for NTSC television broadcasts. This
+is achieved by distributing the progressive frames across alternating
+top and bottom video fields using a specific pulldown pattern.</p>
+<h3 id="the-basic-telecine-command">The Basic Telecine Command</h3>
+<p>To apply a standard 3:2 pulldown (the most common pattern for
+converting 24p to 30i), use the <code>telecine</code> video filter.
+Below is the fundamental FFmpeg command:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input_24p.mp4 <span class="at">-vf</span> <span class="st">&quot;telecine=first_field=top:pattern=32&quot;</span> <span class="at">-c:v</span> libx264 <span class="at">-flags</span> +ildct+ilme output_30i.mp4</span></code></pre></div>
+<h3 id="parameter-breakdown">Parameter Breakdown</h3>
+<ul>
+<li><strong><code>-vf "telecine=...</code></strong>: This activates the
+telecine video filter.
+<ul>
+<li><strong><code>first_field</code></strong>: Specifies which field to
+output first. You can set this to <code>top</code> (or <code>t</code>)
+for Top Field First (TFF), or <code>bottom</code> (or <code>b</code>)
+for Bottom Field First (BFF). Broadcast standards typically require Top
+Field First.</li>
+<li><strong><code>pattern</code></strong>: Defines the pulldown pattern.
+The value <code>32</code> represents the standard NTSC 3:2 pulldown.
+This pattern pulls 5 frames of interlaced video from every 4 frames of
+progressive video. Other patterns include <code>22</code> (for 2:2
+pulldown, often used for PAL) and <code>2332</code> (for 2:3:3:2
+pulldown).</li>
+</ul></li>
+<li><strong><code>-flags +ildct+ilme</code></strong>: This is a critical
+step when encoding to formats like H.264 (libx264). It instructs the
+encoder to use interlaced discrete cosine transform (DCT) and interlaced
+motion estimation. Without these flags, the encoder will treat the
+interlaced frames as progressive, resulting in compression artifacts and
+poor playback quality.</li>
+</ul>
+<h3 id="selecting-the-right-pixel-format">Selecting the Right Pixel
+Format</h3>
+<p>For broadcast compatibility, interlaced video often requires a
+specific chroma subsampling format, such as YUV 4:2:2. You can force
+this output by adding the <code>-pix_fmt</code> flag to your
+command:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input_24p.mp4 <span class="at">-vf</span> <span class="st">&quot;telecine=first_field=top:pattern=32&quot;</span> <span class="at">-c:v</span> libx264 <span class="at">-pix_fmt</span> yuv422p <span class="at">-flags</span> +ildct+ilme output_30i.mp4</span></code></pre></div>
+<p>By combining the <code>telecine</code> filter with interlaced
+encoding flags, FFmpeg will successfully structure and flag the output
+file as interlaced, making it ready for hardware and software player
+environments that require interlaced signals.</p></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

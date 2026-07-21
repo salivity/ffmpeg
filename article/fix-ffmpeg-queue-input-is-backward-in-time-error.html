@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fix FFmpeg Queue Input is Backward in Time Error - ffmpeg</title>
+    <meta name="description" content="The "Queue input is backward in time" error in FFmpeg is a common issue that occurs when input frames or packets have non-monotonic or out-of-order timestamps. This article explains why this error happens, its impact on your media processing, and the mos">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/fix-ffmpeg-queue-input-is-backward-in-time-error">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Fix FFmpeg Queue Input is Backward in Time Error - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/fix-ffmpeg-queue-input-is-backward-in-time-error" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="The "Queue input is backward in time" error in FFmpeg is a common issue that occurs when input frames or packets have non-monotonic or out-of-order timestamps. This article explains why this error happens, its impact on your media processing, and the mos" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="fix-ffmpeg-queue-input-is-backward-in-time-error">Fix FFmpeg
+Queue Input is Backward in Time Error</h1>
+<p>The “Queue input is backward in time” error in FFmpeg is a common
+issue that occurs when input frames or packets have non-monotonic or
+out-of-order timestamps. This article explains why this error happens,
+its impact on your media processing, and the most effective command-line
+solutions to resolve it.</p>
+<h2 id="what-does-the-error-mean">What Does the Error Mean?</h2>
+<p>FFmpeg processes media files chronologically based on two types of
+timestamps: Presentation Timestamps (PTS), which dictate when a frame is
+displayed, and Decoding Timestamps (DTS), which dictate when a frame is
+decoded.</p>
+<p>FFmpeg expects these timestamps to increase steadily. If a frame or
+audio packet arrives with a timestamp that is earlier than the one
+before it, the timeline goes “backward.” FFmpeg flags this discrepancy
+with the warning or error:
+<code>Queue input is backward in time</code>.</p>
+<p>This issue typically occurs in the following scenarios: *
+<strong>Variable Frame Rate (VFR) files:</strong> Screen recordings or
+smartphone videos often have fluctuating frame rates that confuse the
+decoder. * <strong>Concatenated videos:</strong> Merging different video
+clips with mismatched timelines. * <strong>Live streaming:</strong>
+Network latency or packet loss causing audio and video packets to arrive
+out of order.</p>
+<hr />
+<h2 id="how-to-fix-the-error">How to Fix the Error</h2>
+<p>Depending on your specific use case, you can resolve this issue using
+one of the following methods.</p>
+<h3 id="method-1-regenerate-timestamps-recommended">Method 1: Regenerate
+Timestamps (Recommended)</h3>
+<p>The most common fix is to force FFmpeg to ignore the broken source
+timestamps and generate clean, new ones during the input reading phase.
+You can do this by adding the <code>-fflags +genpts</code> option before
+your input file.</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-fflags</span> +genpts <span class="at">-i</span> input.mp4 <span class="at">-c:v</span> libx264 <span class="at">-c:a</span> aac output.mp4</span></code></pre></div>
+<h3 id="method-2-reset-timestamps-with-filters">Method 2: Reset
+Timestamps with Filters</h3>
+<p>If you are re-encoding the video, you can use video and audio filters
+to reset the timestamps so they start at zero and increase
+monotonically.</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;setpts=PTS-STARTPTS&quot;</span> <span class="at">-af</span> <span class="st">&quot;asetpts=PTS-STARTPTS&quot;</span> output.mp4</span></code></pre></div>
+<ul>
+<li><code>setpts=PTS-STARTPTS</code> resets the video presentation
+timestamps.</li>
+<li><code>asetpts=PTS-STARTPTS</code> does the same for the audio track,
+keeping them in sync.</li>
+</ul>
+<h3 id="method-3-force-a-constant-frame-rate-cfr">Method 3: Force a
+Constant Frame Rate (CFR)</h3>
+<p>If the error is caused by a variable frame rate (VFR) source file,
+forcing FFmpeg to output a constant frame rate will normalize the
+timestamps. Use the <code>-r</code> flag to define a target frame rate
+(e.g., 30 or 60 frames per second).</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-r</span> 30 output.mp4</span></code></pre></div>
+<h3 id="method-4-correct-timestamps-for-stream-copying">Method 4:
+Correct Timestamps for Stream Copying</h3>
+<p>If you are copying the video and audio streams without re-encoding
+(using <code>-c copy</code>), you cannot use filters. Instead, use the
+<code>-avoid_negative_ts</code> flag to shift all timestamps so they
+start at zero, preventing backward jumps.</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-c</span> copy <span class="at">-avoid_negative_ts</span> make_zero output.mp4</span></code></pre></div></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

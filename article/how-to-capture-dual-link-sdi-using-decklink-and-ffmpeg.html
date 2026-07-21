@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Capture Dual-Link SDI Using DeckLink and FFmpeg - ffmpeg</title>
+    <meta name="description" content="This article provides a step-by-step guide on how to capture a high-bandwidth dual-link SDI video source using a Blackmagic Design DeckLink capture card and FFmpeg. You will learn how to configure your Blackmagic hardware drivers to combine two physical">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/how-to-capture-dual-link-sdi-using-decklink-and-ffmpeg">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Capture Dual-Link SDI Using DeckLink and FFmpeg - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/how-to-capture-dual-link-sdi-using-decklink-and-ffmpeg" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article provides a step-by-step guide on how to capture a high-bandwidth dual-link SDI video source using a Blackmagic Design DeckLink capture card and FFmpeg. You will learn how to configure your Blackmagic hardware drivers to combine two physical" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="how-to-capture-dual-link-sdi-using-decklink-and-ffmpeg">How to
+Capture Dual-Link SDI Using DeckLink and FFmpeg</h1>
+<p>This article provides a step-by-step guide on how to capture a
+high-bandwidth dual-link SDI video source using a Blackmagic Design
+DeckLink capture card and FFmpeg. You will learn how to configure your
+Blackmagic hardware drivers to combine two physical SDI inputs into a
+single logical stream and write the appropriate FFmpeg command to
+capture and encode the incoming feed.</p>
+<h3 id="step-1-configure-your-decklink-card-for-dual-link-sdi">Step 1:
+Configure Your DeckLink Card for Dual-Link SDI</h3>
+<p>Before running FFmpeg, you must configure your DeckLink card to treat
+two physical SDI ports as a single dual-link input. This is done via the
+Blackmagic Desktop Video Setup utility.</p>
+<ol type="1">
+<li>Open the <strong>Blackmagic Desktop Video Setup</strong> application
+on your system.</li>
+<li>Select your DeckLink card (e.g., DeckLink 8K Pro or DeckLink Duo
+2).</li>
+<li>Go to the <strong>Video Input</strong> or <strong>Connector
+Mapping</strong> settings.</li>
+<li>Change the connector mapping from single-link ports to a dual-link
+configuration (often labeled as “SDI 1 &amp; 2” or “Dual Link”). This
+groups the physical inputs so the driver presents them to FFmpeg as a
+single video device.</li>
+</ol>
+<h3 id="step-2-identify-your-decklink-device-name">Step 2: Identify Your
+DeckLink Device Name</h3>
+<p>FFmpeg needs the exact name of your DeckLink device to target the
+input. You can list all connected Blackmagic devices by running the
+following command in your terminal:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-f</span> decklink <span class="at">-list_devices</span> 1 <span class="at">-i</span> dummy</span></code></pre></div>
+<p>Look at the output to find the name of the grouped dual-link input,
+which will look something like <code>"DeckLink 8K Pro (1)"</code> or
+<code>"DeckLink Duo (1)"</code>.</p>
+<h3 id="step-3-capture-the-dual-link-input-with-ffmpeg">Step 3: Capture
+the Dual-Link Input with FFmpeg</h3>
+<p>Once the driver is configured and you have the device name, you can
+capture the feed. Because dual-link SDI is typically used for
+high-quality formats (such as 10-bit 4:2:2 or 4:4:4 video), it is
+important to specify the correct pixel format and video format in your
+FFmpeg command.</p>
+<p>Use the following template to capture the dual-link SDI source and
+encode it:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-f</span> decklink <span class="at">-raw_format</span> yuv422p10 <span class="at">-i</span> <span class="st">&quot;DeckLink 8K Pro (1)&quot;</span> <span class="at">-c:v</span> libx264 <span class="at">-pix_fmt</span> yuv420p <span class="at">-c:a</span> aac output.mp4</span></code></pre></div>
+<h3 id="command-breakdown">Command Breakdown:</h3>
+<ul>
+<li><strong><code>-f decklink</code></strong>: Specifies that the input
+format is a Blackmagic DeckLink device.</li>
+<li><strong><code>-raw_format yuv422p10</code></strong>: Tells FFmpeg to
+ingest the feed as 10-bit YUV 4:2:2, which is standard for high-quality
+dual-link SDI signals. You can also use <code>v210</code> or
+<code>r210</code> depending on your source signal.</li>
+<li><strong><code>-i "DeckLink 8K Pro (1)"</code></strong>: The logical
+name of your configured DeckLink device.</li>
+<li><strong><code>-c:v libx264</code></strong>: Encodes the video stream
+to H.264. For lossless or archive quality, you can use
+<code>-c:v prores_ks</code>.</li>
+<li><strong><code>-pix_fmt yuv420p</code></strong>: Converts the pixel
+format to 8-bit YUV 4:2:0 for maximum compatibility with consumer media
+players.</li>
+<li><strong><code>-c:a aac</code></strong>: Encodes the accompanying SDI
+embedded audio to AAC format.</li>
+</ul>
+<h3 id="troubleshooting-tips">Troubleshooting Tips</h3>
+<ul>
+<li><strong>Format Mismatch</strong>: If FFmpeg fails to start, the
+incoming video standard (resolution and frame rate) might not match what
+FFmpeg expects. You can force a specific video format by adding the
+<code>-video_input</code> option, such as
+<code>-video_input 1080p60</code>.</li>
+<li><strong>Dropped Frames</strong>: Dual-link capture handles high data
+rates. Ensure your CPU can handle the encoding speed, or use
+hardware-accelerated encoding (like <code>-c:v h264_nvenc</code> for
+NVIDIA GPUs) to prevent packet loss.</li>
+</ul></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

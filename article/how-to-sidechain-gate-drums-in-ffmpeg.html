@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Sidechain Gate Drums in FFmpeg - ffmpeg</title>
+    <meta name="description" content="This article demonstrates how to use the FFmpeg sidechaingate audio filter to gate a drum track using another instrument as a trigger signal. You will learn the essential parameters of the filter, the correct command-line syntax for handling multiple aud">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/how-to-sidechain-gate-drums-in-ffmpeg">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Sidechain Gate Drums in FFmpeg - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/how-to-sidechain-gate-drums-in-ffmpeg" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article demonstrates how to use the FFmpeg sidechaingate audio filter to gate a drum track using another instrument as a trigger signal. You will learn the essential parameters of the filter, the correct command-line syntax for handling multiple aud" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="how-to-sidechain-gate-drums-in-ffmpeg">How to Sidechain Gate
+Drums in FFmpeg</h1>
+<p>This article demonstrates how to use the FFmpeg
+<code>sidechaingate</code> audio filter to gate a drum track using
+another instrument as a trigger signal. You will learn the essential
+parameters of the filter, the correct command-line syntax for handling
+multiple audio inputs, and a practical step-by-step example to achieve a
+clean sidechained gate effect.</p>
+<h2 id="understanding-sidechain-gating">Understanding Sidechain
+Gating</h2>
+<p>A noise gate typically attenuates an audio signal when it falls below
+a certain threshold. In sidechain gating, the gate on your primary audio
+track (the drums) is controlled by the volume level of a secondary,
+independent audio track (such as a bassline or synthesizer). When the
+secondary instrument plays above the set threshold, the gate opens,
+allowing the drums to be heard. When the secondary instrument is silent,
+the drums are silenced or heavily attenuated.</p>
+<p>In FFmpeg, this is achieved using the <code>sidechaingate</code>
+filter inside a <code>filter_complex</code> graph, which accepts two
+audio inputs: the main input (to be gated) and the sidechain input (the
+control signal).</p>
+<h2 id="key-parameters-of-the-sidechaingate-filter">Key Parameters of
+the sidechaingate Filter</h2>
+<p>To customize the gating effect, you can adjust several key parameters
+within the filter:</p>
+<ul>
+<li><strong>threshold</strong>: The volume level of the sidechain signal
+(from 0.0 to 1.0) required to open the gate. Default is 0.1.</li>
+<li><strong>range</strong>: The amount of gain reduction applied to the
+main signal when the gate is closed. Default is 0.06125 (lower values
+result in quieter gated sections).</li>
+<li><strong>attack</strong>: The time in milliseconds it takes for the
+gate to fully open once the sidechain signal crosses the threshold.
+Default is 20 ms.</li>
+<li><strong>release</strong>: The time in milliseconds it takes for the
+gate to close after the sidechain signal drops below the threshold.
+Default is 250 ms.</li>
+<li><strong>ratio</strong>: The compression ratio applied to the signal
+when the gate is closed. Default is 2.0.</li>
+</ul>
+<h2 id="the-ffmpeg-command-syntax">The FFmpeg Command Syntax</h2>
+<p>To gate a drum track using a bass track as the trigger, use the
+following <code>filter_complex</code> structure:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> drums.wav <span class="at">-i</span> bass.wav <span class="at">-filter_complex</span> <span class="st">&quot;[0:a][1:a]sidechaingate=threshold=0.1:range=0.01:attack=10:release=150[out]&quot;</span> <span class="at">-map</span> <span class="st">&quot;[out]&quot;</span> output.wav</span></code></pre></div>
+<h3 id="command-breakdown">Command Breakdown:</h3>
+<ol type="1">
+<li><strong><code>-i drums.wav</code></strong>: Defines the main audio
+input (Input 0) that you want to gate.</li>
+<li><strong><code>-i bass.wav</code></strong>: Defines the control audio
+input (Input 1) that will trigger the gate.</li>
+<li><strong><code>-filter_complex</code></strong>: Initiates the filter
+graph for handling multiple inputs.</li>
+<li><strong><code>[0:a][1:a]</code></strong>: Feeds the audio stream of
+the first file (drums) and the audio stream of the second file (bass)
+into the filter. The main input must always be placed first.</li>
+<li><strong><code>sidechaingate=...</code></strong>: Applies the filter
+with custom settings. In this example, the gate opens when the bass
+volume hits <code>0.1</code>, opens quickly with a <code>10ms</code>
+attack, and closes over <code>150ms</code> when the bass stops, reducing
+the drum volume to a quiet <code>0.01</code> range factor.</li>
+<li><strong><code>-map "[out]"</code></strong>: Maps the processed
+output of the filter graph to the final export file.</li>
+<li><strong><code>output.wav</code></strong>: The resulting gated drum
+audio file.</li>
+</ol></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

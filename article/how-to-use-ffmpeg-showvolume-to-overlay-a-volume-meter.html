@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Use FFmpeg showvolume to Overlay a Volume Meter - ffmpeg</title>
+    <meta name="description" content="This article provides a step-by-step guide on how to use the FFmpeg showvolume filter to overlay a real-time audio volume meter onto a video. You will learn the exact command syntax, how the filter processing pipeline works, and how to customize the volu">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/how-to-use-ffmpeg-showvolume-to-overlay-a-volume-meter">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Use FFmpeg showvolume to Overlay a Volume Meter - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/how-to-use-ffmpeg-showvolume-to-overlay-a-volume-meter" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article provides a step-by-step guide on how to use the FFmpeg showvolume filter to overlay a real-time audio volume meter onto a video. You will learn the exact command syntax, how the filter processing pipeline works, and how to customize the volu" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="how-to-use-ffmpeg-showvolume-to-overlay-a-volume-meter">How to
+Use FFmpeg showvolume to Overlay a Volume Meter</h1>
+<p>This article provides a step-by-step guide on how to use the FFmpeg
+<code>showvolume</code> filter to overlay a real-time audio volume meter
+onto a video. You will learn the exact command syntax, how the filter
+processing pipeline works, and how to customize the volume meter’s size,
+orientation, colors, and positioning.</p>
+<h3 id="the-basic-command">The Basic Command</h3>
+<p>To overlay a volume meter, you must use FFmpeg’s complex filtergraph
+(<code>-filter_complex</code>). This is because the process requires
+taking the audio track, converting it into a visual volume meter stream,
+and then overlaying that stream back onto the original video track.</p>
+<p>Here is the fundamental command to achieve this:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-filter_complex</span> <span class="st">&quot;[0:a]showvolume=w=400:h=30[volume];[0:v][volume]overlay=10:10[out]&quot;</span> <span class="at">-map</span> <span class="st">&quot;[out]&quot;</span> <span class="at">-map</span> 0:a <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<h3 id="command-breakdown">Command Breakdown</h3>
+<ul>
+<li><strong><code>[0:a]showvolume=w=400:h=30[volume]</code></strong>:
+This takes the audio stream from the first input (<code>[0:a]</code>),
+sends it to the <code>showvolume</code> filter, and sets the meter width
+to 400 pixels and height to 30 pixels. The resulting video stream is
+labeled <code>[volume]</code>.</li>
+<li><strong><code>[0:v][volume]overlay=10:10[out]</code></strong>: This
+takes the original video stream (<code>[0:v]</code>) and overlays the
+generated <code>[volume]</code> video stream on top of it. The
+coordinates <code>10:10</code> position the meter 10 pixels from the
+top-left corner. The output stream is labeled <code>[out]</code>.</li>
+<li><strong><code>-map "[out]"</code></strong>: Instructs FFmpeg to use
+the newly created video stream with the overlaid meter.</li>
+<li><strong><code>-map 0:a -c:a copy</code></strong>: Copies the
+original audio stream directly into the output file without re-encoding
+it.</li>
+</ul>
+<h3 id="customizing-the-volume-meter">Customizing the Volume Meter</h3>
+<p>The <code>showvolume</code> filter offers several parameters to
+change how the meter looks and behaves.</p>
+<h4 id="change-orientation-to-vertical">1. Change Orientation to
+Vertical</h4>
+<p>By default, the meter is horizontal. You can change it to vertical by
+setting the orientation option (<code>o</code>) to <code>v</code> and
+swapping the width and height values.</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-filter_complex</span> <span class="st">&quot;[0:a]showvolume=w=40:h=300:o=v[volume];[0:v][volume]overlay=10:10[out]&quot;</span> <span class="at">-map</span> <span class="st">&quot;[out]&quot;</span> <span class="at">-map</span> 0:a <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<h4 id="position-the-meter-on-the-screen">2. Position the Meter on the
+Screen</h4>
+<p>You can change the <code>overlay</code> coordinates to place the
+volume meter anywhere on the video player canvas: * <strong>Bottom-Right
+Corner:</strong> <code>overlay=W-w-10:H-h-10</code> * <strong>Top-Right
+Corner:</strong> <code>overlay=W-w-10:10</code> * <strong>Bottom
+Center:</strong> <code>overlay=(W-w)/2:H-h-10</code></p>
+<h4 id="adjust-the-meters-physics-and-decay">3. Adjust the Meter’s
+Physics and Decay</h4>
+<p>You can control how fast the meter drops after a volume peak using
+the fade option (<code>f</code>). The value ranges from <code>0</code>
+to <code>1</code> (default is <code>0.95</code>). A lower value makes
+the meter more responsive, while a higher value makes the falloff
+smoother.</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-filter_complex</span> <span class="st">&quot;[0:a]showvolume=f=0.9[volume];[0:v][volume]overlay=10:10[out]&quot;</span> <span class="at">-map</span> <span class="st">&quot;[out]&quot;</span> <span class="at">-map</span> 0:a <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<h4 id="hide-the-decibel-db-text">4. Hide the Decibel (dB) Text</h4>
+<p>By default, the volume meter displays decibel numbers. You can
+disable this text overlay by setting <code>t=0</code>.</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-filter_complex</span> <span class="st">&quot;[0:a]showvolume=t=0[volume];[0:v][volume]overlay=10:10[out]&quot;</span> <span class="at">-map</span> <span class="st">&quot;[out]&quot;</span> <span class="at">-map</span> 0:a <span class="at">-c:a</span> copy output.mp4</span></code></pre></div></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

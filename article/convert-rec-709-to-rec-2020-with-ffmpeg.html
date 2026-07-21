@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Convert Rec 709 to Rec 2020 with FFmpeg - ffmpeg</title>
+    <meta name="description" content="Converting video from the standard Rec. 709 color space to the wider Rec. 2020 color space is a common task when prepping older or standard definition content for modern HDR workflows. This guide demonstrates how to perform this conversion using FFmpeg's">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/convert-rec-709-to-rec-2020-with-ffmpeg">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Convert Rec 709 to Rec 2020 with FFmpeg - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/convert-rec-709-to-rec-2020-with-ffmpeg" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Converting video from the standard Rec. 709 color space to the wider Rec. 2020 color space is a common task when prepping older or standard definition content for modern HDR workflows. This guide demonstrates how to perform this conversion using FFmpeg's" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="convert-rec-709-to-rec-2020-with-ffmpeg">Convert Rec 709 to Rec
+2020 with FFmpeg</h1>
+<p>Converting video from the standard Rec. 709 color space to the wider
+Rec. 2020 color space is a common task when prepping older or standard
+definition content for modern HDR workflows. This guide demonstrates how
+to perform this conversion using FFmpeg’s <code>colormatrix</code> video
+filter, provides the exact command-line syntax, and explains how to
+properly tag the output metadata so media players recognize the wide
+color gamut.</p>
+<h3 id="the-basic-colormatrix-command">The Basic colormatrix
+Command</h3>
+<p>To mathematically map color coordinates from Rec. 709 (BT.709) to
+Rec. 2020 (BT.2020), you use the <code>colormatrix</code> video filter
+with the source and destination color spaces defined as
+<code>bt709:bt2020</code>.</p>
+<p>Here is the fundamental FFmpeg command:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;colormatrix=bt709:bt2020&quot;</span> <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<h3 id="applying-correct-color-metadata">Applying Correct Color
+Metadata</h3>
+<p>While the <code>colormatrix</code> filter alters the actual pixel
+values, most media players rely on container metadata to know how to
+render the colors. Without proper tags, your output may look washed out
+or distorted because the player will still assume it is in the Rec. 709
+space.</p>
+<p>To ensure players recognize the Rec. 2020 color space, you must
+explicitly set the color space, color primaries, and transfer
+characteristics. Because Rec. 2020 requires higher bit-depths to prevent
+color banding, it is also highly recommended to output to a 10-bit pixel
+format (such as <code>yuv420p10le</code>) and use a modern codec like
+H.265 (HEVC).</p>
+<p>Here is the complete, production-ready command:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;colormatrix=bt709:bt2020&quot;</span> <span class="at">-c:v</span> libx265 <span class="at">-pix_fmt</span> yuv420p10le <span class="at">-colorspace</span> bt2020nc <span class="at">-color_primaries</span> bt2020 <span class="at">-color_trc</span> bt2020_10 <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<h3 id="breakdown-of-the-command-flags">Breakdown of the Command
+Flags</h3>
+<ul>
+<li><strong><code>-vf "colormatrix=bt709:bt2020"</code></strong>: The
+video filter that converts the color coefficients from BT.709 (SDR
+standard) to BT.2020.</li>
+<li><strong><code>-c:v libx265</code></strong>: Encodes the video to
+HEVC (H.265), which is the industry-standard codec for Rec. 2020 and HDR
+content.</li>
+<li><strong><code>-pix_fmt yuv420p10le</code></strong>: Sets the pixel
+format to 10-bit YUV 4:2:0. Rec. 2020 requires at least 10-bit depth to
+prevent color banding in the wider gamut.</li>
+<li><strong><code>-colorspace bt2020nc</code></strong>: Sets the color
+matrix metadata to BT.2020 non-constant luminance.</li>
+<li><strong><code>-color_primaries bt2020</code></strong>: Tags the
+video with BT.2020 color primaries.</li>
+<li><strong><code>-color_trc bt2020_10</code></strong>: Sets the
+transfer characteristics to 10-bit BT.2020.</li>
+</ul>
+<h3 id="limitations-of-colormatrix-conversion">Limitations of
+Colormatrix Conversion</h3>
+<p>It is important to understand that this process is a color space
+<em>container</em> transformation. Converting a Rec. 709 video to Rec.
+2020 does not automatically make it High Dynamic Range (HDR) or
+magically recover deep, saturated colors that were not originally
+captured. It merely places the existing Standard Dynamic Range (SDR)
+colors into a larger Rec. 2020 color envelope, which is useful when
+integrating SDR assets into an HDR project timeline.</p></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

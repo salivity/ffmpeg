@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fix RTP Missed Packet Warnings in FFmpeg RTSP - ffmpeg</title>
+    <meta name="description" content="When capturing an RTSP stream using FFmpeg, encountering "RTP: missed packet" warnings usually points to network congestion, packet loss, or buffer overflows. This article provides actionable solutions to resolve these warnings by switching transport pro">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/fix-rtp-missed-packet-warnings-in-ffmpeg-rtsp">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Fix RTP Missed Packet Warnings in FFmpeg RTSP - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/fix-rtp-missed-packet-warnings-in-ffmpeg-rtsp" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="When capturing an RTSP stream using FFmpeg, encountering "RTP: missed packet" warnings usually points to network congestion, packet loss, or buffer overflows. This article provides actionable solutions to resolve these warnings by switching transport pro" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="fix-rtp-missed-packet-warnings-in-ffmpeg-rtsp">Fix RTP Missed
+Packet Warnings in FFmpeg RTSP</h1>
+<p>When capturing an RTSP stream using FFmpeg, encountering “RTP: missed
+packet” warnings usually points to network congestion, packet loss, or
+buffer overflows. This article provides actionable solutions to resolve
+these warnings by switching transport protocols, increasing buffer
+sizes, and optimizing FFmpeg configuration settings for a stable stream
+capture.</p>
+<h2 id="switch-from-udp-to-tcp">1. Switch from UDP to TCP</h2>
+<p>By default, RTSP often stream over UDP, which does not guarantee
+packet delivery. If your network experiences even minor congestion, UDP
+packets will be dropped, resulting in “RTP: missed packet” warnings.</p>
+<p>Forcing FFmpeg to use TCP ensures packet delivery through
+retransmission. You can do this by adding the
+<code>-rtsp_transport tcp</code> flag <strong>before</strong> your input
+URL:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-rtsp_transport</span> tcp <span class="at">-i</span> rtsp://your_camera_stream_url <span class="at">-c</span> copy output.mp4</span></code></pre></div>
+<h2 id="increase-the-thread-queue-size">2. Increase the Thread Queue
+Size</h2>
+<p>If FFmpeg cannot process incoming packets quickly enough, the input
+buffer will overflow, causing packet loss. Increasing the thread queue
+size allocates more memory to buffer the incoming stream before
+processing.</p>
+<p>Add the <code>-thread_queue_size</code> option before the input:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-thread_queue_size</span> 1024 <span class="at">-i</span> rtsp://your_camera_stream_url <span class="at">-c</span> copy output.mp4</span></code></pre></div>
+<p>For high-resolution or high-framerate streams, you can increase this
+value further (e.g., <code>2048</code> or <code>4096</code>).</p>
+<h2 id="adjust-the-input-buffer-size">3. Adjust the Input Buffer
+Size</h2>
+<p>You can explicitly increase the ring buffer size used by FFmpeg to
+ingest the RTSP stream. This gives the system more breathing room during
+temporary CPU or disk I/O spikes.</p>
+<p>Use the <code>-buffer_size</code> parameter to allocate more memory
+(defined in bytes):</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-buffer_size</span> 1024000 <span class="at">-i</span> rtsp://your_camera_stream_url <span class="at">-c</span> copy output.mp4</span></code></pre></div>
+<h2 id="increase-system-level-socket-buffers-linux">4. Increase
+System-Level Socket Buffers (Linux)</h2>
+<p>If you are running FFmpeg on Linux, the operating system’s default
+network socket receive buffer might be too small for high-bitrate video
+streams. You can temporarily increase the maximum receiver buffer size
+using <code>sysctl</code>:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> sysctl <span class="at">-w</span> net.core.rmem_max=26214400</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> sysctl <span class="at">-w</span> net.core.rmem_default=26214400</span></code></pre></div>
+<p>To make these changes permanent, add the following lines to
+<code>/etc/sysctl.conf</code>:</p>
+<pre class="text"><code>net.core.rmem_max=26214400
+net.core.rmem_default=26214400</code></pre>
+<h2 id="summary-of-an-optimized-command">Summary of an Optimized
+Command</h2>
+<p>For the most reliable capture, combine these parameters into a single
+command:</p>
+<div class="sourceCode" id="cb6"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-rtsp_transport</span> tcp <span class="at">-thread_queue_size</span> 2048 <span class="at">-buffer_size</span> 10M <span class="at">-i</span> rtsp://your_camera_stream_url <span class="at">-c</span> copy output.mp4</span></code></pre></div></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>List DirectShow Devices Using FFmpeg on Windows - ffmpeg</title>
+    <meta name="description" content="Finding and identifying connected audio and video hardware on Windows is essential for multimedia recording and streaming. This article provides a quick, step-by-step guide on how to use FFmpeg to list all available DirectShow devices, such as webcams, m">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/list-directshow-devices-using-ffmpeg-on-windows">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="List DirectShow Devices Using FFmpeg on Windows - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/list-directshow-devices-using-ffmpeg-on-windows" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Finding and identifying connected audio and video hardware on Windows is essential for multimedia recording and streaming. This article provides a quick, step-by-step guide on how to use FFmpeg to list all available DirectShow devices, such as webcams, m" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="list-directshow-devices-using-ffmpeg-on-windows">List DirectShow
+Devices Using FFmpeg on Windows</h1>
+<p>Finding and identifying connected audio and video hardware on Windows
+is essential for multimedia recording and streaming. This article
+provides a quick, step-by-step guide on how to use FFmpeg to list all
+available DirectShow devices, such as webcams, microphones, and capture
+cards, using a simple command-line instruction.</p>
+<h3 id="the-command-to-list-devices">The Command to List Devices</h3>
+<p>To discover your Windows multimedia devices, open either Command
+Prompt (<code>cmd.exe</code>) or PowerShell and execute the following
+FFmpeg command:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode cmd"><code class="sourceCode dosbat"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>ffmpeg <span class="at">-list_devices</span> true <span class="at">-f</span> dshow <span class="at">-i</span> dummy</span></code></pre></div>
+<h3 id="understanding-the-command-breakdown">Understanding the Command
+Breakdown</h3>
+<ul>
+<li><strong><code>ffmpeg</code></strong>: Calls the FFmpeg
+executable.</li>
+<li><strong><code>-list_devices true</code></strong>: A device-specific
+option for the DirectShow demuxer that instructs FFmpeg to print a list
+of available devices instead of attempting to record input.</li>
+<li><strong><code>-f dshow</code></strong>: Specifies the format driver,
+which is DirectShow (<code>dshow</code>) on Windows.</li>
+<li><strong><code>-i dummy</code></strong>: Passes a placeholder input
+name (<code>dummy</code>) to satisfy the syntax requirements of the
+command, as the actual input will be determined by your list query.</li>
+</ul>
+<h3 id="analyzing-the-output">Analyzing the Output</h3>
+<p>After running the command, FFmpeg will print the results to the
+console. The output will group your hardware into two distinct
+categories: <strong>DirectShow video devices</strong> and
+<strong>DirectShow audio devices</strong>.</p>
+<p>The output will look similar to this:</p>
+<pre class="text"><code>[dshow @ 0000021c97a9f0c0] DirectShow video devices (some may be both video and audio devices)
+[dshow @ 0000021c97a9f0c0]  &quot;Integrated Webcam&quot;
+[dshow @ 0000021c97a9f0c0]     Alternative name &quot;@device_pnp_\\?\usb#vid_04f2&amp;pid_b624...&quot;
+[dshow @ 0000021c97a9f0c0] DirectShow audio devices
+[dshow @ 0000021c97a9f0c0]  &quot;Microphone Array (Realtek(R) Audio)&quot;
+[dshow @ 0000021c97a9f0c0]     Alternative name &quot;@device_cm_{33d9a762-90c8-11d0-bd43-00a0c911ce86}\...&quot;</code></pre>
+<ul>
+<li><strong>Friendly Name</strong>: The name in quotes (e.g.,
+<code>"Integrated Webcam"</code>) is the user-friendly name of the
+device. You can use this exact name in future FFmpeg commands to capture
+video or audio.</li>
+<li><strong>Alternative Name</strong>: The long string beginning with
+<code>@device</code> is a unique system identifier. If your device has
+non-ASCII characters in its name, or if you have multiple devices with
+the exact same friendly name, you should use this alternative name
+instead.</li>
+</ul>
+<h3 id="saving-the-device-list-to-a-text-file">Saving the Device List to
+a Text File</h3>
+<p>Because FFmpeg prints this information to the standard error
+(<code>stderr</code>) stream rather than the standard output
+(<code>stdout</code>), standard command-line redirection using
+<code>&gt;</code> will not work. To save the list of devices directly to
+a text file for future reference, redirect the error stream using
+<code>2&gt;</code>:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode cmd"><code class="sourceCode dosbat"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>ffmpeg <span class="at">-list_devices</span> true <span class="at">-f</span> dshow <span class="at">-i</span> dummy <span class="kw">2&gt;</span> devices.txt</span></code></pre></div></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

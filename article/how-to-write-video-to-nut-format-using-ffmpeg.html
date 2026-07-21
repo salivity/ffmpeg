@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Write Video to NUT Format Using FFmpeg - ffmpeg</title>
+    <meta name="description" content="This article provides a practical guide on how to use FFmpeg to write and package video files into the high-performance NUT container format. You will learn the basic FFmpeg command syntax for muxing existing streams, re-encoding video into NUT, and util">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/how-to-write-video-to-nut-format-using-ffmpeg">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Write Video to NUT Format Using FFmpeg - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/how-to-write-video-to-nut-format-using-ffmpeg" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article provides a practical guide on how to use FFmpeg to write and package video files into the high-performance NUT container format. You will learn the basic FFmpeg command syntax for muxing existing streams, re-encoding video into NUT, and util" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="how-to-write-video-to-nut-format-using-ffmpeg">How to Write
+Video to NUT Format Using FFmpeg</h1>
+<p>This article provides a practical guide on how to use FFmpeg to write
+and package video files into the high-performance NUT container format.
+You will learn the basic FFmpeg command syntax for muxing existing
+streams, re-encoding video into NUT, and utilizing this format for
+lossless video archiving.</p>
+<h2 id="understanding-the-nut-container">Understanding the NUT
+Container</h2>
+<p>The NUT container (<code>.nut</code>) is a high-performance,
+open-source multimedia container developed by FFmpeg and MPlayer
+programmers. It is designed to be simple, low-overhead, highly resilient
+to file corruption, and capable of holding virtually any video, audio,
+and subtitle codec. Because it writes index information dynamically, it
+is an excellent choice for streaming, recording, and archiving where
+system crashes or interruptions might otherwise ruin a file.</p>
+<h2 id="basic-command-copying-streams-to-nut">Basic Command: Copying
+Streams to NUT</h2>
+<p>If you already have a video file (such as an MP4 or MKV) and want to
+place its existing video and audio streams into a NUT container without
+re-encoding, you can use the stream copy mode. This process is extremely
+fast and preserves the original quality.</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-c</span> copy output.nut</span></code></pre></div>
+<ul>
+<li><code>-i input.mp4</code>: Specifies your input video file.</li>
+<li><code>-c copy</code>: Instructs FFmpeg to copy the video and audio
+streams directly without re-encoding.</li>
+<li><code>output.nut</code>: The resulting file in the NUT container
+format.</li>
+</ul>
+<h2 id="encoding-video-to-nut">Encoding Video to NUT</h2>
+<p>If you need to compress or change the codec of your video while
+writing to the NUT format, you must specify the desired video and audio
+encoders.</p>
+<h3 id="high-quality-h.264-and-aac-encoding">High-Quality H.264 and AAC
+Encoding</h3>
+<p>To encode a video to standard H.264 video and AAC audio inside the
+NUT container, use the following command:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mov <span class="at">-c:v</span> libx264 <span class="at">-crf</span> 20 <span class="at">-c:a</span> aac <span class="at">-b:a</span> 192k output.nut</span></code></pre></div>
+<ul>
+<li><code>-c:v libx264</code>: Encodes the video stream using the H.264
+codec.</li>
+<li><code>-crf 20</code>: Sets the Constant Rate Factor for quality
+control (lower numbers mean better quality, typically between 18 and 23
+is ideal).</li>
+<li><code>-c:a aac</code>: Encodes the audio stream using the AAC
+encoder.</li>
+<li><code>-b:a 192k</code>: Sets the audio bitrate to 192 kbps.</li>
+</ul>
+<h3 id="lossless-archiving-with-ffv1-and-flac">Lossless Archiving with
+FFV1 and FLAC</h3>
+<p>The NUT container is widely used in digital preservation and
+archiving because it pairs perfectly with lossless codecs like FFV1
+(video) and FLAC (audio). This combination guarantees zero quality loss
+and maximum error resilience.</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-c:v</span> ffv1 <span class="at">-level</span> 3 <span class="at">-c:a</span> flac output.nut</span></code></pre></div>
+<ul>
+<li><code>-c:v ffv1</code>: Uses the lossless FFV1 video codec, which is
+highly optimized for archival purposes.</li>
+<li><code>-level 3</code>: Enables version 3 of the FFV1 codec, which
+supports multi-threading and self-contained error recovery.</li>
+<li><code>-c:a flac</code>: Uses the lossless FLAC audio codec.</li>
+</ul></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

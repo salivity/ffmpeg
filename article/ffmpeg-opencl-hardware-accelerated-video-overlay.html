@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FFmpeg OpenCL Hardware Accelerated Video Overlay - ffmpeg</title>
+    <meta name="description" content="This article provides a straightforward guide on how to use the overlayopencl filter in FFmpeg to perform hardware-accelerated video overlays. You will learn how to initialize an OpenCL device, upload video frames to GPU memory, apply the overlay filter,">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/ffmpeg-opencl-hardware-accelerated-video-overlay">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="FFmpeg OpenCL Hardware Accelerated Video Overlay - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/ffmpeg-opencl-hardware-accelerated-video-overlay" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article provides a straightforward guide on how to use the overlayopencl filter in FFmpeg to perform hardware-accelerated video overlays. You will learn how to initialize an OpenCL device, upload video frames to GPU memory, apply the overlay filter," />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="ffmpeg-opencl-hardware-accelerated-video-overlay">FFmpeg OpenCL
+Hardware Accelerated Video Overlay</h1>
+<p>This article provides a straightforward guide on how to use the
+<code>overlay_opencl</code> filter in FFmpeg to perform
+hardware-accelerated video overlays. You will learn how to initialize an
+OpenCL device, upload video frames to GPU memory, apply the overlay
+filter, and retrieve the processed video, significantly boosting
+processing speeds compared to traditional CPU-based overlay filters.</p>
+<h3 id="prerequisites">Prerequisites</h3>
+<p>To use OpenCL filters, your FFmpeg build must be compiled with OpenCL
+support (verify this by running <code>ffmpeg -protocols</code> and
+looking for <code>opencl</code>, or checking if
+<code>--enable-opencl</code> was used during compilation). You also need
+a compatible GPU with up-to-date OpenCL drivers installed on your
+system.</p>
+<h3 id="the-opencl-processing-pipeline">The OpenCL Processing
+Pipeline</h3>
+<p>Because <code>overlay_opencl</code> runs on the GPU, both the main
+video and the overlay input must be transferred from system memory (CPU)
+to hardware memory (GPU) before applying the filter. After processing,
+the output must be downloaded back to system memory for software
+encoding, or passed directly to a hardware encoder.</p>
+<h3 id="command-example-cpu-to-gpu-to-cpu">Command Example: CPU to GPU
+to CPU</h3>
+<p>The following command demonstrates how to take two standard video
+inputs, upload them to the GPU, overlay one onto the other using OpenCL,
+download the result, and encode it using a standard software encoder
+(x264):</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-init_hw_device</span> opencl=gpu <span class="at">-filter_hw_device</span> gpu <span class="dt">\</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>-i main_input.mp4 <span class="at">-i</span> overlay_input.mp4 <span class="dt">\</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>-filter_complex <span class="dt">\</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="st">&quot;[0:v]format=nv12,hwupload[main_gpu]; </span><span class="dt">\</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="st"> [1:v]format=nv12,hwupload[overlay_gpu]; </span><span class="dt">\</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="st"> [main_gpu][overlay_gpu]overlay_opencl=x=100:y=50[out_gpu]; </span><span class="dt">\</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="st"> [out_gpu]hwdownload,format=nv12&quot;</span> <span class="dt">\</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>-c:v libx264 <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<h3 id="command-breakdown">Command Breakdown</h3>
+<ul>
+<li><strong><code>-init_hw_device opencl=gpu</code></strong>:
+Initializes the OpenCL hardware device and aliases it as
+<code>gpu</code>.</li>
+<li><strong><code>-filter_hw_device gpu</code></strong>: Instructs the
+filter graph to use the initialized <code>gpu</code> device for hardware
+filters.</li>
+<li><strong><code>format=nv12,hwupload</code></strong>: Converts the
+pixel format of the input to <code>nv12</code> (a widely supported
+hardware format) and uploads the frames to the GPU. This is done for
+both the main video (<code>[0:v]</code>) and the overlay video
+(<code>[1:v]</code>).</li>
+<li><strong><code>overlay_opencl=x=100:y=50</code></strong>: The
+hardware-accelerated overlay filter. It positions the top-left corner of
+the overlay video at coordinates X=100, Y=50 on the main video.</li>
+<li><strong><code>hwdownload,format=nv12</code></strong>: Downloads the
+processed frame back to system memory and defines the output pixel
+format so the software encoder can read it.</li>
+</ul>
+<h3 id="parameters-for-overlay_opencl">Parameters for
+<code>overlay_opencl</code></h3>
+<p>The <code>overlay_opencl</code> filter supports the following main
+parameters:</p>
+<ul>
+<li><strong><code>x</code></strong>: The horizontal position of the
+overlay video (defaults to 0).</li>
+<li><strong><code>y</code></strong>: The vertical position of the
+overlay video (defaults to 0).</li>
+</ul>
+<p>You can use expressions for these parameters, such as
+<code>main_w</code> (main width), <code>main_h</code> (main height),
+<code>overlay_w</code> (overlay width), and <code>overlay_h</code>
+(overlay height).</p>
+<p>For example, to center the overlay:</p>
+<pre class="text"><code>overlay_opencl=x=(main_w-overlay_w)/2:y=(main_h-overlay_h)/2</code></pre>
+<h3 id="full-hardware-pipeline-advanced">Full Hardware Pipeline
+(Advanced)</h3>
+<p>If you want to avoid downloading the video back to the CPU, you can
+pair the OpenCL overlay directly with hardware-accelerated decoding and
+encoding (such as VAAPI, QSV, or NVENC) depending on your GPU
+manufacturer. This keeps the entire pipeline on the GPU, maximizing
+performance.</p></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

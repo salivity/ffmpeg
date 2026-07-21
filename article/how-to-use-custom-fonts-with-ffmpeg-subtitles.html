@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Use Custom Fonts with FFmpeg Subtitles - ffmpeg</title>
+    <meta name="description" content="This article explains how to specify a custom font directory when using the subtitles or ass video filters in FFmpeg. You will learn how to use the native fontsdir filter option, how to handle path escaping, and how to use Fontconfig environment variable">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/how-to-use-custom-fonts-with-ffmpeg-subtitles">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Use Custom Fonts with FFmpeg Subtitles - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/how-to-use-custom-fonts-with-ffmpeg-subtitles" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article explains how to specify a custom font directory when using the subtitles or ass video filters in FFmpeg. You will learn how to use the native fontsdir filter option, how to handle path escaping, and how to use Fontconfig environment variable" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="how-to-use-custom-fonts-with-ffmpeg-subtitles">How to Use Custom
+Fonts with FFmpeg Subtitles</h1>
+<p>This article explains how to specify a custom font directory when
+using the <code>subtitles</code> or <code>ass</code> video filters in
+FFmpeg. You will learn how to use the native <code>fontsdir</code>
+filter option, how to handle path escaping, and how to use Fontconfig
+environment variables as an alternative fallback method. This ensures
+your subtitles render with the correct custom typefaces without needing
+to install them system-wide.</p>
+<hr />
+<h3 id="method-1-using-the-fontsdir-option-recommended">Method 1: Using
+the <code>fontsdir</code> Option (Recommended)</h3>
+<p>The easiest way to specify a custom font directory is to use the
+<code>fontsdir</code> parameter, which is built directly into both the
+<code>subtitles</code> and <code>ass</code> video filters in FFmpeg.</p>
+<h4 id="syntax-for-subtitles-filter">Syntax for <code>subtitles</code>
+filter:</h4>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;subtitles=subs.srt:fontsdir=/path/to/custom/fonts&quot;</span> output.mp4</span></code></pre></div>
+<h4 id="syntax-for-ass-filter">Syntax for <code>ass</code> filter:</h4>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;ass=subs.ass:fontsdir=/path/to/custom/fonts&quot;</span> output.mp4</span></code></pre></div>
+<p>FFmpeg will scan the specified directory for TrueType
+(<code>.ttf</code>) and OpenType (<code>.otf</code>) fonts and make them
+available to the subtitle renderer.</p>
+<hr />
+<h3 id="handling-special-characters-and-windows-paths">Handling Special
+Characters and Windows Paths</h3>
+<p>FFmpeg uses the colon (<code>:</code>) as a separator for filter
+arguments. If your font directory path contains a colon (common in
+Windows drive letters like <code>C:\</code>), you must escape it.</p>
+<h4 id="windows-example-escaping-the-colon">Windows Example (Escaping
+the Colon):</h4>
+<p>On Windows, escape the drive letter colon with a backslash, or wrap
+the path in single quotes and escape the colon:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode cmd"><code class="sourceCode dosbat"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>ffmpeg <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;subtitles=subs.srt:fontsdir=&#39;C\:/Users/Name/Fonts&#39;&quot;</span> output.mp4</span></code></pre></div>
+<p>Alternatively, use relative paths to avoid using drive letters
+entirely:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode cmd"><code class="sourceCode dosbat"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>ffmpeg <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;subtitles=subs.srt:fontsdir=./local_fonts&quot;</span> output.mp4</span></code></pre></div>
+<hr />
+<h3 id="method-2-using-the-fontconfig_file-environment-variable">Method
+2: Using the <code>FONTCONFIG_FILE</code> Environment Variable</h3>
+<p>If you are using an older version of FFmpeg that does not support the
+<code>fontsdir</code> parameter, or if you need to manage complex font
+fallback rules, you can use Fontconfig. This method works on Linux,
+macOS, and Windows builds compiled with Fontconfig support.</p>
+<ol type="1">
+<li><strong>Create a custom configuration file</strong> (e.g.,
+<code>fonts.conf</code>) in your project folder with the following XML
+content:</li>
+</ol>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode xml"><code class="sourceCode xml"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="fu">&lt;?xml</span> <span class="ot">version=</span><span class="st">&quot;1.0&quot;</span><span class="fu">?&gt;</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="dt">&lt;!DOCTYPE</span> <span class="dt">fontconfig</span> SYSTEM &quot;fonts.dtd&quot;<span class="dt">&gt;</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>&lt;<span class="kw">fontconfig</span>&gt;</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>    <span class="co">&lt;!-- Point to your custom fonts directory --&gt;</span></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>    &lt;<span class="kw">dir</span>&gt;/path/to/custom/fonts&lt;/<span class="kw">dir</span>&gt;</span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>    <span class="co">&lt;!-- Fallback to system cache --&gt;</span></span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>    &lt;<span class="kw">cachedir</span>&gt;/var/cache/fontconfig&lt;/<span class="kw">cachedir</span>&gt;</span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>&lt;/<span class="kw">fontconfig</span>&gt;</span></code></pre></div>
+<ol start="2" type="1">
+<li><strong>Set the environment variable</strong> to point to your
+custom configuration file when running your FFmpeg command:</li>
+</ol>
+<h4 id="on-linux-macos">On Linux / macOS:</h4>
+<div class="sourceCode" id="cb6"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="va">FONTCONFIG_FILE</span><span class="op">=</span><span class="st">&quot;/path/to/fonts.conf&quot;</span> <span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;subtitles=subs.srt&quot;</span> output.mp4</span></code></pre></div>
+<h4 id="on-windows-command-prompt">On Windows (Command Prompt):</h4>
+<div class="sourceCode" id="cb7"><pre
+class="sourceCode cmd"><code class="sourceCode dosbat"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="bu">set</span> <span class="va">FONTCONFIG_FILE</span>=C:\path\to\fonts.conf</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>ffmpeg <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;subtitles=subs.srt&quot;</span> output.mp4</span></code></pre></div></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

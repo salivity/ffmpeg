@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Use FFmpeg anequalizer Filter for Parametric EQ - ffmpeg</title>
+    <meta name="description" content="This article provides a straightforward guide on how to use the FFmpeg anequalizer audio filter to apply high-quality parametric equalization to your audio files. You will learn the core syntax of the filter, understand its key parameters—such as frequ">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/how-to-use-ffmpeg-anequalizer-filter-for-parametric-eq">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Use FFmpeg anequalizer Filter for Parametric EQ - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/how-to-use-ffmpeg-anequalizer-filter-for-parametric-eq" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article provides a straightforward guide on how to use the FFmpeg anequalizer audio filter to apply high-quality parametric equalization to your audio files. You will learn the core syntax of the filter, understand its key parameters—such as frequ" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="how-to-use-ffmpeg-anequalizer-filter-for-parametric-eq">How to
+Use FFmpeg anequalizer Filter for Parametric EQ</h1>
+<p>This article provides a straightforward guide on how to use the
+FFmpeg <code>anequalizer</code> audio filter to apply high-quality
+parametric equalization to your audio files. You will learn the core
+syntax of the filter, understand its key parameters—such as frequency,
+gain, bandwidth, and filter type—and explore practical command-line
+examples for single-band, multi-band, and channel-specific EQ
+configurations.</p>
+<h2 id="understanding-the-anequalizer-syntax">Understanding the
+anequalizer Syntax</h2>
+<p>The <code>anequalizer</code> filter allows you to configure one or
+more equalizer bands by defining their specific parameters. The basic
+structure of a single band configuration in the audio filter
+(<code>-af</code>) looks like this:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="va">anequalizer</span><span class="op">=</span>f=FREQUENCY:w=WIDTH:g=GAIN:t=TYPE</span></code></pre></div>
+<p>Here is a breakdown of the essential parameters you need to
+configure:</p>
+<ul>
+<li><strong><code>f</code> (Frequency):</strong> The center frequency of
+the band in Hz (e.g., <code>f=1000</code> for 1 kHz).</li>
+<li><strong><code>w</code> (Width/Bandwidth):</strong> The width of the
+band. By default, this is measured in Hz.</li>
+<li><strong><code>tb</code> (Width Type):</strong> Specifies how the
+width (<code>w</code>) is interpreted. Set <code>tb=0</code> for Hz
+(default), <code>tb=1</code> for octaves, or <code>tb=2</code> for
+Q-factor.</li>
+<li><strong><code>g</code> (Gain):</strong> The boost or cut in dB
+(e.g., <code>g=6</code> to boost by 6 dB, <code>g=-4</code> to cut by 4
+dB).</li>
+<li><strong><code>t</code> (Filter Type):</strong> The type of filter
+band:
+<ul>
+<li><code>0</code>: Bandpass filter</li>
+<li><code>1</code>: Peaking/EQ filter (most common for parametric
+EQ)</li>
+<li><code>2</code>: Low-shelf filter</li>
+<li><code>3</code>: High-shelf filter</li>
+</ul></li>
+<li><strong><code>c</code> (Channel):</strong> The channel index to
+apply the filter to (e.g., <code>c0</code> for the first channel/left,
+<code>c1</code> for the second channel/right). If omitted, the filter
+applies to all channels.</li>
+</ul>
+<hr />
+<h2 id="practical-examples">Practical Examples</h2>
+<h3 id="single-band-peaking-eq">1. Single-Band Peaking EQ</h3>
+<p>To boost a specific frequency (e.g., 1000 Hz) by 6 dB with a
+bandwidth of 200 Hz across all audio channels, use the following
+command:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp3 <span class="at">-af</span> <span class="st">&quot;anequalizer=f=1000:w=200:g=6:t=1&quot;</span> output.mp3</span></code></pre></div>
+<h3 id="multi-band-parametric-eq">2. Multi-Band Parametric EQ</h3>
+<p>To apply multiple EQ bands at once, separate each band configuration
+with a pipe character (<code>|</code>). The following command applies
+three bands: a low-shelf boost at 100 Hz, a peaking cut at 2500 Hz, and
+a high-shelf boost at 12000 Hz:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.wav <span class="at">-af</span> <span class="st">&quot;anequalizer=f=100:w=50:g=4:t=2|f=2500:w=500:g=-5:t=1|f=12000:w=1000:g=3:t=3&quot;</span> output.wav</span></code></pre></div>
+<h3 id="using-q-factor-instead-of-bandwidth-in-hz">3. Using Q-Factor
+Instead of Bandwidth in Hz</h3>
+<p>If you prefer to define your EQ bands using a standard Q-factor
+(e.g., a Q of 1.4) instead of bandwidth in Hz, set the width type
+(<code>tb</code>) to <code>2</code>:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp3 <span class="at">-af</span> <span class="st">&quot;anequalizer=f=800:tb=2:w=1.4:g=-6:t=1&quot;</span> output.mp3</span></code></pre></div>
+<h3 id="channel-specific-equalization">4. Channel-Specific
+Equalization</h3>
+<p>You can target individual audio channels by prefixing the band
+configuration with the channel parameter. For example, to apply a 5 dB
+boost at 400 Hz only to the left channel (<code>c0</code>):</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.wav <span class="at">-af</span> <span class="st">&quot;anequalizer=c0 f=400 w=100 g=5 t=1&quot;</span> output.wav</span></code></pre></div></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

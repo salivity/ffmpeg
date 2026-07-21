@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FFmpeg Intra-Refresh: Prevent H.264 I-Frame Spikes - ffmpeg</title>
+    <meta name="description" content="This article explains how to configure the intra-refresh option in H.264 encoding using FFmpeg to eliminate bitrate spikes caused by keyframes (I-frames). You will learn the specific command-line parameters required to enable this feature, how it distrib">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/ffmpeg-intra-refresh-prevent-h-264-i-frame-spikes">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="FFmpeg Intra-Refresh: Prevent H.264 I-Frame Spikes - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/ffmpeg-intra-refresh-prevent-h-264-i-frame-spikes" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article explains how to configure the intra-refresh option in H.264 encoding using FFmpeg to eliminate bitrate spikes caused by keyframes (I-frames). You will learn the specific command-line parameters required to enable this feature, how it distrib" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="ffmpeg-intra-refresh-prevent-h.264-i-frame-spikes">FFmpeg
+Intra-Refresh: Prevent H.264 I-Frame Spikes</h1>
+<p>This article explains how to configure the intra-refresh option in
+H.264 encoding using FFmpeg to eliminate bitrate spikes caused by
+keyframes (I-frames). You will learn the specific command-line
+parameters required to enable this feature, how it distributes
+intra-coded data across multiple frames, and the benefits and trade-offs
+it brings to low-latency live streaming.</p>
+<h3 id="the-problem-with-i-frame-spikes">The Problem with I-Frame
+Spikes</h3>
+<p>In standard H.264 video encoding, the encoder periodically inserts an
+Instantaneous Decoder Refresh (IDR) frame, commonly known as an I-frame
+or keyframe. Because I-frames contain complete image data without
+referring to other frames, they are significantly larger than P-frames
+(predictive) and B-frames (bi-directional).</p>
+<p>In bandwidth-constrained or low-latency streaming environments, these
+massive I-frames cause sudden, dramatic spikes in bitrate. These spikes
+can saturate network buffers, leading to packet loss, frame drops, and
+playback stutter.</p>
+<h3 id="how-intra-refresh-works">How Intra-Refresh Works</h3>
+<p>Intra-refresh (also called Periodic Intra-Refresh or PIR) eliminates
+these spikes by eliminating traditional, full-frame I-frames entirely
+after the very first frame.</p>
+<p>Instead of sending a whole keyframe at once, the encoder refreshes
+the video by inserting a moving column or block of intra-coded
+macroblocks across a sequence of consecutive P-frames. Over a set number
+of frames—determined by the Group of Pictures (GOP) size—the entire
+screen is refreshed. This spreads the data size of a single I-frame
+evenly over multiple frames, resulting in a highly consistent, flat
+bitrate.</p>
+<h3 id="ffmpeg-command-for-h.264-intra-refresh">FFmpeg Command for H.264
+Intra-Refresh</h3>
+<p>To enable intra-refresh in FFmpeg using the standard
+<code>libx264</code> encoder, you must use the
+<code>-intra-refresh 1</code> flag and define your GOP size with the
+<code>-g</code> option.</p>
+<p>Here is the recommended FFmpeg command:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-c:v</span> libx264 <span class="at">-intra-refresh</span> 1 <span class="at">-g</span> 60 <span class="at">-keyint_min</span> 60 <span class="at">-b:v</span> 2M000k <span class="at">-bufsize</span> 2M output.mp4</span></code></pre></div>
+<h3 id="parameter-breakdown">Parameter Breakdown</h3>
+<ul>
+<li><strong><code>-c:v libx264</code></strong>: Specifies the H.264
+encoder.</li>
+<li><strong><code>-intra-refresh 1</code></strong>: Enables the periodic
+intra-refresh feature.</li>
+<li><strong><code>-g 60</code></strong>: Sets the GOP (Group of
+Pictures) size. In intra-refresh mode, this number defines how many
+frames it takes to complete one full refresh cycle of the screen. For
+example, at 30 frames per second, a GOP of 60 means the screen fully
+refreshes every 2 seconds.</li>
+<li><strong><code>-keyint_min 60</code></strong>: Prevents the encoder
+from automatically creating IDR frames earlier than the specified GOP
+size.</li>
+<li><strong><code>-b:v 2M</code> and <code>-bufsize 2M</code></strong>:
+Sets the target bitrate and buffer size to enforce strict constant
+bitrate (CBR) control, maximizing the benefits of the flattened
+bitrate.</li>
+</ul>
+<p>Alternatively, you can pass this option directly to the x264 encoder
+library using the <code>-x264-params</code> flag:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-c:v</span> libx264 <span class="at">-x264-params</span> intra-refresh=1 <span class="at">-g</span> 60 output.mp4</span></code></pre></div>
+<h3 id="trade-offs-of-using-intra-refresh">Trade-offs of Using
+Intra-Refresh</h3>
+<p>While intra-refresh is highly effective for smoothing out network
+traffic, it comes with minor trade-offs:</p>
+<ol type="1">
+<li><strong>Seeking/Fast-Forwarding:</strong> Because there are no
+complete keyframes, if a viewer joins a live stream or seeks to a new
+timestamp mid-way, they will experience a brief moment of visual tearing
+or “smearing” until the refresh cycle completes (e.g., up to 2 seconds
+if <code>-g 60</code> is used at 30 fps).</li>
+<li><strong>Slightly Lower Compression Efficiency:</strong> Overall
+compression efficiency may be slightly lower compared to standard GOP
+structures, meaning you might need a marginally higher bitrate to
+achieve the exact same visual quality.</li>
+</ol></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

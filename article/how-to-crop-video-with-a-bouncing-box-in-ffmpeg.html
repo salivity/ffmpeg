@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Crop Video with a Bouncing Box in FFmpeg - ffmpeg</title>
+    <meta name="description" content="This article explains how to use the FFmpeg crop filter to create a dynamic, bouncing crop box that moves across your video screen. You will learn the exact command-line syntax, how the mathematical expressions control the movement, and how to customize">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/how-to-crop-video-with-a-bouncing-box-in-ffmpeg">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Crop Video with a Bouncing Box in FFmpeg - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/how-to-crop-video-with-a-bouncing-box-in-ffmpeg" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article explains how to use the FFmpeg crop filter to create a dynamic, bouncing crop box that moves across your video screen. You will learn the exact command-line syntax, how the mathematical expressions control the movement, and how to customize" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="how-to-crop-video-with-a-bouncing-box-in-ffmpeg">How to Crop
+Video with a Bouncing Box in FFmpeg</h1>
+<p>This article explains how to use the FFmpeg <code>crop</code> filter
+to create a dynamic, bouncing crop box that moves across your video
+screen. You will learn the exact command-line syntax, how the
+mathematical expressions control the movement, and how to customize the
+speed and size of the cropping area.</p>
+<p>To create a bouncing crop box in FFmpeg, you must utilize the
+<code>crop</code> filter with dynamic expressions for the <code>x</code>
+(horizontal) and <code>y</code> (vertical) coordinates. By using
+time-based trigonometric functions, you can keep the crop box within the
+video boundaries while animating it continuously.</p>
+<h3 id="the-ffmpeg-command">The FFmpeg Command</h3>
+<p>Run the following command in your terminal to apply a bouncing
+640x360 crop box to an input video:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;crop=640:360:&#39;(in_w-out_w)*(1+sin(1.5*t))/2&#39;:&#39;(in_h-out_h)*(1+sin(2.3*t))/2&#39;&quot;</span> <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<h3 id="how-the-command-works">How the Command Works</h3>
+<p>The <code>crop</code> filter uses the syntax
+<code>crop=w:h:x:y</code>. Here is the breakdown of how the motion is
+calculated:</p>
+<ul>
+<li><strong><code>640:360</code></strong>: Sets the width
+(<code>out_w</code>) and height (<code>out_h</code>) of your output crop
+box.</li>
+<li><strong><code>in_w</code> and <code>in_h</code></strong>: Refer to
+the input video’s original width and height.</li>
+<li><strong><code>t</code></strong>: Represents the current timestamp of
+the video in seconds. This variable updates every frame, driving the
+animation.</li>
+<li><strong><code>(in_w-out_w)</code></strong>: Represents the maximum
+range of movement. This ensures the crop box never goes off the edge of
+the screen.</li>
+<li><strong><code>sin(1.5*t)</code> and
+<code>sin(2.3*t)</code></strong>: Generates a smooth wave between
+<code>-1</code> and <code>1</code>. Using different multipliers
+(frequencies) like <code>1.5</code> and <code>2.3</code> prevents the
+box from moving in a boring diagonal line, creating a natural bouncing
+effect.</li>
+<li><strong><code>(1+sin(...))/2</code></strong>: Normalizes the sine
+wave value to a range between <code>0</code> and <code>1</code>.</li>
+</ul>
+<p>When multiplied by the range of movement, the coordinates smoothly
+oscillate between <code>0</code> (the top/left edge) and the maximum
+safe boundary (the bottom/right edge).</p>
+<h3 id="customizing-the-animation">Customizing the Animation</h3>
+<p>You can easily adjust the parameters to change the behavior of the
+crop box:</p>
+<ul>
+<li><strong>Change Crop Size</strong>: Modify the first two numbers in
+the filter. For a square 400x400 crop, use:
+<code>crop=400:400...</code></li>
+<li><strong>Change Movement Speed</strong>: Adjust the multipliers
+inside the sine function. Increasing the number makes the bounce faster.
+For example, changing <code>1.5*t</code> to <code>3*t</code> doubles the
+horizontal speed.</li>
+<li><strong>Change the Path Pattern</strong>: Adjusting the relationship
+between the X and Y multipliers will alter the movement pattern. Using
+uneven ratios (like <code>1.1</code> and <code>2.7</code>) creates more
+complex, non-repeating paths.</li>
+</ul></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

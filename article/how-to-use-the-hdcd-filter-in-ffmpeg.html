@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Use the HDCD Filter in FFmpeg - ffmpeg</title>
+    <meta name="description" content="This guide explains how to use the High Definition Compatible Digital (HDCD) filter in FFmpeg to decode 20-bit audio data embedded within standard 16-bit HDCD-encoded audio files. You will learn the essential command-line syntax, how to detect HDCD encod">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/how-to-use-the-hdcd-filter-in-ffmpeg">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Use the HDCD Filter in FFmpeg - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/how-to-use-the-hdcd-filter-in-ffmpeg" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This guide explains how to use the High Definition Compatible Digital (HDCD) filter in FFmpeg to decode 20-bit audio data embedded within standard 16-bit HDCD-encoded audio files. You will learn the essential command-line syntax, how to detect HDCD encod" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="how-to-use-the-hdcd-filter-in-ffmpeg">How to Use the HDCD Filter
+in FFmpeg</h1>
+<p>This guide explains how to use the High Definition Compatible Digital
+(HDCD) filter in FFmpeg to decode 20-bit audio data embedded within
+standard 16-bit HDCD-encoded audio files. You will learn the essential
+command-line syntax, how to detect HDCD encoding in your source files,
+and how to configure key parameters to ensure high-fidelity audio
+extraction.</p>
+<h2 id="understanding-the-hdcd-filter">Understanding the HDCD
+Filter</h2>
+<p>HDCD is a recording process that encodes 20-bit audio resolution into
+a standard 16-bit CD-DA audio track using a form of dynamic range
+expansion and transient filtering. To retrieve the original 20-bit
+depth, you must decode the file using FFmpeg’s <code>hdcd</code> audio
+filter and save the output in a format that supports at least 24-bit
+depth, such as a 24-bit WAV or FLAC file.</p>
+<h2 id="basic-command-syntax">Basic Command Syntax</h2>
+<p>To decode an HDCD-encoded audio file, apply the <code>-af hdcd</code>
+filter and specify a 24-bit output codec (like <code>pcm_s24le</code>
+for WAV or <code>flac</code> for FLAC).</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.wav <span class="at">-af</span> hdcd <span class="at">-c:a</span> pcm_s24le output.wav</span></code></pre></div>
+<p>If you prefer to output to a FLAC file, use this command:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.wav <span class="at">-af</span> hdcd output.flac</span></code></pre></div>
+<p><em>Note: FFmpeg automatically selects a 24-bit sample format for
+FLAC when the filter outputs 24-bit audio.</em></p>
+<h2 id="detecting-and-analyzing-hdcd-content">Detecting and Analyzing
+HDCD Content</h2>
+<p>If you are unsure whether a CD rip actually contains HDCD encoding,
+you can run the filter and send the output to a null destination. FFmpeg
+will analyze the audio and display statistics in the terminal.</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.wav <span class="at">-af</span> hdcd <span class="at">-f</span> null <span class="at">-</span></span></code></pre></div>
+<p>At the end of the process, look at the console output for the
+<code>[Parsed_hdcd_0]</code> lines. If the output shows
+<code>HDCD detected: yes</code>, your file contains HDCD data. The log
+will also show whether features like “Peak Extension” or “Transient
+Filter” were detected and utilized.</p>
+<h2 id="key-filter-options">Key Filter Options</h2>
+<p>The <code>hdcd</code> filter has several optional parameters that you
+can customize depending on your specific hardware or audio
+preferences:</p>
+<ul>
+<li><strong><code>process_stereo</code></strong>: This option controls
+whether the channels are processed independently. Setting it to
+<code>true</code> (default) processes both channels.</li>
+<li><strong><code>disable_atf</code></strong>: Disables the Amplitude
+Transient Filter decoding.</li>
+<li><strong><code>enable_es</code></strong>: Enables Peak Extension
+decoding. This is enabled by default (<code>true</code>). Peak Extension
+is the feature responsible for restoring the expanded dynamic
+range.</li>
+</ul>
+<p>To pass these options to the filter, use the following syntax:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.wav <span class="at">-af</span> <span class="st">&quot;hdcd=disable_atf=true:enable_es=true&quot;</span> output.flac</span></code></pre></div></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Configure FFmpeg Colorlevels Filter RGB Levels - ffmpeg</title>
+    <meta name="description" content="This article explains how to use the FFmpeg colorlevels video filter to adjust the input and output minimum and maximum levels for the red, green, and blue channels. By manipulating these parameters, you can perform precise color correction, contrast adj">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/configure-ffmpeg-colorlevels-filter-rgb-levels">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Configure FFmpeg Colorlevels Filter RGB Levels - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/configure-ffmpeg-colorlevels-filter-rgb-levels" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article explains how to use the FFmpeg colorlevels video filter to adjust the input and output minimum and maximum levels for the red, green, and blue channels. By manipulating these parameters, you can perform precise color correction, contrast adj" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="configure-ffmpeg-colorlevels-filter-rgb-levels">Configure FFmpeg
+Colorlevels Filter RGB Levels</h1>
+<p>This article explains how to use the FFmpeg <code>colorlevels</code>
+video filter to adjust the input and output minimum and maximum levels
+for the red, green, and blue channels. By manipulating these parameters,
+you can perform precise color correction, contrast adjustment, and
+black/white point mapping directly from the command line.</p>
+<h2 id="understanding-the-colorlevels-parameters">Understanding the
+Colorlevels Parameters</h2>
+<p>The <code>colorlevels</code> filter allows you to adjust the black
+point, white point, and output brightness range for each individual
+color channel: Red (r), Green (g), Blue (b), and Alpha (a).</p>
+<p>Each channel has four configurable parameters: * <strong>Input
+Minimum (<code>imin</code>):</strong> Specifies the input level that
+will be mapped to the output minimum. Any input value below this will be
+clipped to the output minimum. * <strong>Input Maximum
+(<code>imax</code>):</strong> Specifies the input level that will be
+mapped to the output maximum. Any input value above this will be clipped
+to the output maximum. * <strong>Output Minimum
+(<code>omin</code>):</strong> Specifies the target minimum level for the
+output. * <strong>Output Maximum (<code>omax</code>):</strong> Specifies
+the target maximum level for the output.</p>
+<p>The parameters are prefixed with the channel letter (<code>r</code>,
+<code>g</code>, <code>b</code>, or <code>a</code>). All values are
+represented as floating-point numbers between <code>0.0</code> and
+<code>1.0</code>.</p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">Channel</th>
+<th style="text-align: left;">Input Min</th>
+<th style="text-align: left;">Input Max</th>
+<th style="text-align: left;">Output Min</th>
+<th style="text-align: left;">Output Max</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><strong>Red</strong></td>
+<td style="text-align: left;"><code>rimin</code></td>
+<td style="text-align: left;"><code>rimax</code></td>
+<td style="text-align: left;"><code>romin</code></td>
+<td style="text-align: left;"><code>romax</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Green</strong></td>
+<td style="text-align: left;"><code>gimin</code></td>
+<td style="text-align: left;"><code>gimax</code></td>
+<td style="text-align: left;"><code>gomin</code></td>
+<td style="text-align: left;"><code>gomax</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Blue</strong></td>
+<td style="text-align: left;"><code>bimin</code></td>
+<td style="text-align: left;"><code>bimax</code></td>
+<td style="text-align: left;"><code>bomin</code></td>
+<td style="text-align: left;"><code>bomax</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Alpha</strong></td>
+<td style="text-align: left;"><code>aimin</code></td>
+<td style="text-align: left;"><code>aimax</code></td>
+<td style="text-align: left;"><code>aomin</code></td>
+<td style="text-align: left;"><code>aomax</code></td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="practical-examples">Practical Examples</h2>
+<h3 id="increasing-video-contrast">1. Increasing Video Contrast</h3>
+<p>To increase the contrast of your video, you can crush the blacks
+(raise the input minimums) and boost the whites (lower the input
+maximums).</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;colorlevels=rimin=0.05:gimin=0.05:bimin=0.05:rimax=0.95:gimax=0.95:bimax=0.95&quot;</span> <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<p><em>In this command, any input values below 0.05 become pure black
+(0.0), and any input values above 0.95 become pure white (1.0) for all
+RGB channels.</em></p>
+<h3 id="reducing-contrast-fading-the-video">2. Reducing Contrast (Fading
+the Video)</h3>
+<p>To compress the dynamic range of your video, keep the input range at
+default (<code>0.0</code> to <code>1.0</code>) but narrow the output
+range. This will make your blacks lighter and your whites darker.</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;colorlevels=romin=0.1:gomin=0.1:bomin=0.1:romax=0.9:gomax=0.9:bomax=0.9&quot;</span> <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<p><em>Here, the darkest possible output color is limited to 0.1, and
+the brightest possible output color is capped at 0.9.</em></p>
+<h3 id="fixing-color-casts-color-correction">3. Fixing Color Casts
+(Color Correction)</h3>
+<p>If your video has an unwanted color cast—such as a strong green
+tint—you can lower the maximum intensity of the green channel to bring
+the colors back into balance.</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;colorlevels=gimax=0.9&quot;</span> <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<p><em>This command scales down the highlight threshold of the green
+channel, reducing its overall presence in the brighter areas of the
+video.</em></p>
+<h3 id="warm-photographic-filter-tinting">4. Warm Photographic Filter
+(Tinting)</h3>
+<p>To apply a warm, stylized tint to your video, you can raise the
+output minimum of the red channel and slightly decrease the output
+maximum of the blue channel.</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;colorlevels=romin=0.08:bomax=0.85&quot;</span> <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<p><em>This pushes warmer tones into the shadows while pulling cool
+tones out of the highlights.</em></p></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

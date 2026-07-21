@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Custom HTTP Headers for FFmpeg HLS PUT Uploads - ffmpeg</title>
+    <meta name="description" content="This article explains how to configure and send custom HTTP headers when uploading HTTP Live Streaming (HLS) segments and playlists using the HTTP PUT method in FFmpeg. By leveraging specific command-line flags, you can easily pass authentication tokens,">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/custom-http-headers-for-ffmpeg-hls-put-uploads">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Custom HTTP Headers for FFmpeg HLS PUT Uploads - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/custom-http-headers-for-ffmpeg-hls-put-uploads" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article explains how to configure and send custom HTTP headers when uploading HTTP Live Streaming (HLS) segments and playlists using the HTTP PUT method in FFmpeg. By leveraging specific command-line flags, you can easily pass authentication tokens," />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="custom-http-headers-for-ffmpeg-hls-put-uploads">Custom HTTP
+Headers for FFmpeg HLS PUT Uploads</h1>
+<p>This article explains how to configure and send custom HTTP headers
+when uploading HTTP Live Streaming (HLS) segments and playlists using
+the HTTP PUT method in FFmpeg. By leveraging specific command-line
+flags, you can easily pass authentication tokens, content types, or
+custom metadata to your destination ingest server.</p>
+<p>To send custom HTTP headers during an HLS upload, you must use
+FFmpeg’s <code>-headers</code> option. Because HTTP headers require
+carriage return and line feed (<code>\r\n</code>) separators, the syntax
+must be formatted correctly so your shell passes the newlines to
+FFmpeg.</p>
+<h3 id="the-ffmpeg-command-syntax">The FFmpeg Command Syntax</h3>
+<p>Here is the standard command structure for uploading HLS segments via
+HTTP PUT with custom headers:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="dt">\</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">-c:v</span> libx264 <span class="at">-c:a</span> aac <span class="dt">\</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">-f</span> hls <span class="dt">\</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">-hls_time</span> 4 <span class="dt">\</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">-hls_list_size</span> 5 <span class="dt">\</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">-method</span> PUT <span class="dt">\</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">-headers</span> <span class="st">$&#39;Authorization: Bearer YOUR_TOKEN</span><span class="dt">\r\n</span><span class="st">X-Custom-Header: MyValue</span><span class="dt">\r\n</span><span class="st">&#39;</span> <span class="dt">\</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>  <span class="at">-hls_segment_filename</span> <span class="st">&#39;http://your-server.com/live/seg_%03d.ts&#39;</span> <span class="dt">\</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>  http://your-server.com/live/playlist.m3u8</span></code></pre></div>
+<h3 id="key-parameters-explained">Key Parameters Explained</h3>
+<ul>
+<li><strong><code>-f hls</code></strong>: Specifies the HLS muxer.</li>
+<li><strong><code>-method PUT</code></strong>: Instructs FFmpeg to use
+the HTTP PUT method instead of the default GET or POST for uploading the
+playlist and transport stream (.ts) segments.</li>
+<li><strong><code>-headers</code></strong>: This flag contains the
+custom HTTP headers. Note the use of <code>$'...'</code> in Bash, which
+enables the interpretation of backslash-escaped characters like
+<code>\r\n</code>. Every header line—including the last one—must end
+with <code>\r\n</code>.</li>
+<li><strong><code>-hls_segment_filename</code></strong>: The HTTP
+destination URL where the individual segment files will be
+uploaded.</li>
+</ul>
+<h3 id="important-considerations">Important Considerations</h3>
+<ol type="1">
+<li><strong>Single vs. Multiple Headers</strong>: If you only need to
+send a single header, you must still append <code>\r\n</code> to the end
+of the string (e.g.,
+<code>-headers $'Authorization: Bearer Token\r\n'</code>).</li>
+<li><strong>HTTP Server Configuration</strong>: Ensure your receiving
+web server is configured to accept PUT requests and is prepared to parse
+the custom headers you are sending.</li>
+<li><strong>Connection Reuse</strong>: For better upload performance,
+add <code>-http_persistent 1</code> to your command. This keeps the TCP
+connection alive across multiple segment uploads, reducing latency.</li>
+</ol></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

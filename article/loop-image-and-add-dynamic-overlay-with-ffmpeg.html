@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Loop Image and Add Dynamic Overlay with FFmpeg - ffmpeg</title>
+    <meta name="description" content="This guide explains how to use FFmpeg to convert a single static image into a video of a specific duration while applying a dynamic, moving overlay. You will learn the exact FFmpeg commands needed to loop the image input, define the output duration, and">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/loop-image-and-add-dynamic-overlay-with-ffmpeg">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Loop Image and Add Dynamic Overlay with FFmpeg - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/loop-image-and-add-dynamic-overlay-with-ffmpeg" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This guide explains how to use FFmpeg to convert a single static image into a video of a specific duration while applying a dynamic, moving overlay. You will learn the exact FFmpeg commands needed to loop the image input, define the output duration, and" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="loop-image-and-add-dynamic-overlay-with-ffmpeg">Loop Image and
+Add Dynamic Overlay with FFmpeg</h1>
+<p>This guide explains how to use FFmpeg to convert a single static
+image into a video of a specific duration while applying a dynamic,
+moving overlay. You will learn the exact FFmpeg commands needed to loop
+the image input, define the output duration, and overlay an animated
+element or apply motion coordinates to create a dynamic visual
+effect.</p>
+<h2 id="looping-a-static-image-for-a-set-duration">Looping a Static
+Image for a Set Duration</h2>
+<p>To loop a static image, you must place the <code>-loop 1</code>
+option before the input image, and set the desired output duration using
+the <code>-t</code> parameter (in seconds) or <code>-to</code> (in
+HH:MM:SS format).</p>
+<p>Here is the basic syntax to loop an image for 10 seconds:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-loop</span> 1 <span class="at">-t</span> 10 <span class="at">-i</span> background.png <span class="at">-pix_fmt</span> yuv420p output.mp4</span></code></pre></div>
+<ul>
+<li><code>-loop 1</code>: Enables looping for the single-frame
+input.</li>
+<li><code>-t 10</code>: Limits the output duration to 10 seconds.</li>
+<li><code>-pix_fmt yuv420p</code>: Ensures maximum compatibility with
+standard media players.</li>
+</ul>
+<h2 id="adding-a-dynamic-overlay">Adding a Dynamic Overlay</h2>
+<p>You can add a dynamic overlay in two ways: by making a static
+watermark move across the screen using mathematical expressions, or by
+overlaying an animated video/GIF.</p>
+<h3 id="method-1-overlaying-an-animated-gif-or-video">Method 1:
+Overlaying an Animated GIF or Video</h3>
+<p>To overlay an animated asset (like a looping GIF or transparent
+video) over your looped background, use the <code>-ignore_loop 0</code>
+flag for GIFs or <code>-stream_loop -1</code> for videos to loop the
+overlay infinitely, then merge them using
+<code>filter_complex</code>.</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-loop</span> 1 <span class="at">-t</span> 15 <span class="at">-i</span> background.jpg <span class="at">-ignore_loop</span> 0 <span class="at">-i</span> animated_overlay.gif <span class="at">-filter_complex</span> <span class="st">&quot;[0:v][1:v]overlay=x=10:y=10:shortest=1[out]&quot;</span> <span class="at">-map</span> <span class="st">&quot;[out]&quot;</span> <span class="at">-pix_fmt</span> yuv420p output.mp4</span></code></pre></div>
+<ul>
+<li><code>-ignore_loop 0</code>: Infinite looping for the input
+GIF.</li>
+<li><code>[0:v][1:v]overlay</code>: Places the second input (the GIF) on
+top of the first input (the background image).</li>
+<li><code>x=10:y=10</code>: Positions the overlay 10 pixels from the
+top-left corner.</li>
+<li><code>shortest=1</code>: Stops the encoding process as soon as the
+background’s 15-second duration limit is reached.</li>
+</ul>
+<h3
+id="method-2-creating-a-moving-overlay-using-math-expressions">Method 2:
+Creating a Moving Overlay Using Math Expressions</h3>
+<p>If you want a static overlay image to move dynamically across the
+looped background, use variable expressions inside the
+<code>overlay</code> filter.</p>
+<p>The command below moves a watermark horizontally across the screen
+over a 10-second looped image:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-loop</span> 1 <span class="at">-t</span> 10 <span class="at">-i</span> background.jpg <span class="at">-i</span> watermark.png <span class="at">-filter_complex</span> <span class="st">&quot;[0:v][1:v]overlay=x=&#39;t*100&#39;:y=&#39;H/2-h/2&#39;[out]&quot;</span> <span class="at">-map</span> <span class="st">&quot;[out]&quot;</span> <span class="at">-pix_fmt</span> yuv420p output.mp4</span></code></pre></div>
+<ul>
+<li><code>x='t*100'</code>: Moves the overlay horizontally based on time
+(<code>t</code> represents current time in seconds). The overlay moves
+to the right at a speed of 100 pixels per second.</li>
+<li><code>y='H/2-h/2'</code>: Centers the overlay vertically, where
+<code>H</code> is the background height and <code>h</code> is the
+overlay height.</li>
+</ul>
+<h3 id="method-3-bouncing-or-custom-trajectory-movement">Method 3:
+Bouncing or Custom Trajectory Movement</h3>
+<p>For a more complex dynamic movement, such as bouncing, use
+trigonometric functions within the coordinate values:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-loop</span> 1 <span class="at">-t</span> 10 <span class="at">-i</span> background.jpg <span class="at">-i</span> watermark.png <span class="at">-filter_complex</span> <span class="st">&quot;[0:v][1:v]overlay=x=&#39;(W-w)/2 + sin(t)*100&#39;:y=&#39;(H-h)/2 + cos(t)*100&#39;[out]&quot;</span> <span class="at">-map</span> <span class="st">&quot;[out]&quot;</span> <span class="at">-pix_fmt</span> yuv420p output.mp4</span></code></pre></div>
+<ul>
+<li><code>sin(t)</code> and <code>cos(t)</code>: Create a smooth,
+circular dynamic path around the center of the background image.</li>
+</ul></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Use FFmpeg AFIR Filter - ffmpeg</title>
+    <meta name="description" content="The afir (Audio Finite Impulse Response) filter in FFmpeg is a powerful tool used for applying impulse responses (IR) to audio streams, enabling effects like convolution reverb, cabinet simulation, and precise frequency equalization. This article provide">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/how-to-use-ffmpeg-afir-filter">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Use FFmpeg AFIR Filter - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/how-to-use-ffmpeg-afir-filter" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="The afir (Audio Finite Impulse Response) filter in FFmpeg is a powerful tool used for applying impulse responses (IR) to audio streams, enabling effects like convolution reverb, cabinet simulation, and precise frequency equalization. This article provide" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="how-to-use-ffmpeg-afir-filter">How to Use FFmpeg AFIR
+Filter</h1>
+<p>The <code>afir</code> (Audio Finite Impulse Response) filter in
+FFmpeg is a powerful tool used for applying impulse responses (IR) to
+audio streams, enabling effects like convolution reverb, cabinet
+simulation, and precise frequency equalization. This article provides a
+quick, practical guide on how the <code>afir</code> filter works, its
+basic syntax, and real-world command examples to help you implement it
+in your audio processing projects.</p>
+<h3 id="understanding-the-afir-filter">Understanding the AFIR
+Filter</h3>
+<p>The <code>afir</code> filter works by convolving an input audio
+signal with an impulse response file. An impulse response is a recording
+of how a space (like a cathedral) or a piece of hardware (like a guitar
+amplifier) reacts to a single spike of sound. By combining your source
+audio with an IR, you can simulate that specific acoustic environment or
+hardware coloration.</p>
+<p>The filter requires at least two audio inputs: 1. <strong>Input
+0:</strong> The original, dry audio stream. 2. <strong>Input 1:</strong>
+The impulse response (IR) audio file.</p>
+<h3 id="basic-syntax-and-command-structure">Basic Syntax and Command
+Structure</h3>
+<p>Because the <code>afir</code> filter requires multiple inputs, you
+must use FFmpeg’s <code>-filter_complex</code> flag. Here is the basic
+command template:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.wav <span class="at">-i</span> impulse_response.wav <span class="at">-filter_complex</span> <span class="st">&quot;[0:a][1:a]afir[out]&quot;</span> <span class="at">-map</span> <span class="st">&quot;[out]&quot;</span> output.wav</span></code></pre></div>
+<p>In this command: * <code>-i input.wav</code> is your dry audio. *
+<code>-i impulse_response.wav</code> is the IR file. *
+<code>[0:a][1:a]</code> feeds the audio of the first input and the audio
+of the second input into the filter. * <code>afir</code> processes the
+convolution. * <code>-map "[out]"</code> ensures the output of the
+filter is saved to the final file.</p>
+<h3 id="common-parameters">Common Parameters</h3>
+<p>You can customize the behavior of the <code>afir</code> filter by
+passing key-value parameters.</p>
+<ul>
+<li><strong><code>dry</code></strong>: Sets the gain of the dry
+(unprocessed) signal. Default is 1.0.</li>
+<li><strong><code>wet</code></strong>: Sets the gain of the wet
+(processed) signal. Default is 1.0.</li>
+<li><strong><code>gweight</code></strong>: Sets the global gain weight.
+This is useful for preventing digital clipping if the output signal
+becomes too loud.</li>
+<li><strong><code>irgain</code></strong>: Adjusts the gain of the
+impulse response before processing.</li>
+</ul>
+<h3 id="practical-examples">Practical Examples</h3>
+<h4 id="adjusting-the-wetdry-balance">1. Adjusting the Wet/Dry
+Balance</h4>
+<p>To create a natural-sounding reverb, you usually want more of the dry
+signal and less of the wet signal. You can adjust this using the
+<code>dry</code> and <code>wet</code> parameters:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> dry_vocal.mp3 <span class="at">-i</span> room_ir.wav <span class="at">-filter_complex</span> <span class="st">&quot;[0:a][1:a]afir=dry=10:wet=0.5[out]&quot;</span> <span class="at">-map</span> <span class="st">&quot;[out]&quot;</span> output.mp3</span></code></pre></div>
+<h4 id="preventing-audio-clipping">2. Preventing Audio Clipping</h4>
+<p>Convolution can significantly increase the volume of your output,
+resulting in unpleasant distortion. You can apply the
+<code>gweight</code> parameter to scale down the overall volume:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> guitar.wav <span class="at">-i</span> cab_ir.wav <span class="at">-filter_complex</span> <span class="st">&quot;[0:a][1:a]afir=gweight=0.5[out]&quot;</span> <span class="at">-map</span> <span class="st">&quot;[out]&quot;</span> processed_guitar.wav</span></code></pre></div>
+<h4 id="working-with-stereo-signals">3. Working with Stereo Signals</h4>
+<p>If your input is stereo and your IR file is stereo, the
+<code>afir</code> filter will automatically map the left channel of the
+IR to the left channel of the input, and the right channel of the IR to
+the right channel of the input. Ensure both files share the same sample
+rate (e.g., 44100 Hz or 48000 Hz) for the best results, as FFmpeg will
+automatically resample the IR to match the input if they do not
+match.</p></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stream Stereo as Two Mono RTP Streams with FFmpeg - ffmpeg</title>
+    <meta name="description" content="This guide explains how to use FFmpeg to split a stereo audio input and broadcast it as two separate, independent mono RTP (Real-time Transport Protocol) streams. You will learn the exact command-line syntax, how the audio filtergraph separates the chann">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/stream-stereo-as-two-mono-rtp-streams-with-ffmpeg">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Stream Stereo as Two Mono RTP Streams with FFmpeg - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/stream-stereo-as-two-mono-rtp-streams-with-ffmpeg" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This guide explains how to use FFmpeg to split a stereo audio input and broadcast it as two separate, independent mono RTP (Real-time Transport Protocol) streams. You will learn the exact command-line syntax, how the audio filtergraph separates the chann" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="stream-stereo-as-two-mono-rtp-streams-with-ffmpeg">Stream Stereo
+as Two Mono RTP Streams with FFmpeg</h1>
+<p>This guide explains how to use FFmpeg to split a stereo audio input
+and broadcast it as two separate, independent mono RTP (Real-time
+Transport Protocol) streams. You will learn the exact command-line
+syntax, how the audio filtergraph separates the channels, and how to
+configure the destination ports for receiver playback.</p>
+<h3 id="the-ffmpeg-command">The FFmpeg Command</h3>
+<p>To split a stereo source and stream it to two different RTP
+destinations, use the following command:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp3 <span class="at">-filter_complex</span> <span class="st">&quot;[0:a]channelsplit=channel_layout=stereo[left][right]&quot;</span> <span class="dt">\</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>-map <span class="st">&quot;[left]&quot;</span> <span class="at">-c:a</span> pcm_s16be <span class="at">-f</span> rtp rtp://127.0.0.1:5004 <span class="dt">\</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>-map <span class="st">&quot;[right]&quot;</span> <span class="at">-c:a</span> pcm_s16be <span class="at">-f</span> rtp rtp://127.0.0.1:5006</span></code></pre></div>
+<h3 id="command-breakdown">Command Breakdown</h3>
+<ul>
+<li><strong><code>-i input.mp3</code></strong>: Specifies the input
+stereo audio file or stream.</li>
+<li><strong><code>-filter_complex "[0:a]channelsplit=channel_layout=stereo[left][right]"</code></strong>:
+This is the core filter. It takes the first input’s audio
+(<code>[0:a]</code>), uses the <code>channelsplit</code> filter to
+extract the stereo channels, and labels the output streams as
+<code>[left]</code> and <code>[right]</code>.</li>
+<li><strong><code>-map "[left]"</code></strong>: Directs the extracted
+left channel to the first output.</li>
+<li><strong><code>-map "[right]"</code></strong>: Directs the extracted
+right channel to the second output.</li>
+<li><strong><code>-c:a pcm_s16be</code></strong>: Encodes the audio.
+<code>pcm_s16be</code> (signed 16-bit Big-Endian PCM) is a standard
+uncompressed format highly compatible with RTP. You can replace this
+with other codecs like <code>libopus</code> or <code>libmp3lame</code>
+if bandwidth compression is required.</li>
+<li><strong><code>-f rtp</code></strong>: Forces the output format to
+RTP.</li>
+<li><strong><code>rtp://127.0.0.1:5004</code> and
+<code>rtp://127.0.0.1:5006</code></strong>: Defines the destination IP
+address and unique port numbers for each mono stream. Ensure you use
+even port numbers as RTP standards reserve odd ports for RTCP control
+packets.</li>
+</ul>
+<h3 id="accessing-the-streams-sdp-files">Accessing the Streams (SDP
+Files)</h3>
+<p>RTP streams require a Session Description Protocol (SDP) file for
+receivers (like VLC or FFplay) to understand the audio encoding and port
+mapping.</p>
+<p>FFmpeg displays the SDP configuration in the console output when you
+run the command. To capture and save these configurations directly to
+files for your players, add the <code>-sdp_file</code> option:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp3 <span class="at">-filter_complex</span> <span class="st">&quot;[0:a]channelsplit=channel_layout=stereo[left][right]&quot;</span> <span class="dt">\</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>-map <span class="st">&quot;[left]&quot;</span> <span class="at">-c:a</span> pcm_s16be <span class="at">-f</span> rtp <span class="at">-sdp_file</span> left.sdp rtp://127.0.0.1:5004 <span class="dt">\</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>-map <span class="st">&quot;[right]&quot;</span> <span class="at">-c:a</span> pcm_s16be <span class="at">-f</span> rtp <span class="at">-sdp_file</span> right.sdp rtp://127.0.0.1:5006</span></code></pre></div>
+<p>Receivers can then play the independent mono streams by opening the
+generated <code>left.sdp</code> or <code>right.sdp</code> files.</p></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

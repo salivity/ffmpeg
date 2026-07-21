@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Set FFmpeg Named Pipe Buffer Size to Prevent Data Loss - ffmpeg</title>
+    <meta name="description" content="Using named pipes (FIFOs) with FFmpeg is an efficient way to stream real-time video and audio data between applications without writing to physical storage. However, because named pipes rely on limited system memory buffers, a mismatch in speed between t">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/set-ffmpeg-named-pipe-buffer-size-to-prevent-data-loss">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Set FFmpeg Named Pipe Buffer Size to Prevent Data Loss - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/set-ffmpeg-named-pipe-buffer-size-to-prevent-data-loss" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Using named pipes (FIFOs) with FFmpeg is an efficient way to stream real-time video and audio data between applications without writing to physical storage. However, because named pipes rely on limited system memory buffers, a mismatch in speed between t" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="set-ffmpeg-named-pipe-buffer-size-to-prevent-data-loss">Set
+FFmpeg Named Pipe Buffer Size to Prevent Data Loss</h1>
+<p>Using named pipes (FIFOs) with FFmpeg is an efficient way to stream
+real-time video and audio data between applications without writing to
+physical storage. However, because named pipes rely on limited system
+memory buffers, a mismatch in speed between the writer and reader can
+easily lead to overflow, underflow, and severe data loss. This article
+explains how to configure buffer sizes both within FFmpeg and at the
+operating system level to ensure reliable, high-performance data
+transmission.</p>
+<hr />
+<h3 id="method-1-increase-the-thread-queue-size-input-pipes">Method 1:
+Increase the Thread Queue Size (Input Pipes)</h3>
+<p>When FFmpeg reads from a named pipe, it may temporarily fall behind
+during heavy encoding tasks, causing the pipe’s OS buffer to overflow.
+You can prevent this by increasing the demuxer’s thread queue size. This
+forces FFmpeg to allocate a larger in-memory queue to buffer incoming
+packets.</p>
+<p>Add the <code>-thread_queue_size</code> option immediately
+<strong>before</strong> the input file option:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-thread_queue_size</span> 1024 <span class="at">-i</span> /path/to/named_pipe <span class="at">-c:v</span> libx264 output.mp4</span></code></pre></div>
+<ul>
+<li><strong>Default Value:</strong> Usually 8 or 16 packets.</li>
+<li><strong>Recommended Value:</strong> Try <code>512</code>,
+<code>1024</code>, or <code>2048</code> depending on your system’s RAM
+and the bitrate of your stream.</li>
+</ul>
+<hr />
+<h3 id="method-2-use-the-fifo-muxer-output-pipes">Method 2: Use the FIFO
+Muxer (Output Pipes)</h3>
+<p>If FFmpeg is writing to a named pipe and the receiving application is
+slow to read the data, FFmpeg will block or drop frames. To prevent
+this, use FFmpeg’s native <code>fifo</code> muxer. This runs the output
+writing process in a separate thread with its own configurable
+queue.</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-f</span> fifo <span class="at">-fifo_format</span> mpegts <span class="at">-map</span> 0 <span class="at">-queue_size</span> 2000 /path/to/named_pipe</span></code></pre></div>
+<ul>
+<li><strong><code>-f fifo</code></strong>: Enables the FIFO muxer.</li>
+<li><strong><code>-fifo_format mpegts</code></strong>: Specifies the
+actual format of the output stream (replace <code>mpegts</code> with
+your desired format, like <code>flv</code> or <code>nut</code>).</li>
+<li><strong><code>-queue_size 2000</code></strong>: Sets the maximum
+number of packets to buffer in memory before dropping data.</li>
+</ul>
+<hr />
+<h3 id="method-3-adjust-the-os-pipe-buffer-size-linux">Method 3: Adjust
+the OS Pipe Buffer Size (Linux)</h3>
+<p>By default, the Linux kernel limits a named pipe’s capacity to 64 KB.
+For high-definition video, this buffer is filled almost instantly. You
+can bypass this kernel limitation by routing your data through
+<code>mbuffer</code> or <code>pv</code> (Pipe Viewer), which can
+allocate massive RAM buffers.</p>
+<h4 id="using-mbuffer">Using <code>mbuffer</code></h4>
+<p><code>mbuffer</code> acts as an intermediary buffer that can hold
+megabytes of data in system memory.</p>
+<ol type="1">
+<li><p>Create your named pipe:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="fu">mkfifo</span> /tmp/my_pipe</span></code></pre></div></li>
+<li><p>Run FFmpeg reading from standard input, fed by
+<code>mbuffer</code> reading from the pipe:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">mbuffer</span> <span class="at">-m</span> 64M <span class="at">-I</span> /tmp/my_pipe <span class="kw">|</span> <span class="ex">ffmpeg</span> <span class="at">-i</span> <span class="at">-</span> <span class="at">-c:v</span> copy output.mp4</span></code></pre></div>
+<p><em>(In this example, <code>-m 64M</code> sets a 64 Megabyte buffer
+in RAM).</em></p></li>
+</ol>
+<h4 id="using-pv">Using <code>pv</code></h4>
+<p>If <code>mbuffer</code> is not installed, you can use <code>pv</code>
+with a custom buffer size:</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="ex">pv</span> <span class="at">-B</span> 32M /tmp/my_pipe <span class="kw">|</span> <span class="ex">ffmpeg</span> <span class="at">-i</span> <span class="at">-</span> <span class="at">-c:v</span> copy output.mp4</span></code></pre></div>
+<p><em>(Here, <code>-B 32M</code> allocates a 32 Megabyte
+buffer).</em></p></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

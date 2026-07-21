@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Configure Subtitles in HLS Streams Using FFmpeg - ffmpeg</title>
+    <meta name="description" content="This article provides a straightforward guide on how to configure and package subtitle tracks into an HTTP Live Streaming (HLS) feed using FFmpeg. You will learn the essential FFmpeg commands, codec requirements, and stream mapping configurations needed">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/configure-subtitles-in-hls-streams-using-ffmpeg">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Configure Subtitles in HLS Streams Using FFmpeg - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/configure-subtitles-in-hls-streams-using-ffmpeg" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article provides a straightforward guide on how to configure and package subtitle tracks into an HTTP Live Streaming (HLS) feed using FFmpeg. You will learn the essential FFmpeg commands, codec requirements, and stream mapping configurations needed" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="configure-subtitles-in-hls-streams-using-ffmpeg">Configure
+Subtitles in HLS Streams Using FFmpeg</h1>
+<p>This article provides a straightforward guide on how to configure and
+package subtitle tracks into an HTTP Live Streaming (HLS) feed using
+FFmpeg. You will learn the essential FFmpeg commands, codec
+requirements, and stream mapping configurations needed to deliver
+multi-language WebVTT subtitles alongside your video and audio
+streams.</p>
+<hr />
+<h3 id="understanding-hls-subtitles">Understanding HLS Subtitles</h3>
+<p>HLS streams deliver subtitles using the <strong>WebVTT (Web Video
+Text Tracks)</strong> format. Instead of embedding subtitles directly
+into the video frame (hardcoding), HLS serves them as separate text
+tracks. This allows viewers to toggle subtitles on or off and select
+their preferred language directly from the media player.</p>
+<p>To configure this in FFmpeg, you must convert your subtitle files
+(such as <code>.srt</code>) into WebVTT format and map them correctly
+inside the HLS master playlist (<code>.m3u8</code>).</p>
+<hr />
+<h3 id="the-ffmpeg-command">The FFmpeg Command</h3>
+<p>Below is the standard FFmpeg command used to package a video file and
+two separate subtitle tracks (English and Spanish) into an HLS
+stream:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-i</span> subtitle_en.srt <span class="at">-i</span> subtitle_es.srt <span class="dt">\</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>-map 0:v:0 <span class="at">-map</span> 0:a:0 <span class="at">-map</span> 1:s:0 <span class="at">-map</span> 2:s:0 <span class="dt">\</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>-c:v copy <span class="at">-c:a</span> copy <span class="at">-c:s</span> webvtt <span class="dt">\</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>-f hls <span class="dt">\</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>-hls_time 10 <span class="dt">\</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>-hls_playlist_type vod <span class="dt">\</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>-master_pl_name master.m3u8 <span class="dt">\</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>-var_stream_map <span class="st">&quot;v:0,a:0 s:0,language:eng,name:English s:1,language:spa,name:Spanish&quot;</span> <span class="dt">\</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>output_%v.m3u8</span></code></pre></div>
+<hr />
+<h3 id="command-breakdown">Command Breakdown</h3>
+<p>Here is what each parameter does to configure the subtitle
+tracks:</p>
+<ul>
+<li><strong><code>-i input.mp4 -i subtitle_en.srt -i subtitle_es.srt</code></strong>:
+Defines the input sources. Input <code>0</code> is the video/audio,
+Input <code>1</code> is the English subtitle, and Input <code>2</code>
+is the Spanish subtitle.</li>
+<li><strong><code>-map</code> options</strong>: Maps specific streams
+from the inputs to the output.
+<ul>
+<li><code>0:v:0</code> maps the first video stream.</li>
+<li><code>0:a:0</code> maps the first audio stream.</li>
+<li><code>1:s:0</code> maps the first subtitle stream from the English
+SRT.</li>
+<li><code>2:s:0</code> maps the first subtitle stream from the Spanish
+SRT.</li>
+</ul></li>
+<li><strong><code>-c:s webvtt</code></strong>: Instructs FFmpeg to
+transcode the input subtitle formats (e.g., SRT) into the HLS-compatible
+<code>webvtt</code> format.</li>
+<li><strong><code>-f hls</code></strong>: Specifies the output format as
+HLS.</li>
+<li><strong><code>-master_pl_name master.m3u8</code></strong>: Generates
+a master playlist that links the video, audio, and subtitle tracks
+together.</li>
+<li><strong><code>-var_stream_map</code></strong>: This is the crucial
+setting that groups the streams.
+<ul>
+<li><code>v:0,a:0</code> links the first video and audio streams
+together.</li>
+<li><code>s:0,language:eng,name:English</code> defines the first
+subtitle stream (<code>s:0</code>), assigns it the ISO 639-2 language
+code (<code>eng</code>), and names it “English” for the player’s
+menu.</li>
+<li><code>s:1,language:spa,name:Spanish</code> defines the second
+subtitle stream (<code>s:1</code>), assigns it the language code
+(<code>spa</code>), and names it “Spanish”.</li>
+</ul></li>
+<li><strong><code>output_%v.m3u8</code></strong>: The naming template
+for the variant playlist files.</li>
+</ul>
+<hr />
+<h3 id="verifying-the-output">Verifying the Output</h3>
+<p>Once the command finishes running, FFmpeg will generate the following
+files: * <code>master.m3u8</code> (The main playlist file containing
+references to all streams) * <code>output_0.m3u8</code> (The video and
+audio playlist) * <code>output_1.m3u8</code> (The English subtitle
+playlist) * <code>output_2.m3u8</code> (The Spanish subtitle playlist) *
+Multiple <code>.ts</code> segments for video/audio, and
+<code>.vtt</code> segments for the subtitles.</p>
+<p>When you load the <code>master.m3u8</code> file into an
+HLS-compatible player (like Safari, VLC, or hls.js), the player will
+recognize the English and Spanish subtitle tracks and display them as
+options in the subtitle selection menu.</p></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

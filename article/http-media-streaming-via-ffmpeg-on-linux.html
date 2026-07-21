@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HTTP Media Streaming via FFmpeg on Linux - ffmpeg</title>
+    <meta name="description" content="FFmpeg includes a built-in, lightweight HTTP server capability that allows you to stream local audio and video files directly over a network without needing heavy external web server software. By utilizing the mp4, mpegts, or webm muxers combined with th">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/http-media-streaming-via-ffmpeg-on-linux">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="HTTP Media Streaming via FFmpeg on Linux - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/http-media-streaming-via-ffmpeg-on-linux" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="FFmpeg includes a built-in, lightweight HTTP server capability that allows you to stream local audio and video files directly over a network without needing heavy external web server software. By utilizing the mp4, mpegts, or webm muxers combined with th" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="http-media-streaming-via-ffmpeg-on-linux">HTTP Media Streaming
+via FFmpeg on Linux</h1>
+<p>FFmpeg includes a built-in, lightweight HTTP server capability that
+allows you to stream local audio and video files directly over a network
+without needing heavy external web server software. By utilizing the
+<code>mp4</code>, <code>mpegts</code>, or <code>webm</code> muxers
+combined with the HTTP protocol output, you can instantly host a media
+file from your Linux terminal. This guide covers the exact commands
+required to set up a local HTTP stream, configure the appropriate
+formats, and access the stream from any device on your local
+network.</p>
+<hr />
+<h2 id="the-basic-http-streaming-command">The Basic HTTP Streaming
+Command</h2>
+<p>FFmpeg can listen for incoming HTTP connections by using the
+<code>http://</code> protocol prefix in the output argument, combined
+with the <code>-listen 1</code> flag. This turns FFmpeg from a standard
+media converter into a single-use web server.</p>
+<p>The foundational syntax for streaming a local file is:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-re</span> <span class="at">-i</span> input.mp4 <span class="at">-c</span> copy <span class="at">-listen</span> 1 <span class="at">-f</span> mp4 http://0.0.0.0:8080</span></code></pre></div>
+<h3 id="breaking-down-the-flags">Breaking Down the Flags</h3>
+<ul>
+<li><strong><code>-re</code></strong>: This flag reads the input file at
+its native frame rate (real-time). Without it, FFmpeg will dump the data
+as fast as your CPU allows, which will overwhelm the streaming buffer
+and cause playback to fail.</li>
+<li><strong><code>-i input.mp4</code></strong>: Specifies the path to
+your local media file.</li>
+<li><strong><code>-c copy</code></strong>: Stream copies the video and
+audio codecs without re-encoding them. This uses virtually zero CPU
+power, but requires the source file to already be in a format compatible
+with your playback device.</li>
+<li><strong><code>-listen 1</code></strong>: Instructs FFmpeg to act as
+an HTTP server and accept an incoming connection.</li>
+<li><strong><code>-f mp4</code></strong>: Forces the output format to
+MP4. For streaming, you can also use <code>mpegts</code> or
+<code>webm</code>.</li>
+<li><strong><code>http://0.0.0.0:8080</code></strong>: Binds the server
+to port 8080 on all available network interfaces, allowing other devices
+on your local network to connect.</li>
+</ul>
+<hr />
+<h2 id="choosing-the-right-formats-and-codecs">Choosing the Right
+Formats and Codecs</h2>
+<p>While stream-copying (<code>-c copy</code>) is fast, not all media
+containers stream smoothly over basic HTTP loops. Depending on your
+target player, you may need to tweak the container format or transcode
+the file on the fly.</p>
+<h3 id="fragmented-mp4-recommended-for-browsers">1. Fragmented MP4
+(Recommended for Browsers)</h3>
+<p>Standard MP4 files require the player to read the metadata block
+(moov atom), which usually sits at the end of the file. To stream a
+standard MP4 effectively, you must fragment it so it can play
+instantly:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-re</span> <span class="at">-i</span> input.mp4 <span class="at">-c</span> copy <span class="at">-listen</span> 1 <span class="at">-f</span> mp4 <span class="at">-movflags</span> fragmented+empty_moov+default_base_moof http://0.0.0.0:8080</span></code></pre></div>
+<h3 id="mpeg-ts-recommended-for-vlc-and-media-players">2. MPEG-TS
+(Recommended for VLC and Media Players)</h3>
+<p>The MPEG Transport Stream format is inherently designed for
+streaming. It handles network interruptions gracefully and does not
+require complex metadata flags.</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-re</span> <span class="at">-i</span> input.mp4 <span class="at">-c</span> copy <span class="at">-listen</span> 1 <span class="at">-f</span> mpegts http://0.0.0.0:8080</span></code></pre></div>
+<h3 id="on-the-fly-transcoding-for-maximum-compatibility">3. On-the-Fly
+Transcoding (For Maximum Compatibility)</h3>
+<p>If your source video uses a heavy or unsupported codec (like
+H.265/HEVC) and you need to play it in a standard web browser, you can
+re-encode it to H.264 and AAC while streaming:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-re</span> <span class="at">-i</span> input.mkv <span class="at">-c:v</span> libx264 <span class="at">-preset</span> ultrafast <span class="at">-c:a</span> aac <span class="at">-listen</span> 1 <span class="at">-f</span> mpegts http://0.0.0.0:8080</span></code></pre></div>
+<blockquote>
+<p>The <code>-preset ultrafast</code> flag minimizes CPU latency,
+ensuring the real-time transcode keeps up with the stream.</p>
+</blockquote>
+<hr />
+<h2 id="how-to-connect-to-your-stream">How to Connect to Your
+Stream</h2>
+<p>Once the command is running in your Linux terminal, FFmpeg will pause
+and wait for a client to connect.</p>
+<ol type="1">
+<li>Find your Linux machine’s local IP address by running
+<code>ip route get 1.0.0.0 | awk '{print $7}'</code>.</li>
+<li>Open your preferred media player or web browser on the receiving
+device.</li>
+<li>Network URL to enter:
+<code>http://&lt;your-linux-ip&gt;:8080</code></li>
+</ol>
+<h3 id="example-playback-via-vlc">Example playback via VLC:</h3>
+<p>Open VLC, press <code>Ctrl+N</code> (or <code>Cmd+N</code> on Mac),
+paste your network URL, and click <strong>Play</strong>.</p>
+<h3 id="limitations-to-keep-in-mind">Limitations to Keep in Mind</h3>
+<p>Because this uses FFmpeg’s built-in basic network code,
+<code>-listen 1</code> will serve the file to exactly <strong>one
+client</strong>. As soon as that client disconnects or the video
+finishes, the FFmpeg process will automatically terminate. If you need
+to serve multiple clients simultaneously, you will need to output the
+FFmpeg stream into a dedicated streaming server like Nginx (with the
+RTMP/HTTP-FLV module) or Icecast.</p></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Convert Video to 3GP Mobile Format with FFmpeg - ffmpeg</title>
+    <meta name="description" content="This article provides a quick overview and practical guide on how to use the FFmpeg command-line tool to create 3GPP (3GP) compatible video containers. You will learn the specific video and audio codecs required for 3GP compatibility, the constraints of">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/convert-video-to-3gp-mobile-format-with-ffmpeg">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Convert Video to 3GP Mobile Format with FFmpeg - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/convert-video-to-3gp-mobile-format-with-ffmpeg" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article provides a quick overview and practical guide on how to use the FFmpeg command-line tool to create 3GPP (3GP) compatible video containers. You will learn the specific video and audio codecs required for 3GP compatibility, the constraints of" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="convert-video-to-3gp-mobile-format-with-ffmpeg">Convert Video to
+3GP Mobile Format with FFmpeg</h1>
+<p>This article provides a quick overview and practical guide on how to
+use the FFmpeg command-line tool to create 3GPP (3GP) compatible video
+containers. You will learn the specific video and audio codecs required
+for 3GP compatibility, the constraints of the format, and the exact
+FFmpeg commands needed to convert modern video files into formats
+playable on legacy mobile devices.</p>
+<h3 id="understanding-3gp-compatibility-constraints">Understanding 3GP
+Compatibility Constraints</h3>
+<p>The 3GP container format was designed for 3G mobile phones to deliver
+media over high-latency and low-bandwidth networks. To ensure a 3GP file
+plays correctly on a mobile device, you must adhere to strict codec,
+resolution, and bitrate constraints:</p>
+<ul>
+<li><strong>Video Codecs:</strong> Typically H.263 or MPEG-4 Part
+2.</li>
+<li><strong>Audio Codecs:</strong> AMR-NB (Narrowband), AMR-WB
+(Wideband), or AAC-LC.</li>
+<li><strong>Resolution:</strong> Usually limited to QCIF (176x144) or
+QVGA (320x240).</li>
+<li><strong>Framerate:</strong> Typically 15 or 30 frames per second
+(fps).</li>
+</ul>
+<hr />
+<h3 id="command-1-maximum-compatibility-h.263-amr-nb">Command 1: Maximum
+Compatibility (H.263 + AMR-NB)</h3>
+<p>For older, legacy 3G mobile devices, the safest combination is the
+H.263 video codec paired with the AMR-NB audio codec.</p>
+<p>Use the following FFmpeg command:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-c:v</span> h263 <span class="at">-s</span> 176x144 <span class="at">-r</span> 15 <span class="at">-b:v</span> 128k <span class="at">-c:a</span> libopencore_amrnb <span class="at">-ar</span> 8000 <span class="at">-ac</span> 1 <span class="at">-ab</span> 12.2k output.3gp</span></code></pre></div>
+<p><strong>Parameter Breakdown:</strong> * <code>-i input.mp4</code>:
+Defines the source video file. * <code>-c:v h263</code>: Sets the video
+encoder to H.263. * <code>-s 176x144</code>: Resizes the video to QCIF
+resolution (essential for older devices). * <code>-r 15</code>: Sets the
+video frame rate to 15 fps. * <code>-b:v 128k</code>: Restricts the
+video bitrate to 128 kbps. * <code>-c:a libopencore_amrnb</code>: Uses
+the AMR-NB audio encoder (requires FFmpeg to be compiled with
+<code>--enable-libopencore-amrnb</code>). * <code>-ar 8000</code>: Sets
+the audio sampling rate to 8000 Hz (required for AMR-NB). *
+<code>-ac 1</code>: Downmixes audio to a single channel (mono). *
+<code>-ab 12.2k</code>: Sets the audio bitrate to 12.2 kbps.</p>
+<hr />
+<h3 id="command-2-better-quality-mpeg-4-aac">Command 2: Better Quality
+(MPEG-4 + AAC)</h3>
+<p>If the target mobile device is slightly newer and supports
+higher-quality media, you can use the MPEG-4 video codec paired with AAC
+audio. This allows for higher resolutions and better audio fidelity.</p>
+<p>Use this command:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-c:v</span> mpeg4 <span class="at">-s</span> 320x240 <span class="at">-r</span> 25 <span class="at">-b:v</span> 300k <span class="at">-c:a</span> aac <span class="at">-ar</span> 22050 <span class="at">-ac</span> 1 <span class="at">-b:a</span> 48k output.3gp</span></code></pre></div>
+<p><strong>Parameter Breakdown:</strong> * <code>-c:v mpeg4</code>: Sets
+the video encoder to MPEG-4. * <code>-s 320x240</code>: Scales the
+resolution up to QVGA. * <code>-r 25</code>: Increases the frame rate to
+25 fps. * <code>-b:v 300k</code>: Increases video bitrate to 300 kbps
+for better image quality. * <code>-c:a aac</code>: Uses the native
+FFmpeg AAC audio encoder. * <code>-ar 22050</code>: Sets a higher audio
+sampling rate of 22050 Hz. * <code>-b:a 48k</code>: Allocates 48 kbps to
+the audio track.</p></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

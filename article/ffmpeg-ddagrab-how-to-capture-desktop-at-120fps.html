@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FFmpeg ddagrab: How to Capture Desktop at 120fps - ffmpeg</title>
+    <meta name="description" content="This article explains how to capture high-frame-rate desktop video at 120 frames per second (fps) on Windows using FFmpeg's Desktop Duplication API (ddagrab) input. You will learn the exact FFmpeg command structures, the importance of hardware-accelerate">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/ffmpeg-ddagrab-how-to-capture-desktop-at-120fps">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="FFmpeg ddagrab: How to Capture Desktop at 120fps - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/ffmpeg-ddagrab-how-to-capture-desktop-at-120fps" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article explains how to capture high-frame-rate desktop video at 120 frames per second (fps) on Windows using FFmpeg's Desktop Duplication API (ddagrab) input. You will learn the exact FFmpeg command structures, the importance of hardware-accelerate" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="ffmpeg-ddagrab-how-to-capture-desktop-at-120fps">FFmpeg ddagrab:
+How to Capture Desktop at 120fps</h1>
+<p>This article explains how to capture high-frame-rate desktop video at
+120 frames per second (fps) on Windows using FFmpeg’s Desktop
+Duplication API (<code>ddagrab</code>) input. You will learn the exact
+FFmpeg command structures, the importance of hardware-accelerated
+encoders, and optimization techniques to ensure smooth, stutter-free,
+high-speed screen recordings.</p>
+<h2 id="why-use-ddagrab-for-120fps">Why Use ddagrab for 120fps?</h2>
+<p>The default Windows grabber in FFmpeg, <code>gdigrab</code>, relies
+on the CPU and GDI engine, which struggles to capture video beyond 30 to
+60 fps without dropping frames. The <code>ddagrab</code> input utilizes
+the Windows Desktop Duplication API (DDA), which directly accesses the
+GPU’s frame buffer. This hardware-level access reduces CPU overhead to
+almost zero, making 120fps capture highly efficient and feasible on
+modern systems.</p>
+<h2 id="prerequisites">Prerequisites</h2>
+<p>To capture desktop video at 120fps, your system must meet the
+following requirements: * <strong>Operating System:</strong> Windows 8
+or later. * <strong>Graphics Card:</strong> A dedicated GPU (NVIDIA,
+AMD, or Intel) with up to date drivers. * <strong>Monitor Refresh
+Rate:</strong> Your monitor should ideally be running at 120Hz or
+higher. If your monitor runs at 60Hz, capturing at 120fps will result in
+duplicate frames. * <strong>FFmpeg:</strong> A modern build of FFmpeg
+(configured with <code>--enable-libd3d11va</code> and
+<code>--enable-dxva2</code>).</p>
+<h2 id="the-120fps-capture-command">The 120fps Capture Command</h2>
+<p>For 120fps capture, you must combine the <code>ddagrab</code> input
+with a hardware-accelerated encoder. Below is the optimized command
+using NVIDIA’s NVENC hardware encoder:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-hwaccel</span> d3d11va <span class="at">-f</span> ddagrab <span class="at">-framerate</span> 120 <span class="at">-i</span> desktop <span class="at">-c:v</span> h264_nvenc <span class="at">-preset</span> p1 <span class="at">-cq</span> 19 <span class="at">-pix_fmt</span> yuv420p output.mp4</span></code></pre></div>
+<h3 id="alternative-command-for-amd-gpus-amf">Alternative: Command for
+AMD GPUs (AMF)</h3>
+<p>If you are using an AMD graphics card, use the following command:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-hwaccel</span> d3d11va <span class="at">-f</span> ddagrab <span class="at">-framerate</span> 120 <span class="at">-i</span> desktop <span class="at">-c:v</span> h264_amf <span class="at">-quality</span> speed <span class="at">-pix_fmt</span> yuv420p output.mp4</span></code></pre></div>
+<h3 id="alternative-command-for-intel-gpus-qsv">Alternative: Command for
+Intel GPUs (QSV)</h3>
+<p>If you are using Intel Integrated Graphics, use the following
+command:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-hwaccel</span> d3d11va <span class="at">-f</span> ddagrab <span class="at">-framerate</span> 120 <span class="at">-i</span> desktop <span class="at">-c:v</span> h264_qsv <span class="at">-preset</span> veryfast <span class="at">-pix_fmt</span> nv12 output.mp4</span></code></pre></div>
+<h2 id="command-breakdown">Command Breakdown</h2>
+<ul>
+<li><code>-hwaccel d3d11va</code>: Enables Direct3D 11 hardware
+acceleration to process the video frames directly on the GPU.</li>
+<li><code>-f ddagrab</code>: Tells FFmpeg to use the Desktop Duplication
+API input device.</li>
+<li><code>-framerate 120</code>: Sets the desktop capture speed to 120
+frames per second.</li>
+<li><code>-i desktop</code>: Specifies the input target (the entire
+primary display desktop).</li>
+<li><code>-c:v h264_nvenc</code> (or <code>_amf</code> /
+<code>_qsv</code>): Chooses a hardware-accelerated video encoder. Using
+software encoding (like <code>libx264</code>) at 120fps will likely
+bottleneck your CPU and cause frame drops.</li>
+<li><code>-preset p1</code> / <code>-quality speed</code>: Prioritizes
+encoding speed over compression efficiency to prevent encoding lag.</li>
+<li><code>-pix_fmt yuv420p</code>: Formats the pixel color space to YUV
+420p to ensure maximum compatibility with video players and editing
+software.</li>
+</ul>
+<h2 id="performance-optimization-tips">Performance Optimization
+Tips</h2>
+<p>If you experience skipped frames or stuttering during a 120fps
+recording, apply the following adjustments:</p>
+<ul>
+<li><p><strong>Specify the Capturing Screen:</strong> If you have
+multiple monitors and want to capture a specific screen, use the
+<code>-output_idx</code> parameter. For example, to capture the second
+monitor, use <code>-output_idx 1</code>:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-hwaccel</span> d3d11va <span class="at">-f</span> ddagrab <span class="at">-framerate</span> 120 <span class="at">-output_idx</span> 1 <span class="at">-i</span> desktop <span class="at">-c:v</span> h264_nvenc output.mp4</span></code></pre></div></li>
+<li><p><strong>Limit Capture Area:</strong> Capturing the entire desktop
+at 120fps is resource-intensive. You can crop the capture area using
+<code>-video_size</code>, <code>-offset_x</code>, and
+<code>-offset_y</code>:</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-hwaccel</span> d3d11va <span class="at">-f</span> ddagrab <span class="at">-framerate</span> 120 <span class="at">-video_size</span> 1920x1080 <span class="at">-offset_x</span> 0 <span class="at">-offset_y</span> 0 <span class="at">-i</span> desktop <span class="at">-c:v</span> h264_nvenc output.mp4</span></code></pre></div></li>
+<li><p><strong>Capture Cursor:</strong> By default, <code>ddagrab</code>
+captures the mouse cursor. If you want to disable cursor capture to save
+processing overhead, add <code>-draw_mouse 0</code> before the
+<code>-i desktop</code> parameter.</p></li>
+</ul></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

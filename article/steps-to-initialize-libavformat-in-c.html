@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Steps to Initialize libavformat in C - ffmpeg</title>
+    <meta name="description" content="This article provides a straightforward, step-by-step guide on how to initialize the FFmpeg libavformat library within an external C programming environment. You will learn about the necessary header inclusions, the core initialization functions required">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/steps-to-initialize-libavformat-in-c">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Steps to Initialize libavformat in C - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/steps-to-initialize-libavformat-in-c" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article provides a straightforward, step-by-step guide on how to initialize the FFmpeg libavformat library within an external C programming environment. You will learn about the necessary header inclusions, the core initialization functions required" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="steps-to-initialize-libavformat-in-c">Steps to Initialize
+libavformat in C</h1>
+<p>This article provides a straightforward, step-by-step guide on how to
+initialize the FFmpeg <code>libavformat</code> library within an
+external C programming environment. You will learn about the necessary
+header inclusions, the core initialization functions required for both
+legacy and modern FFmpeg versions, and how to set up the library for
+handling multimedia streams.</p>
+<h3 id="step-1-include-the-required-headers">Step 1: Include the
+Required Headers</h3>
+<p>To use <code>libavformat</code> in your C program, you must include
+the primary header file. Since FFmpeg is written in C, if you ever
+compile your project using a C++ compiler, you should wrap the includes
+in an <code>extern "C"</code> block. For a standard C program, simply
+include the headers directly:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode c"><code class="sourceCode c"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;libavformat/avformat.h&gt;</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;libcodec/avcodec.h&gt;</span><span class="pp"> </span><span class="co">// Often required alongside avformat</span></span></code></pre></div>
+<h3 id="step-2-initialize-the-library-ffmpeg-version-dependent">Step 2:
+Initialize the Library (FFmpeg Version Dependent)</h3>
+<p>The initialization step depends heavily on the version of FFmpeg you
+are linking against.</p>
+<h4 id="for-ffmpeg-4.0-and-newer">For FFmpeg 4.0 and Newer</h4>
+<p>In modern versions of FFmpeg, explicit initialization of muxers,
+demuxers, and protocols is no longer required. The registration happens
+automatically. You do not need to call any specific initialization
+function for general file I/O.</p>
+<h4 id="for-legacy-ffmpeg-version-3.x-and-older">For Legacy FFmpeg
+(Version 3.x and Older)</h4>
+<p>If you are working with an older codebase or legacy FFmpeg library,
+you must manually register all codecs, formats, and protocols using the
+following function call at the very beginning of your <code>main</code>
+function:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode c"><code class="sourceCode c"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co">// Only required for FFmpeg &lt; 4.0</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>av_register_all<span class="op">();</span></span></code></pre></div>
+<h3 id="step-3-initialize-network-protocols-optional">Step 3: Initialize
+Network Protocols (Optional)</h3>
+<p>If your C program needs to access network streams (such as RTSP,
+RTMP, or HTTP), you must explicitly initialize the network components of
+<code>libavformat</code>. This is required for both old and modern
+versions of FFmpeg.</p>
+<p>Add the following function call before attempting to open any network
+streams:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode c"><code class="sourceCode c"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> <span class="op">(</span>avformat_network_init<span class="op">()</span> <span class="op">&lt;</span> <span class="dv">0</span><span class="op">)</span> <span class="op">{</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>    <span class="co">// Handle initialization failure</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="op">-</span><span class="dv">1</span><span class="op">;</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<h3 id="step-4-allocate-the-format-context">Step 4: Allocate the Format
+Context</h3>
+<p>Once the library is initialized, the primary structure you will work
+with is the <code>AVFormatContext</code>. This structure holds the
+header information and state of the multimedia file or stream. You
+allocate it using:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode c"><code class="sourceCode c"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>AVFormatContext <span class="op">*</span>format_ctx <span class="op">=</span> avformat_alloc_context<span class="op">();</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> <span class="op">(!</span>format_ctx<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>    <span class="co">// Handle memory allocation failure</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="op">-</span><span class="dv">1</span><span class="op">;</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<h3 id="step-5-clean-up-resources">Step 5: Clean Up Resources</h3>
+<p>To prevent memory leaks, you must properly deinitialize the library
+resources when your program finishes executing.</p>
+<ol type="1">
+<li><strong>Close the Format Context:</strong> If you opened an input
+stream, close it using <code>avformat_close_input</code>.</li>
+<li><strong>Deinitialize Network:</strong> If you called
+<code>avformat_network_init()</code>, clean up the network resources
+using <code>avformat_network_deinit()</code>.</li>
+</ol>
+<div class="sourceCode" id="cb5"><pre class="sourceCode c"><code class="sourceCode c"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="co">// Free the format context</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>avformat_close_input<span class="op">(&amp;</span>format_ctx<span class="op">);</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a><span class="co">// Deinitialize network protocols (if initialized)</span></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>avformat_network_deinit<span class="op">();</span></span></code></pre></div></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

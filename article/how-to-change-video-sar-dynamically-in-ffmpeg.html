@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Change Video SAR Dynamically in FFmpeg - ffmpeg</title>
+    <meta name="description" content="This guide explains how to dynamically modify a video's Sample Aspect Ratio (SAR) using the FFmpeg setsar filter. You will learn how to use FFmpeg's built-in mathematical expressions and video variables—such as input width, height, and existing display">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/how-to-change-video-sar-dynamically-in-ffmpeg">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Change Video SAR Dynamically in FFmpeg - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/how-to-change-video-sar-dynamically-in-ffmpeg" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This guide explains how to dynamically modify a video's Sample Aspect Ratio (SAR) using the FFmpeg setsar filter. You will learn how to use FFmpeg's built-in mathematical expressions and video variables—such as input width, height, and existing display" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="how-to-change-video-sar-dynamically-in-ffmpeg">How to Change
+Video SAR Dynamically in FFmpeg</h1>
+<p>This guide explains how to dynamically modify a video’s Sample Aspect
+Ratio (SAR) using the FFmpeg <code>setsar</code> filter. You will learn
+how to use FFmpeg’s built-in mathematical expressions and video
+variables—such as input width, height, and existing display aspect
+ratio—to calculate and apply SAR changes programmatically during the
+encoding process.</p>
+<h2 id="understanding-the-setsar-filter">Understanding the setsar
+Filter</h2>
+<p>The <code>setsar</code> filter sets the Sample Aspect Ratio (the
+ratio of a single pixel’s width to its height) for the output video.
+Instead of passing a static ratio (like <code>1:1</code> or
+<code>4:3</code>), you can pass an expression that FFmpeg evaluates for
+each input video.</p>
+<p>The basic syntax is:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;setsar=expression&quot;</span> output.mp4</span></code></pre></div>
+<h3 id="available-variables">Available Variables</h3>
+<p>When writing dynamic expressions for <code>setsar</code>, you can use
+the following variables:</p>
+<ul>
+<li><strong><code>sar</code></strong>: The input Sample Aspect
+Ratio.</li>
+<li><strong><code>dar</code></strong>: The input Display Aspect
+Ratio.</li>
+<li><strong><code>iw</code></strong>: The input video frame width.</li>
+<li><strong><code>ih</code></strong>: The input video frame height.</li>
+<li><strong><code>num</code></strong>: The numerator of the input
+SAR.</li>
+<li><strong><code>den</code></strong>: The denominator of the input
+SAR.</li>
+</ul>
+<hr />
+<h2 id="practical-examples-of-dynamic-sar-calculation">Practical
+Examples of Dynamic SAR Calculation</h2>
+<h3 id="scaling-the-existing-sar">1. Scaling the Existing SAR</h3>
+<p>If you want to dynamically double the current SAR of any input video,
+multiply the <code>sar</code> variable by a factor:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;setsar=sar*2&quot;</span> output.mp4</span></code></pre></div>
+<h3 id="calculating-sar-based-on-a-target-dar">2. Calculating SAR Based
+on a Target DAR</h3>
+<p>The relationship between Display Aspect Ratio (DAR), Sample Aspect
+Ratio (SAR), and frame dimensions is:</p>
+<p><span class="math display">\[\text{DAR} = \text{SAR} \times
+\left(\frac{\text{Width}}{\text{Height}}\right)\]</span></p>
+<p>To dynamically force a specific DAR (for example, <code>16:9</code>)
+regardless of the input dimensions, calculate the SAR using the formula
+<span class="math inline">\(\text{SAR} = \text{DAR} /
+(\text{Width}/\text{Height})\)</span>:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;setsar=(16/9)/(iw/ih)&quot;</span> output.mp4</span></code></pre></div>
+<p>Alternatively, you can write this using the <code>dar</code> variable
+to adapt to whatever the input display ratio is:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;setsar=dar/(iw/ih)&quot;</span> output.mp4</span></code></pre></div>
+<h3 id="conditional-sar-assignment">3. Conditional SAR Assignment</h3>
+<p>FFmpeg supports conditional evaluation using the
+<code>if(x, y, z)</code> function (if <em>x</em> is true, return
+<em>y</em>, else <em>z</em>).</p>
+<p>To set the SAR to <code>1:1</code> (square pixels) if the input SAR
+is greater than <code>1</code>, but otherwise keep the original SAR:</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;setsar=&#39;if(gt(sar,1), 1, sar)&#39;&quot;</span> output.mp4</span></code></pre></div>
+<h3 id="handling-anamorphic-video-formats">4. Handling Anamorphic Video
+Formats</h3>
+<p>If you are processing files where you need to scale the horizontal
+aspect of the pixels based on whether the video is portrait or
+landscape, you can use comparison operators:</p>
+<div class="sourceCode" id="cb6"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;setsar=&#39;if(lt(iw,ih), 1, 12/11)&#39;&quot;</span> output.mp4</span></code></pre></div>
+<p>This expression checks if the width (<code>iw</code>) is less than
+the height (<code>ih</code>). If true (portrait), it sets the SAR to
+<code>1</code>. If false (landscape/square), it sets the SAR to
+<code>12/11</code>.</p></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

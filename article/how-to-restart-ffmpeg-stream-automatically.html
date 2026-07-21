@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Restart FFmpeg Stream Automatically - ffmpeg</title>
+    <meta name="description" content="Live streaming with FFmpeg can easily interrupt due to temporary network drops, ISP changes, or server-side disconnections. This article provides a quick guide and ready-to-use scripts to wrap your FFmpeg command in a resilient loop, ensuring your stream">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/how-to-restart-ffmpeg-stream-automatically">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Restart FFmpeg Stream Automatically - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/how-to-restart-ffmpeg-stream-automatically" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Live streaming with FFmpeg can easily interrupt due to temporary network drops, ISP changes, or server-side disconnections. This article provides a quick guide and ready-to-use scripts to wrap your FFmpeg command in a resilient loop, ensuring your stream" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="how-to-restart-ffmpeg-stream-automatically">How to Restart
+FFmpeg Stream Automatically</h1>
+<p>Live streaming with FFmpeg can easily interrupt due to temporary
+network drops, ISP changes, or server-side disconnections. This article
+provides a quick guide and ready-to-use scripts to wrap your FFmpeg
+command in a resilient loop, ensuring your stream automatically restarts
+and maintains maximum uptime on Linux, macOS, and Windows.</p>
+<h2 id="the-shell-loop-solution-linux-and-macos">The Shell Loop Solution
+(Linux and macOS)</h2>
+<p>The most reliable way to handle network failures is to wrap your
+FFmpeg command inside a <code>while</code> loop using a Bash script. If
+FFmpeg terminates due to a network drop, the script waits for a few
+seconds and then launches the command again.</p>
+<p>Create a file named <code>stream.sh</code> and add the following
+code:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co">#!/bin/bash</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Configuration</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="va">STREAM_URL</span><span class="op">=</span><span class="st">&quot;rtmp://your-streaming-destination/live&quot;</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="va">STREAM_KEY</span><span class="op">=</span><span class="st">&quot;your-stream-key&quot;</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="va">INPUT_SOURCE</span><span class="op">=</span><span class="st">&quot;input.mp4&quot;</span> <span class="co"># Can be a local file, RTMP pull, or camera input</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="bu">echo</span> <span class="st">&quot;Starting resilient streaming loop...&quot;</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a><span class="cf">while</span> <span class="fu">true</span><span class="kw">;</span> <span class="cf">do</span></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>    <span class="bu">echo</span> <span class="st">&quot;Launching FFmpeg...&quot;</span></span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>    <span class="ex">ffmpeg</span> <span class="at">-re</span> <span class="at">-i</span> <span class="st">&quot;</span><span class="va">$INPUT_SOURCE</span><span class="st">&quot;</span> <span class="dt">\</span></span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>      <span class="at">-c:v</span> libx264 <span class="at">-preset</span> veryfast <span class="at">-b:v</span> 3000k <span class="at">-maxrate</span> 3000k <span class="at">-bufsize</span> 6000k <span class="dt">\</span></span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>      <span class="at">-pix_fmt</span> yuv420p <span class="at">-g</span> 50 <span class="at">-c:a</span> aac <span class="at">-b:a</span> 128k <span class="dt">\</span></span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a>      <span class="at">-f</span> flv <span class="st">&quot;</span><span class="va">$STREAM_URL</span><span class="st">/</span><span class="va">$STREAM_KEY</span><span class="st">&quot;</span></span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a>    <span class="bu">echo</span> <span class="st">&quot;FFmpeg exited with code </span><span class="va">$?</span><span class="st">. Reconnecting in 5 seconds...&quot;</span></span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a>    <span class="fu">sleep</span> 5</span>
+<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a><span class="cf">done</span></span></code></pre></div>
+<p>Make the script executable and run it:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">chmod</span> +x stream.sh</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="ex">./stream.sh</span></span></code></pre></div>
+<h3 id="how-it-works">How it works:</h3>
+<ul>
+<li><strong><code>while true</code></strong>: This creates an infinite
+loop.</li>
+<li><strong><code>ffmpeg ...</code></strong>: Your actual streaming
+command. When the network drops, FFmpeg will fail and exit.</li>
+<li><strong><code>sleep 5</code></strong>: Pauses the script for 5
+seconds to prevent spamming the streaming server with rapid connection
+attempts while the network recovers.</li>
+</ul>
+<hr />
+<h2 id="the-batch-loop-solution-windows">The Batch Loop Solution
+(Windows)</h2>
+<p>If you are running FFmpeg on Windows, you can achieve the same
+resilient behavior using a Command Prompt batch file
+(<code>.bat</code>).</p>
+<p>Create a file named <code>stream.bat</code> and add the following
+code:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode cmd"><code class="sourceCode dosbat"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">@</span><span class="bu">echo off</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="co">:: Configuration</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="bu">set</span> <span class="va">STREAM_URL</span>=rtmp://your-streaming-destination/live</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="bu">set</span> <span class="va">STREAM_KEY</span>=your-stream-key</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="bu">set</span> <span class="va">INPUT_SOURCE</span>=input.mp4</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a><span class="ot">:loop</span></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a><span class="bu">echo</span> Launching FFmpeg...</span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>ffmpeg <span class="at">-re</span> <span class="at">-i</span> <span class="st">&quot;</span><span class="pp">%</span><span class="va">INPUT_SOURCE</span><span class="pp">%</span><span class="st">&quot;</span> ^</span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>  -c:v libx264 <span class="at">-preset</span> veryfast <span class="at">-b:</span>v 3000k <span class="at">-maxrate</span> 3000k <span class="at">-bufsize</span> 6000k ^</span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>  -pix_fmt yuv420p <span class="at">-g</span> 50 <span class="at">-c:</span>a aac <span class="at">-b:</span>a 128k ^</span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>  -f flv <span class="st">&quot;</span><span class="pp">%</span><span class="va">STREAM_URL</span><span class="pp">%</span><span class="st">/</span><span class="pp">%</span><span class="va">STREAM_KEY</span><span class="pp">%</span><span class="st">&quot;</span></span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a><span class="bu">echo</span> FFmpeg exited. Reconnecting in 5 seconds...</span>
+<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a>timeout <span class="at">/t</span> 5</span>
+<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a><span class="cf">goto</span> <span class="ot">loop</span></span></code></pre></div>
+<p>Double-click the <code>stream.bat</code> file to run it. Press
+<code>Ctrl + C</code> in the command window to stop the loop.</p>
+<hr />
+<h2 id="optimizing-ffmpeg-network-flags">Optimizing FFmpeg Network
+Flags</h2>
+<p>To make FFmpeg even more resilient before the loop has to trigger,
+you can add native reconnection parameters directly into your command.
+These flags force FFmpeg to try reconnecting internally during minor
+packet losses, preventing the loop from having to restart the entire
+process.</p>
+<p>If your input is an HTTP/HTTPS stream or an RTSP feed, add these
+flags <strong>before</strong> the <code>-i</code> (input) option:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-reconnect</span> 1 <span class="at">-reconnect_at_eof</span> 1 <span class="at">-reconnect_streamed</span> 1 <span class="at">-reconnect_delay_max</span> 5 <span class="at">-i</span> <span class="st">&quot;http://your-input-stream&quot;</span> ...</span></code></pre></div>
+<ul>
+<li><strong><code>-reconnect 1</code></strong>: Tells FFmpeg to
+reconnect if the connection drops.</li>
+<li><strong><code>-reconnect_at_eof 1</code></strong>: Reconnects if the
+end of the file/stream is reached unexpectedly.</li>
+<li><strong><code>-reconnect_streamed 1</code></strong>: Reconnects to
+streamed HTTP resources.</li>
+<li><strong><code>-reconnect_delay_max 5</code></strong>: Sets the
+maximum delay in seconds before retrying the connection.</li>
+</ul></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

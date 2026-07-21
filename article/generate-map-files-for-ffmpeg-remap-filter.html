@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generate Map Files for FFmpeg Remap Filter - ffmpeg</title>
+    <meta name="description" content="This article explains how to generate the X and Y coordinate map files required by the FFmpeg remap filter. You will learn the underlying format requirements of these map files, how to programmatically generate them using a Python script, and how to appl">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/generate-map-files-for-ffmpeg-remap-filter">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Generate Map Files for FFmpeg Remap Filter - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/generate-map-files-for-ffmpeg-remap-filter" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article explains how to generate the X and Y coordinate map files required by the FFmpeg remap filter. You will learn the underlying format requirements of these map files, how to programmatically generate them using a Python script, and how to appl" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="generate-map-files-for-ffmpeg-remap-filter">Generate Map Files
+for FFmpeg Remap Filter</h1>
+<p>This article explains how to generate the X and Y coordinate map
+files required by the FFmpeg <code>remap</code> filter. You will learn
+the underlying format requirements of these map files, how to
+programmatically generate them using a Python script, and how to apply
+them to your video files using FFmpeg.</p>
+<h2 id="understanding-ffmpeg-remap-map-files">Understanding FFmpeg Remap
+Map Files</h2>
+<p>The FFmpeg <code>remap</code> filter rearranges pixels from a source
+video to a destination video based on two map files: an
+<strong>X-map</strong> and a <strong>Y-map</strong>.</p>
+<ul>
+<li><strong>The X-map</strong> determines which horizontal coordinate
+(column) of the source video is mapped to each pixel of the destination
+video.</li>
+<li><strong>The Y-map</strong> determines which vertical coordinate
+(row) of the source video is mapped to each pixel of the destination
+video.</li>
+</ul>
+<p>Both map files must have the exact resolution of the desired
+<em>output</em> video. They are typically formatted as raw binary
+streams of 16-bit unsigned integers (<code>gray16le</code> for pixel
+values from <code>0</code> to <code>65535</code>) or 32-bit
+floating-point numbers (<code>grayf32le</code> for sub-pixel
+precision).</p>
+<h2 id="step-1-generate-map-files-using-python">Step 1: Generate Map
+Files Using Python</h2>
+<p>The easiest way to generate these binary files is using Python with
+the <code>numpy</code> library. The following script generates an
+identity map (which leaves the image unchanged) and demonstrates how to
+apply a simple transformation—such as shifting the video
+horizontally.</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Define the target output resolution</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>width <span class="op">=</span> <span class="dv">1920</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>height <span class="op">=</span> <span class="dv">1080</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Create a grid of coordinates corresponding to the destination image</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="co"># x represents column indices, y represents row indices</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>x, y <span class="op">=</span> np.meshgrid(np.arange(width), np.arange(height))</span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a><span class="co"># --- Define Your Transformation Here ---</span></span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a><span class="co"># As an example, we will shift the source image 150 pixels to the right.</span></span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a><span class="co"># This means destination coordinate (x) pulls from source coordinate (x - 150).</span></span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>source_x <span class="op">=</span> x <span class="op">-</span> <span class="dv">150</span></span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>source_y <span class="op">=</span> y</span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a><span class="co"># Clip the coordinates to ensure they stay within valid source video boundaries</span></span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a><span class="co"># to prevent out-of-bounds rendering artifacts.</span></span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a>source_x <span class="op">=</span> np.clip(source_x, <span class="dv">0</span>, width <span class="op">-</span> <span class="dv">1</span>)</span>
+<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a>source_y <span class="op">=</span> np.clip(source_y, <span class="dv">0</span>, height <span class="op">-</span> <span class="dv">1</span>)</span>
+<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a><span class="co"># ---------------------------------------</span></span>
+<span id="cb1-22"><a href="#cb1-22" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-23"><a href="#cb1-23" aria-hidden="true" tabindex="-1"></a><span class="co"># Convert the coordinate arrays to 16-bit unsigned little-endian integers (gray16le)</span></span>
+<span id="cb1-24"><a href="#cb1-24" aria-hidden="true" tabindex="-1"></a>x_map_raw <span class="op">=</span> source_x.astype(np.uint16)</span>
+<span id="cb1-25"><a href="#cb1-25" aria-hidden="true" tabindex="-1"></a>y_map_raw <span class="op">=</span> source_y.astype(np.uint16)</span>
+<span id="cb1-26"><a href="#cb1-26" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-27"><a href="#cb1-27" aria-hidden="true" tabindex="-1"></a><span class="co"># Save the arrays to raw binary files</span></span>
+<span id="cb1-28"><a href="#cb1-28" aria-hidden="true" tabindex="-1"></a>x_map_raw.tofile(<span class="st">&#39;x_map.bin&#39;</span>)</span>
+<span id="cb1-29"><a href="#cb1-29" aria-hidden="true" tabindex="-1"></a>y_map_raw.tofile(<span class="st">&#39;y_map.bin&#39;</span>)</span>
+<span id="cb1-30"><a href="#cb1-30" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-31"><a href="#cb1-31" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">&quot;Map files &#39;x_map.bin&#39; and &#39;y_map.bin&#39; generated successfully.&quot;</span>)</span></code></pre></div>
+<p>For sub-pixel precision using <code>grayf32le</code>, cast the final
+arrays to <code>np.float32</code> instead of <code>np.uint16</code> and
+save them using <code>.tofile()</code>.</p>
+<h2 id="step-2-apply-the-maps-in-ffmpeg">Step 2: Apply the Maps in
+FFmpeg</h2>
+<p>Once you have generated <code>x_map.bin</code> and
+<code>y_map.bin</code>, you must tell FFmpeg to read them as raw video
+streams and feed them into the <code>remap</code> filter.</p>
+<p>Use the following command to apply the maps to an input video:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="dt">\</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>-f rawvideo <span class="at">-pix_fmt</span> gray16le <span class="at">-s</span> 1920x1080 <span class="at">-i</span> x_map.bin <span class="dt">\</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>-f rawvideo <span class="at">-pix_fmt</span> gray16le <span class="at">-s</span> 1920x1080 <span class="at">-i</span> y_map.bin <span class="dt">\</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>-filter_complex <span class="st">&quot;[0:v][1:v][2:v]remap[out]&quot;</span> <span class="dt">\</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>-map <span class="st">&quot;[out]&quot;</span> <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<h3 id="command-breakdown">Command Breakdown:</h3>
+<ul>
+<li><code>-f rawvideo</code>: Instructs FFmpeg to treat the incoming map
+files as raw, unformatted video data.</li>
+<li><code>-pix_fmt gray16le</code>: Specifies that the map files consist
+of 16-bit little-endian integers. If you used floats in Python, change
+this to <code>grayf32le</code>.</li>
+<li><code>-s 1920x1080</code>: Defines the resolution of the map files,
+which must match the dimensions configured in your generator
+script.</li>
+<li><code>-filter_complex "[0:v][1:v][2:v]remap[out]"</code>: Takes the
+primary video source <code>[0:v]</code>, the X-map <code>[1:v]</code>,
+and the Y-map <code>[2:v]</code>, maps the pixels, and outputs the
+result to <code>[out]</code>.</li>
+</ul></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Stream to Twitch Using FFmpeg - ffmpeg</title>
+    <meta name="description" content="Streaming directly to Twitch using FFmpeg offers unparalleled control over your broadcast's technical parameters. This guide provides a straightforward walk-through on how to configure FFmpeg command-line arguments to target Twitch’s ingest servers, ap">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/how-to-stream-to-twitch-using-ffmpeg">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Stream to Twitch Using FFmpeg - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/how-to-stream-to-twitch-using-ffmpeg" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Streaming directly to Twitch using FFmpeg offers unparalleled control over your broadcast's technical parameters. This guide provides a straightforward walk-through on how to configure FFmpeg command-line arguments to target Twitch’s ingest servers, ap" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="how-to-stream-to-twitch-using-ffmpeg">How to Stream to Twitch
+Using FFmpeg</h1>
+<p>Streaming directly to Twitch using FFmpeg offers unparalleled control
+over your broadcast’s technical parameters. This guide provides a
+straightforward walk-through on how to configure FFmpeg command-line
+arguments to target Twitch’s ingest servers, apply specific H.264
+encoding profiles, set precise video and audio bitrates, and optimize
+your stream for reliable, low-latency live playback.</p>
+<h3 id="twitch-streaming-requirements">Twitch Streaming
+Requirements</h3>
+<p>To ensure your stream is accepted by Twitch without transcoding
+issues, your FFmpeg command must comply with Twitch’s strict ingest
+guidelines:</p>
+<ul>
+<li><strong>Video Codec:</strong> H.264 (libx264)</li>
+<li><strong>Audio Codec:</strong> AAC (libfdk_aac or native aac)</li>
+<li><strong>Rate Control:</strong> Constant Bitrate (CBR)</li>
+<li><strong>Keyframe Interval:</strong> Exactly 2 seconds</li>
+<li><strong>H.264 Profile:</strong> High or Main</li>
+<li><strong>Maximum Bitrate:</strong> 6000 Kbps for non-partners (up to
+8000 Kbps for partners/selected creators)</li>
+</ul>
+<hr />
+<h3 id="the-ffmpeg-command-structure">The FFmpeg Command Structure</h3>
+<p>Here is a standard, optimized FFmpeg command to stream a video source
+to Twitch at 1080p at 60 frames per second:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-f</span> lavfi <span class="at">-i</span> testsrc=size=1920x1080:rate=60 <span class="at">-f</span> lavfi <span class="at">-i</span> sine=frequency=1000 <span class="dt">\</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>-c:v libx264 <span class="at">-preset</span> veryfast <span class="at">-profile:v</span> high <span class="at">-level:v</span> 4.2 <span class="dt">\</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>-b:v 6000k <span class="at">-maxrate</span> 6000k <span class="at">-bufsize</span> 6000k <span class="at">-pix_fmt</span> yuv420p <span class="dt">\</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>-g 120 <span class="at">-keyint_min</span> 120 <span class="at">-sc_threshold</span> 0 <span class="dt">\</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>-c:a aac <span class="at">-b:a</span> 160k <span class="at">-ar</span> 44100 <span class="dt">\</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>-f flv rtmp://live.twitch.tv/app/live_your_stream_key</span></code></pre></div>
+<p><em>(Note: Replace <code>-f lavfi -i ...</code> with your actual
+video and audio input sources, and change
+<code>live_your_stream_key</code> to your actual Twitch stream
+key.)</em></p>
+<hr />
+<h3 id="command-breakdown-and-configuration">Command Breakdown and
+Configuration</h3>
+<h4 id="setting-the-encoding-profile-and-preset">1. Setting the Encoding
+Profile and Preset</h4>
+<p>Twitch recommends using the <strong>High</strong> or
+<strong>Main</strong> profile. The profile dictates the compression
+features used by the H.264 encoder.</p>
+<ul>
+<li><code>-profile:v high</code>: Restricts the encoder to the High
+profile, which is compatible with almost all modern playback devices and
+delivers better quality at lower bitrates.</li>
+<li><code>-preset veryfast</code>: Controls the trade-off between
+encoding speed and compression ratio. <code>veryfast</code> is the
+recommended starting point for live streaming to keep CPU usage
+low.</li>
+</ul>
+<h4 id="enforcing-constant-bitrate-cbr">2. Enforcing Constant Bitrate
+(CBR)</h4>
+<p>Twitch requires a strict Constant Bitrate to prevent packet loss and
+buffering for viewers. To force CBR in FFmpeg, you must set the target
+bitrate, maximum bitrate, and buffer size to the same value.</p>
+<ul>
+<li><code>-b:v 6000k</code>: Sets the target video bitrate to 6000
+Kbps.</li>
+<li><code>-maxrate 6000k</code>: Limits the maximum bitrate spikes to
+6000 Kbps.</li>
+<li><code>-bufsize 6000k</code>: Sets the encoder’s buffer size.
+Matching this to your target bitrate ensures the encoder checks and
+corrects the bitrate limit regularly.</li>
+</ul>
+<h4 id="configuring-the-keyframe-interval-gop">3. Configuring the
+Keyframe Interval (GOP)</h4>
+<p>Twitch’s delivery system relies on keyframes occurring exactly every
+2 seconds.</p>
+<ul>
+<li><code>-g 120</code>: Sets the Group of Pictures (GOP) size. For a 60
+fps stream, a keyframe every 2 seconds requires a GOP size of 120 (60
+fps * 2 seconds). For a 30 fps stream, change this to
+<code>60</code>.</li>
+<li><code>-keyint_min 120</code>: Forces the minimum keyframe interval
+to match the maximum.</li>
+<li><code>-sc_threshold 0</code>: Disables scene change detection to
+prevent FFmpeg from inserting extra keyframes between the designated
+2-second intervals.</li>
+</ul>
+<h4 id="audio-settings">4. Audio Settings</h4>
+<p>Twitch accepts AAC audio. Recommended audio bitrates range between
+128 Kbps and 160 Kbps.</p>
+<ul>
+<li><code>-c:a aac</code>: Selects FFmpeg’s native AAC encoder.</li>
+<li><code>-b:a 160k</code>: Sets the audio bitrate to 160 Kbps.</li>
+<li><code>-ar 44100</code>: Sets the audio sample rate to 44.1 kHz,
+which is the Twitch standard.</li>
+</ul>
+<h4 id="output-format-and-rtmp-url">5. Output Format and RTMP URL</h4>
+<p>FFmpeg must package the output stream into an FLV container before
+transmitting it via RTMP.</p>
+<ul>
+<li><code>-f flv</code>: Forces the output format to FLV.</li>
+<li><code>rtmp://live.twitch.tv/app/live_your_stream_key</code>: The
+target ingest URL. You can replace <code>live.twitch.tv</code> with a
+region-specific Twitch ingest server (e.g.,
+<code>live-jfk.twitch.tv</code> for New York) to reduce latency and
+improve stability.</li>
+</ul></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

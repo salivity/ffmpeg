@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Configure libx264 Scene Cut Detection in FFmpeg - ffmpeg</title>
+    <meta name="description" content="This article explains how to configure and adjust the scene cut detection threshold in FFmpeg when encoding video with the libx264 library. You will learn about the parameters that control keyframe placement at scene transitions, how these settings affec">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/configure-libx264-scene-cut-detection-in-ffmpeg">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Configure libx264 Scene Cut Detection in FFmpeg - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/configure-libx264-scene-cut-detection-in-ffmpeg" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article explains how to configure and adjust the scene cut detection threshold in FFmpeg when encoding video with the libx264 library. You will learn about the parameters that control keyframe placement at scene transitions, how these settings affec" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="configure-libx264-scene-cut-detection-in-ffmpeg">Configure
+libx264 Scene Cut Detection in FFmpeg</h1>
+<p>This article explains how to configure and adjust the scene cut
+detection threshold in FFmpeg when encoding video with the
+<code>libx264</code> library. You will learn about the parameters that
+control keyframe placement at scene transitions, how these settings
+affect compression efficiency and playback seekability, and how to apply
+them using practical command-line examples.</p>
+<h2 id="understanding-scene-cut-detection-in-libx264">Understanding
+Scene Cut Detection in libx264</h2>
+<p>When encoding video, <code>libx264</code> attempts to detect scene
+changes to insert an I-frame (keyframe) at the beginning of a new scene.
+This ensures high visual quality at transitions and improves seeking
+performance. The behavior of this detection is controlled primarily by
+the scene cut threshold.</p>
+<p>A higher threshold makes the encoder more sensitive to changes,
+resulting in more frequent keyframes at scene transitions. A lower
+threshold makes it less sensitive, while setting the threshold to
+<code>0</code> disables scene cut detection entirely, forcing the
+encoder to rely strictly on a fixed Group of Pictures (GOP)
+interval.</p>
+<h2 id="setting-the-threshold-with--sc_threshold">Setting the Threshold
+with <code>-sc_threshold</code></h2>
+<p>The standard way to configure this in FFmpeg is using the
+<code>-sc_threshold</code> option.</p>
+<p>In <code>libx264</code>, the default threshold value is
+<strong>40</strong>.</p>
+<h3 id="example-adjusting-the-threshold">Example: Adjusting the
+Threshold</h3>
+<p>To increase sensitivity and force more frequent keyframe placement on
+subtle scene changes, you can raise the threshold:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-c:v</span> libx264 <span class="at">-sc_threshold</span> 60 output.mp4</span></code></pre></div>
+<p>To decrease sensitivity, lower the value:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-c:v</span> libx264 <span class="at">-sc_threshold</span> 25 output.mp4</span></code></pre></div>
+<h3 id="example-disabling-scene-cut-detection">Example: Disabling Scene
+Cut Detection</h3>
+<p>For scenarios like HTTP Live Streaming (HLS) or Dynamic Adaptive
+Streaming over HTTP (DASH), you often need a strictly fixed keyframe
+interval (GOP size) without extra keyframes inserted at scene cuts. You
+can disable scene cut detection by setting the threshold to
+<code>0</code>:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-c:v</span> libx264 <span class="at">-g</span> 60 <span class="at">-keyint_min</span> 60 <span class="at">-sc_threshold</span> 0 output.mp4</span></code></pre></div>
+<p><em>Note: In this command, <code>-g 60</code> and
+<code>-keyint_min 60</code> force a keyframe exactly every 60
+frames.</em></p>
+<h2 id="setting-the-threshold-with--x264-params">Setting the Threshold
+with <code>-x264-params</code></h2>
+<p>Alternatively, you can pass the parameter directly to the underlying
+<code>libx264</code> library using the <code>-x264-params</code> flag
+with the <code>scenecut</code> option. This achieves the same result as
+<code>-sc_threshold</code>.</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-c:v</span> libx264 <span class="at">-x264-params</span> scenecut=40 output.mp4</span></code></pre></div>
+<p>To disable it using this method:</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-c:v</span> libx264 <span class="at">-g</span> 60 <span class="at">-keyint_min</span> 60 <span class="at">-x264-params</span> scenecut=0 output.mp4</span></code></pre></div></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

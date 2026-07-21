@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Use transpose_opencl in FFmpeg - ffmpeg</title>
+    <meta name="description" content="Rotating videos in FFmpeg using the CPU can be resource-intensive and slow, especially for high-resolution files. This article provides a straightforward guide on how to leverage your GPU using the transposeopencl filter in FFmpeg to perform hardware-acc">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/how-to-use-transpose-opencl-in-ffmpeg">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Use transpose_opencl in FFmpeg - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/how-to-use-transpose-opencl-in-ffmpeg" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Rotating videos in FFmpeg using the CPU can be resource-intensive and slow, especially for high-resolution files. This article provides a straightforward guide on how to leverage your GPU using the transposeopencl filter in FFmpeg to perform hardware-acc" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="how-to-use-transpose_opencl-in-ffmpeg">How to Use
+transpose_opencl in FFmpeg</h1>
+<p>Rotating videos in FFmpeg using the CPU can be resource-intensive and
+slow, especially for high-resolution files. This article provides a
+straightforward guide on how to leverage your GPU using the
+<code>transpose_opencl</code> filter in FFmpeg to perform
+hardware-accelerated video rotation quickly and efficiently.</p>
+<h3 id="prerequisites">Prerequisites</h3>
+<p>Before using OpenCL filters, ensure your system meets the following
+requirements: 1. <strong>FFmpeg Build:</strong> Your FFmpeg binary must
+be compiled with OpenCL support (verify this by running
+<code>ffmpeg -protocols</code> and checking for OpenCL, or ensure
+<code>--enable-opencl</code> was used during compilation). 2.
+<strong>GPU Drivers:</strong> You must have the appropriate OpenCL
+runtime drivers installed for your graphics card (Intel, AMD, or
+NVIDIA).</p>
+<h3 id="the-basic-command-structure">The Basic Command Structure</h3>
+<p>Because OpenCL runs on the GPU, you must initialize the GPU hardware
+device, upload the video frames from system memory (RAM) to GPU memory
+(VRAM), apply the rotation filter, and then download the frames back to
+system memory.</p>
+<p>Here is the standard command template:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-init_hw_device</span> opencl=gpu <span class="at">-filter_hw_device</span> gpu <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;hwupload,transpose_opencl=dir=clock,hwdownload,format=yuv420p&quot;</span> <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<h3 id="parameter-breakdown">Parameter Breakdown</h3>
+<ul>
+<li><strong><code>-init_hw_device opencl=gpu</code></strong>:
+Initializes the OpenCL hardware device and labels it as
+<code>gpu</code>.</li>
+<li><strong><code>-filter_hw_device gpu</code></strong>: Instructs the
+filter graph to use the initialized <code>gpu</code> device.</li>
+<li><strong><code>hwupload</code></strong>: Uploads the video frames
+from system memory to GPU memory.</li>
+<li><strong><code>transpose_opencl=dir=clock</code></strong>: Applies
+the GPU-accelerated rotation.</li>
+<li><strong><code>hwdownload</code></strong>: Downloads the processed
+frames back to system memory.</li>
+<li><strong><code>format=yuv420p</code></strong>: Converts the pixel
+format back to a standard format suitable for common software
+encoders.</li>
+<li><strong><code>-c:a copy</code></strong>: Copies the audio stream
+without re-encoding to save time.</li>
+</ul>
+<h3 id="available-rotation-directions-dir">Available Rotation Directions
+(<code>dir</code>)</h3>
+<p>The <code>transpose_opencl</code> filter accepts the <code>dir</code>
+parameter to specify how the video should be rotated:</p>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th style="text-align: left;">Value</th>
+<th style="text-align: left;">Name</th>
+<th style="text-align: left;">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><code>0</code></td>
+<td style="text-align: left;"><code>cclock_flip</code></td>
+<td style="text-align: left;">Rotate 90 degrees counter-clockwise and
+flip vertically.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>1</code></td>
+<td style="text-align: left;"><code>clock</code></td>
+<td style="text-align: left;">Rotate 90 degrees clockwise.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>2</code></td>
+<td style="text-align: left;"><code>cclock</code></td>
+<td style="text-align: left;">Rotate 90 degrees counter-clockwise.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>3</code></td>
+<td style="text-align: left;"><code>clock_flip</code></td>
+<td style="text-align: left;">Rotate 90 degrees clockwise and flip
+vertically.</td>
+</tr>
+</tbody>
+</table>
+<p>You can use either the numerical value or the name. For example, to
+rotate 90 degrees counter-clockwise:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="va">transpose_opencl</span><span class="op">=</span>dir=cclock</span></code></pre></div>
+<h3 id="how-to-rotate-180-degrees">How to Rotate 180 Degrees</h3>
+<p>The <code>transpose_opencl</code> filter does not have a native
+180-degree rotation option. To achieve a 180-degree rotation, you must
+chain two 90-degree transpose filters together within the GPU memory
+space:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-init_hw_device</span> opencl=gpu <span class="at">-filter_hw_device</span> gpu <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;hwupload,transpose_opencl=dir=clock,transpose_opencl=dir=clock,hwdownload,format=yuv420p&quot;</span> <span class="at">-c:a</span> copy output.mp4</span></code></pre></div></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

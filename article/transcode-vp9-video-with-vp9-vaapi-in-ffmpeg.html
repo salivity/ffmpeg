@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Transcode VP9 Video with vp9_vaapi in FFmpeg - ffmpeg</title>
+    <meta name="description" content="This guide provides a straightforward tutorial on how to transcode videos to the VP9 format using hardware acceleration via the vp9vaapi encoder in FFmpeg. You will learn the necessary prerequisites, the essential command-line structure, and practical ex">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/transcode-vp9-video-with-vp9-vaapi-in-ffmpeg">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Transcode VP9 Video with vp9_vaapi in FFmpeg - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/transcode-vp9-video-with-vp9-vaapi-in-ffmpeg" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This guide provides a straightforward tutorial on how to transcode videos to the VP9 format using hardware acceleration via the vp9vaapi encoder in FFmpeg. You will learn the necessary prerequisites, the essential command-line structure, and practical ex" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="transcode-vp9-video-with-vp9_vaapi-in-ffmpeg">Transcode VP9
+Video with vp9_vaapi in FFmpeg</h1>
+<p>This guide provides a straightforward tutorial on how to transcode
+videos to the VP9 format using hardware acceleration via the
+<code>vp9_vaapi</code> encoder in FFmpeg. You will learn the necessary
+prerequisites, the essential command-line structure, and practical
+examples to leverage your GPU for fast and efficient video encoding.</p>
+<h3 id="prerequisites">Prerequisites</h3>
+<p>To use VAAPI (Video Acceleration API) for VP9 encoding, you need: * A
+Linux-based operating system. * A GPU that supports VP9 hardware
+encoding (such as Intel Kaby Lake or newer, or AMD Radeon graphics). *
+The correct VAAPI drivers installed (e.g.,
+<code>intel-media-driver</code> for Intel or
+<code>mesa-va-drivers</code> for AMD). * FFmpeg compiled with VAAPI
+support enabled (<code>--enable-vaapi</code>).</p>
+<h3 id="the-basic-command-structure">The Basic Command Structure</h3>
+<p>To hardware-transcode a video using the <code>vp9_vaapi</code>
+encoder, you must initialize the VAAPI device, decode the input
+(optionally in hardware), and specify the VP9 VAAPI encoder.</p>
+<p>Here is the standard command:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-hwaccel</span> vaapi <span class="at">-hwaccel_device</span> /dev/dri/renderD128 <span class="at">-hwaccel_output_format</span> vaapi <span class="at">-i</span> input.mp4 <span class="at">-c:v</span> vp9_vaapi <span class="at">-b:v</span> 2M <span class="at">-c:a</span> libopus output.mkv</span></code></pre></div>
+<h3 id="parameter-breakdown">Parameter Breakdown</h3>
+<ul>
+<li><code>-hwaccel vaapi</code>: Enables VAAPI hardware acceleration for
+decoding the input file.</li>
+<li><code>-hwaccel_device /dev/dri/renderD128</code>: Specifies the
+hardware device path (usually the primary GPU render node).</li>
+<li><code>-hwaccel_output_format vaapi</code>: Keeps the decoded video
+frames in GPU memory to avoid slow transfers between GPU and system
+RAM.</li>
+<li><code>-i input.mp4</code>: Defines the source video file.</li>
+<li><code>-c:v vp9_vaapi</code>: Selects the hardware-accelerated VP9
+encoder.</li>
+<li><code>-b:v 2M</code>: Sets the target video bitrate (e.g., 2
+Megabits per second).</li>
+<li><code>-c:a libopus</code>: Encodes the audio to Opus, which is the
+standard companion audio codec for VP9 in MKV/WebM containers.</li>
+</ul>
+<h3 id="hardware-scaling-and-filtering">Hardware Scaling and
+Filtering</h3>
+<p>If you need to resize the video during transcoding, you must use
+hardware-based filters to keep the video frames in the GPU memory. Use
+the <code>scale_vaapi</code> filter instead of the standard software
+<code>scale</code> filter:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-hwaccel</span> vaapi <span class="at">-hwaccel_device</span> /dev/dri/renderD128 <span class="at">-hwaccel_output_format</span> vaapi <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;scale_vaapi=w=1920:h=1080&quot;</span> <span class="at">-c:v</span> vp9_vaapi <span class="at">-b:v</span> 4M output.mkv</span></code></pre></div>
+<h3 id="quality-and-rate-control">Quality and Rate Control</h3>
+<p>VAAPI offers different rate control modes depending on your driver
+support. * <strong>Constant Bitrate (CBR):</strong> Specified using
+<code>-b:v 3M -maxrate 3M</code>. * <strong>Variable Bitrate
+(VBR):</strong> Specified using <code>-b:v 3M</code> (the driver
+automatically determines peak bitrates). * <strong>Constant Quality
+(CQP):</strong> If supported by your driver, you can set the quality
+level using the <code>-q</code> option (lower values mean higher
+quality):
+<code>bash     ffmpeg -hwaccel vaapi -hwaccel_device /dev/dri/renderD128 -hwaccel_output_format vaapi -i input.mp4 -c:v vp9_vaapi -q 25 output.mkv</code></p></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

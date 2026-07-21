@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Color Threshold Masks with FFmpeg maskfun - ffmpeg</title>
+    <meta name="description" content="This article explains how to use the FFmpeg maskfun filter to create binary masks based on pixel color and brightness thresholds. You will learn the core parameters of the filter, how the thresholding logic works, and how to apply it to specific color ch">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/create-color-threshold-masks-with-ffmpeg-maskfun">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Create Color Threshold Masks with FFmpeg maskfun - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/create-color-threshold-masks-with-ffmpeg-maskfun" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article explains how to use the FFmpeg maskfun filter to create binary masks based on pixel color and brightness thresholds. You will learn the core parameters of the filter, how the thresholding logic works, and how to apply it to specific color ch" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="create-color-threshold-masks-with-ffmpeg-maskfun">Create Color
+Threshold Masks with FFmpeg maskfun</h1>
+<p>This article explains how to use the FFmpeg <code>maskfun</code>
+filter to create binary masks based on pixel color and brightness
+thresholds. You will learn the core parameters of the filter, how the
+thresholding logic works, and how to apply it to specific color channels
+(planes) to isolate objects, background colors, or brightness ranges in
+your video processing workflows.</p>
+<h2 id="understanding-the-maskfun-filter">Understanding the maskfun
+Filter</h2>
+<p>The <code>maskfun</code> filter in FFmpeg creates a mask by
+evaluating the color or brightness value of each pixel against a
+specified range. If a pixel’s value falls inside this range, it is
+assigned one color value; if it falls outside, it is assigned another.
+This is highly useful for keying, motion detection, and visual
+effects.</p>
+<p>The filter uses five primary parameters:</p>
+<ul>
+<li><strong><code>low</code></strong>: The lower boundary of the pixel
+value threshold (default is 10).</li>
+<li><strong><code>high</code></strong>: The upper boundary of the pixel
+value threshold (default is 20).</li>
+<li><strong><code>fill</code></strong>: The value assigned to pixels
+that fall <strong>inside</strong> the <code>[low, high]</code> range
+(default is 0).</li>
+<li><strong><code>max</code></strong>: The value assigned to pixels that
+fall <strong>outside</strong> the <code>[low, high]</code> range
+(default is 255).</li>
+<li><strong><code>planes</code></strong>: A bitmask specifying which
+color planes (channels) to filter (default is 15, which filters all
+planes).</li>
+</ul>
+<h2 id="the-math-behind-the-mask">The Math Behind the Mask</h2>
+<p>For every pixel in the selected planes, the filter applies the
+following logic:</p>
+<pre class="text"><code>if (pixel_value &gt;= low &amp;&amp; pixel_value &lt;= high) {
+    output_pixel_value = fill;
+} else {
+    output_pixel_value = max;
+}</code></pre>
+<p>By default, pixels within the threshold become black
+(<code>0</code>), and pixels outside the threshold become white
+(<code>255</code>). To invert this behavior, swap the values of
+<code>fill</code> and <code>max</code> (e.g.,
+<code>fill=255:max=0</code>).</p>
+<h2 id="practical-examples">Practical Examples</h2>
+<h3 id="creating-a-brightness-luma-mask">1. Creating a Brightness (Luma)
+Mask</h3>
+<p>To isolate bright areas of a video (such as sky or studio lights) in
+YUV color space, you can target the Y (Luma) plane. In YUV, the Y plane
+is plane 0 (value <code>1</code> in the plane bitmask).</p>
+<p>The following command masks out any pixels with a brightness value
+between 200 and 255:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;maskfun=low=200:high=255:fill=255:max=0:planes=1&quot;</span> output.mp4</span></code></pre></div>
+<ul>
+<li><code>low=200:high=255</code>: Selects bright pixels.</li>
+<li><code>fill=255</code>: Turns the selected bright pixels white.</li>
+<li><code>max=0</code>: Turns all other pixels black.</li>
+<li><code>planes=1</code>: Applies the filter only to the Y (Luma)
+channel.</li>
+</ul>
+<h3 id="creating-a-color-specific-mask-chroma-keying">2. Creating a
+Color-Specific Mask (Chroma Keying)</h3>
+<p>To target specific colors, you must filter the U and V chroma planes
+in YUV space. The U plane represents blue-difference (plane 1, bitmask
+<code>2</code>) and the V plane represents red-difference (plane 2,
+bitmask <code>4</code>). Combined, planes 1 and 2 equal bitmask
+<code>6</code> (2 + 4).</p>
+<p>If you want to mask green tones (commonly used for green screen
+removal), green has low U and low V values. You can apply the filter to
+the chroma planes like this:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;maskfun=low=50:high=110:fill=0:max=255:planes=6&quot;</span> output.mp4</span></code></pre></div>
+<ul>
+<li><code>low=50:high=110</code>: Targets the color range representing
+green in YUV chroma.</li>
+<li><code>fill=0</code>: Turns the green pixels black
+(transparent/masked).</li>
+<li><code>max=255</code>: Turns non-green pixels white.</li>
+<li><code>planes=6</code>: Applies the filter only to the U and V chroma
+channels.</li>
+</ul></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

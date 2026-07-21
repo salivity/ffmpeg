@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Use FFmpeg Premultiply Filter - ffmpeg</title>
+    <meta name="description" content="This article explains how to use the FFmpeg premultiply filter to multiply RGB color channels by an alpha (transparency) channel. You will learn how to apply this filter to single inputs containing built-in alpha channels, composite separate color and al">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/how-to-use-ffmpeg-premultiply-filter">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Use FFmpeg Premultiply Filter - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/how-to-use-ffmpeg-premultiply-filter" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article explains how to use the FFmpeg premultiply filter to multiply RGB color channels by an alpha (transparency) channel. You will learn how to apply this filter to single inputs containing built-in alpha channels, composite separate color and al" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="how-to-use-ffmpeg-premultiply-filter">How to Use FFmpeg
+Premultiply Filter</h1>
+<p>This article explains how to use the FFmpeg <code>premultiply</code>
+filter to multiply RGB color channels by an alpha (transparency)
+channel. You will learn how to apply this filter to single inputs
+containing built-in alpha channels, composite separate color and alpha
+inputs, and reverse the process using the unpremultiply option.</p>
+<h2 id="understanding-the-premultiply-filter">Understanding the
+Premultiply Filter</h2>
+<p>In digital imaging, “straight” alpha keeps RGB color data independent
+of transparency, while “premultiplied” alpha multiplies the RGB values
+by the alpha value beforehand. Premultiplication is essential for
+preventing dark or light fringing artifacts around the edges of
+transparent objects during compositing.</p>
+<p>FFmpeg’s <code>premultiply</code> filter offers two primary modes of
+operation depending on your input files: * <strong>Inplace processing
+(Single Input):</strong> Premultiplies an existing alpha channel within
+a single file. * <strong>Two-stream processing (Double Input):</strong>
+Takes color data from the first stream and an alpha map from a second
+stream to create a premultiplied output.</p>
+<hr />
+<h2 id="method-1-premultiply-a-single-input-inplace">Method 1:
+Premultiply a Single Input (Inplace)</h2>
+<p>If you have an image or video file that already contains an
+unassociated (straight) alpha channel, you can premultiply it directly
+by setting the <code>inplace</code> option to <code>1</code>.</p>
+<p>Use the following command:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.png <span class="at">-vf</span> <span class="st">&quot;premultiply=inplace=1&quot;</span> output.png</span></code></pre></div>
+<ul>
+<li><code>input.png</code>: The source file containing RGB and Alpha
+channels.</li>
+<li><code>-vf "premultiply=inplace=1"</code>: Instructs FFmpeg to use
+the single input stream and multiply its RGB values by its own alpha
+channel.</li>
+</ul>
+<hr />
+<h2
+id="method-2-premultiply-using-separate-color-and-alpha-inputs">Method
+2: Premultiply Using Separate Color and Alpha Inputs</h2>
+<p>If your color data and alpha matte are in two separate files, you can
+merge and premultiply them using <code>filter_complex</code>. By
+default, the <code>inplace</code> parameter is set to <code>0</code>,
+which expects two input streams.</p>
+<p>Use the following command:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> color.mp4 <span class="at">-i</span> alpha.mp4 <span class="at">-filter_complex</span> <span class="st">&quot;[0:v][1:v]premultiply=inplace=0[out]&quot;</span> <span class="at">-map</span> <span class="st">&quot;[out]&quot;</span> output.mov</span></code></pre></div>
+<ul>
+<li><code>-i color.mp4</code>: The primary input containing the color
+(RGB) channels.</li>
+<li><code>-i alpha.mp4</code>: The secondary input containing the
+grayscale transparency map.</li>
+<li><code>[0:v][1:v]premultiply=inplace=0[out]</code>: Takes the video
+from the first input (<code>0:v</code>) and the alpha from the second
+input (<code>1:v</code>), premultiplies them, and outputs the result to
+the <code>[out]</code> label.</li>
+</ul>
+<hr />
+<h2 id="method-3-unpremultiplying-reverse-process">Method 3:
+Unpremultiplying (Reverse Process)</h2>
+<p>If you have a premultiplied image or video and need to restore it to
+straight alpha (for editing or color grading), you can use the
+<code>inverse</code> parameter.</p>
+<p>To unpremultiply a single input file, run:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> premultiplied_input.png <span class="at">-vf</span> <span class="st">&quot;premultiply=inplace=1:inverse=1&quot;</span> straight_output.png</span></code></pre></div>
+<ul>
+<li><code>inverse=1</code>: Tells the filter to divide the RGB channels
+by the alpha channel instead of multiplying them.</li>
+<li><code>inplace=1</code>: Performs this action on the single input
+file’s internal channels.</li>
+</ul></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

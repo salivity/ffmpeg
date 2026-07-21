@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scroll Text Vertically Like Movie Credits in FFmpeg - ffmpeg</title>
+    <meta name="description" content="This guide explains how to create a vertical scrolling text effect, similar to movie credits, using the FFmpeg drawtext filter. You will learn the exact command-line syntax, how to control the scrolling speed, and how to position your text so it rolls sm">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/scroll-text-vertically-like-movie-credits-in-ffmpeg">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Scroll Text Vertically Like Movie Credits in FFmpeg - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/scroll-text-vertically-like-movie-credits-in-ffmpeg" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This guide explains how to create a vertical scrolling text effect, similar to movie credits, using the FFmpeg drawtext filter. You will learn the exact command-line syntax, how to control the scrolling speed, and how to position your text so it rolls sm" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="scroll-text-vertically-like-movie-credits-in-ffmpeg">Scroll Text
+Vertically Like Movie Credits in FFmpeg</h1>
+<p>This guide explains how to create a vertical scrolling text effect,
+similar to movie credits, using the FFmpeg <code>drawtext</code> filter.
+You will learn the exact command-line syntax, how to control the
+scrolling speed, and how to position your text so it rolls smoothly from
+the bottom to the top of your video.</p>
+<p>To create a scrolling credits effect, you must dynamically change the
+vertical coordinate (<code>y</code>) of the text over time. FFmpeg
+allows you to do this by using the <code>t</code> (time in seconds)
+variable inside the <code>drawtext</code> filter expression.</p>
+<p>Here is the standard command to scroll a text file over a solid black
+background:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-f</span> lavfi <span class="at">-i</span> color=c=black:s=1920x1080:d=20 <span class="at">-vf</span> <span class="st">&quot;drawtext=fontfile=sans.ttf:textfile=credits.txt:fontsize=48:fontcolor=white:x=(w-tw)/2:y=h-t*150&quot;</span> <span class="at">-c:v</span> libx264 <span class="at">-pix_fmt</span> yuv420p output.mp4</span></code></pre></div>
+<h3 id="how-the-command-works">How the Command Works</h3>
+<ul>
+<li><strong><code>-f lavfi -i color=c=black:s=1920x1080:d=20</code></strong>:
+This generates a synthetic 1920x1080 black background video that lasts
+for 20 seconds. If you want to overlay credits on an existing video,
+replace this part with <code>-i your_video.mp4</code>.</li>
+<li><strong><code>fontfile=sans.ttf</code></strong>: The path to your
+desired TrueType (.ttf) or OpenType (.otf) font. You must provide a
+valid path to a font file on your system.</li>
+<li><strong><code>textfile=credits.txt</code></strong>: A plain text
+file containing your credits. Using a text file is highly recommended
+for multi-line credits because it preserves line breaks.</li>
+<li><strong><code>x=(w-tw)/2</code></strong>: This centers the text
+horizontally. <code>w</code> is the width of the video, and
+<code>tw</code> (or <code>text_w</code>) is the width of the rendered
+text.</li>
+<li><strong><code>y=h-t*150</code></strong>: This is the formula that
+drives the vertical scroll.
+<ul>
+<li><code>h</code> is the height of the video frame.</li>
+<li><code>t</code> is the current playback time in seconds.</li>
+<li><code>150</code> is the scroll speed in pixels per second. At
+<code>t=0</code>, the text starts at <code>y=h</code> (just off the
+bottom of the screen) and moves upward by 150 pixels every second.</li>
+</ul></li>
+</ul>
+<h3 id="adjusting-the-scroll-speed">Adjusting the Scroll Speed</h3>
+<p>To change how fast the credits scroll, modify the multiplier in the
+<code>y</code> equation. * <strong>Slower scroll</strong>: Decrease the
+number (e.g., <code>y=h-t*100</code>). * <strong>Faster scroll</strong>:
+Increase the number (e.g., <code>y=h-t*250</code>).</p>
+<h3 id="overlaying-credits-on-an-existing-video">Overlaying Credits on
+an Existing Video</h3>
+<p>If you want to overlay the scrolling credits on top of an existing
+video instead of a black background, use this command:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;drawtext=fontfile=sans.ttf:textfile=credits.txt:fontsize=48:fontcolor=white:x=(w-tw)/2:y=h-t*150&quot;</span> <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<p>This command applies the filter directly to <code>input.mp4</code>
+and copies the audio stream without re-encoding it, saving processing
+time.</p></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

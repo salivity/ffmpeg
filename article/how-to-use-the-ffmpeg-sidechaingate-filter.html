@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Use the FFmpeg sidechaingate Filter - ffmpeg</title>
+    <meta name="description" content="This article provides a practical guide on how to use the sidechaingate filter in FFmpeg to control one audio signal using the level of another. You will learn the basic syntax, the key parameters that control the gating effect, and a practical command-l">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/how-to-use-the-ffmpeg-sidechaingate-filter">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Use the FFmpeg sidechaingate Filter - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/how-to-use-the-ffmpeg-sidechaingate-filter" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article provides a practical guide on how to use the sidechaingate filter in FFmpeg to control one audio signal using the level of another. You will learn the basic syntax, the key parameters that control the gating effect, and a practical command-l" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="how-to-use-the-ffmpeg-sidechaingate-filter">How to Use the
+FFmpeg sidechaingate Filter</h1>
+<p>This article provides a practical guide on how to use the
+<code>sidechaingate</code> filter in FFmpeg to control one audio signal
+using the level of another. You will learn the basic syntax, the key
+parameters that control the gating effect, and a practical command-line
+example to help you implement sidechain gating in your audio processing
+workflows.</p>
+<h3 id="what-is-sidechain-gating">What is Sidechain Gating?</h3>
+<p>A sidechain gate is an audio dynamics processor that acts as a gate
+on a primary audio channel, but determines whether to open or close that
+gate based on the volume level of a secondary “sidechain” audio channel.
+When the volume of the sidechain signal rises above a specified
+threshold, the gate opens, allowing the primary audio signal to pass
+through. When the sidechain signal falls below the threshold, the gate
+closes, silencing or reducing the volume of the primary audio.</p>
+<h3 id="key-parameters-of-the-sidechaingate-filter">Key Parameters of
+the sidechaingate Filter</h3>
+<p>The <code>sidechaingate</code> filter accepts several parameters to
+fine-tune the gating behavior. Here are the most commonly used
+options:</p>
+<ul>
+<li><strong>threshold</strong>: The level (from 0 to 1, or in decibels)
+that the sidechain signal must exceed to open the gate. The default is
+0.1.</li>
+<li><strong>attack</strong>: The amount of time, in milliseconds, it
+takes for the gate to fully open once the sidechain signal exceeds the
+threshold. Default is 20 ms.</li>
+<li><strong>release</strong>: The amount of time, in milliseconds, it
+takes for the gate to fully close once the sidechain signal drops below
+the threshold. Default is 250 ms.</li>
+<li><strong>range</strong>: The amount of attenuation applied to the
+primary signal when the gate is closed. Default is 0.01 (significant
+reduction).</li>
+<li><strong>ratio</strong>: The reduction ratio of the gate. Default is
+2.0.</li>
+<li><strong>detection</strong>: Specifies how the signal level is
+detected: <code>peak</code> (default) or <code>rms</code> (root mean
+square).</li>
+</ul>
+<h3 id="practical-command-example">Practical Command Example</h3>
+<p>To use the <code>sidechaingate</code> filter, you must pass two audio
+streams into the filter using FFmpeg’s <code>filter_complex</code>. The
+first input is the primary audio you want to gate, and the second input
+is the sidechain trigger.</p>
+<p>Here is a standard command template:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> primary_audio.wav <span class="at">-i</span> trigger_audio.wav <span class="at">-filter_complex</span> <span class="st">&quot;[0:a][1:a]sidechaingate=threshold=0.05:attack=10:release=150[outa]&quot;</span> <span class="at">-map</span> <span class="st">&quot;[outa]&quot;</span> output.wav</span></code></pre></div>
+<h3 id="how-the-command-works">How the Command Works</h3>
+<ol type="1">
+<li><strong><code>-i primary_audio.wav -i trigger_audio.wav</code></strong>:
+This inputs both audio files. The primary track (index <code>0</code>)
+is the one that will be muted or unmuted, while the trigger track (index
+<code>1</code>) acts as the control key.</li>
+<li><strong><code>[0:a][1:a]</code></strong>: This feeds the audio from
+the first input and the audio from the second input into the
+filter.</li>
+<li><strong><code>sidechaingate=threshold=0.05:attack=10:release=150</code></strong>:
+This applies the filter. The gate will open quickly (10 milliseconds)
+whenever the trigger audio rises above the 0.05 threshold, and it will
+close smoothly over 150 milliseconds when the trigger audio goes
+quiet.</li>
+<li><strong><code>[outa]</code></strong>: This labels the resulting
+processed audio stream.</li>
+<li><strong><code>-map "[outa]"</code></strong>: This tells FFmpeg to
+write the processed audio stream to the final output file,
+<code>output.wav</code>.</li>
+</ol></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

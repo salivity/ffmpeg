@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Downmix 5.1 to Stereo with FFmpeg Pan Filter - ffmpeg</title>
+    <meta name="description" content="This article explains how to use the FFmpeg pan audio filter to downmix 5.1 surround sound to a 2-channel stereo format. You will learn the syntax of the pan filter, how the audio channels are mapped, and how to apply custom weights to control the exact">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/downmix-5-1-to-stereo-with-ffmpeg-pan-filter">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Downmix 5.1 to Stereo with FFmpeg Pan Filter - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/downmix-5-1-to-stereo-with-ffmpeg-pan-filter" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article explains how to use the FFmpeg pan audio filter to downmix 5.1 surround sound to a 2-channel stereo format. You will learn the syntax of the pan filter, how the audio channels are mapped, and how to apply custom weights to control the exact" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="downmix-5.1-to-stereo-with-ffmpeg-pan-filter">Downmix 5.1 to
+Stereo with FFmpeg Pan Filter</h1>
+<p>This article explains how to use the FFmpeg <code>pan</code> audio
+filter to downmix 5.1 surround sound to a 2-channel stereo format. You
+will learn the syntax of the <code>pan</code> filter, how the audio
+channels are mapped, and how to apply custom weights to control the
+exact volume distribution of the center, surround, and subwoofer
+channels into the left and right stereo outputs.</p>
+<h2 id="understanding-the-pan-filter-syntax">Understanding the Pan
+Filter Syntax</h2>
+<p>The <code>pan</code> filter allows you to reroute and mix audio
+channels with precise control. To downmix 5.1 to stereo, you define a
+stereo output layout and specify how the original six channels are
+combined into the two output channels: <code>c0</code> (Left) and
+<code>c1</code> (Right).</p>
+<p>The basic syntax for the filter is:
+<code>pan=layout|output_channel_0=specification|output_channel_1=specification</code></p>
+<p>In a 5.1 audio track, the input channels are typically defined as: *
+<strong>FL</strong>: Front Left * <strong>FR</strong>: Front Right *
+<strong>FC</strong>: Front Center * <strong>LFE</strong>: Low Frequency
+Effects (Subwoofer) * <strong>BL</strong>: Back Left (or
+<strong>SL</strong>: Surround Left) * <strong>BR</strong>: Back Right
+(or <strong>SR</strong>: Surround Right)</p>
+<h2 id="applying-custom-weights">Applying Custom Weights</h2>
+<p>When downmixing, you must assign a coefficient (weight) between
+<code>0.0</code> and <code>1.0</code> to each input channel to determine
+how much of its signal goes into the stereo channels.</p>
+<p>A common balanced custom downmix configuration allocates: * Full
+strength to the Left/Right channels (<code>1.0</code>). * Reduced
+strength to the Center channel (<code>0.707</code> or <code>-3dB</code>)
+so dialogue does not overpower the stereo field. * Reduced strength to
+the Surround channels (<code>0.707</code> or <code>-3dB</code>) to
+maintain a sense of space without muddying the mix. * Moderate strength
+to the Subwoofer (<code>0.5</code> or <code>-6dB</code>) to retain bass
+response without causing distortion.</p>
+<h3 id="the-ffmpeg-command">The FFmpeg Command</h3>
+<p>Use the following command to apply these custom weights:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mkv <span class="at">-c:v</span> copy <span class="at">-af</span> <span class="st">&quot;pan=stereo|c0=1.0*FL + 0.707*FC + 0.707*BL + 0.5*LFE|c1=1.0*FR + 0.707*FC + 0.707*BR + 0.5*LFE&quot;</span> output.mp4</span></code></pre></div>
+<h3 id="command-breakdown">Command Breakdown</h3>
+<ul>
+<li><code>-i input.mkv</code>: Specifies the input multi-channel video
+file.</li>
+<li><code>-c:v copy</code>: Copies the video stream directly without
+re-encoding to save time and preserve video quality.</li>
+<li><code>-af</code>: Applies the audio filter.</li>
+<li><code>pan=stereo</code>: Sets the output to a standard stereo
+layout.</li>
+<li><code>c0=1.0*FL + 0.707*FC + 0.707*BL + 0.5*LFE</code>: Creates the
+Left stereo channel by combining 100% of Front Left, 70.7% of Center,
+70.7% of Back Left, and 50% of the LFE channel.</li>
+<li><code>c1=1.0*FR + 0.707*FC + 0.707*BR + 0.5*LFE</code>: Creates the
+Right stereo channel using the corresponding right-side inputs.</li>
+</ul>
+<h2 id="managing-audio-clipping">Managing Audio Clipping</h2>
+<p>If the sum of the coefficients in your formula exceeds
+<code>1.0</code>, the resulting audio might exceed the maximum digital
+volume limit, causing clipping (distortion).</p>
+<p>FFmpeg’s <code>pan</code> filter automatically scales down all inputs
+proportionally if the sum of the weights for a channel is greater than
+<code>1.0</code>. If you want to bypass this automatic normalization and
+force your exact custom volume levels, you can prefix the layout with a
+<code>pseudo</code> channel layout or manually lower your coefficients
+so that their sum equals <code>1.0</code> (for example, using
+<code>0.5*FL + 0.3*FC + 0.2*BL</code>).</p></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

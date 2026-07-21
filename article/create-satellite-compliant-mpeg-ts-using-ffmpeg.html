@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Satellite Compliant MPEG-TS Using FFmpeg - ffmpeg</title>
+    <meta name="description" content="This article provides a practical guide on how to configure and run FFmpeg to generate an MPEG-2 Transport Stream (MPEG-TS) optimized for satellite broadcasting. Satellite transmission standards, such as DVB-S and DVB-S2, require strict adherence to spec">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/create-satellite-compliant-mpeg-ts-using-ffmpeg">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Create Satellite Compliant MPEG-TS Using FFmpeg - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/create-satellite-compliant-mpeg-ts-using-ffmpeg" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article provides a practical guide on how to configure and run FFmpeg to generate an MPEG-2 Transport Stream (MPEG-TS) optimized for satellite broadcasting. Satellite transmission standards, such as DVB-S and DVB-S2, require strict adherence to spec" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="create-satellite-compliant-mpeg-ts-using-ffmpeg">Create
+Satellite Compliant MPEG-TS Using FFmpeg</h1>
+<p>This article provides a practical guide on how to configure and run
+FFmpeg to generate an MPEG-2 Transport Stream (MPEG-TS) optimized for
+satellite broadcasting. Satellite transmission standards, such as DVB-S
+and DVB-S2, require strict adherence to specific multiplexing
+parameters, including constant bitrate (CBR), precise Packet Identifier
+(PID) mapping, and frequent Program Clock Reference (PCR) insertion. You
+will learn the exact FFmpeg commands and parameters needed to output a
+compliant broadcast stream.</p>
+<h2 id="the-core-challenges-of-satellite-mpeg-ts">The Core Challenges of
+Satellite MPEG-TS</h2>
+<p>Satellite receivers (Integrated Receiver-Decoders, or IRDs) require
+highly stable and predictable streams. Unlike web streaming, where
+bitrates can fluctuate, satellite transponders operate on a fixed
+bandwidth. If your stream does not meet the exact bitrate of the
+allocated satellite slice, the signal will fail.</p>
+<p>To achieve satellite compliance, your MPEG-TS container must feature:
+* <strong>Strict Constant Bitrate (CBR):</strong> The stream must
+maintain an identical bitrate at all times using padding (null packets).
+* <strong>Precise PCR Intervals:</strong> The Program Clock Reference
+must be transmitted frequently (typically every 20ms to 40ms) to keep
+the receiver’s clock synchronized. * <strong>Explicit PID
+Assignment:</strong> Video, audio, and metadata packet identifiers must
+be statically defined so the receiver can decode them without delay.</p>
+<h2 id="the-ffmpeg-command">The FFmpeg Command</h2>
+<p>Below is the optimized FFmpeg command designed to output a
+DVB-compliant MPEG-TS stream from a standard MP4 input source.</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="dt">\</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">-c:v</span> libx264 <span class="at">-b:v</span> 4000k <span class="at">-maxrate:v</span> 4000k <span class="at">-bufsize:v</span> 8000k <span class="dt">\</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">-g</span> 50 <span class="at">-keyint_min</span> 50 <span class="at">-sc_threshold</span> 0 <span class="dt">\</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">-c:a</span> mp2 <span class="at">-b:a</span> 192k <span class="at">-ar</span> 48000 <span class="dt">\</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">-f</span> mpegts <span class="dt">\</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">-mpegts_original_network_id</span> 0x0001 <span class="dt">\</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">-mpegts_transport_stream_id</span> 0x0001 <span class="dt">\</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>  <span class="at">-mpegts_service_id</span> 0x0001 <span class="dt">\</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>  <span class="at">-mpegts_pmt_start_pid</span> 0x1000 <span class="dt">\</span></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>  <span class="at">-mpegts_start_pid</span> 0x0100 <span class="dt">\</span></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>  <span class="at">-pcr_period</span> 40 <span class="dt">\</span></span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>  <span class="at">-muxrate</span> 5000k <span class="dt">\</span></span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>  <span class="at">-mpegts_flags</span> +filler <span class="dt">\</span></span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>  output.ts</span></code></pre></div>
+<h2 id="parameter-breakdown">Parameter Breakdown</h2>
+<p>To adapt this command to your specific broadcast requirements, you
+must understand what each parameter does.</p>
+<h3 id="video-encoding-and-gop-structure">1. Video Encoding and GOP
+Structure</h3>
+<ul>
+<li><code>-b:v 4000k -maxrate:v 4000k -bufsize:v 8000k</code>:
+Constrains the H.264 video encoder to a strict constant bitrate. The
+buffer size (<code>-bufsize</code>) is set to twice the bitrate to allow
+the encoder to manage rate control effectively while avoiding buffer
+underruns on the receiver.</li>
+<li><code>-g 50 -keyint_min 50</code>: Sets a fixed Group of Pictures
+(GOP) size of 50 frames. For 25fps video, this guarantees an I-frame
+(keyframe) exactly every 2 seconds, which is crucial for fast channel
+switching on satellite receivers.</li>
+<li><code>-sc_threshold 0</code>: Disables scene change detection to
+prevent the encoder from inserting extra, unscheduled keyframes that
+would disrupt the GOP structure.</li>
+</ul>
+<h3 id="audio-encoding">2. Audio Encoding</h3>
+<ul>
+<li><code>-c:a mp2 -b:a 192k -ar 48000</code>: Encodes the audio to
+MPEG-1 Audio Layer II (MP2) at 192 kbps and 48 kHz. While AAC is widely
+supported, MP2 remains the most universally compatible and resilient
+audio format for legacy satellite networks.</li>
+</ul>
+<h3 id="container-and-pid-configuration">3. Container and PID
+Configuration</h3>
+<ul>
+<li><code>-f mpegts</code>: Forces the output format to be an MPEG-2
+Transport Stream.</li>
+<li><code>-mpegts_original_network_id</code>,
+<code>-mpegts_transport_stream_id</code>,
+<code>-mpegts_service_id</code>: Sets the network, transport stream, and
+service IDs. These IDs are read by the receiver to populate the
+Electronic Program Guide (EPG) and channel lists.</li>
+<li><code>-mpegts_pmt_start_pid 0x1000</code>: Sets the Program Map
+Table (PMT) PID to <code>0x1000</code> (hexadecimal).</li>
+<li><code>-mpegts_start_pid 0x0100</code>: Directs FFmpeg to start
+mapping elementary streams (video and audio) starting at PID
+<code>0x0100</code>.</li>
+</ul>
+<h3 id="multiplexing-and-satellite-optimization">4. Multiplexing and
+Satellite Optimization</h3>
+<ul>
+<li><code>-pcr_period 40</code>: Forces the Program Clock Reference to
+be written every 40 milliseconds. This ensures the satellite receiver
+stays in sync and prevents AV sync drift.</li>
+<li><code>-muxrate 5000k</code>: Sets the absolute total bitrate of the
+transport stream container to 5 Mbps. This value must be higher than the
+combined bitrates of your video, audio, and metadata streams (which
+total roughly 4.2 Mbps in this example).</li>
+<li><code>-mpegts_flags +filler</code>: Instructs FFmpeg to insert
+“filler” (null packets, PID <code>0x1FFF</code>) to pad the stream up to
+the exact <code>-muxrate</code> limit of 5 Mbps. This creates the rigid,
+constant bitrate required by satellite modulators.</li>
+</ul></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

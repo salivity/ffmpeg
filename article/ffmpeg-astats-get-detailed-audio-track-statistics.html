@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FFmpeg astats: Get Detailed Audio Track Statistics - ffmpeg</title>
+    <meta name="description" content="Analyzing audio files for peak levels, RMS amplitude, DC offset, and dynamic range is crucial for audio mastering, broadcasting, and quality control. This guide demonstrates how to use the FFmpeg astats (audio statistics) filter to extract detailed techn">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/ffmpeg-astats-get-detailed-audio-track-statistics">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="FFmpeg astats: Get Detailed Audio Track Statistics - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/ffmpeg-astats-get-detailed-audio-track-statistics" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Analyzing audio files for peak levels, RMS amplitude, DC offset, and dynamic range is crucial for audio mastering, broadcasting, and quality control. This guide demonstrates how to use the FFmpeg astats (audio statistics) filter to extract detailed techn" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="ffmpeg-astats-get-detailed-audio-track-statistics">FFmpeg
+astats: Get Detailed Audio Track Statistics</h1>
+<p>Analyzing audio files for peak levels, RMS amplitude, DC offset, and
+dynamic range is crucial for audio mastering, broadcasting, and quality
+control. This guide demonstrates how to use the FFmpeg
+<code>astats</code> (audio statistics) filter to extract detailed
+technical data from any audio track, explaining the essential command
+syntax, key output metrics, and practical use cases.</p>
+<h3 id="the-basic-command">The Basic Command</h3>
+<p>To measure the statistics of an audio file without producing a new
+output file, use the <code>astats</code> filter with the null muxer
+(<code>-f null -</code>). This processes the audio and prints the
+statistical report directly to your terminal.</p>
+<p>Run the following command in your terminal:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.wav <span class="at">-af</span> astats <span class="at">-f</span> null <span class="at">-</span></span></code></pre></div>
+<p>Because FFmpeg outputs diagnostic information to the standard error
+(<code>stderr</code>) stream, you can redirect the statistics to a text
+file for easier reading:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.wav <span class="at">-af</span> astats <span class="at">-f</span> null <span class="at">-</span> <span class="dv">2</span><span class="op">&gt;</span> audio_stats.txt</span></code></pre></div>
+<h3 id="understanding-the-output-metrics">Understanding the Output
+Metrics</h3>
+<p>The <code>astats</code> filter outputs values for each individual
+audio channel (e.g., Channel 1, Channel 2) as well as cumulative overall
+statistics. Here are the most critical parameters provided in the
+report:</p>
+<ul>
+<li><strong>DC offset:</strong> The deviation of the audio waveform’s
+center from zero. High DC offset reduces headroom and can cause audible
+clicks.</li>
+<li><strong>Min/Max level:</strong> The lowest and highest numerical
+sample values in the track.</li>
+<li><strong>Peak DB (Peak amplitude):</strong> The loudest point in the
+audio file, measured in decibels relative to full scale (dBFS). A value
+of <code>0 dB</code> means the audio is peaking/clipping.</li>
+<li><strong>RMS DB (Root Mean Square amplitude):</strong> The average
+power of the audio signal, which closely represents the perceived
+loudness of the track.</li>
+<li><strong>Crest factor:</strong> The ratio between the peak value and
+the RMS value. A higher crest factor indicates a highly dynamic audio
+track, while a low crest factor indicates heavy compression.</li>
+<li><strong>Bit depth:</strong> The calculated bit depth of the audio
+file based on the actual sample resolution used.</li>
+</ul>
+<h3 id="advanced-usage-examples">Advanced Usage Examples</h3>
+<h4 id="measure-peak-and-rms-levels-only">1. Measure Peak and RMS Levels
+Only</h4>
+<p>If you want to filter out the noise and only view specific
+parameters, you can use the <code>metadata</code> filter or parse the
+output. However, to configure the interval at which <code>astats</code>
+updates its measurements, use the <code>metadata</code> option:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.wav <span class="at">-af</span> astats=metadata=1 <span class="at">-f</span> null <span class="at">-</span></span></code></pre></div>
+<p>This injects the statistical values into the frame metadata, which is
+useful for downstream filters or custom scripts.</p>
+<h4 id="reset-statistics-at-specific-intervals">2. Reset Statistics at
+Specific Intervals</h4>
+<p>By default, <code>astats</code> calculates cumulative statistics for
+the entire file. If you want to measure statistics for shorter windowed
+intervals (e.g., every 30 seconds), use the <code>reset</code>
+parameter:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.wav <span class="at">-af</span> astats=reset=30 <span class="at">-f</span> null <span class="at">-</span></span></code></pre></div>
+<p>This tells the filter to recalculate and output statistics fresh
+after every 30-second block of audio.</p></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

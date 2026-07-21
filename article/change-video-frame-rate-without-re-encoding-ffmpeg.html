@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Change Video Frame Rate Without Re-encoding FFmpeg - ffmpeg</title>
+    <meta name="description" content="Changing a video's frame rate usually requires re-encoding, which takes time and causes quality loss. However, if you want to alter the playback speed or change the container-level frame rate metadata without modifying the raw video frames, FFmpeg can do">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/change-video-frame-rate-without-re-encoding-ffmpeg">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Change Video Frame Rate Without Re-encoding FFmpeg - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/change-video-frame-rate-without-re-encoding-ffmpeg" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Changing a video's frame rate usually requires re-encoding, which takes time and causes quality loss. However, if you want to alter the playback speed or change the container-level frame rate metadata without modifying the raw video frames, FFmpeg can do" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="change-video-frame-rate-without-re-encoding-ffmpeg">Change Video
+Frame Rate Without Re-encoding FFmpeg</h1>
+<p>Changing a video’s frame rate usually requires re-encoding, which
+takes time and causes quality loss. However, if you want to alter the
+playback speed or change the container-level frame rate metadata without
+modifying the raw video frames, FFmpeg can do this losslessly in
+seconds. This article explains the most efficient methods to change
+container-level frame rates and timestamps using FFmpeg’s stream copying
+features.</p>
+<h2 id="method-1-using-the-timestamp-scaling-flag--itsscale">Method 1:
+Using the Timestamp Scaling Flag (<code>-itsscale</code>)</h2>
+<p>The easiest way to speed up or slow down a video at the container
+level is to scale the presentation timestamps (PTS) during the stream
+copy process. This changes the playback speed and the effective frame
+rate without altering the raw video packets.</p>
+<p>To speed up a video (e.g., make it play twice as fast, doubling the
+frame rate):</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-itsscale</span> 0.5 <span class="at">-i</span> input.mp4 <span class="at">-c:v</span> copy <span class="at">-an</span> output.mp4</span></code></pre></div>
+<p>To slow down a video (e.g., make it play at half speed, halving the
+frame rate):</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-itsscale</span> 2.0 <span class="at">-i</span> input.mp4 <span class="at">-c:v</span> copy <span class="at">-an</span> output.mp4</span></code></pre></div>
+<p><em>Note: The <code>-an</code> flag is included because changing
+video timestamps without re-encoding will desynchronize the audio. It is
+usually best to strip the audio or process it separately.</em></p>
+<h2 id="method-2-demuxing-to-raw-bitstream-and-remuxing">Method 2:
+Demuxing to Raw Bitstream and Remuxing</h2>
+<p>For containers like MP4, the frame rate is strictly defined in the
+container headers. If you want to force the container to read the video
+frames at a completely different specific frame rate (for example,
+interpreting a 24 fps video as 60 fps), you can extract the video to a
+raw bitstream and then remux it with a new frame rate flag.</p>
+<h3 id="step-1-extract-the-video-to-a-raw-bitstream">Step 1: Extract the
+video to a raw bitstream</h3>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-c:v</span> copy <span class="at">-an</span> <span class="at">-bsf:v</span> h264_mp4toannexb raw.h264</span></code></pre></div>
+<p><em>(Use <code>hevc_mp4toannexb</code> if your source video is
+H.265/HEVC).</em></p>
+<h3 id="step-2-remux-the-raw-stream-with-the-new-frame-rate">Step 2:
+Remux the raw stream with the new frame rate</h3>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-r</span> 60 <span class="at">-i</span> raw.h264 <span class="at">-c:v</span> copy output.mp4</span></code></pre></div>
+<p>By passing the <code>-r</code> flag before the input raw file
+(<code>-i raw.h264</code>), FFmpeg forces the container to tag the video
+at 60 frames per second without touching the underlying compressed video
+data.</p>
+<h2 id="method-3-using-bitstream-filters-h.264h.265-metadata">Method 3:
+Using Bitstream Filters (H.264/H.265 Metadata)</h2>
+<p>If your video is H.264 or H.265, you can use FFmpeg’s internal
+bitstream filters to modify the frame rate parameters (specifically the
+<code>tick_rate</code> and <code>num_units_in_tick</code> parameters in
+the VUI parameters) directly during a stream copy.</p>
+<p>To change an H.264 video to a flat 30 fps container-level
+designation:</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-c:v</span> copy <span class="at">-bsf:v</span> h264_metadata=tick_rate=30000/1001:num_units_in_tick=1000 output.mp4</span></code></pre></div>
+<p>This method rewrites the metadata header inside the video stream on
+the fly, allowing you to bypass the need to demux and remux raw
+streams.</p></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

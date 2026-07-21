@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Configure B-Frame Strategy in FFmpeg libx265 - ffmpeg</title>
+    <meta name="description" content="This article explains how to configure the B-frame decision strategy in the FFmpeg libx265 HEVC encoder. You will learn about the different B-frame adaptation modes, how they impact encoding speed and video quality, and the exact FFmpeg command-line argu">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/configure-b-frame-strategy-in-ffmpeg-libx265">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Configure B-Frame Strategy in FFmpeg libx265 - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/configure-b-frame-strategy-in-ffmpeg-libx265" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article explains how to configure the B-frame decision strategy in the FFmpeg libx265 HEVC encoder. You will learn about the different B-frame adaptation modes, how they impact encoding speed and video quality, and the exact FFmpeg command-line argu" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="configure-b-frame-strategy-in-ffmpeg-libx265">Configure B-Frame
+Strategy in FFmpeg libx265</h1>
+<p>This article explains how to configure the B-frame decision strategy
+in the FFmpeg <code>libx265</code> HEVC encoder. You will learn about
+the different B-frame adaptation modes, how they impact encoding speed
+and video quality, and the exact FFmpeg command-line arguments required
+to apply these settings to your video transcode workflow.</p>
+<h2 id="understanding-the-b-frame-strategy-b-adapt">Understanding the
+B-Frame Strategy (<code>b-adapt</code>)</h2>
+<p>In the H.265/HEVC encoder <code>libx265</code>, the B-frame strategy
+determines how the encoder decides whether to use a P-frame or a B-frame
+at any given point in the video sequence. This decision is controlled by
+the <code>b-adapt</code> parameter.</p>
+<p>There are three primary settings for the B-frame strategy:</p>
+<ul>
+<li><strong><code>0</code> (None / Disabled):</strong> The encoder
+bypasses adaptive B-frame placement and strictly writes the maximum
+number of allowed B-frames. This is the fastest setting but results in
+the lowest compression efficiency.</li>
+<li><strong><code>1</code> (Fast):</strong> The encoder uses a fast,
+heuristic-based decision algorithm. It offers a good balance between
+encoding speed and compression quality.</li>
+<li><strong><code>2</code> (Optimal / Full):</strong> The encoder
+performs a full, trellis-like lookahead decision. This is the slowest
+option but yields the highest quality and best compression efficiency.
+This is the default setting for most presets.</li>
+</ul>
+<h2 id="setting-the-b-frame-strategy-in-ffmpeg">Setting the B-Frame
+Strategy in FFmpeg</h2>
+<p>To configure the B-frame strategy in FFmpeg, you pass the
+<code>b-adapt</code> option inside the <code>-x265-params</code> flag.
+Additionally, you should define the maximum number of consecutive
+B-frames allowed using the <code>bframes</code> parameter (or the
+standard <code>-bf</code> FFmpeg flag).</p>
+<h3 id="method-1-using--x265-params-recommended">Method 1: Using
+<code>-x265-params</code> (Recommended)</h3>
+<p>The most reliable way to pass encoder-specific parameters to
+<code>libx265</code> is by using the <code>-x265-params</code> argument,
+separating multiple settings with colons.</p>
+<p><strong>Example: Setting Optimal B-Frame Strategy (b-adapt=2) with 4
+B-frames:</strong></p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-c:v</span> libx265 <span class="at">-x265-params</span> b-adapt=2:bframes=4 <span class="at">-crf</span> 22 output.mp4</span></code></pre></div>
+<p><strong>Example: Setting Fast B-Frame Strategy (b-adapt=1) for faster
+encoding:</strong></p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-c:v</span> libx265 <span class="at">-x265-params</span> b-adapt=1:bframes=3 <span class="at">-crf</span> 22 output.mp4</span></code></pre></div>
+<h3 id="method-2-using-native-ffmpeg-flags">Method 2: Using Native
+FFmpeg Flags</h3>
+<p>Alternatively, you can use the native FFmpeg <code>-b_strategy</code>
+flag, though it maps directly to <code>b-adapt</code> under the
+hood.</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-c:v</span> libx265 <span class="at">-b_strategy</span> 2 <span class="at">-bf</span> 4 <span class="at">-crf</span> 22 output.mp4</span></code></pre></div>
+<h2 id="performance-vs.-quality-trade-off">Performance vs. Quality
+Trade-Off</h2>
+<ul>
+<li><strong>Use <code>b-adapt=2</code></strong> for archival,
+distribution, or high-quality streaming where encoding time is not a
+constraint.</li>
+<li><strong>Use <code>b-adapt=1</code></strong> for live streaming, fast
+turnaround drafts, or when encoding on lower-end hardware where CPU
+resources are limited.</li>
+<li><strong>Avoid <code>b-adapt=0</code></strong> unless you have a
+highly specific compatibility constraint, as it significantly degrades
+compression efficiency.</li>
+</ul></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Configure vp9_vaapi Rate Control and Quality in FFmpeg - ffmpeg</title>
+    <meta name="description" content="This article provides a quick overview of how to configure the rate control and quality options for the Intel/AMD hardware-accelerated VP9 encoder (vp9vaapi) in FFmpeg. You will learn how to set up Constant Quality (CQP), Variable Bitrate (VBR), and Cons">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/configure-vp9-vaapi-rate-control-and-quality-in-ffmpeg">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Configure vp9_vaapi Rate Control and Quality in FFmpeg - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/configure-vp9-vaapi-rate-control-and-quality-in-ffmpeg" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article provides a quick overview of how to configure the rate control and quality options for the Intel/AMD hardware-accelerated VP9 encoder (vp9vaapi) in FFmpeg. You will learn how to set up Constant Quality (CQP), Variable Bitrate (VBR), and Cons" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1
+id="configure-vp9_vaapi-rate-control-and-quality-in-ffmpeg">Configure
+vp9_vaapi Rate Control and Quality in FFmpeg</h1>
+<p>This article provides a quick overview of how to configure the rate
+control and quality options for the Intel/AMD hardware-accelerated VP9
+encoder (<code>vp9_vaapi</code>) in FFmpeg. You will learn how to set up
+Constant Quality (CQP), Variable Bitrate (VBR), and Constant Bitrate
+(CBR) modes, as well as how to fine-tune encoding speed and compression
+efficiency.</p>
+<h3 id="setting-up-va-api-in-ffmpeg">Setting Up VA-API in FFmpeg</h3>
+<p>Before applying rate control options, you must initialize the VA-API
+hardware device. A standard FFmpeg command template for
+hardware-accelerated VP9 encoding looks like this:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-hwaccel</span> vaapi <span class="at">-hwaccel_device</span> /dev/dri/renderD128 <span class="at">-hwaccel_output_format</span> vaapi <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;hwupload&quot;</span> <span class="at">-c:v</span> vp9_vaapi <span class="op">&lt;</span>rate_control_options<span class="op">&gt;</span> output.mkv</span></code></pre></div>
+<h3 id="constant-quality-mode-cqp">1. Constant Quality Mode (CQP)</h3>
+<p>In Constant Quality mode, the encoder maintains a consistent level of
+visual quality throughout the video, regardless of how much bitrate is
+required. This is the recommended mode for archival and general
+encoding.</p>
+<p>For VA-API encoders, quality is controlled using the
+<code>-global_quality</code> flag.</p>
+<ul>
+<li><strong>Option to use:</strong>
+<code>-global_quality &lt;value&gt;</code></li>
+<li><strong>Scale:</strong> Typically 1 to 255, where lower values mean
+better quality and higher bitrates.</li>
+<li><strong>Recommended range:</strong> 100 to 130 for high-quality VP9
+encodes.</li>
+</ul>
+<p><strong>Example Command:</strong></p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-hwaccel</span> vaapi <span class="at">-hwaccel_device</span> /dev/dri/renderD128 <span class="at">-hwaccel_output_format</span> vaapi <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;hwupload&quot;</span> <span class="at">-c:v</span> vp9_vaapi <span class="at">-global_quality</span> 110 output.mkv</span></code></pre></div>
+<h3 id="variable-bitrate-mode-vbr">2. Variable Bitrate Mode (VBR)</h3>
+<p>Variable Bitrate mode targets a specific average bitrate but allows
+the encoder to use more bits for complex scenes and fewer bits for
+simple scenes. This is ideal for streaming and file-size targeting.</p>
+<p>To trigger VBR, specify a target bitrate with <code>-b:v</code> and
+set a maximum limit with <code>-maxrate</code>.</p>
+<ul>
+<li><strong>Options to use:</strong>
+<code>-b:v &lt;target_bitrate&gt;</code> and
+<code>-maxrate &lt;max_bitrate&gt;</code></li>
+</ul>
+<p><strong>Example Command:</strong></p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-hwaccel</span> vaapi <span class="at">-hwaccel_device</span> /dev/dri/renderD128 <span class="at">-hwaccel_output_format</span> vaapi <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;hwupload&quot;</span> <span class="at">-c:v</span> vp9_vaapi <span class="at">-b:v</span> 5M <span class="at">-maxrate</span> 8M output.mkv</span></code></pre></div>
+<h3 id="constant-bitrate-mode-cbr">3. Constant Bitrate Mode (CBR)</h3>
+<p>Constant Bitrate mode forces the encoder to maintain a strict,
+unvarying bitrate. This mode is useful for strict bandwidth-limited live
+streaming scenarios.</p>
+<p>To force CBR, set the target bitrate (<code>-b:v</code>), maximum
+bitrate (<code>-maxrate</code>), and buffer size (<code>-bufsize</code>)
+to the same value.</p>
+<ul>
+<li><strong>Options to use:</strong>
+<code>-b:v &lt;bitrate&gt; -maxrate &lt;bitrate&gt; -bufsize &lt;bitrate&gt;</code></li>
+</ul>
+<p><strong>Example Command:</strong></p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-hwaccel</span> vaapi <span class="at">-hwaccel_device</span> /dev/dri/renderD128 <span class="at">-hwaccel_output_format</span> vaapi <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;hwupload&quot;</span> <span class="at">-c:v</span> vp9_vaapi <span class="at">-b:v</span> 6M <span class="at">-maxrate</span> 6M <span class="at">-bufsize</span> 6M output.mkv</span></code></pre></div>
+<h3 id="adjusting-the-quality-and-speed-trade-off">Adjusting the Quality
+and Speed Trade-off</h3>
+<p>You can control the encoder’s speed versus compression efficiency
+using the <code>-compression_level</code> option.</p>
+<ul>
+<li><strong>Option to use:</strong>
+<code>-compression_level &lt;value&gt;</code></li>
+<li><strong>Scale:</strong> Typically 1 to 7 (depending on your hardware
+driver). Lower values prioritize speed (faster encoding, larger file
+size), while higher values prioritize compression efficiency (slower
+encoding, smaller file size).</li>
+</ul>
+<p><strong>Example Command (High Efficiency / Slower):</strong></p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-hwaccel</span> vaapi <span class="at">-hwaccel_device</span> /dev/dri/renderD128 <span class="at">-hwaccel_output_format</span> vaapi <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;hwupload&quot;</span> <span class="at">-c:v</span> vp9_vaapi <span class="at">-global_quality</span> 110 <span class="at">-compression_level</span> 7 output.mkv</span></code></pre></div></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

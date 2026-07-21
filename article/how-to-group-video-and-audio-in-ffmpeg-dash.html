@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Group Video and Audio in FFmpeg DASH - ffmpeg</title>
+    <meta name="description" content="When streaming using the Dynamic Adaptive Streaming over HTTP (DASH) protocol, properly grouping your video and audio streams into adaptation sets is crucial for client players to choose the right quality and language. This article provides a straightfor">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/how-to-group-video-and-audio-in-ffmpeg-dash">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Group Video and Audio in FFmpeg DASH - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/how-to-group-video-and-audio-in-ffmpeg-dash" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="When streaming using the Dynamic Adaptive Streaming over HTTP (DASH) protocol, properly grouping your video and audio streams into adaptation sets is crucial for client players to choose the right quality and language. This article provides a straightfor" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="how-to-group-video-and-audio-in-ffmpeg-dash">How to Group Video
+and Audio in FFmpeg DASH</h1>
+<p>When streaming using the Dynamic Adaptive Streaming over HTTP (DASH)
+protocol, properly grouping your video and audio streams into adaptation
+sets is crucial for client players to choose the right quality and
+language. This article provides a straightforward guide on how to
+configure adaptation sets in FFmpeg using the
+<code>-adaptation_sets</code> option, ensuring your video and audio
+tracks are correctly mapped and organized for seamless adaptive
+playback.</p>
+<h3 id="understanding-dash-adaptation-sets-in-ffmpeg">Understanding DASH
+Adaptation Sets in FFmpeg</h3>
+<p>In DASH, an <strong>Adaptation Set</strong> contains a set of
+interchangeable streams (representations) that the player can switch
+between based on network conditions (e.g., different video resolutions)
+or user preferences (e.g., different audio languages).</p>
+<p>To define these sets in FFmpeg, you use the
+<code>-adaptation_sets</code> option within the <code>dash</code> muxer.
+The basic syntax is:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">-adaptation_sets</span> <span class="st">&quot;id=SET_ID,streams=STREAM_SELECTORS&quot;</span></span></code></pre></div>
+<ul>
+<li><strong><code>id</code></strong>: A unique integer identifying the
+adaptation set.</li>
+<li><strong><code>streams</code></strong>: A space-separated list of
+output stream indexes or stream type specifiers (like <code>v</code> for
+video and <code>a</code> for audio) assigned to this set.</li>
+</ul>
+<h3 id="scenario-1-grouping-all-videos-and-all-audios-basic">Scenario 1:
+Grouping All Videos and All Audios (Basic)</h3>
+<p>If you have multiple video qualities (e.g., 1080p, 720p, 480p) and
+one audio stream, you want all video streams in one adaptation set and
+the audio stream in another.</p>
+<p>Use the following command helper:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="dt">\</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">-map</span> 0:v <span class="at">-b:v:0</span> 5000k <span class="at">-s:v:0</span> 1920x1080 <span class="dt">\</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">-map</span> 0:v <span class="at">-b:v:1</span> 3000k <span class="at">-s:v:1</span> 1280x720 <span class="dt">\</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">-map</span> 0:a <span class="at">-c:a</span> aac <span class="dt">\</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">-f</span> dash <span class="dt">\</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">-adaptation_sets</span> <span class="st">&quot;id=0,streams=v id=1,streams=a&quot;</span> <span class="dt">\</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>  manifest.mpd</span></code></pre></div>
+<ul>
+<li><strong><code>id=0,streams=v</code></strong>: Groups all mapped
+video streams (<code>v</code>) into Adaptation Set 0.</li>
+<li><strong><code>id=1,streams=a</code></strong>: Groups all mapped
+audio streams (<code>a</code>) into Adaptation Set 1.</li>
+</ul>
+<h3
+id="scenario-2-grouping-by-specific-stream-indexes-advanced">Scenario 2:
+Grouping by Specific Stream Indexes (Advanced)</h3>
+<p>When dealing with multiple audio languages or specific stream
+assignments, grouping by stream type (<code>v</code> or <code>a</code>)
+is not enough. You must reference the output streams by their zero-based
+index in the order they are mapped.</p>
+<p>Consider this stream mapping order: * Output Stream 0: Video (1080p)
+* Output Stream 1: Video (720p) * Output Stream 2: Audio (English) *
+Output Stream 3: Audio (Spanish)</p>
+<p>To group the two videos together, and keep the English and Spanish
+audio tracks in separate, selectable adaptation sets, configure the
+command like this:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mkv <span class="dt">\</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">-map</span> 0:v:0 <span class="at">-s:v:0</span> 1920x1080 <span class="dt">\</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">-map</span> 0:v:0 <span class="at">-s:v:1</span> 1280x720 <span class="dt">\</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">-map</span> 0:a:0 <span class="at">-c:a:0</span> aac <span class="dt">\</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">-map</span> 0:a:1 <span class="at">-c:a:1</span> aac <span class="dt">\</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">-f</span> dash <span class="dt">\</span></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">-adaptation_sets</span> <span class="st">&quot;id=0,streams=0,1 id=1,streams=2 id=2,streams=3&quot;</span> <span class="dt">\</span></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>  manifest.mpd</span></code></pre></div>
+<ul>
+<li><strong><code>id=0,streams=0,1</code></strong>: Places the 1080p and
+720p video streams into the first set. The player will dynamically
+switch between these based on bandwidth.</li>
+<li><strong><code>id=1,streams=2</code></strong>: Places the English
+audio stream into its own set.</li>
+<li><strong><code>id=2,streams=3</code></strong>: Places the Spanish
+audio stream into its own set, allowing the user to toggle
+languages.</li>
+</ul>
+<h3 id="best-practices-for-adaptation-sets">Best Practices for
+Adaptation Sets</h3>
+<ol type="1">
+<li><strong>Always Match Output Indexes</strong>: The numbers in
+<code>streams=0,1</code> refer to the order of <code>-map</code>
+arguments in your FFmpeg command, not the track IDs of the input
+file.</li>
+<li><strong>Double Quotes</strong>: Always wrap the
+<code>-adaptation_sets</code> argument in double quotes to prevent
+command-line parsing errors, especially when using spaces to separate
+multiple sets.</li>
+<li><strong>Set Descriptor Attributes</strong>: If you need to specify
+languages or roles, you can append them inside the adaptation set string
+(e.g., <code>id=1,lang=eng,streams=2</code>).</li>
+</ol></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

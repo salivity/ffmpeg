@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FFmpeg H.264 Hardware Acceleration on Windows - ffmpeg</title>
+    <meta name="description" content="This article provides a quick, step-by-step guide on how to leverage your GPU for hardware-accelerated H.264 video decoding and encoding using FFmpeg on Windows. By offloading the video processing pipeline to dedicated graphics hardware—such as Nvidia">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/ffmpeg-h-264-hardware-acceleration-on-windows">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="FFmpeg H.264 Hardware Acceleration on Windows - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/ffmpeg-h-264-hardware-acceleration-on-windows" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article provides a quick, step-by-step guide on how to leverage your GPU for hardware-accelerated H.264 video decoding and encoding using FFmpeg on Windows. By offloading the video processing pipeline to dedicated graphics hardware—such as Nvidia" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="ffmpeg-h.264-hardware-acceleration-on-windows">FFmpeg H.264
+Hardware Acceleration on Windows</h1>
+<p>This article provides a quick, step-by-step guide on how to leverage
+your GPU for hardware-accelerated H.264 video decoding and encoding
+using FFmpeg on Windows. By offloading the video processing pipeline to
+dedicated graphics hardware—such as Nvidia NVDEC/NVENC, Intel Quick Sync
+Video (QSV), or native Windows D3D11VA—you can drastically increase
+transcoding speeds while significantly reducing CPU utilization.</p>
+<hr />
+<h2 id="prerequisites">Prerequisites</h2>
+<p>To use hardware-accelerated transcoding, ensure you have: 1. A
+dedicated or integrated GPU (Nvidia, Intel, or AMD). 2. The latest
+graphics drivers installed on your Windows system. 3. A recent build of
+FFmpeg for Windows added to your system’s PATH.</p>
+<hr />
+<h2 id="method-1-nvidia-gpus-cudanvdecnvenc">Method 1: Nvidia GPUs
+(CUDA/NVDEC/NVENC)</h2>
+<p>Nvidia GPUs utilize the NVDEC decoder and NVENC encoder. For optimal
+performance, you should keep the decoded video frames in GPU memory
+(VRAM) throughout the transcoding process.</p>
+<h3 id="command">Command:</h3>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode cmd"><code class="sourceCode dosbat"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>ffmpeg <span class="at">-hwaccel</span> cuda <span class="at">-hwaccel_output_format</span> cuda <span class="at">-i</span> input.mp4 <span class="at">-c:</span>v h264_nvenc <span class="at">-preset</span> fast output.mp4</span></code></pre></div>
+<h3 id="how-it-works">How it works:</h3>
+<ul>
+<li><strong><code>-hwaccel cuda</code></strong>: Enables CUDA hardware
+acceleration for decoding.</li>
+<li><strong><code>-hwaccel_output_format cuda</code></strong>: Forces
+the decoded frames to remain in GPU memory, avoiding slow memory
+transfers back to the CPU (RAM).</li>
+<li><strong><code>-c:v h264_nvenc</code></strong>: Selects the
+hardware-accelerated H.264 encoder.</li>
+</ul>
+<hr />
+<h2 id="method-2-intel-gpus-quick-sync-video---qsv">Method 2: Intel GPUs
+(Quick Sync Video - QSV)</h2>
+<p>If your system runs on an Intel CPU with integrated graphics or an
+Intel Arc discrete GPU, you can use Intel Quick Sync Video (QSV) for
+hardware-accelerated decoding and encoding.</p>
+<h3 id="command-1">Command:</h3>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode cmd"><code class="sourceCode dosbat"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>ffmpeg <span class="at">-hwaccel</span> qsv <span class="at">-c:</span>v h264_qsv <span class="at">-i</span> input.mp4 <span class="at">-c:</span>v h264_qsv output.mp4</span></code></pre></div>
+<h3 id="how-it-works-1">How it works:</h3>
+<ul>
+<li><strong><code>-hwaccel qsv</code></strong>: Directs FFmpeg to use
+Intel QSV hardware acceleration.</li>
+<li><strong><code>-c:v h264_qsv</code> (before input)</strong>: Specfies
+the hardware-accelerated H.264 QSV decoder.</li>
+<li><strong><code>-c:v h264_qsv</code> (before output)</strong>:
+Specifies the hardware-accelerated H.264 QSV encoder.</li>
+</ul>
+<hr />
+<h2 id="method-3-universal-windows-acceleration-d3d11va-dxva2">Method 3:
+Universal Windows Acceleration (D3D11VA / DXVA2)</h2>
+<p>If you want a universal method that works across various GPU vendors
+(including AMD, Nvidia, and Intel) using native Windows APIs, you can
+use the Direct3D11 video acceleration API.</p>
+<h3 id="command-hardware-decoding-software-encoding">Command (Hardware
+Decoding + Software Encoding):</h3>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode cmd"><code class="sourceCode dosbat"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>ffmpeg <span class="at">-hwaccel</span> d3d11va <span class="at">-i</span> input.mp4 <span class="at">-c:</span>v libx264 <span class="at">-crf</span> 23 output.mp4</span></code></pre></div>
+<h3 id="command-hardware-decoding-hardware-encoding-via-amd-amf">Command
+(Hardware Decoding + Hardware Encoding via AMD AMF):</h3>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode cmd"><code class="sourceCode dosbat"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>ffmpeg <span class="at">-hwaccel</span> d3d11va <span class="at">-i</span> input.mp4 <span class="at">-c:</span>v h264_amf output.mp4</span></code></pre></div>
+<h3 id="how-it-works-2">How it works:</h3>
+<ul>
+<li><strong><code>-hwaccel d3d11va</code></strong>: Utilizes the native
+Windows Direct3D11 hardware acceleration pipeline to decode the input
+video.</li>
+<li><strong><code>-c:v h264_amf</code></strong>: Uses AMD’s Advanced
+Media Framework encoder (ideal for AMD Radeon GPUs).</li>
+</ul>
+<hr />
+<h2 id="troubleshooting-hardware-transcoding">Troubleshooting Hardware
+Transcoding</h2>
+<ul>
+<li><strong>Driver Errors</strong>: If FFmpeg fails with a “driver not
+found” or “API mismatch” error, update your GPU drivers to the latest
+stable release.</li>
+<li><strong>Codec Compatibility</strong>: Ensure your source file is
+actually encoded in a format your GPU’s decoder chip supports (e.g.,
+standard H.264, HEVC, VP9).</li>
+<li><strong>Check Supported Accelerators</strong>: You can run
+<code>ffmpeg -hwaccels</code> in the Windows Command Prompt to see which
+hardware acceleration APIs are compiled and available in your FFmpeg
+build.</li>
+</ul></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

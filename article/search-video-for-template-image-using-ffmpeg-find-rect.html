@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Search Video for Template Image Using FFmpeg find_rect - ffmpeg</title>
+    <meta name="description" content="This article explains how to use the FFmpeg findrect filter to search for and locate a specific template image within a video stream. You will learn how to prepare your template image, construct the FFmpeg command, and utilize the resulting coordinate me">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/search-video-for-template-image-using-ffmpeg-find-rect">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Search Video for Template Image Using FFmpeg find_rect - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/search-video-for-template-image-using-ffmpeg-find-rect" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article explains how to use the FFmpeg findrect filter to search for and locate a specific template image within a video stream. You will learn how to prepare your template image, construct the FFmpeg command, and utilize the resulting coordinate me" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="search-video-for-template-image-using-ffmpeg-find_rect">Search
+Video for Template Image Using FFmpeg find_rect</h1>
+<p>This article explains how to use the FFmpeg <code>find_rect</code>
+filter to search for and locate a specific template image within a video
+stream. You will learn how to prepare your template image, construct the
+FFmpeg command, and utilize the resulting coordinate metadata to
+identify where and when the object appears in your video.</p>
+<hr />
+<h3 id="step-1-prepare-the-template-image">Step 1: Prepare the Template
+Image</h3>
+<p>The <code>find_rect</code> filter requires the template image (the
+object you are searching for) to be in a grayscale format, specifically
+a PGM (Portable Graymap) file. If your template image is in PNG or JPEG
+format, you must convert it to grayscale PGM first.</p>
+<p>You can perform this conversion directly using FFmpeg:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> template.png <span class="at">-vf</span> format=gray template.pgm</span></code></pre></div>
+<h3 id="step-2-basic-syntax-of-the-find_rect-filter">Step 2: Basic
+Syntax of the <code>find_rect</code> Filter</h3>
+<p>The <code>find_rect</code> filter compares the template image against
+every frame of the video. The basic parameters for the filter are:</p>
+<ul>
+<li><strong><code>object</code></strong>: The path to your prepared
+<code>.pgm</code> template image.</li>
+<li><strong><code>threshold</code></strong>: The detection threshold
+(ranging from 0.0 to 1.0). A lower value makes the search stricter,
+while a higher value is more lenient. The default is
+<code>0.5</code>.</li>
+<li><strong><code>mipmaps</code></strong>: The number of mipmaps used
+for multi-scale matching. The default is <code>3</code>.</li>
+</ul>
+<p>Here is the basic filter syntax:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="va">find_rect</span><span class="op">=</span>object=template.pgm:threshold=0.5</span></code></pre></div>
+<h3 id="step-3-visualizing-the-search-results">Step 3: Visualizing the
+Search Results</h3>
+<p>By default, the <code>find_rect</code> filter does not draw a box on
+the video; it only generates metadata coordinates for the detected
+object. To visually verify that the filter is finding your template, you
+can chain it with the <code>drawbox</code> filter.</p>
+<p>The <code>find_rect</code> filter outputs the coordinates to the
+following metadata keys: * <code>lavfi.rect.x</code> *
+<code>lavfi.rect.y</code> * <code>lavfi.rect.w</code> (width of the
+template) * <code>lavfi.rect.h</code> (height of the template)</p>
+<p>Use this command to render a red box around the detected template
+image in the output video:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;find_rect=object=template.pgm:threshold=0.5,drawbox=x=&#39;val(lavfi.rect.x)&#39;:y=&#39;val(lavfi.rect.y)&#39;:w=&#39;val(lavfi.rect.w)&#39;:h=&#39;val(lavfi.rect.h)&#39;:color=red&quot;</span> output.mp4</span></code></pre></div>
+<h3 id="step-4-extracting-coordinate-metadata">Step 4: Extracting
+Coordinate Metadata</h3>
+<p>If you want to search the video and export the timestamps and exact
+coordinates of the template without rendering a new video file, you can
+output the metadata to your console or log files.</p>
+<p>Run the filter with the <code>showinfo</code> filter and direct the
+output to a text file. This avoids the overhead of re-encoding:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;find_rect=object=template.pgm:threshold=0.5,showinfo&quot;</span> <span class="at">-f</span> null <span class="at">-</span> <span class="op">&gt;</span> detection_log.txt <span class="dv">2</span><span class="op">&gt;&amp;</span><span class="dv">1</span></span></code></pre></div>
+<p>Open the resulting <code>detection_log.txt</code> file. When the
+template is successfully found, you will see log entries containing the
+metadata values:</p>
+<pre class="text"><code>lavfi.rect.x=120
+lavfi.rect.y=340
+lavfi.rect.w=50
+lavfi.rect.h=50</code></pre></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

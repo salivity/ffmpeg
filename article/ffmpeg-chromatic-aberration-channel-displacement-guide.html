@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FFmpeg Chromatic Aberration Channel Displacement Guide - ffmpeg</title>
+    <meta name="description" content="This guide explains how to configure the displacement of red, green, and blue channels in FFmpeg to create a chromatic aberration effect. You will learn how to use the built-in chromashift filter for quick adjustments in YUV color space, as well as how t">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/ffmpeg-chromatic-aberration-channel-displacement-guide">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="FFmpeg Chromatic Aberration Channel Displacement Guide - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/ffmpeg-chromatic-aberration-channel-displacement-guide" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This guide explains how to configure the displacement of red, green, and blue channels in FFmpeg to create a chromatic aberration effect. You will learn how to use the built-in chromashift filter for quick adjustments in YUV color space, as well as how t" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="ffmpeg-chromatic-aberration-channel-displacement-guide">FFmpeg
+Chromatic Aberration Channel Displacement Guide</h1>
+<p>This guide explains how to configure the displacement of red, green,
+and blue channels in FFmpeg to create a chromatic aberration effect. You
+will learn how to use the built-in <code>chromashift</code> filter for
+quick adjustments in YUV color space, as well as how to perform precise
+pixel shifts in RGB space by splitting, transforming, and merging
+individual color channels.</p>
+<h2 id="method-1-using-the-built-in-chromashift-filter-yuv-space">Method
+1: Using the Built-In Chromashift Filter (YUV Space)</h2>
+<p>The fastest way to introduce chromatic aberration is using the
+<code>chromashift</code> filter. Because most digital video is processed
+in YUV format, this filter shifts the chroma planes—Chroma Blue (Cb) and
+Chroma Red (Cr)—relative to the luminance (Y) plane, which holds most of
+the green channel data and overall brightness.</p>
+<h3 id="the-command">The Command</h3>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;chromashift=cbh=5:cbv=2:crh=-5:crv=-2&quot;</span> <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<h3 id="parameter-breakdown">Parameter Breakdown</h3>
+<ul>
+<li><strong><code>cbh</code> (Chroma Blue Horizontal):</strong>
+Displaces the blue channel horizontally. Positive values shift it to the
+right; negative values shift it to the left.</li>
+<li><strong><code>cbv</code> (Chroma Blue Vertical):</strong> Displaces
+the blue channel vertically. Positive values shift it down; negative
+values shift it up.</li>
+<li><strong><code>crh</code> (Chroma Red Horizontal):</strong> Displaces
+the red channel horizontally.</li>
+<li><strong><code>crv</code> (Chroma Red Vertical):</strong> Displaces
+the red channel vertically.</li>
+</ul>
+<p>In the example above, the blue channel is shifted 5 pixels right and
+2 pixels down, while the red channel is shifted 5 pixels left and 2
+pixels up, creating a balanced chromatic aberration effect.</p>
+<hr />
+<h2 id="method-2-precision-rgb-channel-displacement-rgb-space">Method 2:
+Precision RGB Channel Displacement (RGB Space)</h2>
+<p>For projects requiring precise pixel-level displacement of the actual
+Red, Green, and Blue channels, you must convert the video to RGB, split
+the channels, shift them using the <code>crop</code> and
+<code>pad</code> filters, and then merge them back together.</p>
+<h3 id="the-command-1">The Command</h3>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-filter_complex</span> <span class="dt">\</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="st">&quot;[0:v]format=rgb24,split=3[r][g][b]; </span><span class="dt">\</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="st"> [r]crop=iw-10:ih:0:0,pad=iw:ih:10:0[r_shifted]; </span><span class="dt">\</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="st"> [b]crop=iw-10:ih:10:0,pad=iw:ih:0:0[b_shifted]; </span><span class="dt">\</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="st"> [r_shifted][g][b_shifted]mergeplanes=0x000102:rgb[out]&quot;</span> <span class="dt">\</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>-map <span class="st">&quot;[out]&quot;</span> <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<h3 id="how-it-works">How It Works</h3>
+<ol type="1">
+<li><strong><code>format=rgb24,split=3</code>:</strong> Converts the
+input video to the RGB24 color space and duplicates it into three
+identical streams labeled <code>[r]</code>, <code>[g]</code>, and
+<code>[b]</code>.</li>
+<li><strong>Red Channel Shift (<code>[r]crop...pad...</code>):</strong>
+<ul>
+<li><code>crop=iw-10:ih:0:0</code> crops 10 pixels off the right side of
+the red frame.</li>
+<li><code>pad=iw:ih:10:0</code> adds 10 pixels of padding back to the
+left side. This effectively shifts the red channel 10 pixels to the
+right.</li>
+</ul></li>
+<li><strong>Blue Channel Shift (<code>[b]crop...pad...</code>):</strong>
+<ul>
+<li><code>crop=iw-10:ih:10:0</code> crops 10 pixels off the left side of
+the blue frame.</li>
+<li><code>pad=iw:ih:0:0</code> adds 10 pixels of padding to the right
+side. This shifts the blue channel 10 pixels to the left.</li>
+</ul></li>
+<li><strong>Green Channel (<code>[g]</code>):</strong> Left unmodified
+to serve as the stable anchor.</li>
+<li><strong><code>mergeplanes=0x000102:rgb</code>:</strong> Recombines
+the shifted red channel, the untouched green channel, and the shifted
+blue channel back into a single RGB video stream.</li>
+</ol></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

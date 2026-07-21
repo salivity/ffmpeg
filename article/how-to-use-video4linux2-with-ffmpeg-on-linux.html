@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Use video4linux2 with FFmpeg on Linux - ffmpeg</title>
+    <meta name="description" content="This article provides a straightforward guide on how to capture video from webcams and capture cards on Linux using FFmpeg's video4linux2 (V4L2) input device. You will learn how to identify your connected video devices, list their supported formats, and">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/how-to-use-video4linux2-with-ffmpeg-on-linux">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Use video4linux2 with FFmpeg on Linux - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/how-to-use-video4linux2-with-ffmpeg-on-linux" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article provides a straightforward guide on how to capture video from webcams and capture cards on Linux using FFmpeg's video4linux2 (V4L2) input device. You will learn how to identify your connected video devices, list their supported formats, and" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="how-to-use-video4linux2-with-ffmpeg-on-linux">How to Use
+video4linux2 with FFmpeg on Linux</h1>
+<p>This article provides a straightforward guide on how to capture video
+from webcams and capture cards on Linux using FFmpeg’s
+<code>video4linux2</code> (V4L2) input device. You will learn how to
+identify your connected video devices, list their supported formats, and
+construct FFmpeg commands to record, stream, or configure your video
+feed with specific resolutions and frame rates.</p>
+<h2 id="finding-your-video-device">Finding Your Video Device</h2>
+<p>Before using FFmpeg, you need to identify the device path of your
+camera (usually <code>/dev/videoX</code>). You can list all connected
+video devices by running the following command in your terminal:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ls</span> /dev/video<span class="pp">*</span></span></code></pre></div>
+<p>Alternatively, if you have the <code>v4l-utils</code> package
+installed, you can get a cleaner list with:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">v4l2-ctl</span> <span class="at">--list-devices</span></span></code></pre></div>
+<p>Identify the path corresponding to your camera, which is typically
+<code>/dev/video0</code>.</p>
+<h2 id="basic-video-capture">Basic Video Capture</h2>
+<p>To test if your webcam is working and capture a basic video stream,
+use the <code>-f video4linux2</code> (or <code>-f v4l2</code>) option to
+specify the input format, followed by the device path.</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-f</span> video4linux2 <span class="at">-i</span> /dev/video0 output.mp4</span></code></pre></div>
+<p>To stop recording, press <code>q</code> in your terminal.</p>
+<h2 id="listing-supported-resolutions-and-formats">Listing Supported
+Resolutions and Formats</h2>
+<p>Webcams support specific resolutions, frame rates, and pixel formats.
+To see what your hardware supports, ask FFmpeg to list them:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-f</span> video4linux2 <span class="at">-list_formats</span> all <span class="at">-i</span> /dev/video0</span></code></pre></div>
+<p>This will print a list of supported formats (such as raw
+<code>yuyv422</code> or compressed <code>mjpeg</code>), resolutions, and
+framerates to your terminal.</p>
+<h2 id="setting-resolution-framerate-and-input-format">Setting
+Resolution, Framerate, and Input Format</h2>
+<p>For optimal performance, you should explicitly set the input
+parameters <em>before</em> the input file option (<code>-i</code>).</p>
+<ul>
+<li><code>-video_size</code>: Sets the resolution (e.g.,
+<code>1280x720</code>).</li>
+<li><code>-framerate</code>: Sets the frames per second (e.g.,
+<code>30</code>).</li>
+<li><code>-input_format</code>: Specifies the input codec or pixel
+format (e.g., <code>mjpeg</code> or <code>yuyv422</code>). Using
+<code>mjpeg</code> is often required for high resolutions at 30+ FPS on
+USB 2.0 webcams.</li>
+</ul>
+<p>Here is an example command combining these options:</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-f</span> video4linux2 <span class="at">-input_format</span> mjpeg <span class="at">-video_size</span> 1920x1080 <span class="at">-framerate</span> 30 <span class="at">-i</span> /dev/video0 output.mp4</span></code></pre></div>
+<h2 id="capturing-video-with-audio">Capturing Video with Audio</h2>
+<p>If you want to record audio from your microphone alongside the video,
+you must add an audio input device. On modern Linux systems, this is
+typically done using <code>pulse</code> or <code>alsa</code>.</p>
+<p>Here is an example capturing video via V4L2 and audio via
+PulseAudio:</p>
+<div class="sourceCode" id="cb6"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-f</span> video4linux2 <span class="at">-video_size</span> 1280x720 <span class="at">-framerate</span> 30 <span class="at">-i</span> /dev/video0 <span class="at">-f</span> pulse <span class="at">-i</span> default output.mkv</span></code></pre></div></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

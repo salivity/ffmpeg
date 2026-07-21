@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FFmpeg 5.1 to Binaural Headphone Surround Guide - ffmpeg</title>
+    <meta name="description" content="This article explains how to use FFmpeg to convert a 5.1 surround sound audio track into a 3D binaural stereo mix optimized for headphones. You will learn the exact command-line syntax for the headphone filter, how to map the multi-channel inputs, and ho">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/ffmpeg-5-1-to-binaural-headphone-surround-guide">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="FFmpeg 5.1 to Binaural Headphone Surround Guide - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/ffmpeg-5-1-to-binaural-headphone-surround-guide" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article explains how to use FFmpeg to convert a 5.1 surround sound audio track into a 3D binaural stereo mix optimized for headphones. You will learn the exact command-line syntax for the headphone filter, how to map the multi-channel inputs, and ho" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="ffmpeg-5.1-to-binaural-headphone-surround-guide">FFmpeg 5.1 to
+Binaural Headphone Surround Guide</h1>
+<p>This article explains how to use FFmpeg to convert a 5.1 surround
+sound audio track into a 3D binaural stereo mix optimized for
+headphones. You will learn the exact command-line syntax for the
+<code>headphone</code> filter, how to map the multi-channel inputs, and
+how to utilize Head-Related Impulse Response (HRIR) files to achieve an
+immersive, three-dimensional spatial audio effect.</p>
+<hr />
+<h2 id="understanding-binaural-conversion-in-ffmpeg">Understanding
+Binaural Conversion in FFmpeg</h2>
+<p>To simulate a 3D surround sound space over standard stereo
+headphones, FFmpeg uses Head-Related Impulse Response (HRIR)
+coefficients. These coefficients mimic how human ears perceive sound
+coming from different directions in a physical room.</p>
+<p>FFmpeg achieves this binaural virtualization primarily through the
+<code>headphone</code> filter, which convolving the 5.1 input channels
+with an HRIR multi-channel audio file.</p>
+<hr />
+<h2 id="step-1-obtain-an-hrir-file">Step 1: Obtain an HRIR File</h2>
+<p>The <code>headphone</code> filter requires an external HRIR wave file
+(typically a multi-channel WAV file containing impulse responses for
+different speaker angles). You can download standard HRIR datasets (such
+as the KEMAR HRTF dataset or IRCAM files) in WAV format from public
+github repositories or spatial audio resources.</p>
+<p>Ensure your HRIR WAV file has the same number of channels as your
+target spatial positions (usually 6 channels for a 5.1 setup: Left,
+Right, Center, LFE, Left Surround, Right Surround).</p>
+<hr />
+<h2 id="step-2-the-ffmpeg-command">Step 2: The FFmpeg Command</h2>
+<p>To process a 5.1 audio source and apply the binaural filter, use the
+following complex filtergraph command:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input_5.1.mp4 <span class="at">-i</span> hrir.wav <span class="at">-filter_complex</span> <span class="st">&quot;[0:a][1:a]headphone=map=FL|FR|FC|LFE|SL|SR[spatial]&quot;</span> <span class="at">-map</span> <span class="st">&quot;[spatial]&quot;</span> <span class="at">-c:a</span> libmp3lame <span class="at">-q:a</span> 2 output_binaural.mp3</span></code></pre></div>
+<h3 id="command-breakdown">Command Breakdown:</h3>
+<ul>
+<li><code>-i input_5.1.mp4</code>: The source video or audio file
+containing the 5.1 surround sound track (Input 0).</li>
+<li><code>-i hrir.wav</code>: The HRIR matrix file (Input 1).</li>
+<li><code>-filter_complex</code>: Used to combine the audio stream from
+your source (<code>[0:a]</code>) and the HRIR stream
+(<code>[1:a]</code>).</li>
+<li><code>headphone=map=FL|FR|FC|LFE|SL|SR</code>: The filter maps each
+channel of the 5.1 input to the corresponding spatial coordinate
+coefficients in the HRIR file.
+<ul>
+<li><strong>FL</strong>: Front Left</li>
+<li><strong>FR</strong>: Front Right</li>
+<li><strong>FC</strong>: Front Center</li>
+<li><strong>LFE</strong>: Low-Frequency Effects (Subwoofer)</li>
+<li><strong>SL</strong>: Surround Left</li>
+<li><strong>SR</strong>: Surround Right</li>
+</ul></li>
+<li><code>[spatial]</code>: The label given to the resulting output
+stream.</li>
+<li><code>-map "[spatial]"</code>: Directs FFmpeg to write the processed
+3D stereo audio to the output file.</li>
+</ul>
+<hr />
+<h2 id="alternative-method-using-the-sofalizer-filter">Alternative
+Method: Using the Sofalizer Filter</h2>
+<p>If you have a <code>.sofa</code> (Spatially Orthogonal
+Frequency-reconstructed Auditory Localization) file instead of a WAV
+HRIR file, you can use the <code>sofalizer</code> filter. This is often
+easier because it runs as a simple audio filter (<code>-af</code>):</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input_5.1.mp4 <span class="at">-af</span> <span class="st">&quot;sofalizer=sofa=/path/to/HRTF.sofa:type=freq&quot;</span> <span class="at">-c:a</span> aac <span class="at">-b:a</span> 256k output_binaural.mp4</span></code></pre></div>
+<h3 id="command-breakdown-1">Command Breakdown:</h3>
+<ul>
+<li><code>sofa=/path/to/HRTF.sofa</code>: Defines the path to your SOFA
+database file.</li>
+<li><code>type=freq</code>: Sets the processing to the frequency domain
+(which is computationally faster and often sounds smoother than
+time-domain processing).</li>
+</ul>
+<p>Both methods will result in a 2-channel stereo file that, when
+listened to with headphones, provides a realistic 3D representation of
+the original 5.1 surround sound stage.</p></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

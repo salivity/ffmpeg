@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Decode Ambisonics in FFmpeg with Custom Channel Map - ffmpeg</title>
+    <meta name="description" content="Decoding Higher-Order Ambisonics (HOA)—such as 2nd-order (9 channels) and 3rd-order (16 channels) audio—requires precise channel routing and matrix manipulation to ensure accurate spatial reproduction. This guide demonstrates how to use FFmpeg's powe">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/decode-ambisonics-in-ffmpeg-with-custom-channel-map">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Decode Ambisonics in FFmpeg with Custom Channel Map - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/decode-ambisonics-in-ffmpeg-with-custom-channel-map" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Decoding Higher-Order Ambisonics (HOA)—such as 2nd-order (9 channels) and 3rd-order (16 channels) audio—requires precise channel routing and matrix manipulation to ensure accurate spatial reproduction. This guide demonstrates how to use FFmpeg's powe" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="decode-ambisonics-in-ffmpeg-with-custom-channel-map">Decode
+Ambisonics in FFmpeg with Custom Channel Map</h1>
+<p>Decoding Higher-Order Ambisonics (HOA)—such as 2nd-order (9 channels)
+and 3rd-order (16 channels) audio—requires precise channel routing and
+matrix manipulation to ensure accurate spatial reproduction. This guide
+demonstrates how to use FFmpeg’s powerful audio filters, specifically
+<code>pan</code> and <code>channelmap</code>, to decode these
+multi-channel streams and apply custom channel maps for virtual speaker
+layouts or custom hardware configurations.</p>
+<hr />
+<h2 id="understanding-ambisonic-orders-and-channel-counts">Understanding
+Ambisonic Orders and Channel Counts</h2>
+<p>Before writing the FFmpeg commands, you must identify the Ambisonics
+format (typically AmbiX, which uses ACN channel ordering and SN3D
+normalization) and the channel count:</p>
+<ul>
+<li><strong>2nd-Order Ambisonics:</strong> 9 channels (ACN index 0 to
+8)</li>
+<li><strong>3rd-Order Ambisonics:</strong> 16 channels (ACN index 0 to
+15)</li>
+</ul>
+<p>In FFmpeg, these channels are indexed starting from <code>c0</code>
+(the 1st channel, which is the W/Omni channel) up to <code>c8</code>
+(for 2nd-order) or <code>c15</code> (for 3rd-order).</p>
+<hr />
+<h2 id="method-1-decoding-to-speakers-using-the-pan-filter">Method 1:
+Decoding to Speakers Using the <code>pan</code> Filter</h2>
+<p>The <code>pan</code> filter is the most effective tool in FFmpeg for
+decoding Ambisonics because it allows you to define a custom decoding
+matrix. You can specify exactly how much of each Ambisonic input channel
+(<span class="math inline">\(c0, c1, c2...\)</span>) feeds into each
+output speaker channel.</p>
+<h3 id="example-decoding-2nd-order-9-channels-to-5.1-surround">Example:
+Decoding 2nd-Order (9 Channels) to 5.1 Surround</h3>
+<p>To decode a 2nd-order Ambisonics file into a standard 5.1 speaker
+layout, use a decoding matrix. Below is an example command using
+illustrative coefficients:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input_2nd_order.wav <span class="at">-af</span> <span class="st">&quot;pan=5.1|FL = 0.35*c0 + 0.35*c1 + 0.15*c3 + 0.15*c4|FR = 0.35*c0 - 0.35*c1 + 0.15*c3 - 0.15*c4|FC = 0.5*c0 + 0.3*c3|LFE = 0.1*c0|BL = 0.35*c0 + 0.35*c2 + 0.15*c8|BR = 0.35*c0 - 0.35*c2 - 0.15*c8&quot;</span> output_51.wav</span></code></pre></div>
+<h3 id="example-decoding-3rd-order-16-channels-to-7.1-surround">Example:
+Decoding 3rd-Order (16 Channels) to 7.1 Surround</h3>
+<p>For 3rd-order Ambisonics, you have access to all 16 channels
+(<code>c0</code> to <code>c15</code>). You can map these higher-order
+components to a 7.1 layout to achieve sharper spatial localization:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input_3rd_order.wav <span class="at">-af</span> <span class="st">&quot;pan=7.1|FL = 0.3*c0 + 0.2*c1 + 0.1*c3 + 0.1*c9|FR = 0.3*c0 - 0.2*c1 + 0.1*c3 - 0.1*c9|FC = 0.4*c0 + 0.3*c3 + 0.2*c15|LFE = 0.1*c0|BL = 0.3*c0 + 0.2*c2 + 0.1*c8|BR = 0.3*c0 - 0.2*c2 - 0.1*c8|SL = 0.3*c0 + 0.2*c1 + 0.2*c2|SR = 0.3*c0 - 0.2*c1 - 0.2*c2&quot;</span> output_71.wav</span></code></pre></div>
+<p><em>Note: You should replace the coefficient values (e.g.,
+<code>0.35</code>, <code>0.15</code>) in these examples with the
+specific math derived from your target speaker positions and your chosen
+decoding equations (e.g., basic sampling, max rE, or in-phase).</em></p>
+<hr />
+<h2 id="method-2-reordering-channels-using-the-channelmap-filter">Method
+2: Reordering Channels Using the <code>channelmap</code> Filter</h2>
+<p>If you already have a pre-decoded multi-channel stream or need to
+rearrange/remap the raw Ambisonic channels (for example, converting from
+FuMa channel order to ACN channel order), use the
+<code>channelmap</code> filter.</p>
+<h3 id="example-custom-reordering-of-a-3rd-order-stream">Example: Custom
+Reordering of a 3rd-Order Stream</h3>
+<p>This command takes a 16-channel input and remaps the sequence of the
+channels. The map syntax <code>0-2</code> means “route input channel
+index 0 to output channel index 2”.</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input_3rd_order.wav <span class="at">-filter_complex</span> <span class="st">&quot;channelmap=map=0-0|1-2|2-1|3-3|4-5|5-4|6-6|7-7|8-8|9-10|10-9|11-11|12-12|13-13|14-14|15-15:channel_layout=hexadecagonal&quot;</span> output_reordered.wav</span></code></pre></div>
+<ul>
+<li><code>hexadecagonal</code> is the FFmpeg layout name for a standard
+16-channel stream.</li>
+<li>For 2nd-order (9 channels), use the layout name
+<code>octagonal+LFE</code> or a custom channel layout definition.</li>
+</ul>
+<hr />
+<h2 id="method-3-decoding-2nd3rd-order-to-binaural-via-sofa">Method 3:
+Decoding 2nd/3rd-Order to Binaural via SOFA</h2>
+<p>For headphone playback, you can decode HOA streams directly to
+binaural stereo using custom HRTF (Head-Related Transfer Function)
+profiles in <code>.sofa</code> format. FFmpeg achieves this via the
+<code>sofalizer</code> (or <code>binauralhrft</code>) filter.</p>
+<p>To decode a 3rd-order, 16-channel Ambisonics file to binaural
+stereo:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input_3rd_order.wav <span class="at">-af</span> <span class="st">&quot;sofalizer=sofa=/path/to/your_hrtf.sofa:type=ambisonics:order=3&quot;</span> output_binaural.wav</span></code></pre></div>
+<p>To run this command with a 2nd-order file, simply change
+<code>order=3</code> to <code>order=2</code>. Ensure your
+<code>.sofa</code> file supports the corresponding Ambisonic order for
+accurate spatial virtualization.</p></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

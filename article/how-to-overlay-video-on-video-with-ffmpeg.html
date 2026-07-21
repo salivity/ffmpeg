@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Overlay Video on Video with FFmpeg - ffmpeg</title>
+    <meta name="description" content="This article provides a straightforward guide on how to use the FFmpeg overlay filter to place one video on top of another. You will learn the basic command syntax, how to position the overlay video using coordinates and variables, and how to handle audi">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/how-to-overlay-video-on-video-with-ffmpeg">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Overlay Video on Video with FFmpeg - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/how-to-overlay-video-on-video-with-ffmpeg" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article provides a straightforward guide on how to use the FFmpeg overlay filter to place one video on top of another. You will learn the basic command syntax, how to position the overlay video using coordinates and variables, and how to handle audi" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="how-to-overlay-video-on-video-with-ffmpeg">How to Overlay Video
+on Video with FFmpeg</h1>
+<p>This article provides a straightforward guide on how to use the
+FFmpeg <code>overlay</code> filter to place one video on top of another.
+You will learn the basic command syntax, how to position the overlay
+video using coordinates and variables, and how to handle audio and video
+duration sync.</p>
+<p>To overlay one video on top of another in FFmpeg, you use the
+<code>-filter_complex</code> option with the <code>overlay</code>
+filter. This filter takes two video inputs, overlays the second input
+(the foreground) onto the first input (the background), and outputs the
+combined stream.</p>
+<h3 id="the-basic-command-syntax">The Basic Command Syntax</h3>
+<p>The fundamental command structure for overlaying a video is as
+follows:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> background.mp4 <span class="at">-i</span> foreground.mp4 <span class="at">-filter_complex</span> <span class="st">&quot;[0:v][1:v]overlay=x=10:y=10[out]&quot;</span> <span class="at">-map</span> <span class="st">&quot;[out]&quot;</span> output.mp4</span></code></pre></div>
+<p>In this command: * <code>-i background.mp4</code> is the first input
+(index <code>0</code>). * <code>-i foreground.mp4</code> is the second
+input (index <code>1</code>). * <code>[0:v][1:v]</code> tells FFmpeg to
+send the video stream of the first input and the video stream of the
+second input into the filter. * <code>overlay=x=10:y=10</code> positions
+the top-left corner of the foreground video 10 pixels from the left
+(<code>x</code>) and 10 pixels from the top (<code>y</code>) of the
+background video. * <code>[out]</code> names the output stream of the
+filter, which is then mapped to the final output file via
+<code>-map "[out]"</code>.</p>
+<h3 id="positioning-the-overlay-using-variables">Positioning the Overlay
+Using Variables</h3>
+<p>FFmpeg provides built-in variables to make positioning easier without
+needing to calculate exact pixel values manually. The most common
+variables are: * <code>main_w</code> or <code>W</code>: Width of the
+background video. * <code>main_h</code> or <code>H</code>: Height of the
+background video. * <code>overlay_w</code> or <code>w</code>: Width of
+the foreground/overlay video. * <code>overlay_h</code> or
+<code>h</code>: Height of the foreground/overlay video.</p>
+<p>Using these variables, you can easily place the overlay in common
+positions:</p>
+<ul>
+<li><p><strong>Top-Right Corner:</strong></p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="va">overlay</span><span class="op">=</span>W-w:0</span></code></pre></div></li>
+<li><p><strong>Bottom-Left Corner:</strong></p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="va">overlay</span><span class="op">=</span>0:H-h</span></code></pre></div></li>
+<li><p><strong>Bottom-Right Corner (with a 20-pixel
+padding):</strong></p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="va">overlay</span><span class="op">=</span>W-w-20:H-h-20</span></code></pre></div></li>
+<li><p><strong>Center of the Screen:</strong></p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="va">overlay</span><span class="op">=</span><span class="va">(</span>W-w<span class="va">)</span>/2:<span class="kw">(</span><span class="ex">H-h</span><span class="kw">)</span><span class="ex">/2</span></span></code></pre></div></li>
+</ul>
+<h3 id="handling-video-endings-and-audio">Handling Video Endings and
+Audio</h3>
+<p>By default, the output video will keep playing until the longer of
+the two input videos finishes. If the overlay video is shorter, it will
+freeze on its last frame while the background continues. If the
+background video is shorter, the video will end but the file may
+continue encoding.</p>
+<p>To force the output to stop encoding as soon as the shortest input
+finishes, add the <code>shortest=1</code> option inside the overlay
+filter:</p>
+<div class="sourceCode" id="cb6"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> background.mp4 <span class="at">-i</span> foreground.mp4 <span class="at">-filter_complex</span> <span class="st">&quot;[0:v][1:v]overlay=10:10:shortest=1[out]&quot;</span> <span class="at">-map</span> <span class="st">&quot;[out]&quot;</span> output.mp4</span></code></pre></div>
+<p>To include the audio from the background video in the final output,
+map the audio channel from the first input:</p>
+<div class="sourceCode" id="cb7"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> background.mp4 <span class="at">-i</span> foreground.mp4 <span class="at">-filter_complex</span> <span class="st">&quot;[0:v][1:v]overlay=10:10[out]&quot;</span> <span class="at">-map</span> <span class="st">&quot;[out]&quot;</span> <span class="at">-map</span> 0:a output.mp4</span></code></pre></div></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

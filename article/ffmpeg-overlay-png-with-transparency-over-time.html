@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FFmpeg Overlay PNG with Transparency Over Time - ffmpeg</title>
+    <meta name="description" content="This article explains how to overlay a transparent PNG image onto a video and dynamically control its opacity over time using FFmpeg. You will learn the exact command-line syntax needed to fade a logo or watermark in and out, apply constant custom transp">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/ffmpeg-overlay-png-with-transparency-over-time">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="FFmpeg Overlay PNG with Transparency Over Time - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/ffmpeg-overlay-png-with-transparency-over-time" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article explains how to overlay a transparent PNG image onto a video and dynamically control its opacity over time using FFmpeg. You will learn the exact command-line syntax needed to fade a logo or watermark in and out, apply constant custom transp" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="ffmpeg-overlay-png-with-transparency-over-time">FFmpeg Overlay
+PNG with Transparency Over Time</h1>
+<p>This article explains how to overlay a transparent PNG image onto a
+video and dynamically control its opacity over time using FFmpeg. You
+will learn the exact command-line syntax needed to fade a logo or
+watermark in and out, apply constant custom transparency, or create
+advanced pulsing opacity effects using FFmpeg’s powerful filtering
+tools.</p>
+<h2 id="method-1-fading-a-png-in-and-out-time-based-opacity">Method 1:
+Fading a PNG In and Out (Time-Based Opacity)</h2>
+<p>To make a transparent PNG fade in at a specific time and fade out
+later, you can combine the <code>fade</code> filter (targeting the alpha
+channel) with the <code>overlay</code> filter inside a
+<code>filter_complex</code> graph.</p>
+<p>Use the following command:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-loop</span> 1 <span class="at">-i</span> logo.png <span class="at">-filter_complex</span> <span class="dt">\</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="st">&quot;[1:v]format=rgba,fade=in:st=2:d=1:alpha=1,fade=out:st=7:d=1:alpha=1[logo]; </span><span class="dt">\</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="st"> [0:v][logo]overlay=x=10:y=10:shortest=1&quot;</span> <span class="dt">\</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>-c:a copy output.mp4</span></code></pre></div>
+<h3 id="how-this-command-works">How This Command Works:</h3>
+<ul>
+<li><strong><code>-loop 1 -i logo.png</code></strong>: Loops the single
+PNG image indefinitely so it can exist for the duration of the
+video.</li>
+<li><strong><code>format=rgba</code></strong>: Ensures the image is
+processed with an alpha (transparency) channel.</li>
+<li><strong><code>fade=in:st=2:d=1:alpha=1</code></strong>: Fades the
+image <em>in</em> starting at second 2 (<code>st=2</code>) for a
+duration of 1 second (<code>d=1</code>). The <code>alpha=1</code>
+parameter tells FFmpeg to apply the fade to the transparency channel
+rather than fading to black.</li>
+<li><strong><code>fade=out:st=7:d=1:alpha=1</code></strong>: Fades the
+image <em>out</em> starting at second 7 (<code>st=7</code>) for a
+duration of 1 second (<code>d=1</code>).</li>
+<li><strong><code>overlay=x=10:y=10:shortest=1</code></strong>: Overlays
+the processed logo at the coordinates X=10, Y=10. The
+<code>shortest=1</code> parameter is crucial; it forces the output to
+stop encoding when the main video input ends, preventing an infinite
+loop caused by the looped PNG.</li>
+</ul>
+<hr />
+<h2 id="method-2-applying-a-constant-custom-transparency">Method 2:
+Applying a Constant Custom Transparency</h2>
+<p>If you want the PNG overlay to have a fixed, semi-transparent opacity
+(for example, 50% opacity) throughout the entire video, you can use the
+<code>colorchannelmixer</code> filter to adjust the alpha channel.</p>
+<p>Use this command:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-i</span> logo.png <span class="at">-filter_complex</span> <span class="dt">\</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="st">&quot;[1:v]format=rgba,colorchannelmixer=aa=0.5[logo]; </span><span class="dt">\</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="st"> [0:v][logo]overlay=10:10&quot;</span> <span class="dt">\</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>-c:a copy output.mp4</span></code></pre></div>
+<h3 id="how-this-command-works-1">How This Command Works:</h3>
+<ul>
+<li><strong><code>colorchannelmixer=aa=0.5</code></strong>: Modifies the
+input’s alpha channel. The value for <code>aa</code> (Alpha-Alpha)
+ranges from <code>0.0</code> (fully invisible) to <code>1.0</code>
+(fully opaque). Setting it to <code>0.5</code> gives the PNG 50%
+opacity.</li>
+</ul>
+<hr />
+<h2 id="method-3-advanced-dynamic-transparency-pulsing-effect">Method 3:
+Advanced Dynamic Transparency (Pulsing Effect)</h2>
+<p>For advanced scenarios where transparency needs to fluctuate
+continuously over time (such as a pulsing watermark), you can pass
+mathematical expressions using the time variable (<code>t</code>) to the
+<code>colorchannelmixer</code> filter.</p>
+<p>Use this command to create a pulsing opacity effect:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-loop</span> 1 <span class="at">-i</span> logo.png <span class="at">-filter_complex</span> <span class="dt">\</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="st">&quot;[1:v]format=rgba,colorchannelmixer=aa=&#39;0.5+0.5*sin(2*PI*t/3)&#39;[logo]; </span><span class="dt">\</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="st"> [0:v][logo]overlay=10:10:shortest=1&quot;</span> <span class="dt">\</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>-c:a copy output.mp4</span></code></pre></div>
+<h3 id="how-this-command-works-2">How This Command Works:</h3>
+<ul>
+<li><strong><code>aa='0.5+0.5*sin(2*PI*t/3)'</code></strong>: This
+expression continuously calculates the alpha value based on the current
+video timestamp (<code>t</code>).
+<ul>
+<li>It uses a sine wave (<code>sin</code>) to oscillate the opacity
+smoothly.</li>
+<li>The opacity will wave back and forth between <code>0.0</code>
+(invisible) and <code>1.0</code> (fully opaque) every 3 seconds.</li>
+</ul></li>
+</ul></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

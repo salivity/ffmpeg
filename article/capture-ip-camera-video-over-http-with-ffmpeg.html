@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Capture IP Camera Video over HTTP with FFmpeg - ffmpeg</title>
+    <meta name="description" content="Capturing video from an IP camera over HTTP and saving it to local storage is a highly efficient way to manage security footage or archive live streams. This article provides a straightforward guide on how to use FFmpeg, a powerful open-source multimedia">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/capture-ip-camera-video-over-http-with-ffmpeg">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Capture IP Camera Video over HTTP with FFmpeg - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/capture-ip-camera-video-over-http-with-ffmpeg" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Capturing video from an IP camera over HTTP and saving it to local storage is a highly efficient way to manage security footage or archive live streams. This article provides a straightforward guide on how to use FFmpeg, a powerful open-source multimedia" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="capture-ip-camera-video-over-http-with-ffmpeg">Capture IP Camera
+Video over HTTP with FFmpeg</h1>
+<p>Capturing video from an IP camera over HTTP and saving it to local
+storage is a highly efficient way to manage security footage or archive
+live streams. This article provides a straightforward guide on how to
+use FFmpeg, a powerful open-source multimedia framework, to connect to
+an HTTP-based camera stream, handle authentication, and save the video
+file directly to your system.</p>
+<h3 id="step-1-locate-the-ip-camera-http-stream-url">Step 1: Locate the
+IP Camera HTTP Stream URL</h3>
+<p>Before running FFmpeg, you need the exact HTTP URL of your IP
+camera’s video stream. This stream is often delivered in MJPEG (Motion
+JPEG) or H.264 format over HTTP.</p>
+<p>Common stream URL formats include: * <strong>MJPEG:</strong>
+<code>http://&lt;CAMERA_IP&gt;:&lt;PORT&gt;/video.mjpg</code> *
+<strong>H.264/MPEG-4:</strong>
+<code>http://&lt;CAMERA_IP&gt;:&lt;PORT&gt;/live/ch0.m3u8</code></p>
+<p>Consult your IP camera’s user manual or administrative portal to find
+the specific streaming path.</p>
+<h3 id="step-2-run-the-basic-ffmpeg-command">Step 2: Run the Basic
+FFmpeg Command</h3>
+<p>To capture the stream and save it to a local file, open your terminal
+or command prompt and run the following command:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> <span class="st">&quot;http://192.168.1.100:8080/video.mjpg&quot;</span> <span class="at">-c:v</span> copy output.mp4</span></code></pre></div>
+<p>Here is a breakdown of the parameters used: *
+<strong><code>-i "http://..."</code></strong>: Specifies the input
+source, which is your IP camera’s HTTP stream URL. *
+<strong><code>-c:v copy</code></strong>: Instructs FFmpeg to copy the
+video stream directly without re-encoding. This saves CPU usage and
+preserves the original video quality. *
+<strong><code>output.mp4</code></strong>: The name and format of the
+output file where the video will be saved.</p>
+<h3 id="step-3-handling-username-and-password">Step 3: Handling Username
+and Password</h3>
+<p>Most IP cameras require authentication to access the video stream.
+You can pass your credentials directly inside the HTTP URL:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> <span class="st">&quot;http://username:password@192.168.1.100:8080/video.mjpg&quot;</span> <span class="at">-c:v</span> copy output.mp4</span></code></pre></div>
+<p>Replace <code>username</code> and <code>password</code> with your
+camera’s login credentials.</p>
+<h3 id="step-4-splitting-the-video-into-segments-optional">Step 4:
+Splitting the Video into Segments (Optional)</h3>
+<p>If you plan to run the capture continuously, saving a single, massive
+file is impractical. You can instruct FFmpeg to split the recording into
+smaller, time-based segments (e.g., every 15 minutes) using the segment
+muxer:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> <span class="st">&quot;http://192.168.1.100:8080/video.mjpg&quot;</span> <span class="at">-c:v</span> copy <span class="at">-f</span> segment <span class="at">-segment_time</span> 900 <span class="at">-reset_timestamps</span> 1 capture_%03d.mp4</span></code></pre></div>
+<p>Key arguments for segmentation: *
+<strong><code>-f segment</code></strong>: Enables the segment muxer. *
+<strong><code>-segment_time 900</code></strong>: Splits the video every
+900 seconds (15 minutes). *
+<strong><code>-reset_timestamps 1</code></strong>: Resets the timestamps
+at the beginning of each segment to ensure the output files play back
+correctly. * <strong><code>capture_%03d.mp4</code></strong>: Names the
+output files sequentially (e.g., <code>capture_001.mp4</code>,
+<code>capture_002.mp4</code>).</p></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

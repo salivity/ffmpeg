@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stream Encrypted Files Over HTTP Using FFmpeg - ffmpeg</title>
+    <meta name="description" content="Streaming encrypted media over HTTP secures your content from unauthorized downloads and ensures safe transit. This article provides a step-by-step guide on how to encrypt video files using AES-128 encryption and package them for HTTP Live Streaming (HLS">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/stream-encrypted-files-over-http-using-ffmpeg">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Stream Encrypted Files Over HTTP Using FFmpeg - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/stream-encrypted-files-over-http-using-ffmpeg" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Streaming encrypted media over HTTP secures your content from unauthorized downloads and ensures safe transit. This article provides a step-by-step guide on how to encrypt video files using AES-128 encryption and package them for HTTP Live Streaming (HLS" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="stream-encrypted-files-over-http-using-ffmpeg">Stream Encrypted
+Files Over HTTP Using FFmpeg</h1>
+<p>Streaming encrypted media over HTTP secures your content from
+unauthorized downloads and ensures safe transit. This article provides a
+step-by-step guide on how to encrypt video files using AES-128
+encryption and package them for HTTP Live Streaming (HLS) using
+FFmpeg.</p>
+<h3 id="step-1-create-the-encryption-key-and-key-info-file">Step 1:
+Create the Encryption Key and Key Info File</h3>
+<p>To encrypt your stream, you need a 16-byte AES encryption key and a
+key info file that tells FFmpeg how to apply it.</p>
+<ol type="1">
+<li><p><strong>Generate a random 16-byte key</strong> using OpenSSL:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">openssl</span> rand 16 <span class="op">&gt;</span> video.key</span></code></pre></div></li>
+<li><p><strong>Generate a random Initialization Vector (IV)</strong>
+(optional, but recommended for security):</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">openssl</span> rand <span class="at">-hex</span> 16 <span class="op">&gt;</span> video.iv</span></code></pre></div></li>
+<li><p><strong>Create a key info file</strong> named
+<code>key_info.txt</code>. This file must contain three lines:</p>
+<ul>
+<li><strong>Line 1:</strong> The URI where the player will retrieve the
+key over HTTP (use HTTPS in production).</li>
+<li><strong>Line 2:</strong> The local path to the key file on your
+disk.</li>
+<li><strong>Line 3:</strong> The IV (hexadecimal string) generated in
+the previous step.</li>
+</ul>
+<p>Example of <code>key_info.txt</code>:</p>
+<pre class="text"><code>https://example.com/keys/video.key
+/path/to/video.key
+e84a2f8b9c1d0e3f4a5b6c7d8e9f0a1b</code></pre></li>
+</ol>
+<h3 id="step-2-encrypt-and-segment-the-video-with-ffmpeg">Step 2:
+Encrypt and Segment the Video with FFmpeg</h3>
+<p>Use FFmpeg to convert your input video file into encrypted HLS
+segments (<code>.ts</code> files) and generate the playlist
+(<code>.m3u8</code>) file. Run the following command in your
+terminal:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="dt">\</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">-codec:v</span> libx264 <span class="at">-codec:a</span> aac <span class="dt">\</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">-hls_time</span> 10 <span class="dt">\</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">-hls_key_info_file</span> key_info.txt <span class="dt">\</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">-hls_playlist_type</span> vod <span class="dt">\</span></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">-hls_segment_filename</span> <span class="st">&quot;segment_%03d.ts&quot;</span> <span class="dt">\</span></span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>  playlist.m3u8</span></code></pre></div>
+<p><strong>Command breakdown:</strong> * <code>-i input.mp4</code>:
+Specifies the input video. * <code>-codec:v libx264 -codec:a aac</code>:
+Encodes video to H264 and audio to AAC (standard for HLS). *
+<code>-hls_time 10</code>: Sets the target segment duration to 10
+seconds. * <code>-hls_key_info_file key_info.txt</code>: Tells FFmpeg to
+encrypt the segments using the details in your key info file. *
+<code>-hls_playlist_type vod</code>: Creates a Video-on-Demand playlist.
+* <code>playlist.m3u8</code>: The output playlist file.</p>
+<h3 id="step-3-stream-and-serve-the-encrypted-files">Step 3: Stream and
+Serve the Encrypted Files</h3>
+<p>To stream the video to clients over HTTP, upload the generated
+<code>.ts</code> segments, the <code>playlist.m3u8</code> file, and the
+<code>video.key</code> file to your web server.</p>
+<p>When an HLS-compatible player (like Video.js, hls.js, or native
+Safari) loads <code>playlist.m3u8</code>: 1. It reads the playlist and
+finds the URL of the key. 2. It makes an HTTP request to retrieve
+<code>video.key</code>. 3. It downloads the encrypted <code>.ts</code>
+segments. 4. It decrypts the segments locally in memory using the key
+and plays the video.</p>
+<h3 id="best-practices-for-http-key-protection">Best Practices for HTTP
+Key Protection</h3>
+<p>Because the video key is requested over HTTP, you must secure the key
+endpoint: * <strong>Use HTTPS:</strong> Always serve the key and the
+stream over HTTPS to prevent man-in-the-middle interception. *
+<strong>Implement Authentication:</strong> Configure your web server to
+require token authentication, session cookies, or referrer validation
+before serving the <code>video.key</code> file. This ensures only
+authorized users can decrypt the stream.</p></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

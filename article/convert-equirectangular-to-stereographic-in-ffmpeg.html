@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Convert Equirectangular to Stereographic in FFmpeg - ffmpeg</title>
+    <meta name="description" content="This article provides a straightforward guide on how to use the FFmpeg v360 filter to convert 360-degree equirectangular video into a stereographic projection, commonly known as the "little planet" or "tiny planet" effect. You will learn the exact comman">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/convert-equirectangular-to-stereographic-in-ffmpeg">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Convert Equirectangular to Stereographic in FFmpeg - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/convert-equirectangular-to-stereographic-in-ffmpeg" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article provides a straightforward guide on how to use the FFmpeg v360 filter to convert 360-degree equirectangular video into a stereographic projection, commonly known as the "little planet" or "tiny planet" effect. You will learn the exact comman" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="convert-equirectangular-to-stereographic-in-ffmpeg">Convert
+Equirectangular to Stereographic in FFmpeg</h1>
+<p>This article provides a straightforward guide on how to use the
+FFmpeg <code>v360</code> filter to convert 360-degree equirectangular
+video into a stereographic projection, commonly known as the “little
+planet” or “tiny planet” effect. You will learn the exact command-line
+syntax, the key parameters of the <code>v360</code> filter, and how to
+customize the camera angle and field of view to achieve the perfect
+visual result.</p>
+<h2 id="the-basic-command">The Basic Command</h2>
+<p>To project an equirectangular video to a stereographic projection,
+use the <code>v360</code> video filter. Below is the standard FFmpeg
+command to perform this conversion:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;v360=input=equirectangular:output=stereographic:yaw=0:pitch=-90:roll=0:fov=180:w=1080:h=1080&quot;</span> output.mp4</span></code></pre></div>
+<h2 id="parameter-breakdown">Parameter Breakdown</h2>
+<p>The <code>v360</code> filter relies on specific parameters to define
+the input, output, camera orientation, and dimensions:</p>
+<ul>
+<li><strong><code>input=equirectangular</code> (or
+<code>e</code>)</strong>: Specifies that the source video is in the
+standard 360-degree equirectangular format.</li>
+<li><strong><code>output=stereographic</code> (or
+<code>sg</code>)</strong>: Specifies the target projection format.</li>
+<li><strong><code>yaw</code>, <code>pitch</code>, and
+<code>roll</code></strong>: These control the rotation of the camera in
+degrees.
+<ul>
+<li>Setting <strong><code>pitch=-90</code></strong> points the camera
+straight down, which wraps the ground into a sphere to create the
+classic “little planet” effect.</li>
+<li>Setting <strong><code>pitch=90</code></strong> points the camera
+straight up, creating an inverted “sky tunnel” or “inverted planet”
+effect.</li>
+</ul></li>
+<li><strong><code>fov</code></strong>: Controls the Field of View in
+degrees. For a stereographic projection, a value between
+<code>180</code> and <code>220</code> is recommended to capture enough
+of the surrounding environment to form the “planet” shape.</li>
+<li><strong><code>w</code> and <code>h</code></strong>: Sets the width
+and height of the output video. Because stereographic projections are
+circular, a 1:1 square aspect ratio (like <code>1080x1080</code> or
+<code>2160x2160</code>) is ideal.</li>
+</ul>
+<h2 id="customizing-the-projection">Customizing the Projection</h2>
+<p>You can adjust the parameters to change the appearance of your output
+video:</p>
+<h3 id="changing-the-planet-center">Changing the Planet Center</h3>
+<p>If you want to spin the “planet” horizontally to center a specific
+subject, adjust the <code>yaw</code> parameter:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;v360=e:sg:yaw=120:pitch=-90:roll=0:fov=190:w=1080:h=1080&quot;</span> output.mp4</span></code></pre></div>
+<h3 id="adjusting-the-planet-size">Adjusting the Planet Size</h3>
+<p>To make the central planet smaller and show more of the horizon,
+increase the <code>fov</code> value. To zoom in closer to the center,
+decrease the <code>fov</code> value: * <strong>Zoom Out (Smaller
+Planet):</strong> <code>fov=220</code> * <strong>Zoom In (Larger
+Planet):</strong> <code>fov=150</code></p></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

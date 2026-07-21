@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FFmpeg Multi-Bitrate Ladder Encoding for HLS and DASH - ffmpeg</title>
+    <meta name="description" content="This article provides a step-by-step guide on how to configure a multi-bitrate ladder for HLS (HTTP Live Streaming) and DASH (Dynamic Adaptive Streaming over HTTP) using FFmpeg. You will learn how to take a single high-quality video input, scale it into">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/ffmpeg-multi-bitrate-ladder-encoding-for-hls-and-dash">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="FFmpeg Multi-Bitrate Ladder Encoding for HLS and DASH - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/ffmpeg-multi-bitrate-ladder-encoding-for-hls-and-dash" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article provides a step-by-step guide on how to configure a multi-bitrate ladder for HLS (HTTP Live Streaming) and DASH (Dynamic Adaptive Streaming over HTTP) using FFmpeg. You will learn how to take a single high-quality video input, scale it into" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="ffmpeg-multi-bitrate-ladder-encoding-for-hls-and-dash">FFmpeg
+Multi-Bitrate Ladder Encoding for HLS and DASH</h1>
+<p>This article provides a step-by-step guide on how to configure a
+multi-bitrate ladder for HLS (HTTP Live Streaming) and DASH (Dynamic
+Adaptive Streaming over HTTP) using FFmpeg. You will learn how to take a
+single high-quality video input, scale it into multiple resolutions and
+bitrates using FFmpeg’s filter graphs, and package those streams into
+adaptive playouts (.m3u8 for HLS and .mpd for DASH) to ensure smooth
+playback across varying network conditions.</p>
+<hr />
+<h2 id="understanding-the-bitrate-ladder">Understanding the Bitrate
+Ladder</h2>
+<p>A bitrate ladder is a set of matching video streams encoded at
+different resolutions, frame rates, and bitrates. When network bandwidth
+fluctuates, the video player automatically switches between these
+streams (renditions) to prevent buffering.</p>
+<p>For a standard 1080p source, a typical three-tier ladder might look
+like this: * <strong>1080p (High):</strong> 1920x1080 at 5,000 kbps *
+<strong>720p (Medium):</strong> 1280x720 at 2,800 kbps * <strong>480p
+(Low):</strong> 854x480 at 1,400 kbps</p>
+<p>To ensure seamless switching, all renditions must have aligned
+keyframes (GOP size).</p>
+<hr />
+<h2 id="preparing-the-filter-graph-in-ffmpeg">1. Preparing the Filter
+Graph in FFmpeg</h2>
+<p>To avoid decoding the input file multiple times, use FFmpeg’s
+<code>split</code> filter to duplicate the input video, then scale each
+copy to the target resolution.</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">-filter_complex</span> <span class="st">&quot;[0:v]split=3[v1][v2][v3]; [v1]scale=w=1920:h=1080[v1out]; [v2]scale=w=1280:h=720[v2out]; [v3]scale=w=854:h=480[v3out]&quot;</span></span></code></pre></div>
+<p>This configuration splits the input video stream into three identical
+streams and scales them to 1080p, 720p, and 480p respectively.</p>
+<hr />
+<h2 id="encoding-and-packaging-for-hls">2. Encoding and Packaging for
+HLS</h2>
+<p>To generate HLS outputs, map the scaled video outputs and the audio
+track to individual stream specifiers. Use the <code>-f hls</code> muxer
+along with <code>-var_stream_map</code> to link specific video and audio
+streams together into variant playlists.</p>
+<p>Here is the complete command:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="dt">\</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">-filter_complex</span> <span class="st">&quot;[0:v]split=3[v1][v2][v3]; [v1]scale=w=1920:h=1080[v1out]; [v2]scale=w=1280:h=720[v2out]; [v3]scale=w=854:h=480[v3out]&quot;</span> <span class="dt">\</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">-map</span> <span class="st">&quot;[v1out]&quot;</span> <span class="at">-c:v:0</span> libx264 <span class="at">-b:v:0</span> 5000k <span class="at">-maxrate:v:0</span> 5350k <span class="at">-bufsize:v:0</span> 7500k <span class="at">-g</span> 48 <span class="at">-keyint_min</span> 48 <span class="at">-sc_threshold</span> 0 <span class="dt">\</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">-map</span> <span class="st">&quot;[v2out]&quot;</span> <span class="at">-c:v:1</span> libx264 <span class="at">-b:v:1</span> 2800k <span class="at">-maxrate:v:1</span> 3000k <span class="at">-bufsize:v:1</span> 4200k <span class="at">-g</span> 48 <span class="at">-keyint_min</span> 48 <span class="at">-sc_threshold</span> 0 <span class="dt">\</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">-map</span> <span class="st">&quot;[v3out]&quot;</span> <span class="at">-c:v:2</span> libx264 <span class="at">-b:v:2</span> 1400k <span class="at">-maxrate:v:2</span> 1500k <span class="at">-bufsize:v:2</span> 2100k <span class="at">-g</span> 48 <span class="at">-keyint_min</span> 48 <span class="at">-sc_threshold</span> 0 <span class="dt">\</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">-map</span> a:0 <span class="at">-c:a:0</span> aac <span class="at">-b:a:0</span> 192k <span class="dt">\</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">-map</span> a:0 <span class="at">-c:a:1</span> aac <span class="at">-b:a:1</span> 128k <span class="dt">\</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>  <span class="at">-map</span> a:0 <span class="at">-c:a:2</span> aac <span class="at">-b:a:2</span> 96k <span class="dt">\</span></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>  <span class="at">-f</span> hls <span class="dt">\</span></span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>  <span class="at">-hls_time</span> 4 <span class="dt">\</span></span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>  <span class="at">-hls_playlist_type</span> vod <span class="dt">\</span></span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a>  <span class="at">-master_pl_name</span> master.m3u8 <span class="dt">\</span></span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a>  <span class="at">-var_stream_map</span> <span class="st">&quot;v:0,a:0 v:1,a:1 v:2,a:2&quot;</span> <span class="dt">\</span></span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a>  stream_%v.m3u8</span></code></pre></div>
+<h3 id="key-parameters-explained">Key Parameters Explained:</h3>
+<ul>
+<li><code>-g 48 -keyint_min 48 -sc_threshold 0</code>: Forces a closed
+GOP (Group of Pictures) of 48 frames (2 seconds at 24fps) and disables
+scene-change detection to align GOP boundaries across all streams.</li>
+<li><code>-hls_time 4</code>: Sets the segment duration to 4
+seconds.</li>
+<li><code>-master_pl_name master.m3u8</code>: Generates the master
+playlist that index-links the sub-playlists.</li>
+<li><code>-var_stream_map</code>: Maps video stream 0 to audio stream 0
+(<code>v:0,a:0</code>), video 1 to audio 1, and video 2 to audio 2.</li>
+</ul>
+<hr />
+<h2 id="encoding-and-packaging-for-dash">3. Encoding and Packaging for
+DASH</h2>
+<p>DASH uses a Media Presentation Description (<code>.mpd</code>) file.
+Instead of individual variant playlists, DASH groups streams into
+“adaptation sets” (typically one set for video streams and one for audio
+streams).</p>
+<p>Here is the command to encode and package the same ladder for
+DASH:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="dt">\</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">-filter_complex</span> <span class="st">&quot;[0:v]split=3[v1][v2][v3]; [v1]scale=w=1920:h=1080[v1out]; [v2]scale=w=1280:h=720[v2out]; [v3]scale=w=854:h=480[v3out]&quot;</span> <span class="dt">\</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">-map</span> <span class="st">&quot;[v1out]&quot;</span> <span class="at">-c:v:0</span> libx264 <span class="at">-b:v:0</span> 5000k <span class="at">-g</span> 48 <span class="at">-keyint_min</span> 48 <span class="at">-sc_threshold</span> 0 <span class="dt">\</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">-map</span> <span class="st">&quot;[v2out]&quot;</span> <span class="at">-c:v:1</span> libx264 <span class="at">-b:v:1</span> 2800k <span class="at">-g</span> 48 <span class="at">-keyint_min</span> 48 <span class="at">-sc_threshold</span> 0 <span class="dt">\</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">-map</span> <span class="st">&quot;[v3out]&quot;</span> <span class="at">-c:v:2</span> libx264 <span class="at">-b:v:2</span> 1400k <span class="at">-g</span> 48 <span class="at">-keyint_min</span> 48 <span class="at">-sc_threshold</span> 0 <span class="dt">\</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">-map</span> a:0 <span class="at">-c:a:0</span> aac <span class="at">-b:a:0</span> 128k <span class="dt">\</span></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">-f</span> dash <span class="dt">\</span></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>  <span class="at">-seg_duration</span> 4 <span class="dt">\</span></span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>  <span class="at">-use_timeline</span> 1 <span class="dt">\</span></span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>  <span class="at">-use_template</span> 1 <span class="dt">\</span></span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>  <span class="at">-adaptation_sets</span> <span class="st">&quot;id=0,streams=v id=1,streams=a&quot;</span> <span class="dt">\</span></span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>  manifest.mpd</span></code></pre></div>
+<h3 id="key-parameters-explained-1">Key Parameters Explained:</h3>
+<ul>
+<li><code>-f dash</code>: Instructs FFmpeg to use the DASH muxer.</li>
+<li><code>-seg_duration 4</code>: Sets the target segment duration to 4
+seconds.</li>
+<li><code>-use_template 1 -use_timeline 1</code>: Enables URL templates
+and media timelines in the manifest, optimizing file structures and
+playback sync.</li>
+<li><code>-adaptation_sets "id=0,streams=v id=1,streams=a"</code>:
+Groups all video streams (<code>v</code>) into adaptation set 0, and all
+audio streams (<code>a</code>) into adaptation set 1, allowing players
+to transition smoothly between different video resolutions while keeping
+a single audio track.</li>
+</ul></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

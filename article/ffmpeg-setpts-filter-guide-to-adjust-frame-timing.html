@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FFmpeg setpts Filter Guide to Adjust Frame Timing - ffmpeg</title>
+    <meta name="description" content="This article explains how to use the FFmpeg setpts video filter to manipulate Presentation Time Stamps (PTS), allowing you to speed up, slow down, or precisely adjust the timing of video frames. You will learn the basic syntax, practical examples for fas">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/ffmpeg-setpts-filter-guide-to-adjust-frame-timing">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="FFmpeg setpts Filter Guide to Adjust Frame Timing - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/ffmpeg-setpts-filter-guide-to-adjust-frame-timing" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article explains how to use the FFmpeg setpts video filter to manipulate Presentation Time Stamps (PTS), allowing you to speed up, slow down, or precisely adjust the timing of video frames. You will learn the basic syntax, practical examples for fas" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="ffmpeg-setpts-filter-guide-to-adjust-frame-timing">FFmpeg setpts
+Filter Guide to Adjust Frame Timing</h1>
+<p>This article explains how to use the FFmpeg <code>setpts</code> video
+filter to manipulate Presentation Time Stamps (PTS), allowing you to
+speed up, slow down, or precisely adjust the timing of video frames. You
+will learn the basic syntax, practical examples for fast and slow
+motion, and how to properly sync the accompanying audio.</p>
+<h2 id="understanding-pts-and-the-setpts-filter">Understanding PTS and
+the setpts Filter</h2>
+<p>In video files, each frame has a Presentation Time Stamp (PTS) that
+tells the player exactly when to display that frame. The
+<code>setpts</code> filter modifies these timestamps. By changing the
+PTS, you alter the playback speed and frame timing of the video without
+changing the actual number of frames (unless you also change the output
+frame rate).</p>
+<p>The basic syntax for the filter is:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;setpts=EXPRESSION&quot;</span> output.mp4</span></code></pre></div>
+<h2 id="how-to-speed-up-video-fast-motion">How to Speed Up Video (Fast
+Motion)</h2>
+<p>To speed up a video, you need to make the presentation timestamps
+occur sooner. This is done by multiplying the <code>PTS</code> by a
+fraction less than 1.</p>
+<p>For example, to speed up a video to <strong>double speed
+(2x)</strong>, multiply the PTS by 0.5:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;setpts=0.5*PTS&quot;</span> <span class="at">-an</span> output.mp4</span></code></pre></div>
+<p><em>Note: The <code>-an</code> flag is used here to disable audio, as
+speeding up the video alone will desynchronize the audio.</em></p>
+<h2 id="how-to-slow-down-video-slow-motion">How to Slow Down Video (Slow
+Motion)</h2>
+<p>To slow down a video, you must space out the timestamps. This is done
+by multiplying the <code>PTS</code> by a factor greater than 1.</p>
+<p>To slow a video down to <strong>half speed (0.5x)</strong>, multiply
+the PTS by 2.0:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;setpts=2.0*PTS&quot;</span> <span class="at">-an</span> output.mp4</span></code></pre></div>
+<h2 id="resetting-timestamps-to-zero">Resetting Timestamps to Zero</h2>
+<p>Sometimes, video clips extracted from live streams or security
+cameras have irregular starting timestamps. You can reset the container
+timestamps so the video starts exactly at zero using the
+<code>STARTPTS</code> variable:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;setpts=PTS-STARTPTS&quot;</span> output.mp4</span></code></pre></div>
+<h2 id="adjusting-video-and-audio-speed-together">Adjusting Video and
+Audio Speed Together</h2>
+<p>If you change the video speed using <code>setpts</code>, the audio
+will quickly go out of sync. To change both video and audio speed
+simultaneously, combine the <code>setpts</code> video filter with the
+<code>atempo</code> audio filter.</p>
+<h3 id="example-speeding-up-video-and-audio-by-2x">Example: Speeding up
+Video and Audio by 2x</h3>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;setpts=0.5*PTS&quot;</span> <span class="at">-af</span> <span class="st">&quot;atempo=2.0&quot;</span> output.mp4</span></code></pre></div>
+<h3
+id="example-slowing-down-video-and-audio-to-half-speed-0.5x">Example:
+Slowing down Video and Audio to Half Speed (0.5x)</h3>
+<div class="sourceCode" id="cb6"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;setpts=2.0*PTS&quot;</span> <span class="at">-af</span> <span class="st">&quot;atempo=0.5&quot;</span> output.mp4</span></code></pre></div>
+<p><em>Note: The <code>atempo</code> filter in FFmpeg only supports
+values between 0.5 and 100. If you need to slow down a video more than
+0.5x, you must chain multiple <code>atempo</code> filters together
+(e.g., <code>-af "atempo=0.5,atempo=0.5"</code> for 0.25x
+speed).</em></p></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

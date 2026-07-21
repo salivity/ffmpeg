@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Use FFmpeg -f for Raw Audio Formats - ffmpeg</title>
+    <meta name="description" content="Using FFmpeg to process raw audio requires explicitly defining the audio characteristics because raw audio files lack headers containing metadata like sample rate, channel count, and bit depth. This article explains how to use the -f (format) parameter i">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/how-to-use-ffmpeg-f-for-raw-audio-formats">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Use FFmpeg -f for Raw Audio Formats - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/how-to-use-ffmpeg-f-for-raw-audio-formats" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Using FFmpeg to process raw audio requires explicitly defining the audio characteristics because raw audio files lack headers containing metadata like sample rate, channel count, and bit depth. This article explains how to use the -f (format) parameter i" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="how-to-use-ffmpeg--f-for-raw-audio-formats">How to Use FFmpeg -f
+for Raw Audio Formats</h1>
+<p>Using FFmpeg to process raw audio requires explicitly defining the
+audio characteristics because raw audio files lack headers containing
+metadata like sample rate, channel count, and bit depth. This article
+explains how to use the <code>-f</code> (format) parameter in FFmpeg to
+successfully ingest, convert, and output raw PCM (Pulse Code Modulation)
+audio formats.</p>
+<h2 id="understanding-the--f-parameter-for-raw-audio">Understanding the
+-f Parameter for Raw Audio</h2>
+<p>The <code>-f</code> flag in FFmpeg forces the input or output file
+format. For standard audio files (like MP3 or WAV), FFmpeg automatically
+detects the container and codec. For raw audio (like <code>.pcm</code>,
+<code>.raw</code>, or <code>.bin</code>), there is no container
+structure. You must use the <code>-f</code> parameter to tell FFmpeg
+exactly how to interpret the raw binary data.</p>
+<p>When reading raw audio, the <code>-f</code> parameter is typically
+paired with sample rate (<code>-ar</code>) and channel
+(<code>-ac</code>) specifiers so FFmpeg can correctly reconstruct the
+analog signal.</p>
+<h2 id="common-raw-audio-format-specifiers">Common Raw Audio Format
+Specifiers</h2>
+<p>FFmpeg supports various raw audio formats under the <code>-f</code>
+flag. The most common specifiers include:</p>
+<ul>
+<li><strong><code>s16le</code></strong>: Signed 16-bit Little Endian
+(standard CD quality)</li>
+<li><strong><code>s16be</code></strong>: Signed 16-bit Big Endian</li>
+<li><strong><code>s32le</code></strong>: Signed 32-bit Little
+Endian</li>
+<li><strong><code>f32le</code></strong>: 32-bit Floating-Point Little
+Endian</li>
+<li><strong><code>u8</code></strong>: Unsigned 8-bit</li>
+</ul>
+<p>You can view a full list of supported formats by running
+<code>ffmpeg -formats</code> in your terminal.</p>
+<h2 id="how-to-read-raw-audio-files-input">How to Read Raw Audio Files
+(Input)</h2>
+<p>To convert a raw audio file to a compressed format, you must place
+the <code>-f</code> parameter and its corresponding audio properties
+<em>before</em> the input file (<code>-i</code>).</p>
+<h3 id="example-converting-16-bit-raw-pcm-to-mp3">Example: Converting
+16-bit Raw PCM to MP3</h3>
+<p>If you have a raw audio file recorded at 44,100 Hz, in stereo (2
+channels), using signed 16-bit little-endian format, use the following
+command:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-f</span> s16le <span class="at">-ar</span> 44100 <span class="at">-ac</span> 2 <span class="at">-i</span> input.raw output.mp3</span></code></pre></div>
+<p>In this command: * <code>-f s16le</code>: Forces FFmpeg to read the
+input as signed 16-bit little-endian PCM. * <code>-ar 44100</code>: Sets
+the audio sample rate to 44.1 kHz. * <code>-ac 2</code>: Sets the
+channel count to 2 (stereo). * <code>-i input.raw</code>: Specifies the
+raw input file.</p>
+<h2 id="how-to-write-raw-audio-files-output">How to Write Raw Audio
+Files (Output)</h2>
+<p>To export an existing audio file into a raw PCM format, place the
+<code>-f</code> parameter <em>after</em> the input file, just before the
+output destination.</p>
+<h3 id="example-converting-wav-to-32-bit-float-raw-pcm">Example:
+Converting WAV to 32-bit Float Raw PCM</h3>
+<p>To convert a standard WAV file into raw 32-bit floating-point
+audio:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.wav <span class="at">-f</span> f32le output.raw</span></code></pre></div>
+<p>In this case, FFmpeg extracts the audio data from the WAV file,
+strips away the header, and writes the raw 32-bit little-endian float
+data directly to <code>output.raw</code>.</p></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

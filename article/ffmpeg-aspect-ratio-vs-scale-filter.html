@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FFmpeg Aspect Ratio vs Scale Filter - ffmpeg</title>
+    <meta name="description" content="This article explains the fundamental differences between using the -aspect option and the scale filter in FFmpeg. While both tools are used to control the visual proportions of a video, they operate on entirely different levels. Understanding when to us">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/ffmpeg-aspect-ratio-vs-scale-filter">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="FFmpeg Aspect Ratio vs Scale Filter - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/ffmpeg-aspect-ratio-vs-scale-filter" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article explains the fundamental differences between using the -aspect option and the scale filter in FFmpeg. While both tools are used to control the visual proportions of a video, they operate on entirely different levels. Understanding when to us" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="ffmpeg-aspect-ratio-vs-scale-filter">FFmpeg Aspect Ratio vs
+Scale Filter</h1>
+<p>This article explains the fundamental differences between using the
+<code>-aspect</code> option and the <code>scale</code> filter in FFmpeg.
+While both tools are used to control the visual proportions of a video,
+they operate on entirely different levels. Understanding when to use
+metadata manipulation versus physical pixel resizing will help you
+choose the right method for your video processing workflow.</p>
+<h2 id="the--aspect-option-metadata-manipulation">The
+<code>-aspect</code> Option: Metadata Manipulation</h2>
+<p>The <code>-aspect</code> option changes the <strong>Display Aspect
+Ratio (DAR)</strong> of a video by modifying the metadata in the
+container or video stream header. It does not alter the actual pixels of
+the video frames.</p>
+<ul>
+<li><strong>How it works:</strong> It tells video players how to stretch
+or shrink the video during playback. For example, if you have a 720x570
+video (roughly 5:4) and apply <code>-aspect 16:9</code>, the media
+player will stretch the video to a widescreen format on the fly.</li>
+<li><strong>Re-encoding:</strong> It does not require re-encoding. You
+can combine it with <code>-c copy</code> to change the aspect ratio
+almost instantaneously without losing video quality.</li>
+<li><strong>Drawback:</strong> Some video players and streaming
+platforms ignore container aspect ratio flags and will play the video in
+its original pixel dimensions.</li>
+</ul>
+<p><strong>Example Command:</strong></p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-aspect</span> 16:9 <span class="at">-c</span> copy output.mp4</span></code></pre></div>
+<h2 id="the-scale-filter-pixel-manipulation">The <code>scale</code>
+Filter: Pixel Manipulation</h2>
+<p>The <code>scale</code> filter physically alters the video resolution
+by changing the actual width and height of the video frames (the
+<strong>Storage Aspect Ratio</strong> or <strong>SAR</strong>).</p>
+<ul>
+<li><strong>How it works:</strong> It resamples the image data to create
+a new set of pixels. If you scale a 1920x1080 video down to 1280x720,
+FFmpeg recalculates the image to fit the new, smaller pixel grid.</li>
+<li><strong>Re-encoding:</strong> It requires fully decoding the video,
+applying the filter, and re-encoding the video stream. This is a
+CPU-intensive process and can lead to generational quality loss
+depending on your encoder settings.</li>
+<li><strong>Benefit:</strong> It is universally supported. Because the
+actual pixel dimensions are changed, every video player and website will
+display the video in the correct proportions.</li>
+</ul>
+<p><strong>Example Command:</strong></p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> scale=1280:720 <span class="at">-c:v</span> libx264 output.mp4</span></code></pre></div>
+<h2 id="summary-of-key-differences">Summary of Key Differences</h2>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th style="text-align: left;">Feature</th>
+<th style="text-align: left;"><code>-aspect</code> Option</th>
+<th style="text-align: left;"><code>scale</code> Filter</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><strong>Primary Action</strong></td>
+<td style="text-align: left;">Changes playback metadata (DAR)</td>
+<td style="text-align: left;">Changes physical resolution (SAR)</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Re-encoding</strong></td>
+<td style="text-align: left;">Not required (can use
+<code>-c copy</code>)</td>
+<td style="text-align: left;">Required</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Processing Speed</strong></td>
+<td style="text-align: left;">Extremely fast (instantaneous)</td>
+<td style="text-align: left;">Slower (dependent on CPU/GPU)</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Quality Loss</strong></td>
+<td style="text-align: left;">None (lossless if stream copied)</td>
+<td style="text-align: left;">Potential loss (depends on encoder)</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Compatibility</strong></td>
+<td style="text-align: left;">May be ignored by some players</td>
+<td style="text-align: left;">Universally compatible</td>
+</tr>
+</tbody>
+</table>
+<h2 id="when-to-use-which">When to Use Which</h2>
+<p>Use <strong><code>-aspect</code></strong> when you have an anamorphic
+video (like a DVD rip) that is playing back with the wrong proportions
+and you want a quick, lossless fix without waiting for a full
+re-encode.</p>
+<p>Use the <strong><code>scale</code> filter</strong> when you need to
+resize a video for a specific device, reduce the file size, or prepare a
+video for upload to web platforms (like YouTube or social media) that
+rely strictly on physical pixel dimensions.</p></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Use FFmpeg thistogram for Temporal Color Histograms - ffmpeg</title>
+    <meta name="description" content="This article explains how to use the FFmpeg thistogram filter to generate and display a temporal color histogram of a video. You will learn the basic syntax of the filter, its key parameters for customization, and practical command-line examples to view">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/use-ffmpeg-thistogram-for-temporal-color-histograms">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Use FFmpeg thistogram for Temporal Color Histograms - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/use-ffmpeg-thistogram-for-temporal-color-histograms" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article explains how to use the FFmpeg thistogram filter to generate and display a temporal color histogram of a video. You will learn the basic syntax of the filter, its key parameters for customization, and practical command-line examples to view" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="use-ffmpeg-thistogram-for-temporal-color-histograms">Use FFmpeg
+thistogram for Temporal Color Histograms</h1>
+<p>This article explains how to use the FFmpeg <code>thistogram</code>
+filter to generate and display a temporal color histogram of a video.
+You will learn the basic syntax of the filter, its key parameters for
+customization, and practical command-line examples to view the histogram
+on its own or side-by-side with your original video.</p>
+<h2 id="understanding-the-thistogram-filter">Understanding the
+thistogram Filter</h2>
+<p>Unlike a standard histogram that displays the color distribution of a
+single frame, the <code>thistogram</code> (temporal histogram) filter
+displays the color distribution of a video across successive frames over
+time. It creates a scrolling visualization where each vertical column of
+pixels represents the color histogram of a specific frame in the video
+timeline.</p>
+<p>This tool is highly useful for video analysis, color grading, and
+monitoring exposure transitions across a scene.</p>
+<h2 id="key-parameters-of-the-thistogram-filter">Key Parameters of the
+thistogram Filter</h2>
+<p>You can customize the output of the temporal histogram using several
+parameters:</p>
+<ul>
+<li><strong><code>width</code> (or <code>w</code>):</strong> Sets the
+width of the output video. The default is 512.</li>
+<li><strong><code>height</code> (or <code>h</code>):</strong> Sets the
+height of the output video. The default is 512.</li>
+<li><strong><code>display_mode</code> (or <code>d</code>):</strong>
+Specifies how the histogram values are scaled.
+<ul>
+<li><code>linear</code> (default): Linear scaling.</li>
+<li><code>logarithmic</code> or <code>log</code>: Logarithmic scaling,
+which is useful for seeing details in darker or lower-density
+areas.</li>
+</ul></li>
+<li><strong><code>components</code> (or <code>c</code>):</strong> A
+bitmask specifying which color components to display. The default is 7
+(all components/planes).</li>
+<li><strong><code>slide</code> (or <code>s</code>):</strong> Sets the
+sliding mode of the histogram.
+<ul>
+<li><code>frame</code>: Shows the histogram moving frame by frame.</li>
+<li><code>scroll</code>: Scrolls the histogram horizontally.</li>
+</ul></li>
+</ul>
+<h2 id="practical-command-examples">Practical Command Examples</h2>
+<h3 id="basic-temporal-histogram">1. Basic Temporal Histogram</h3>
+<p>To generate a standalone video consisting only of the temporal color
+histogram from an input video, use the following command:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;thistogram&quot;</span> output.mp4</span></code></pre></div>
+<h3 id="custom-dimensions-and-logarithmic-scaling">2. Custom Dimensions
+and Logarithmic Scaling</h3>
+<p>To make the histogram wider and use logarithmic scaling to better
+analyze low-light details, configure the <code>width</code>,
+<code>height</code>, and <code>display_mode</code> parameters:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;thistogram=w=800:h=400:d=log&quot;</span> output.mp4</span></code></pre></div>
+<h3 id="displaying-the-video-and-histogram-side-by-side">3. Displaying
+the Video and Histogram Side-by-Side</h3>
+<p>To view the original video and its temporal histogram simultaneously,
+you can split the video stream, apply the <code>thistogram</code> filter
+to one path, and combine them horizontally using the <code>hstack</code>
+filter:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-filter_complex</span> <span class="st">&quot;[0:v]split[original][for_hist];[for_hist]thistogram=width=300[hist];[original][hist]hstack&quot;</span> output.mp4</span></code></pre></div>
+<p>In this command: * <code>split</code> duplicates the input video into
+two streams: <code>original</code> and <code>for_hist</code>. *
+<code>thistogram</code> processes the duplicate stream and outputs it as
+<code>hist</code>. * <code>hstack</code> stacks the
+<code>original</code> video and the <code>hist</code> visualizer
+side-by-side.</p></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

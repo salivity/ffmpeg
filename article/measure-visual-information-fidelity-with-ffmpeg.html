@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Measure Visual Information Fidelity with FFmpeg - ffmpeg</title>
+    <meta name="description" content="Visual Information Fidelity (VIF) is a full-reference image and video quality metric that measures how much information is lost during distortion, such as compression or transmission. This article provides a step-by-step guide on how to use FFmpeg to cal">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/measure-visual-information-fidelity-with-ffmpeg">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Measure Visual Information Fidelity with FFmpeg - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/measure-visual-information-fidelity-with-ffmpeg" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Visual Information Fidelity (VIF) is a full-reference image and video quality metric that measures how much information is lost during distortion, such as compression or transmission. This article provides a step-by-step guide on how to use FFmpeg to cal" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="measure-visual-information-fidelity-with-ffmpeg">Measure Visual
+Information Fidelity with FFmpeg</h1>
+<p>Visual Information Fidelity (VIF) is a full-reference image and video
+quality metric that measures how much information is lost during
+distortion, such as compression or transmission. This article provides a
+step-by-step guide on how to use FFmpeg to calculate VIF scores. It
+covers the required prerequisites, the exact command-line syntax, and
+how to export and interpret the resulting quality scores.</p>
+<h3 id="prerequisites">Prerequisites</h3>
+<p>To measure VIF, you must use FFmpeg’s <code>libvmaf</code> filter.
+VIF is implemented as a feature within Netflix’s VMAF (Video
+Multi-Method Assessment Fusion) library.</p>
+<p>Before starting, ensure that your version of FFmpeg is compiled with
+VMAF support. You can verify this by running the following command in
+your terminal:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-filters</span> <span class="kw">|</span> <span class="fu">grep</span> libvmaf</span></code></pre></div>
+<p>If <code>libvmaf</code> appears in the output, your FFmpeg
+installation is ready.</p>
+<h3 id="the-command-syntax">The Command Syntax</h3>
+<p>To calculate VIF, you need two video files: the
+<strong>distorted</strong> (compressed) video and the
+<strong>reference</strong> (original) video. Both videos must have the
+same resolution and frame rate.</p>
+<p>Use the following command to run the VIF assessment:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> distorted.mp4 <span class="at">-i</span> reference.mp4 <span class="at">-filter_complex</span> <span class="st">&quot;[0:v][1:v]libvmaf=feature=&#39;name=vif&#39;:log_path=vif_results.json:log_fmt=json&quot;</span> <span class="at">-f</span> null <span class="at">-</span></span></code></pre></div>
+<h3 id="command-breakdown">Command Breakdown</h3>
+<ul>
+<li><code>-i distorted.mp4</code>: Specifies the distorted/compressed
+video as the first input (<code>0:v</code>).</li>
+<li><code>-i reference.mp4</code>: Specifies the original reference
+video as the second input (<code>1:v</code>).</li>
+<li><code>-filter_complex "[0:v][1:v]libvmaf=..."</code>: Maps both
+video streams into the <code>libvmaf</code> filter.</li>
+<li><code>feature='name=vif'</code>: Instructs the VMAF library to
+specifically calculate and output VIF metrics.</li>
+<li><code>log_path=vif_results.json</code>: Saves the frame-by-frame and
+pooled VIF metrics to a JSON file named
+<code>vif_results.json</code>.</li>
+<li><code>log_fmt=json</code>: Sets the output format of the log to JSON
+for easy parsing.</li>
+<li><code>-f null -</code>: Prevents FFmpeg from writing a new video
+file, as we only need the text-based log output.</li>
+</ul>
+<h3 id="understanding-the-vif-output">Understanding the VIF Output</h3>
+<p>Once the command finishes running, open the generated
+<code>vif_results.json</code> file. The file will contain VIF scores
+calculated at different scales, typically labeled as:</p>
+<ul>
+<li><code>vif_scale0</code></li>
+<li><code>vif_scale1</code></li>
+<li><code>vif_scale2</code></li>
+<li><code>vif_scale3</code></li>
+</ul>
+<p>These scales represent the visual fidelity at different spatial
+resolutions (multi-scale analysis).</p>
+<p>A VIF score generally ranges from <strong>0 to 1</strong>, where: *
+<strong>1.0</strong> indicates that the distorted video is identical to
+the reference video. * <strong>0.0</strong> indicates complete loss of
+visual information. * In some cases where artificial sharpening or
+contrast enhancement has been applied, a VIF score may exceed 1.0.</p></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Rotate Video Using Gyro Metadata in FFmpeg - ffmpeg</title>
+    <meta name="description" content="This article explains how to dynamically rotate a video using its embedded gyroscopic metadata with FFmpeg. You will learn how FFmpeg handles automatic orientation, how to apply dynamic rotation using external sensor data, and how to utilize advanced ope">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/how-to-rotate-video-using-gyro-metadata-in-ffmpeg">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Rotate Video Using Gyro Metadata in FFmpeg - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/how-to-rotate-video-using-gyro-metadata-in-ffmpeg" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article explains how to dynamically rotate a video using its embedded gyroscopic metadata with FFmpeg. You will learn how FFmpeg handles automatic orientation, how to apply dynamic rotation using external sensor data, and how to utilize advanced ope" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="how-to-rotate-video-using-gyro-metadata-in-ffmpeg">How to Rotate
+Video Using Gyro Metadata in FFmpeg</h1>
+<p>This article explains how to dynamically rotate a video using its
+embedded gyroscopic metadata with FFmpeg. You will learn how FFmpeg
+handles automatic orientation, how to apply dynamic rotation using
+external sensor data, and how to utilize advanced open-source plugins
+for frame-by-frame gyro stabilization and rotation.</p>
+<h2 id="understanding-gyro-metadata-and-ffmpeg">Understanding Gyro
+Metadata and FFmpeg</h2>
+<p>When recording video on smartphones, drones, or action cameras, the
+device’s internal gyroscope records orientation data. This metadata can
+be static (a single flag indicating the camera was held sideways) or
+dynamic (continuous frame-by-frame sensor readings tracking
+movement).</p>
+<p>Depending on whether your metadata is static or dynamic, you will
+need to use different FFmpeg approaches.</p>
+<h2 id="method-1-automatic-static-rotation-default-behavior">Method 1:
+Automatic Static Rotation (Default Behavior)</h2>
+<p>If your camera writes a static orientation tag (such as 90, 180, or
+270 degrees) based on the initial gyroscope reading, modern versions of
+FFmpeg will automatically rotate the video during playback or
+re-encoding.</p>
+<p>To ensure this automatic rotation is applied and baked into the video
+stream, use the following command:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;autorotate&quot;</span> output.mp4</span></code></pre></div>
+<p>If you want to disable this automatic behavior and keep the original
+raw pixel orientation, use the <code>-nosources</code> flag or disable
+the video filter:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-noautorotate</span> <span class="at">-i</span> input.mp4 <span class="at">-c</span> copy output.mp4</span></code></pre></div>
+<h2
+id="method-2-dynamic-frame-by-frame-rotation-using-the-rotate-filter">Method
+2: Dynamic Frame-by-Frame Rotation Using the Rotate Filter</h2>
+<p>For true dynamic rotation where the angle changes over time (e.g.,
+correcting a horizon during a flight), you must feed dynamic values into
+FFmpeg’s <code>rotate</code> video filter.</p>
+<p>FFmpeg’s <code>rotate</code> filter accepts expressions. If you have
+extracted your gyroscope roll angles into a time-based math formula, you
+can pass it directly to the filter:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;rotate=&#39;t*PI/10&#39;&quot;</span> output.mp4</span></code></pre></div>
+<p><em>In this example, the video dynamically rotates continuously over
+time (<code>t</code> represents the timestamp in seconds).</em></p>
+<p>For actual gyroscope logs, you must map the time-stamped angles (in
+radians) using an expression. The <code>rotate</code> filter parameters
+include: * <strong><code>a</code> / <code>angle</code></strong>: The
+angle in radians by which to rotate the video clockwise. *
+<strong><code>ow</code> and <code>oh</code></strong>: Output width and
+height. Dynamic rotation can crop corners; you can use
+<code>ow='hypot(iw,ih)'</code> and <code>oh='out_w'</code> to prevent
+cropping by expanding the canvas.</p>
+<p>Example with canvas compensation:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;rotate=angle=&#39;sin(t)&#39;:ow=&#39;hypot(iw,ih)&#39;:oh=&#39;out_w&#39;:fillcolor=black&quot;</span> output.mp4</span></code></pre></div>
+<h2 id="method-3-advanced-dynamic-gyro-rotation-via-gyroflow">Method 3:
+Advanced Dynamic Gyro Rotation via Gyroflow</h2>
+<p>Standard FFmpeg cannot natively parse complex continuous binary gyro
+data tracks (like GoPro GPMF or Sony RTMD metadata) directly into the
+<code>rotate</code> filter without third-party extraction.</p>
+<p>To achieve professional, dynamic, gyro-based stabilization and
+rotation, the open-source tool <strong>Gyroflow</strong> provides an
+FFmpeg video filter plugin (<code>vf_gyroflow</code>).</p>
+<h3 id="step-1-install-the-gyroflow-ffmpeg-plugin">Step 1: Install the
+Gyroflow FFmpeg Plugin</h3>
+<p>You must use an FFmpeg build compiled with the
+<code>--enable-libgyroflow</code> flag.</p>
+<h3 id="step-2-run-the-dynamic-rotation-command">Step 2: Run the Dynamic
+Rotation Command</h3>
+<p>Once installed, you can pass the video and its gyroscope data
+directly through FFmpeg. The filter automatically parses the camera
+telemetry and dynamically rotates/stabilizes the frames:</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;gyroflow=gyro_file=telemetry.gcsv:smoothing=1.0&quot;</span> output.mp4</span></code></pre></div>
+<p>If the gyro metadata is embedded directly inside the video container
+(like in GoPro Creator Edition files), you do not need to specify an
+external <code>gyro_file</code>:</p>
+<div class="sourceCode" id="cb6"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;gyroflow&quot;</span> output.mp4</span></code></pre></div>
+<p>This method provides the most accurate dynamic rotation as it
+utilizes the exact sensor sampling rate of your camera’s hardware
+gyroscope.</p></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

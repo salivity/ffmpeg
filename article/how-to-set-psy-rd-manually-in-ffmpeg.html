@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Set psy-rd Manually in FFmpeg - ffmpeg</title>
+    <meta name="description" content="This guide explains how to manually configure the -psy-rd (psychovisual rate-distortion optimization) parameter in FFmpeg. You will learn the correct syntax for both the libx264 and libx265 encoders, what the individual values represent, and how to apply">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/how-to-set-psy-rd-manually-in-ffmpeg">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Set psy-rd Manually in FFmpeg - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/how-to-set-psy-rd-manually-in-ffmpeg" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This guide explains how to manually configure the -psy-rd (psychovisual rate-distortion optimization) parameter in FFmpeg. You will learn the correct syntax for both the libx264 and libx265 encoders, what the individual values represent, and how to apply" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="how-to-set-psy-rd-manually-in-ffmpeg">How to Set psy-rd Manually
+in FFmpeg</h1>
+<p>This guide explains how to manually configure the
+<code>-psy-rd</code> (psychovisual rate-distortion optimization)
+parameter in FFmpeg. You will learn the correct syntax for both the
+<code>libx264</code> and <code>libx265</code> encoders, what the
+individual values represent, and how to apply these settings to optimize
+your video encoding quality.</p>
+<h2 id="understanding-psy-rd">Understanding psy-rd</h2>
+<p>Psychovisual rate-distortion optimization (<code>psy-rd</code>) is a
+feature in x264 and x265 encoders that biases the encoder toward keeping
+high-frequency details (like film grain and textures) rather than
+discarding them to save bitrate.</p>
+<p>The parameter consists of two parts, written as
+<code>strength:trellis</code> (for x264) or configured as separate
+variables (for x265).</p>
+<ul>
+<li><strong>Strength (Psy-RD):</strong> Controls the overall strength of
+psychovisual optimization. Higher values keep more detail but can cause
+blockiness at lower bitrates.</li>
+<li><strong>Trellis (Psy-Trellis / Psy-RDOQ):</strong> Controls
+psychovisual quantization. It helps preserve textures and reduces
+blurriness, particularly in dark or complex areas.</li>
+</ul>
+<hr />
+<h2 id="setting-psy-rd-in-libx264">Setting psy-rd in libx264</h2>
+<p>In FFmpeg, you can configure <code>psy-rd</code> for the H.264
+encoder in two different ways: using the direct <code>-psy-rd</code>
+flag or using the <code>-x264-params</code> option.</p>
+<h3 id="method-1-using-the-direct-flag">Method 1: Using the Direct
+Flag</h3>
+<p>You can pass the values directly using the <code>-psy-rd</code> flag.
+The format is <code>-psy-rd strength:trellis</code>.</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-c:v</span> libx264 <span class="at">-crf</span> 20 <span class="at">-psy-rd</span> 1.0:0.15 output.mp4</span></code></pre></div>
+<h3 id="method-2-using--x264-params-recommended">Method 2: Using
+-x264-params (Recommended)</h3>
+<p>Using the <code>-x264-params</code> flag is often preferred because
+it prevents conflicts with FFmpeg’s internal mapping.</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-c:v</span> libx264 <span class="at">-crf</span> 20 <span class="at">-x264-params</span> psy-rd=1.0:0.15 output.mp4</span></code></pre></div>
+<p><em>Note: The default value for x264 is <code>1.0:0.0</code> (or
+<code>1.0:0.15</code> when Trellis is enabled).</em></p>
+<hr />
+<h2 id="setting-psy-rd-in-libx265">Setting psy-rd in libx265</h2>
+<p>For HEVC (H.265) encoding via <code>libx265</code>, FFmpeg does not
+support a direct <code>-psy-rd</code> flag. Instead, you must pass these
+settings using the <code>-x265-params</code> argument.</p>
+<p>In x265, the two components are defined as <code>psy-rd</code> and
+<code>psy-rdoq</code>.</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-c:v</span> libx265 <span class="at">-crf</span> 22 <span class="at">-x265-params</span> psy-rd=2.0:psy-rdoq=1.0 output.mp4</span></code></pre></div>
+<ul>
+<li><strong>psy-rd</strong> (default is <code>2.0</code>): Adjusts the
+psychovisual rate-distortion.</li>
+<li><strong>psy-rdoq</strong> (default is <code>1.0</code>): Adjusts
+psychovisual rate-distortion quantization (similar to x264’s
+trellis).</li>
+</ul>
+<hr />
+<h2 id="recommended-values">Recommended Values</h2>
+<p>If you are customizing these values to improve film grain retention
+or sharp details, use these starting baselines:</p>
+<h3 id="for-h.264-libx264">For H.264 (libx264)</h3>
+<ul>
+<li><strong>Animation / Clean Content:</strong>
+<code>-x264-params psy-rd=0.4:0.0</code> (Lower values prevent ringing
+artifacts)</li>
+<li><strong>High-Detail / Film Grain:</strong>
+<code>-x264-params psy-rd=1.0:0.20</code> (Higher values keep grain
+intact)</li>
+</ul>
+<h3 id="for-h.265-libx265">For H.265 (libx265)</h3>
+<ul>
+<li><strong>Animation / Clean Content:</strong>
+<code>-x265-params psy-rd=0.5:psy-rdoq=0.5</code></li>
+<li><strong>High-Detail / Film Grain:</strong>
+<code>-x265-params psy-rd=2.0:psy-rdoq=1.5</code></li>
+</ul></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

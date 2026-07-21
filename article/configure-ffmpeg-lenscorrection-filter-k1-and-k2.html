@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Configure FFmpeg Lenscorrection Filter k1 and k2 - ffmpeg</title>
+    <meta name="description" content="This guide explains how to configure the quadratic (k1) and double-quadratic (k2) correction factors in the FFmpeg lenscorrection filter. You will learn the syntax of the filter, how the parameters affect the image, and how to choose the right values to">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/configure-ffmpeg-lenscorrection-filter-k1-and-k2">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Configure FFmpeg Lenscorrection Filter k1 and k2 - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/configure-ffmpeg-lenscorrection-filter-k1-and-k2" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This guide explains how to configure the quadratic (k1) and double-quadratic (k2) correction factors in the FFmpeg lenscorrection filter. You will learn the syntax of the filter, how the parameters affect the image, and how to choose the right values to" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="configure-ffmpeg-lenscorrection-filter-k1-and-k2">Configure
+FFmpeg Lenscorrection Filter k1 and k2</h1>
+<p>This guide explains how to configure the quadratic (<code>k1</code>)
+and double-quadratic (<code>k2</code>) correction factors in the FFmpeg
+<code>lenscorrection</code> filter. You will learn the syntax of the
+filter, how the parameters affect the image, and how to choose the right
+values to correct barrel and pincushion lens distortion in your
+videos.</p>
+<p>The <code>lenscorrection</code> filter in FFmpeg corrects radial lens
+distortion using a polynomial model. This is particularly useful for
+correcting the “fisheye” effect produced by action cameras, wide-angle
+lenses, and drones.</p>
+<h3 id="filter-syntax-and-parameters">Filter Syntax and Parameters</h3>
+<p>The basic syntax for the filter is:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="va">lenscorrection</span><span class="op">=</span>cx=cx_val:cy=cy_val:k1=k1_val:k2=k2_val</span></code></pre></div>
+<ul>
+<li><strong><code>cx</code></strong>: The relative horizontal center of
+distortion (ranging from <code>0.0</code> to <code>1.0</code>). The
+default is <code>0.5</code> (the exact center).</li>
+<li><strong><code>cy</code></strong>: The relative vertical center of
+distortion (ranging from <code>0.0</code> to <code>1.0</code>). The
+default is <code>0.5</code> (the exact center).</li>
+<li><strong><code>k1</code></strong>: The quadratic correction factor.
+This parameter has the strongest effect on the correction near the
+center of the image.</li>
+<li><strong><code>k2</code></strong>: The double-quadratic correction
+factor. This parameter has a stronger effect on the edges of the
+image.</li>
+</ul>
+<h3 id="understanding-the-correction-values">Understanding the
+Correction Values</h3>
+<p>The filter uses a mathematical formula to map pixels from the
+corrected image back to the distorted source image based on their
+distance (<span class="math inline">\(r\)</span>) from the center:</p>
+<p><span class="math display">\[\text{Source Radius} = r \cdot (1 + k_1
+\cdot r^2 + k_2 \cdot r^4)\]</span></p>
+<p>To configure the coefficients correctly, observe the type of
+distortion in your footage:</p>
+<ul>
+<li><strong>Barrel Distortion (Fisheye):</strong> Straight lines curve
+outward toward the edges of the frame. To correct this, use
+<strong>negative</strong> values for <code>k1</code> and
+<code>k2</code>.</li>
+<li><strong>Pincushion Distortion:</strong> Straight lines curve inward
+toward the center. To correct this, use <strong>positive</strong> values
+for <code>k1</code> and <code>k2</code>.</li>
+</ul>
+<h3 id="practical-examples">Practical Examples</h3>
+<h4 id="correcting-moderate-fisheye-barrel-distortion">1. Correcting
+Moderate Fisheye / Barrel Distortion</h4>
+<p>For standard action cameras with a wide-angle lens, you will need
+negative values. Start with a stronger <code>k1</code> and a smaller
+<code>k2</code> to clean up the edges.</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;lenscorrection=cx=0.5:cy=0.5:k1=-0.222:k2=0.045&quot;</span> output.mp4</span></code></pre></div>
+<h4 id="correcting-heavy-fisheye-distortion">2. Correcting Heavy Fisheye
+Distortion</h4>
+<p>For extremely wide lenses, both <code>k1</code> and <code>k2</code>
+must be adjusted to prevent the corners of the image from stretching
+excessively or bending backwards.</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;lenscorrection=k1=-0.333:k2=-0.125&quot;</span> output.mp4</span></code></pre></div>
+<p><em>(Note: If <code>cx</code> and <code>cy</code> are omitted, they
+default to <code>0.5</code>.)</em></p>
+<h3 id="how-to-find-the-right-k1-and-k2-values">How to Find the Right k1
+and k2 Values</h3>
+<p>Because every lens is different, finding the exact values requires a
+systematic approach:</p>
+<ol type="1">
+<li><strong>Use a grid:</strong> Record a flat grid, a brick wall, or a
+door frame with straight horizontal and vertical lines.</li>
+<li><strong>Test incrementally:</strong> Start by setting
+<code>k2=0</code> and adjusting <code>k1</code> in increments of
+<code>0.05</code> (e.g., <code>-0.05</code>, <code>-0.10</code>,
+<code>-0.15</code>) until the lines near the center of the frame are
+straight.</li>
+<li><strong>Fine-tune the edges:</strong> Once the center is straight,
+you may notice the corners are still curved or overly stretched. Adjust
+<code>k2</code> in small increments (e.g., <code>-0.01</code> to
+<code>-0.05</code>) to correct the outermost edges of the frame.</li>
+</ol></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

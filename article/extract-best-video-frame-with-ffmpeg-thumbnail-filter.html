@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Extract Best Video Frame with FFmpeg Thumbnail Filter - ffmpeg</title>
+    <meta name="description" content="Extracting a high-quality, representative frame from a video segment is a common task that can be tedious to do manually. FFmpeg simplifies this process with its built-in thumbnail filter, which analyzes a sequence of frames and automatically selects the">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/extract-best-video-frame-with-ffmpeg-thumbnail-filter">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Extract Best Video Frame with FFmpeg Thumbnail Filter - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/extract-best-video-frame-with-ffmpeg-thumbnail-filter" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Extracting a high-quality, representative frame from a video segment is a common task that can be tedious to do manually. FFmpeg simplifies this process with its built-in thumbnail filter, which analyzes a sequence of frames and automatically selects the" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="extract-best-video-frame-with-ffmpeg-thumbnail-filter">Extract
+Best Video Frame with FFmpeg Thumbnail Filter</h1>
+<p>Extracting a high-quality, representative frame from a video segment
+is a common task that can be tedious to do manually. FFmpeg simplifies
+this process with its built-in <code>thumbnail</code> filter, which
+analyzes a sequence of frames and automatically selects the one with the
+most typical color distribution, effectively avoiding blank screens or
+blurry transitions. This article provides a straightforward guide on how
+to use the <code>thumbnail</code> filter, detailing its basic syntax,
+custom batch sizes, and practical command-to-use examples.</p>
+<h3 id="how-the-thumbnail-filter-works">How the Thumbnail Filter
+Works</h3>
+<p>Unlike standard frame extraction which grabs a frame at a specific
+timestamp, the <code>thumbnail</code> filter analyzes a cluster of
+consecutive frames. By default, it looks at a batch of 100 frames,
+calculates the color histogram for each, and selects the frame that is
+the most mathematically representative of that entire batch. This
+ensures you do not accidentally extract a black frame or a highly
+distorted motion frame.</p>
+<h3 id="basic-syntax">Basic Syntax</h3>
+<p>To extract a single representative frame from the beginning of a
+video using the default settings, use the following command:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;thumbnail&quot;</span> <span class="at">-frames:v</span> 1 output.png</span></code></pre></div>
+<ul>
+<li><strong><code>-i input.mp4</code></strong>: Specifies the input
+video file.</li>
+<li><strong><code>-vf "thumbnail"</code></strong>: Applies the thumbnail
+video filter using the default batch size of 100 frames.</li>
+<li><strong><code>-frames:v 1</code></strong>: Instructs FFmpeg to stop
+processing and output only one single video frame.</li>
+<li><strong><code>output.png</code></strong>: The resulting high-quality
+image file.</li>
+</ul>
+<h3 id="customizing-the-frame-batch-size">Customizing the Frame Batch
+Size</h3>
+<p>You can adjust the number of frames the filter analyzes by passing a
+number to the filter. For example, if you want to analyze a wider
+segment of 300 frames (which is about 10 seconds of a 30fps video) to
+find the best shot, format the filter as <code>thumbnail=300</code>:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;thumbnail=300&quot;</span> <span class="at">-frames:v</span> 1 output.png</span></code></pre></div>
+<p>Increasing this number provides a more globally representative frame
+for a longer scene, while decreasing it is ideal for rapid, fast-cutting
+segments.</p>
+<h3 id="extracting-from-a-specific-video-segment">Extracting from a
+Specific Video Segment</h3>
+<p>If you want to find the most representative frame from a specific
+scene later in the video, combine the <code>thumbnail</code> filter with
+the seeking (<code>-ss</code>) parameter.</p>
+<p>To find the best frame within a 150-frame window starting at the
+1-minute and 30-second mark:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-ss</span> 00:01:30 <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;thumbnail=150&quot;</span> <span class="at">-frames:v</span> 1 output.png</span></code></pre></div>
+<p>By placing <code>-ss</code> before the input file, FFmpeg quickly
+seeks to the specified timestamp, and the <code>thumbnail</code> filter
+then analyzes the subsequent 150 frames from that exact point to output
+the single best image.</p></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

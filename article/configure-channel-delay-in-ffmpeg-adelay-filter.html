@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Configure Channel Delay in FFmpeg adelay Filter - ffmpeg</title>
+    <meta name="description" content="This guide explains how to use the FFmpeg adelay filter to configure independent delay times for individual audio channels. You will learn the syntax structure, how to specify delays in milliseconds or samples, and how to apply these delays to specific c">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/configure-channel-delay-in-ffmpeg-adelay-filter">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Configure Channel Delay in FFmpeg adelay Filter - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/configure-channel-delay-in-ffmpeg-adelay-filter" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This guide explains how to use the FFmpeg adelay filter to configure independent delay times for individual audio channels. You will learn the syntax structure, how to specify delays in milliseconds or samples, and how to apply these delays to specific c" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="configure-channel-delay-in-ffmpeg-adelay-filter">Configure
+Channel Delay in FFmpeg adelay Filter</h1>
+<p>This guide explains how to use the FFmpeg <code>adelay</code> filter
+to configure independent delay times for individual audio channels. You
+will learn the syntax structure, how to specify delays in milliseconds
+or samples, and how to apply these delays to specific channels in stereo
+or multi-channel audio files.</p>
+<h2 id="the-basic-syntax-of-adelay">The Basic Syntax of
+<code>adelay</code></h2>
+<p>The <code>adelay</code> filter applies a delay to each audio channel
+individually. The delays are specified as a list of times separated by a
+pipe character (<code>|</code>).</p>
+<p>The basic syntax is:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">-af</span> <span class="st">&quot;adelay=delay_channel_1|delay_channel_2|delay_channel_3...&quot;</span></span></code></pre></div>
+<p>By default, the delay values are mapped to the audio channels in
+their standard order (for example, Left then Right in a stereo track).
+If you provide fewer delay values than there are channels in the input,
+the remaining channels will not be delayed.</p>
+<h2 id="specifying-delay-units">Specifying Delay Units</h2>
+<p>You can specify the delay time using two different units:</p>
+<ol type="1">
+<li><strong>Milliseconds (Default):</strong> Use plain integers to
+define the delay in milliseconds.
+<ul>
+<li>Example: <code>1000</code> results in a 1-second (1000ms)
+delay.</li>
+</ul></li>
+<li><strong>Samples:</strong> Append the letter <code>S</code> (or
+<code>s</code>) to the number to specify the delay in audio samples.
+<ul>
+<li>Example: <code>44100S</code> results in a 1-second delay if the
+audio sample rate is 44.1 kHz.</li>
+</ul></li>
+</ol>
+<h2 id="practical-examples">Practical Examples</h2>
+<h3 id="delaying-stereo-channels-separately">1. Delaying Stereo Channels
+Separately</h3>
+<p>To delay the Left channel by 500 milliseconds and the Right channel
+by 1500 milliseconds, use the following command:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.wav <span class="at">-af</span> <span class="st">&quot;adelay=500|1500&quot;</span> output.wav</span></code></pre></div>
+<h3 id="delaying-only-the-right-channel">2. Delaying Only the Right
+Channel</h3>
+<p>To keep the Left channel playing instantly but delay the Right
+channel by 2000 milliseconds, set the first channel’s delay to
+<code>0</code> or leave it empty:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.wav <span class="at">-af</span> <span class="st">&quot;adelay=0|2000&quot;</span> output.wav</span></code></pre></div>
+<p><em>(Alternatively, you can write <code>adelay=|2000</code>)</em></p>
+<h3 id="delaying-using-samples">3. Delaying Using Samples</h3>
+<p>To delay the Left channel by 22,050 samples and the Right channel by
+44,100 samples:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.wav <span class="at">-af</span> <span class="st">&quot;adelay=22050S|44100S&quot;</span> output.wav</span></code></pre></div>
+<h3 id="multi-channel-5.1-surround-delay">4. Multi-Channel (5.1
+Surround) Delay</h3>
+<p>For a 5.1 surround sound layout (typically ordered as Front Left,
+Front Right, Center, LFE, Back Left, Back Right), you can delay specific
+channels by mapping them in order.</p>
+<p>To delay only the Center (3rd) and LFE (4th) channels by 1000
+milliseconds:</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.wav <span class="at">-af</span> <span class="st">&quot;adelay=0|0|1000|1000&quot;</span> output.wav</span></code></pre></div></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

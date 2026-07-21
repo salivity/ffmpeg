@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Transcode Video to Lossless Snow Codec with FFmpeg - ffmpeg</title>
+    <meta name="description" content="This article provides a straightforward, step-by-step guide on how to transcode video files into the experimental Snow video codec using FFmpeg. You will learn the exact command-line arguments required to enable lossless compression, configure the experi">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/transcode-video-to-lossless-snow-codec-with-ffmpeg">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Transcode Video to Lossless Snow Codec with FFmpeg - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/transcode-video-to-lossless-snow-codec-with-ffmpeg" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article provides a straightforward, step-by-step guide on how to transcode video files into the experimental Snow video codec using FFmpeg. You will learn the exact command-line arguments required to enable lossless compression, configure the experi" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="transcode-video-to-lossless-snow-codec-with-ffmpeg">Transcode
+Video to Lossless Snow Codec with FFmpeg</h1>
+<p>This article provides a straightforward, step-by-step guide on how to
+transcode video files into the experimental Snow video codec using
+FFmpeg. You will learn the exact command-line arguments required to
+enable lossless compression, configure the experimental codec, and
+choose the right file container for your output.</p>
+<h2 id="prerequisites">Prerequisites</h2>
+<p>To use the Snow codec, you must have FFmpeg installed on your system.
+Because Snow is an experimental codec developed by the FFmpeg team, you
+will need to pass a specific flag in your command to allow its use.</p>
+<p>For the best compatibility and container support, it is highly
+recommended to output your transcoded video into a Matroska
+(<code>.mkv</code>) or NUT (<code>.nut</code>) container.</p>
+<h2 id="the-lossless-snow-command">The Lossless Snow Command</h2>
+<p>To transcode a video to the lossless Snow codec, open your terminal
+or command prompt and run the following command:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-c:v</span> snow <span class="at">-q:v</span> 0 <span class="at">-strict</span> experimental output.mkv</span></code></pre></div>
+<h3 id="command-breakdown">Command Breakdown</h3>
+<ul>
+<li><strong><code>-i input.mp4</code></strong>: Specifies the path to
+your source video file.</li>
+<li><strong><code>-c:v snow</code></strong>: Selects the Snow video
+codec for the video stream.</li>
+<li><strong><code>-q:v 0</code></strong>: Sets the video quality scale
+to <code>0</code>. In the Snow codec, a quality setting of 0 triggers
+mathematically lossless compression.</li>
+<li><strong><code>-strict experimental</code></strong>: Tells FFmpeg to
+permit the use of experimental codecs, which is required since Snow is
+not marked as stable.</li>
+<li><strong><code>output.mkv</code></strong>: The name and container of
+your output file.</li>
+</ul>
+<h2 id="handling-audio">Handling Audio</h2>
+<p>By default, the command above will re-encode the audio using FFmpeg’s
+default audio encoder for the MKV container. To ensure your entire file
+is preserved without any quality loss, you should handle the audio in
+one of two ways:</p>
+<h3 id="copy-the-audio-stream-no-re-encoding">1. Copy the Audio Stream
+(No Re-encoding)</h3>
+<p>If your source video already has high-quality or lossless audio, you
+can copy the audio stream directly without re-encoding it:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-c:v</span> snow <span class="at">-q:v</span> 0 <span class="at">-strict</span> experimental <span class="at">-c:a</span> copy output.mkv</span></code></pre></div>
+<h3 id="transcode-audio-to-lossless-flac">2. Transcode Audio to Lossless
+FLAC</h3>
+<p>If you want to compress the audio into a widely supported lossless
+format during the transcode, use the FLAC audio codec:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-c:v</span> snow <span class="at">-q:v</span> 0 <span class="at">-strict</span> experimental <span class="at">-c:a</span> flac output.mkv</span></code></pre></div></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

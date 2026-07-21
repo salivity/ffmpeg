@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Transcoding Video with FFmpeg h264_qsv - ffmpeg</title>
+    <meta name="description" content="This guide explains how to use the Intel Quick Sync Video (QSV) hardware-accelerated H.264 encoder, h264qsv, in FFmpeg. It covers the prerequisites, basic and advanced command-line syntax, and how to configure quality and performance settings to achieve">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/transcoding-video-with-ffmpeg-h264-qsv">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Transcoding Video with FFmpeg h264_qsv - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/transcoding-video-with-ffmpeg-h264-qsv" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This guide explains how to use the Intel Quick Sync Video (QSV) hardware-accelerated H.264 encoder, h264qsv, in FFmpeg. It covers the prerequisites, basic and advanced command-line syntax, and how to configure quality and performance settings to achieve" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="transcoding-video-with-ffmpeg-h264_qsv">Transcoding Video with
+FFmpeg h264_qsv</h1>
+<p>This guide explains how to use the Intel Quick Sync Video (QSV)
+hardware-accelerated H.264 encoder, <code>h264_qsv</code>, in FFmpeg. It
+covers the prerequisites, basic and advanced command-line syntax, and
+how to configure quality and performance settings to achieve fast,
+high-quality video transcodes using your Intel CPU or GPU.</p>
+<h2 id="prerequisites">Prerequisites</h2>
+<p>To use Intel QSV hardware acceleration in FFmpeg, your system must
+meet the following requirements:</p>
+<ul>
+<li><strong>Hardware:</strong> An Intel processor with Integrated
+Graphics (HD, UHD, or Iris Xe) or a dedicated Intel Arc GPU.</li>
+<li><strong>Drivers:</strong> Installed Intel Graphics Drivers (Windows)
+or the Intel Media Driver/oneVPL runtime (Linux).</li>
+<li><strong>FFmpeg Build:</strong> A version of FFmpeg compiled with QSV
+support (configured with <code>--enable-libmfx</code> or
+<code>--enable-libvpl</code>). You can verify support by running
+<code>ffmpeg -encoders | grep qsv</code> in your terminal.</li>
+</ul>
+<h2 id="basic-transcoding-command">Basic Transcoding Command</h2>
+<p>To perform a basic transcode using the <code>h264_qsv</code> encoder,
+use the following syntax:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-c:v</span> h264_qsv <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<ul>
+<li><code>-i input.mp4</code>: Specifies the input video file.</li>
+<li><code>-c:v h264_qsv</code>: Selects the Intel QSV H.264 hardware
+encoder for the video stream.</li>
+<li><code>-c:a copy</code>: Copies the audio stream without re-encoding
+to save time and CPU resources.</li>
+</ul>
+<h2 id="controlling-quality-and-bitrate">Controlling Quality and
+Bitrate</h2>
+<p>Like software encoders, <code>h264_qsv</code> supports different rate
+control methods to balance file size and video quality.</p>
+<h3 id="intelligent-constant-quality-icq">1. Intelligent Constant
+Quality (ICQ)</h3>
+<p>This is the recommended mode for general transcoding, as it targets a
+specific quality level while optimizing the bitrate. Lower values
+produce higher quality but larger files (typical range is 15 to 30).</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-c:v</span> h264_qsv <span class="at">-global_quality</span> 20 output.mp4</span></code></pre></div>
+<h3 id="constant-bitrate-cbr-and-variable-bitrate-vbr">2. Constant
+Bitrate (CBR) and Variable Bitrate (VBR)</h3>
+<p>To target a specific file size or bandwidth limit, use the standard
+bitrate flags.</p>
+<p><strong>Variable Bitrate (VBR):</strong></p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-c:v</span> h264_qsv <span class="at">-b:v</span> 5M <span class="at">-maxrate</span> 8M <span class="at">-bufsize</span> 16M output.mp4</span></code></pre></div>
+<p><strong>Constant Bitrate (CBR):</strong></p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-c:v</span> h264_qsv <span class="at">-b:v</span> 5M <span class="at">-maxrate</span> 5M <span class="at">-bufsize</span> 10M output.mp4</span></code></pre></div>
+<h2 id="adjusting-encoding-speed-and-quality-presets">Adjusting Encoding
+Speed and Quality Presets</h2>
+<p>The <code>h264_qsv</code> encoder supports speed presets ranging from
+<code>veryfast</code> (fastest encoding, lowest quality per bitrate) to
+<code>veryslow</code> (slowest encoding, best quality per bitrate). The
+default is <code>medium</code>.</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-c:v</span> h264_qsv <span class="at">-preset</span> slow output.mp4</span></code></pre></div>
+<p>Available presets include: <code>veryfast</code>,
+<code>faster</code>, <code>fast</code>, <code>medium</code>,
+<code>slow</code>, <code>slower</code>, and <code>veryslow</code>.</p>
+<h2 id="full-hardware-pipeline-hardware-decoding-and-encoding">Full
+Hardware Pipeline (Hardware Decoding and Encoding)</h2>
+<p>To achieve maximum performance, you can offload both the decoding of
+the input video and the encoding of the output video to the Intel GPU.
+This minimizes CPU usage and memory copy overhead.</p>
+<div class="sourceCode" id="cb6"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-hwaccel</span> qsv <span class="at">-c:v</span> h264_qsv <span class="at">-i</span> input.mp4 <span class="at">-c:v</span> h264_qsv <span class="at">-global_quality</span> 20 output.mp4</span></code></pre></div>
+<ul>
+<li><code>-hwaccel qsv</code>: Enables Intel QSV hardware acceleration
+for decoding.</li>
+<li><code>-c:v h264_qsv</code> (before <code>-i</code>): Specifies that
+the input stream (assuming H.264) should be decoded using QSV.</li>
+</ul></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

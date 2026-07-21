@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Configure FFmpeg owdenoise Luma and Chroma Strength - ffmpeg</title>
+    <meta name="description" content="This guide explains how to configure the luma and chroma denoising strength using the owdenoise (Overcomplete Wavelet Denoise) filter in FFmpeg. You will learn the exact parameters required, how they affect your video quality, and how to apply them using">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/configure-ffmpeg-owdenoise-luma-and-chroma-strength">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Configure FFmpeg owdenoise Luma and Chroma Strength - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/configure-ffmpeg-owdenoise-luma-and-chroma-strength" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This guide explains how to configure the luma and chroma denoising strength using the owdenoise (Overcomplete Wavelet Denoise) filter in FFmpeg. You will learn the exact parameters required, how they affect your video quality, and how to apply them using" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="configure-ffmpeg-owdenoise-luma-and-chroma-strength">Configure
+FFmpeg owdenoise Luma and Chroma Strength</h1>
+<p>This guide explains how to configure the luma and chroma denoising
+strength using the <code>owdenoise</code> (Overcomplete Wavelet Denoise)
+filter in FFmpeg. You will learn the exact parameters required, how they
+affect your video quality, and how to apply them using practical
+command-line examples.</p>
+<p>The <code>owdenoise</code> filter applies a wavelet-based denoising
+algorithm to video frames. It allows you to control the denoising
+intensity for the brightness channel (luma) and the color channels
+(chroma) separately.</p>
+<h3 id="the-key-parameters">The Key Parameters</h3>
+<p>To configure luma and chroma strength, you must use the following two
+parameters inside the <code>owdenoise</code> filter:</p>
+<ul>
+<li><strong><code>luma_strength</code></strong> (or shorthand
+<strong><code>ls</code></strong>): Sets the denoising strength for the
+luma channel. The default value is <code>1.0</code>. Higher values
+increase the denoising effect but can result in a loss of fine details
+and sharpness.</li>
+<li><strong><code>chroma_strength</code></strong> (or shorthand
+<strong><code>cs</code></strong>): Sets the denoising strength for the
+chroma channels. The default value is <code>1.0</code>. Adjusting this
+is highly effective for removing color-speckle noise (chroma noise)
+without affecting the sharpness of image details.</li>
+</ul>
+<p>Additionally, the <strong><code>depth</code></strong> parameter
+(default <code>3</code>, range <code>1</code> to <code>16</code>)
+controls the wavelet depth. Larger depth values allow the filter to
+eliminate larger-scale noise but drastically increase processing
+time.</p>
+<h3 id="syntax-and-configuration-examples">Syntax and Configuration
+Examples</h3>
+<p>The parameters are assigned as key-value pairs separated by colons
+inside the <code>-vf</code> (video filter) flag.</p>
+<h4 id="moderate-denoising-balanced">1. Moderate Denoising
+(Balanced)</h4>
+<p>To slightly increase both luma and chroma denoising beyond the
+default levels, use:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;owdenoise=luma_strength=1.5:chroma_strength=1.5&quot;</span> output.mp4</span></code></pre></div>
+<h4 id="shorthand-syntax-with-heavy-chroma-denoising">2. Shorthand
+Syntax with Heavy Chroma Denoising</h4>
+<p>If your video has clean details but heavy color noise, you can
+aggressively target the chroma channels while keeping luma denoising
+mild using shorthand (<code>ls</code> and <code>cs</code>):</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;owdenoise=ls=1.0:cs=3.0&quot;</span> output.mp4</span></code></pre></div>
+<h4 id="complete-filter-configuration">3. Complete Filter
+Configuration</h4>
+<p>To set the wavelet depth along with custom luma and chroma strengths,
+structure the command as follows:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;owdenoise=depth=4:ls=2.0:cs=2.5&quot;</span> output.mp4</span></code></pre></div>
+<h3 id="tips-for-best-results">Tips for Best Results</h3>
+<ul>
+<li><strong>Start Small:</strong> Increase strength values in increments
+of <code>0.5</code>. Settings that are too high will make the video look
+unnaturally flat or “plastic.”</li>
+<li><strong>Chroma Bias:</strong> Digital camera sensors often produce
+more color noise than luminance noise in dark environments. Try setting
+<code>chroma_strength</code> higher than <code>luma_strength</code> to
+preserve image sharpness while eliminating ugly color artifacts.</li>
+</ul></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

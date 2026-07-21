@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Write Encoded Packets to Container with libavformat - ffmpeg</title>
+    <meta name="description" content="This article provides a practical guide on how to write encoded audio or video packets into a media container file using FFmpeg's libavformat API. We will cover the complete lifecycle of container writing, including allocating the output context, adding">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/write-encoded-packets-to-container-with-libavformat">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Write Encoded Packets to Container with libavformat - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/write-encoded-packets-to-container-with-libavformat" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article provides a practical guide on how to write encoded audio or video packets into a media container file using FFmpeg's libavformat API. We will cover the complete lifecycle of container writing, including allocating the output context, adding" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="write-encoded-packets-to-container-with-libavformat">Write
+Encoded Packets to Container with libavformat</h1>
+<p>This article provides a practical guide on how to write encoded audio
+or video packets into a media container file using FFmpeg’s
+<code>libavformat</code> API. We will cover the complete lifecycle of
+container writing, including allocating the output context, adding
+streams, writing the container header, interleaving and writing packets,
+and properly finalizing the file structure to prevent data
+corruption.</p>
+<h3 id="step-1-allocate-the-output-format-context">Step 1: Allocate the
+Output Format Context</h3>
+<p>Before writing any data, you must initialize an
+<code>AVFormatContext</code> for the output container. Use
+<code>avformat_alloc_output_context2</code> to automatically detect the
+container format based on the file extension or format name.</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode c"><code class="sourceCode c"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>AVFormatContext <span class="op">*</span>out_ctx <span class="op">=</span> NULL<span class="op">;</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="dt">int</span> ret <span class="op">=</span> avformat_alloc_output_context2<span class="op">(&amp;</span>out_ctx<span class="op">,</span> NULL<span class="op">,</span> NULL<span class="op">,</span> <span class="st">&quot;output.mp4&quot;</span><span class="op">);</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> <span class="op">(</span>ret <span class="op">&lt;</span> <span class="dv">0</span><span class="op">)</span> <span class="op">{</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>    <span class="co">// Handle allocation error</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<h3 id="step-2-create-output-streams-and-copy-parameters">Step 2: Create
+Output Streams and Copy Parameters</h3>
+<p>You need to create a new <code>AVStream</code> inside the format
+context for every track (video, audio, subtitles) you want to write. You
+must also copy the codec configuration parameters from your encoder
+context (<code>AVCodecContext</code>) to the stream’s parameters
+(<code>AVCodecParameters</code>).</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode c"><code class="sourceCode c"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>AVStream <span class="op">*</span>out_stream <span class="op">=</span> avformat_new_stream<span class="op">(</span>out_ctx<span class="op">,</span> NULL<span class="op">);</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> <span class="op">(!</span>out_stream<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>    <span class="co">// Handle stream creation error</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a><span class="co">// Copy codec parameters from your encoder context</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>ret <span class="op">=</span> avcodec_parameters_from_context<span class="op">(</span>out_stream<span class="op">-&gt;</span>codecpar<span class="op">,</span> encoder_ctx<span class="op">);</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> <span class="op">(</span>ret <span class="op">&lt;</span> <span class="dv">0</span><span class="op">)</span> <span class="op">{</span></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>    <span class="co">// Handle copy parameters error</span></span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a><span class="co">// Ensure the stream has a defined timebase</span></span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a>out_stream<span class="op">-&gt;</span>time_base <span class="op">=</span> encoder_ctx<span class="op">-&gt;</span>time_base<span class="op">;</span></span></code></pre></div>
+<h3 id="step-3-open-the-output-file">Step 3: Open the Output File</h3>
+<p>If the chosen output container format writes to a physical file
+(which is determined by checking the <code>AVFMT_NOFILE</code> flag),
+you must open the target destination using FFmpeg’s I/O layer
+(<code>avio_open</code>).</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode c"><code class="sourceCode c"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> <span class="op">(!(</span>out_ctx<span class="op">-&gt;</span>oformat<span class="op">-&gt;</span>flags <span class="op">&amp;</span> AVFMT_NOFILE<span class="op">))</span> <span class="op">{</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>    ret <span class="op">=</span> avio_open<span class="op">(&amp;</span>out_ctx<span class="op">-&gt;</span>pb<span class="op">,</span> <span class="st">&quot;output.mp4&quot;</span><span class="op">,</span> AVIO_FLAG_WRITE<span class="op">);</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="op">(</span>ret <span class="op">&lt;</span> <span class="dv">0</span><span class="op">)</span> <span class="op">{</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>        <span class="co">// Handle file open error</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<h3 id="step-4-write-the-container-header">Step 4: Write the Container
+Header</h3>
+<p>Write the file header and initial structural metadata to the output
+context using <code>avformat_write_header</code>. This function
+processes any format options and configures the stream variables.</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode c"><code class="sourceCode c"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>ret <span class="op">=</span> avformat_write_header<span class="op">(</span>out_ctx<span class="op">,</span> NULL<span class="op">);</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> <span class="op">(</span>ret <span class="op">&lt;</span> <span class="dv">0</span><span class="op">)</span> <span class="op">{</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>    <span class="co">// Handle write header error</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<h3 id="step-5-rescale-timestamps-and-write-packets">Step 5: Rescale
+Timestamps and Write Packets</h3>
+<p>When writing packets (<code>AVPacket</code>), you must translate
+their Presentation Timestamp (PTS), Decompression Timestamp (DTS), and
+duration from the encoder’s time base to the output stream’s time
+base.</p>
+<p>Use <code>av_interleaved_write_frame</code> to write the packets.
+This function automatically manages interleaving multiple streams (like
+mixing audio and video packets) chronologically, which is required by
+most container formats.</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode c"><code class="sourceCode c"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>AVPacket <span class="op">*</span>pkt <span class="op">=</span> av_packet_alloc<span class="op">();</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="co">// ... Retrieve your encoded packet from the encoder ...</span></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a><span class="co">// Rescale timestamps from encoder time_base to stream time_base</span></span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>av_packet_rescale_ts<span class="op">(</span>pkt<span class="op">,</span> encoder_ctx<span class="op">-&gt;</span>time_base<span class="op">,</span> out_stream<span class="op">-&gt;</span>time_base<span class="op">);</span></span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>pkt<span class="op">-&gt;</span>stream_index <span class="op">=</span> out_stream<span class="op">-&gt;</span>index<span class="op">;</span></span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a><span class="co">// Write the packet to the output file</span></span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>ret <span class="op">=</span> av_interleaved_write_frame<span class="op">(</span>out_ctx<span class="op">,</span> pkt<span class="op">);</span></span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> <span class="op">(</span>ret <span class="op">&lt;</span> <span class="dv">0</span><span class="op">)</span> <span class="op">{</span></span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a>    <span class="co">// Handle write error</span></span>
+<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a>av_packet_unref<span class="op">(</span>pkt<span class="op">);</span></span></code></pre></div>
+<h3 id="step-6-flush-and-close-the-file">Step 6: Flush and Close the
+File</h3>
+<p>Once all media packets have been written, write the trailer to
+finalize the container structure (this writes index tables, metadata,
+and duration markers to the file). Finally, close the file I/O context
+and free the format context structures.</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode c"><code class="sourceCode c"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="co">// Write the trailer</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>av_write_trailer<span class="op">(</span>out_ctx<span class="op">);</span></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a><span class="co">// Close the file output stream if opened</span></span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> <span class="op">(!(</span>out_ctx<span class="op">-&gt;</span>oformat<span class="op">-&gt;</span>flags <span class="op">&amp;</span> AVFMT_NOFILE<span class="op">))</span> <span class="op">{</span></span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>    avio_closep<span class="op">(&amp;</span>out_ctx<span class="op">-&gt;</span>pb<span class="op">);</span></span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a><span class="co">// Free the format context</span></span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>avformat_free_context<span class="op">(</span>out_ctx<span class="op">);</span></span></code></pre></div></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

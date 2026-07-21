@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Use FFmpeg mcompand for Multi-Band Compression - ffmpeg</title>
+    <meta name="description" content="This article provides a practical guide on how to use the mcompand (multi-band compand) filter in FFmpeg to perform multi-band audio compression. You will learn the core syntax of the filter, understand how to configure its parameters for different frequ">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/how-to-use-ffmpeg-mcompand-for-multi-band-compression">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Use FFmpeg mcompand for Multi-Band Compression - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/how-to-use-ffmpeg-mcompand-for-multi-band-compression" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article provides a practical guide on how to use the mcompand (multi-band compand) filter in FFmpeg to perform multi-band audio compression. You will learn the core syntax of the filter, understand how to configure its parameters for different frequ" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="how-to-use-ffmpeg-mcompand-for-multi-band-compression">How to
+Use FFmpeg mcompand for Multi-Band Compression</h1>
+<p>This article provides a practical guide on how to use the
+<code>mcompand</code> (multi-band compand) filter in FFmpeg to perform
+multi-band audio compression. You will learn the core syntax of the
+filter, understand how to configure its parameters for different
+frequency bands, and see a real-world command-line example to enhance
+your audio processing workflows.</p>
+<h2 id="understanding-the-mcompand-filter">Understanding the mcompand
+Filter</h2>
+<p>Unlike standard compressors that apply gain reduction to the entire
+audio signal, the <code>mcompand</code> filter splits the audio spectrum
+into multiple frequency bands and compresses (or expands) each band
+independently. This is highly useful for mastering, leveling podcasts,
+or taming problematic frequencies (like muddy bass or harsh treble)
+without affecting the rest of the mix.</p>
+<h2 id="the-syntax-of-mcompand">The Syntax of mcompand</h2>
+<p>The <code>mcompand</code> filter accepts definition strings for each
+band, separated by the pipe (<code>|</code>) character.</p>
+<p>The basic structure for a single band definition is:</p>
+<pre class="text"><code>attack,decay,... points [crossover_frequency]</code></pre>
+<p>Each band definition consists of the following components:</p>
+<ol type="1">
+<li><strong>Attack and Decay Times:</strong> Two pairs of attack and
+decay times (in seconds).
+<ul>
+<li>The first pair controls how quickly the volume sensor responds to
+increases and decreases in level.</li>
+<li>The second pair controls how quickly the compressor gain is
+adjusted.</li>
+<li><em>Example:</em> <code>0.005,0.1 0.005,0.1</code> (fast attack of
+5ms, slower decay of 100ms).</li>
+</ul></li>
+<li><strong>Transfer Function (Points):</strong> A list of input/output
+decibel (dB) pairs defining the compression curve.
+<ul>
+<li><em>Example:</em> <code>-60,-60,-15,-10,0,-3</code> (if input is
+-60dB, output is -60dB; if input is -15dB, output is compressed to
+-10dB; if input is 0dB, output is limited to -3dB).</li>
+</ul></li>
+<li><strong>Crossover Frequency:</strong> The upper boundary frequency
+(in Hz) of the current band. The final band does not require a crossover
+frequency, as it automatically covers everything up to the Nyquist
+frequency.</li>
+</ol>
+<h2 id="practical-3-band-compression-example">Practical 3-Band
+Compression Example</h2>
+<p>Below is a practical FFmpeg command that applies a 3-band compressor
+to an audio file. This setup divides the audio into Low (Bass), Mid, and
+High (Treble) frequencies.</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp3 <span class="at">-af</span> <span class="st">&quot;mcompand=0.005\,0.1 0.005\,0.1 -60\,-60\,-15\,-10\,0\,-3 150 | 0.003\,0.05 0.003\,0.05 -60\,-60\,-15\,-12\,0\,-5 3000 | 0.002\,0.05 0.002\,0.05 -60\,-60\,-15\,-15\,0\,-8&quot;</span> output.mp3</span></code></pre></div>
+<h3 id="breakdown-of-the-3-bands">Breakdown of the 3 Bands:</h3>
+<ul>
+<li><strong>Band 1 (Bass - Below 150 Hz):</strong>
+<ul>
+<li><strong>Settings:</strong>
+<code>0.005\,0.1 0.005\,0.1 -60\,-60\,-15\,-10\,0\,-3 150</code></li>
+<li><strong>Explanation:</strong> A moderate attack/decay is used. Input
+levels at -15dB are boosted to -10dB, and peaks at 0dB are compressed to
+-3dB to keep the low-end punchy but controlled.</li>
+</ul></li>
+<li><strong>Band 2 (Mids - 150 Hz to 3000 Hz):</strong>
+<ul>
+<li><strong>Settings:</strong>
+<code>0.003\,0.05 0.003\,0.05 -60\,-60\,-15\,-12\,0\,-5 3000</code></li>
+<li><strong>Explanation:</strong> A faster response is used for
+mid-frequencies (containing vocals and main instruments). Compression is
+slightly tighter, limiting 0dB peaks to -5dB.</li>
+</ul></li>
+<li><strong>Band 3 (Treble - Above 3000 Hz):</strong>
+<ul>
+<li><strong>Settings:</strong>
+<code>0.002\,0.05 0.002\,0.05 -60\,-60\,-15\,-15\,0\,-8</code></li>
+<li><strong>Explanation:</strong> Very fast attack times prevent harsh,
+sibilant peaks. The highest frequencies are compressed more
+aggressively, limiting 0dB to -8dB to prevent ear fatigue.</li>
+</ul></li>
+</ul>
+<p><em>Note: In the command line, backslashes (<code>\</code>) are used
+to escape the commas within the filter chain, depending on your shell
+environment.</em></p></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

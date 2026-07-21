@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Update FFmpeg to the Latest Version on Windows - ffmpeg</title>
+    <meta name="description" content="Keeping FFmpeg updated on Windows ensures you have access to the latest video and audio codecs, performance improvements, and bug fixes. Since FFmpeg does not have a built-in auto-update feature, updating it requires manually replacing the existing execu">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/how-to-update-ffmpeg-to-the-latest-version-on-windows">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Update FFmpeg to the Latest Version on Windows - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/how-to-update-ffmpeg-to-the-latest-version-on-windows" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Keeping FFmpeg updated on Windows ensures you have access to the latest video and audio codecs, performance improvements, and bug fixes. Since FFmpeg does not have a built-in auto-update feature, updating it requires manually replacing the existing execu" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="how-to-update-ffmpeg-to-the-latest-version-on-windows">How to
+Update FFmpeg to the Latest Version on Windows</h1>
+<p>Keeping FFmpeg updated on Windows ensures you have access to the
+latest video and audio codecs, performance improvements, and bug fixes.
+Since FFmpeg does not have a built-in auto-update feature, updating it
+requires manually replacing the existing executable files or using a
+Windows package manager. This guide provides clear, step-by-step
+instructions for both methods so you can quickly get the latest version
+running on your system.</p>
+<h3 id="method-1-the-manual-update-recommended">Method 1: The Manual
+Update (Recommended)</h3>
+<p>If you previously installed FFmpeg manually by adding it to your
+system’s Path environment variable, follow these steps to update it.</p>
+<h4 id="step-1-find-your-current-ffmpeg-folder">Step 1: Find your
+current FFmpeg folder</h4>
+<ol type="1">
+<li>Open the Windows Command Prompt.</li>
+<li>Type <code>where ffmpeg</code> and press
+<strong>Enter</strong>.</li>
+<li>Note the folder path displayed (for example,
+<code>C:\ffmpeg\bin\ffmpeg.exe</code>). This is where your current
+FFmpeg files are located.</li>
+</ol>
+<h4 id="step-2-download-the-latest-build">Step 2: Download the latest
+build</h4>
+<ol type="1">
+<li>Visit the official download page at <a
+href="https://ffmpeg.org/download.html">ffmpeg.org/download.html</a>.</li>
+<li>Under the Windows logo, click on <strong>Windows builds from
+gyan.dev</strong> or <strong>Windows builds by Brosser</strong>.</li>
+<li>Download the latest “git-full” or “release-full” zip package (e.g.,
+<code>ffmpeg-release-full.zip</code>).</li>
+</ol>
+<h4 id="step-3-replace-the-old-files">Step 3: Replace the old files</h4>
+<ol type="1">
+<li>Extract the downloaded ZIP file.</li>
+<li>Open the extracted folder and navigate to the <code>bin</code>
+subfolder. You will see three files: <code>ffmpeg.exe</code>,
+<code>ffplay.exe</code>, and <code>ffprobe.exe</code>.</li>
+<li>Copy these three files.</li>
+<li>Navigate to the folder path you located in Step 1 (e.g.,
+<code>C:\ffmpeg\bin\</code>).</li>
+<li>Paste the new files into this folder, choosing to <strong>Replace
+the files in the destination</strong> when prompted.</li>
+</ol>
+<hr />
+<h3 id="method-2-update-using-windows-package-manager-winget">Method 2:
+Update using Windows Package Manager (Winget)</h3>
+<p>If you installed FFmpeg using a package manager, or if you want an
+automated way to manage updates, you can use Windows Package Manager
+(Winget), which is built into Windows 10 and 11.</p>
+<ol type="1">
+<li><p>Right-click the Start menu and select <strong>Terminal</strong>
+or <strong>Command Prompt (Admin)</strong>.</p></li>
+<li><p>Type the following command and press <strong>Enter</strong>:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode cmd"><code class="sourceCode dosbat"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>winget upgrade Gyan.FFmpeg</span></code></pre></div>
+<p><em>(Note: If you installed the essentials version, use
+<code>winget upgrade Gyan.FFmpeg.Essentials</code>
+instead).</em></p></li>
+<li><p>Windows will automatically download and install the latest
+version over your existing installation.</p></li>
+</ol>
+<hr />
+<h3 id="step-4-verify-the-update">Step 4: Verify the Update</h3>
+<p>Regardless of the method you used, verify that the update was
+successful:</p>
+<ol type="1">
+<li><p>Open a new Command Prompt window (close any existing windows
+first to refresh the environment variables).</p></li>
+<li><p>Type the following command and press <strong>Enter</strong>:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode cmd"><code class="sourceCode dosbat"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>ffmpeg <span class="at">-version</span></span></code></pre></div></li>
+<li><p>Check the first line of the output. It should display the newly
+installed version number and build date.</p></li>
+</ol></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

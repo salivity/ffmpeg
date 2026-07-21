@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Limit FFmpeg CPU Usage on Multi-User Servers - ffmpeg</title>
+    <meta name="description" content="This article explains how to configure the thread count in FFmpeg to prevent it from consuming all available CPU resources on a shared or multi-user server. By default, FFmpeg attempts to utilize all available CPU cores to speed up processing, which can">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/how-to-limit-ffmpeg-cpu-usage-on-multi-user-servers">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Limit FFmpeg CPU Usage on Multi-User Servers - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/how-to-limit-ffmpeg-cpu-usage-on-multi-user-servers" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article explains how to configure the thread count in FFmpeg to prevent it from consuming all available CPU resources on a shared or multi-user server. By default, FFmpeg attempts to utilize all available CPU cores to speed up processing, which can" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="how-to-limit-ffmpeg-cpu-usage-on-multi-user-servers">How to
+Limit FFmpeg CPU Usage on Multi-User Servers</h1>
+<p>This article explains how to configure the thread count in FFmpeg to
+prevent it from consuming all available CPU resources on a shared or
+multi-user server. By default, FFmpeg attempts to utilize all available
+CPU cores to speed up processing, which can quickly lead to server
+instability or lag for other users. You will learn how to use the
+<code>-threads</code> option, understand how FFmpeg allocates threads,
+and discover operating system-level limits to keep your server running
+smoothly.</p>
+<h2 id="using-the-ffmpeg--threads-parameter">Using the FFmpeg -threads
+Parameter</h2>
+<p>The primary way to control resource consumption in FFmpeg is by
+explicitly setting the thread limit using the <code>-threads</code>
+flag. By default, FFmpeg is set to <code>0</code>, which automatically
+spawns a thread count optimized for your system’s total logical CPU
+cores.</p>
+<p>To limit the thread count, place the <code>-threads</code> option
+before your output file in the command line:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-threads</span> 2 output.mp4</span></code></pre></div>
+<p>In this example, FFmpeg is restricted to using a maximum of 2
+threads, ensuring the remaining CPU capacity remains available for other
+users and processes on the server.</p>
+<h2 id="choosing-the-right-thread-count">Choosing the Right Thread
+Count</h2>
+<p>When managing a multi-user server, you should determine thread
+allocation based on your server’s total hardware capacity and the
+expected number of concurrent jobs.</p>
+<ul>
+<li><strong>Low-resource encoding (1–2 threads):</strong> Ideal for
+background tasks, audio conversion, or when many users are running
+encodes simultaneously.</li>
+<li><strong>Moderate encoding (4 threads):</strong> A balanced setting
+for 1080p video encoding that provides decent speed without locking up a
+modern multi-core CPU.</li>
+<li><strong>Dynamic allocation:</strong> If you run a web application
+that triggers FFmpeg, write logic in your backend code to scale the
+<code>-threads</code> value dynamically based on current system
+load.</li>
+</ul>
+<h2 id="limiting-threads-for-specific-codecs-and-filters">Limiting
+Threads for Specific Codecs and Filters</h2>
+<p>Some video codecs and filters handle threading independently. If you
+are using complex filtering or specific codecs like <code>libx264</code>
+or <code>libx265</code>, you may need to pass additional parameters to
+ensure they respect your limits.</p>
+<h3 id="codec-specific-threading">Codec-Specific Threading</h3>
+<p>For the widely used H.264 encoder (<code>libx264</code>), you can
+pass the <code>-threads</code> parameter directly as a private
+option:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-c:v</span> libx264 <span class="at">-threads</span> 2 output.mp4</span></code></pre></div>
+<h3 id="filter-threading">Filter Threading</h3>
+<p>If your command utilizes heavy video filters (like scaling or
+deinterlacing), these filters can spawn their own threads. You can
+restrict filter-specific threads using the <code>-filter_threads</code>
+option:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-filter_threads</span> 2 <span class="at">-vf</span> <span class="st">&quot;scale=1280:720&quot;</span> output.mp4</span></code></pre></div>
+<h2
+id="supplementing-ffmpeg-settings-with-os-level-limits">Supplementing
+FFmpeg Settings with OS-Level Limits</h2>
+<p>While the <code>-threads</code> parameter is highly effective, users
+or automated scripts can still bypass these restrictions or run multiple
+instances of FFmpeg at once. To guarantee server stability, combine
+FFmpeg configuration with operating system resource controls.</p>
+<h3 id="using-nice-for-cpu-scheduling">1. Using <code>nice</code> for
+CPU Scheduling</h3>
+<p>You can lower the CPU priority of the FFmpeg process using the
+<code>nice</code> command on Linux. This ensures that when the CPU is
+busy, other system processes get priority:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="fu">nice</span> <span class="at">-n</span> 19 ffmpeg <span class="at">-i</span> input.mp4 <span class="at">-threads</span> 2 output.mp4</span></code></pre></div>
+<p>A niceness value of <code>19</code> represents the lowest priority,
+meaning FFmpeg will only use CPU cycles that no other process currently
+needs.</p>
+<h3 id="using-cpulimit">2. Using <code>cpulimit</code></h3>
+<p>If you want to restrict the actual CPU percentage of the FFmpeg
+process regardless of thread count, you can use the
+<code>cpulimit</code> utility:</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="ex">cpulimit</span> <span class="at">-l</span> 50 <span class="at">--</span> ffmpeg <span class="at">-i</span> input.mp4 output.mp4</span></code></pre></div>
+<p>This command restricts the FFmpeg process to a maximum of 50% of a
+single CPU core.</p></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

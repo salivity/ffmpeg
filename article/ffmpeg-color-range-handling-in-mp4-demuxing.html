@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FFmpeg Color Range Handling in MP4 Demuxing - ffmpeg</title>
+    <meta name="description" content="When demuxing MP4 files, FFmpeg identifies and processes color range metadata to distinguish between limited (MPEG) and full (JPEG) color ranges. This article explains how FFmpeg extracts this information from both the MP4 container atoms and the underly">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/ffmpeg-color-range-handling-in-mp4-demuxing">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="FFmpeg Color Range Handling in MP4 Demuxing - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/ffmpeg-color-range-handling-in-mp4-demuxing" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="When demuxing MP4 files, FFmpeg identifies and processes color range metadata to distinguish between limited (MPEG) and full (JPEG) color ranges. This article explains how FFmpeg extracts this information from both the MP4 container atoms and the underly" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="ffmpeg-color-range-handling-in-mp4-demuxing">FFmpeg Color Range
+Handling in MP4 Demuxing</h1>
+<p>When demuxing MP4 files, FFmpeg identifies and processes color range
+metadata to distinguish between limited (MPEG) and full (JPEG) color
+ranges. This article explains how FFmpeg extracts this information from
+both the MP4 container atoms and the underlying video bitstream, how it
+resolves potential metadata conflicts, and how it propagates this data
+to downstream decoders and filters to ensure accurate color
+reproduction.</p>
+<h2 id="understanding-mpeg-vs.-jpeg-range">Understanding MPEG vs. JPEG
+Range</h2>
+<p>Color range defines the span of digital values used to represent
+color and luminance in a video file:</p>
+<ul>
+<li><strong>MPEG Range (Limited/TV Range):</strong> Standard for
+broadcast and most video distribution. In 8-bit video, luminance (Y) is
+restricted to values between 16 and 235, while chroma (Cb/Cr) ranges
+from 16 to 240.</li>
+<li><strong>JPEG Range (Full/PC Range):</strong> Standard for computer
+graphics and photography. It utilizes the entire 8-bit spectrum from 0
+to 255 for both luminance and chrominance.</li>
+</ul>
+<p>If FFmpeg misidentifies the color range during demuxing, the
+resulting playback or transcode will suffer from visual defects:
+full-range content treated as limited-range will look overly contrasty
+with crushed shadows, while limited-range content treated as full-range
+will appear washed out.</p>
+<h2 id="how-ffmpeg-detects-color-range-during-demuxing">How FFmpeg
+Detects Color Range During Demuxing</h2>
+<p>FFmpeg’s demuxer (<code>libavformat</code>) and decoder
+(<code>libavcodec</code>) work in tandem to determine the correct color
+range from an MP4 file. This detection happens at two distinct levels:
+the container level and the bitstream level.</p>
+<h3 id="container-level-extraction-mp4-atoms">1. Container-Level
+Extraction (MP4 Atoms)</h3>
+<p>The MP4 container format (ISO/IEC 14496-12) can store color space
+metadata within the track sample description box (<code>stsd</code>).
+Specifically, FFmpeg looks for the <strong><code>colr</code> (Color
+Parameter) box</strong> inside the visual sample entry.</p>
+<p>During the demuxing phase, <code>libavformat</code> parses the
+<code>colr</code> box to read three primary parameters, alongside a flag
+that specifies whether the video uses full or limited range. If this box
+is present, FFmpeg maps the parsed range to the stream’s codec
+parameters.</p>
+<h3 id="bitstream-level-extraction-codec-vui">2. Bitstream-Level
+Extraction (Codec VUI)</h3>
+<p>The video bitstream itself (such as H.264/AVC or H.265/HEVC) contains
+its own metadata. Within the Sequence Parameter Set (SPS) of the video
+bitstream, there is a section called <strong>Video Usability Information
+(VUI)</strong>.</p>
+<p>The VUI contains a specific flag: <code>video_full_range_flag</code>.
+* If <code>video_full_range_flag</code> is set to <code>0</code>, the
+range is MPEG (limited). * If <code>video_full_range_flag</code> is set
+to <code>1</code>, the range is JPEG (full).</p>
+<p>As FFmpeg demuxes the packets and passes them to the decoder,
+<code>libavcodec</code> parses this SPS VUI data to determine the
+range.</p>
+<h2 id="resolving-container-vs.-bitstream-conflicts">Resolving Container
+vs. Bitstream Conflicts</h2>
+<p>It is common for MP4 files to have conflicting metadata—for example,
+the MP4 container’s <code>colr</code> box might flag the video as
+limited range, while the internal H.264 bitstream flags it as full
+range.</p>
+<p>FFmpeg handles these discrepancies through a prioritized resolution
+hierarchy:</p>
+<ol type="1">
+<li><strong>Bitstream Precedence:</strong> By default, FFmpeg
+prioritizes the bitstream VUI parameters parsed by the decoder over the
+container-level metadata. The decoder’s findings directly update the
+<code>AVFrame</code> properties.</li>
+<li><strong>Internal API Mapping:</strong> The resolved range is mapped
+to the <code>AVColorRange</code> enum in FFmpeg’s API:
+<ul>
+<li><code>AVCOL_RANGE_MPEG</code> (Limited range)</li>
+<li><code>AVCOL_RANGE_JPEG</code> (Full range)</li>
+<li><code>AVCOL_RANGE_UNSPECIFIED</code> (Fallback when no metadata is
+found; usually defaults to limited range for YUV formats)</li>
+</ul></li>
+</ol>
+<h2 id="propagation-to-downstream-filters-libswscale">Propagation to
+Downstream Filters (libswscale)</h2>
+<p>Once the demuxer and decoder establish the color range, this metadata
+is attached to each decoded frame
+(<code>AVFrame-&gt;color_range</code>).</p>
+<p>When you apply filters or convert the pixel format (e.g., converting
+YUV420P to RGB for playback), FFmpeg’s scaling library,
+<code>libswscale</code>, reads this frame metadata. It selects the
+appropriate mathematical matrix to scale the color values. If the frame
+is tagged as <code>AVCOL_RANGE_JPEG</code>, <code>libswscale</code> uses
+a full-range conversion matrix; if tagged as
+<code>AVCOL_RANGE_MPEG</code>, it applies a limited-range correction
+matrix to prevent color shifting.</p></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

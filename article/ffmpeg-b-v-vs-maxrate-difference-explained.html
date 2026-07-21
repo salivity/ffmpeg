@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FFmpeg -b:v vs -maxrate Difference Explained - ffmpeg</title>
+    <meta name="description" content="This article explains how FFmpeg handles the -b:v and -maxrate options during video encoding. It clarifies the operational differences between setting an average target video bitrate versus capping the peak encoding rate, demonstrating how these settings">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/ffmpeg-b-v-vs-maxrate-difference-explained">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="FFmpeg -b:v vs -maxrate Difference Explained - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/ffmpeg-b-v-vs-maxrate-difference-explained" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article explains how FFmpeg handles the -b:v and -maxrate options during video encoding. It clarifies the operational differences between setting an average target video bitrate versus capping the peak encoding rate, demonstrating how these settings" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="ffmpeg--bv-vs--maxrate-difference-explained">FFmpeg -b:v vs
+-maxrate Difference Explained</h1>
+<p>This article explains how FFmpeg handles the <code>-b:v</code> and
+<code>-maxrate</code> options during video encoding. It clarifies the
+operational differences between setting an average target video bitrate
+versus capping the peak encoding rate, demonstrating how these settings
+interact to control video quality and file size, especially when
+streaming.</p>
+<h3 id="the-role-of--bv-target-bitrate">The Role of -b:v (Target
+Bitrate)</h3>
+<p>The <code>-b:v</code> option sets the target or average video bitrate
+for the encoder. When you specify <code>-b:v 2M</code>, you are
+instructing FFmpeg to aim for an average bitrate of 2 Megabits per
+second across the duration of the entire video.</p>
+<p>During encoding, the library (such as <code>libx264</code>) allocates
+more data to complex, high-motion scenes and less data to simple, static
+scenes. The overall goal of the encoder when using <code>-b:v</code>
+alone is to hit the specified average by the end of the file, meaning
+individual segments of the video may temporarily spike far above or drop
+far below this target.</p>
+<h3 id="the-role-of--maxrate-maximum-bitrate-limit">The Role of -maxrate
+(Maximum Bitrate Limit)</h3>
+<p>The <code>-maxrate</code> option defines a strict ceiling for the
+video bitrate. Unlike <code>-b:v</code>, which acts as a flexible
+target, <code>-maxrate</code> prevents the encoder from exceeding a
+specific bitrate during highly complex scenes.</p>
+<p>By itself, <code>-maxrate</code> does nothing. For the encoder to
+enforce this maximum limit, it must be paired with the
+<code>-bufsize</code> (buffer size) option. The buffer size tells the
+encoder how often to calculate the average bitrate and check if it is
+exceeding the <code>-maxrate</code>.</p>
+<h3 id="how-they-work-together-constrained-bitrate-vbv">How They Work
+Together: Constrained Bitrate (VBV)</h3>
+<p>When you combine <code>-b:v</code>, <code>-maxrate</code>, and
+<code>-bufsize</code>, you enable Constrained Variable Bitrate (CVBR)
+encoding, often referred to as the Video Buffer Verifier (VBV)
+model.</p>
+<p>For example, using the command:
+<code>ffmpeg -i input.mp4 -b:v 2M -maxrate 3M -bufsize 6M output.mp4</code></p>
+<p>In this scenario: * <strong><code>-b:v 2M</code></strong> tells the
+encoder to try and maintain an overall average of 2 Mbps. *
+<strong><code>-maxrate 3M</code></strong> prevents the encoder from ever
+spiking above 3 Mbps. * <strong><code>-bufsize 6M</code></strong> sets a
+6 Megabit receiver buffer. The encoder will check the bitrate over this
+buffer window to ensure the 3 Mbps limit is never violated.</p>
+<h3 id="why-the-difference-matters">Why the Difference Matters</h3>
+<p>Using only <code>-b:v</code> is ideal for local file playback and
+progressive downloads where temporary bitrate spikes do not cause
+playback issues.</p>
+<p>Using <code>-b:v</code> in conjunction with <code>-maxrate</code> and
+<code>-bufsize</code> is essential for network streaming (such as HLS,
+DASH, or live streaming to platforms like Twitch and YouTube). Streaming
+clients have limited network bandwidth and physical buffer sizes.
+Without <code>-maxrate</code>, a sudden high-motion scene could produce
+a massive bitrate spike that exceeds the viewer’s internet speed,
+resulting in playback buffering and stuttering.</p></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

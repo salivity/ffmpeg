@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FFmpeg Color Space Conversion Before and After LUT - ffmpeg</title>
+    <meta name="description" content="Applying a Look-Up Table (LUT) to a video in FFmpeg requires the input video to match the exact color space and transfer characteristics (gamma) that the LUT was designed for. This article demonstrates how to use FFmpeg's video filters to convert your vi">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/ffmpeg-color-space-conversion-before-and-after-lut">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="FFmpeg Color Space Conversion Before and After LUT - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/ffmpeg-color-space-conversion-before-and-after-lut" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Applying a Look-Up Table (LUT) to a video in FFmpeg requires the input video to match the exact color space and transfer characteristics (gamma) that the LUT was designed for. This article demonstrates how to use FFmpeg's video filters to convert your vi" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="ffmpeg-color-space-conversion-before-and-after-lut">FFmpeg Color
+Space Conversion Before and After LUT</h1>
+<p>Applying a Look-Up Table (LUT) to a video in FFmpeg requires the
+input video to match the exact color space and transfer characteristics
+(gamma) that the LUT was designed for. This article demonstrates how to
+use FFmpeg’s video filters to convert your video’s color space
+immediately before applying a 3D LUT, and how to convert it to the
+desired output format afterward.</p>
+<h2 id="why-convert-color-spaces-around-a-lut">Why Convert Color Spaces
+Around a LUT?</h2>
+<p>A 3D LUT (typically a <code>.cube</code> file) maps specific input
+RGB values to specific output RGB values. If a LUT is designed for a
+flat Log profile (like Sony S-Log3 or Canon Log) or a linear color
+space, applying it directly to a standard Rec. 709 video will result in
+heavily distorted colors and contrast. To get accurate results, you must
+chain your filters so that:</p>
+<ol type="1">
+<li><strong>Pre-LUT:</strong> The input video is converted to the color
+space expected by the LUT.</li>
+<li><strong>LUT Application:</strong> The LUT is applied via the
+<code>lut3d</code> filter.</li>
+<li><strong>Post-LUT:</strong> The resulting video is converted to the
+final target color space (usually Rec. 709 or Rec. 2020) if the LUT
+output does not already match the target format.</li>
+</ol>
+<hr />
+<h2 id="method-1-using-the-zscale-filter-recommended">Method 1: Using
+the <code>zscale</code> Filter (Recommended)</h2>
+<p>The <code>zscale</code> filter (part of the <code>zimg</code>
+library) is the most powerful and precise tool in FFmpeg for handling
+color space, transfer characteristics (gamma), and color primaries. To
+use it, your FFmpeg build must be compiled with
+<code>--enable-libzimg</code>.</p>
+<h3 id="example-1-converting-to-linear-space-and-back">Example 1:
+Converting to Linear Space and Back</h3>
+<p>Some LUTs are designed to operate on linear light. Here is how to
+convert a standard Rec. 709 video to linear space, apply the LUT, and
+convert it back to Rec. 709:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;zscale=transfer=linear,lut3d=linear_lut.cube,zscale=transfer=bt709&quot;</span> output.mp4</span></code></pre></div>
+<h3 id="example-2-log-to-rec.-709-conversion">Example 2: Log to Rec. 709
+Conversion</h3>
+<p>If you have a Rec. 2020 HDR video but your LUT expects Rec. 709 (SDR)
+input, you must downconvert the primaries and transfer characteristics
+before applying the LUT:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input_hdr.mp4 <span class="at">-vf</span> <span class="st">&quot;zscale=primaries=bt709:transfer=bt709:matrix=bt709,lut3d=rec709_lut.cube&quot;</span> output_sdr.mp4</span></code></pre></div>
+<h3 id="key-zscale-parameters">Key <code>zscale</code> Parameters:</h3>
+<ul>
+<li><code>p</code> or <code>primaries</code>: Defines the color
+primaries (e.g., <code>bt709</code>, <code>bt2020</code>,
+<code>smpte432</code> for DCI-P3).</li>
+<li><code>t</code> or <code>transfer</code>: Defines the gamma curve
+(e.g., <code>bt709</code>, <code>linear</code>, <code>smpte2084</code>
+for HDR10/PQ, <code>arib-std-b67</code> for HLG).</li>
+<li><code>m</code> or <code>matrix</code>: Defines the color matrix
+coefficients (e.g., <code>bt709</code>, <code>bt2020nc</code>).</li>
+</ul>
+<hr />
+<h2 id="method-2-using-the-native-colorspace-filter">Method 2: Using the
+Native <code>colorspace</code> Filter</h2>
+<p>If your FFmpeg installation does not support <code>zscale</code>, you
+can use the native <code>colorspace</code> filter. It is slightly less
+flexible but highly effective for standard broadcast formats.</p>
+<p>To convert a BT.2020 video to BT.709 before applying a LUT:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;colorspace=all=bt709:trc=bt709,lut3d=my_lut.cube&quot;</span> output.mp4</span></code></pre></div>
+<p>To convert BT.709 to BT.2020 after applying a LUT:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;lut3d=my_lut.cube,colorspace=all=bt2020:trc=smpte2084&quot;</span> output.mp4</span></code></pre></div>
+<h3 id="key-colorspace-parameters">Key <code>colorspace</code>
+Parameters:</h3>
+<ul>
+<li><code>all</code>: Sets primaries, transfer characteristics, and
+matrix at once (e.g., <code>bt709</code>, <code>bt2020</code>).</li>
+<li><code>trc</code>: Transfer characteristics (e.g.,
+<code>bt709</code>, <code>smpte2084</code>,
+<code>smpte170m</code>).</li>
+</ul>
+<hr />
+<h2 id="combining-transformations-in-a-single-filtergraph">Combining
+Transformations in a Single Filtergraph</h2>
+<p>For complex pipelines where you must convert color spaces both before
+and after the LUT, chain the filters together in a comma-separated list
+within the <code>-vf</code> flag. FFmpeg processes these filters
+sequentially from left to right.</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input_log.mp4 <span class="at">-vf</span> <span class="st">&quot;zscale=p=bt709:t=linear:m=bt709,lut3d=lut_in_linear_space.cube,zscale=p=bt2020:t=smpte2084:m=bt2020nc&quot;</span> output_hdr.mp4</span></code></pre></div>
+<p>In this command: 1. The S-Log/Rec. 709 input is converted to
+<strong>Linear RGB</strong>. 2. The <strong>LUT</strong> is applied
+while the video is in Linear RGB. 3. The output of the LUT is converted
+to <strong>HDR10 (Rec. 2020 / PQ)</strong> for the final export.</p></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

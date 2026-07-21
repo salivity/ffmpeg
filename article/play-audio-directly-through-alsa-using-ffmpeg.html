@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Play Audio Directly Through ALSA Using FFmpeg - ffmpeg</title>
+    <meta name="description" content="This article explains how to output audio directly to the Advanced Linux Sound Architecture (ALSA) driver using FFmpeg's alsa muxer. You will learn the correct command-line syntax, how to identify and specify your playback hardware, and how to configure">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/play-audio-directly-through-alsa-using-ffmpeg">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Play Audio Directly Through ALSA Using FFmpeg - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/play-audio-directly-through-alsa-using-ffmpeg" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article explains how to output audio directly to the Advanced Linux Sound Architecture (ALSA) driver using FFmpeg's alsa muxer. You will learn the correct command-line syntax, how to identify and specify your playback hardware, and how to configure" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="play-audio-directly-through-alsa-using-ffmpeg">Play Audio
+Directly Through ALSA Using FFmpeg</h1>
+<p>This article explains how to output audio directly to the Advanced
+Linux Sound Architecture (ALSA) driver using FFmpeg’s <code>alsa</code>
+muxer. You will learn the correct command-line syntax, how to identify
+and specify your playback hardware, and how to configure key audio
+parameters for seamless direct playback without the need for a heavy
+desktop audio server.</p>
+<h3 id="prerequisites">Prerequisites</h3>
+<p>To play audio directly through ALSA, your FFmpeg installation must be
+compiled with ALSA support enabled. You can verify this by running:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-muxers</span> <span class="kw">|</span> <span class="fu">grep</span> alsa</span></code></pre></div>
+<p>If you see <code>E alsa ALSA audio output</code> in the list, your
+FFmpeg build is ready.</p>
+<h3 id="basic-playback-command">Basic Playback Command</h3>
+<p>To stream any audio or video file directly to your default ALSA
+playback device, use the <code>-f alsa</code> output format option
+followed by the device name:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp3 <span class="at">-f</span> alsa default</span></code></pre></div>
+<p>In this command: * <code>-i input.mp3</code> specifies your source
+file (which can be any audio or video format FFmpeg supports). *
+<code>-f alsa</code> forces the output format to use the ALSA driver. *
+<code>default</code> directs the stream to your system’s default ALSA
+soundcard.</p>
+<h3 id="selecting-a-specific-alsa-device">Selecting a Specific ALSA
+Device</h3>
+<p>If you have multiple sound cards (such as an onboard chip, a USB DAC,
+or HDMI output), you can direct the audio to a specific hardware
+device.</p>
+<p>First, list your available ALSA playback devices by running:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="fu">aplay</span> <span class="at">-L</span></span></code></pre></div>
+<p>Look for device names like <code>hw:CARD=PCH,DEV=0</code> or
+simplified hardware identifiers like <code>hw:0,0</code> (representing
+card 0, device 0).</p>
+<p>To play audio through a specific card and device, replace
+<code>default</code> with the hardware identifier:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.wav <span class="at">-f</span> alsa hw:0,0</span></code></pre></div>
+<p>Using <code>hw:X,Y</code> provides direct, unmixed hardware access.
+If you want to use ALSA’s software mixing (so other applications can
+play sound at the same time), use <code>plughw</code> instead:</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.wav <span class="at">-f</span> alsa plughw:0,0</span></code></pre></div>
+<h3 id="controlling-audio-parameters">Controlling Audio Parameters</h3>
+<p>Sometimes, your hardware may not natively support the sample rate or
+channel layout of your source file. You can use FFmpeg’s built-in
+options to resample the audio on the fly before sending it to ALSA:</p>
+<div class="sourceCode" id="cb6"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.flac <span class="at">-ar</span> 44100 <span class="at">-ac</span> 2 <span class="at">-f</span> alsa hw:0,0</span></code></pre></div>
+<ul>
+<li><code>-ar 44100</code> sets the output audio sample rate to 44.1
+kHz.</li>
+<li><code>-ac 2</code> forces the channel layout to stereo (2
+channels).</li>
+</ul></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

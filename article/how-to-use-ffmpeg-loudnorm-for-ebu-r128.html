@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Use FFmpeg Loudnorm for EBU R128 - ffmpeg</title>
+    <meta name="description" content="This guide explains how to use the FFmpeg loudnorm filter to achieve EBU R128 loudness normalization for your audio and video files. You will learn the difference between one-pass and two-pass normalization, the key parameters of the filter, and the exac">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/how-to-use-ffmpeg-loudnorm-for-ebu-r128">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Use FFmpeg Loudnorm for EBU R128 - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/how-to-use-ffmpeg-loudnorm-for-ebu-r128" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This guide explains how to use the FFmpeg loudnorm filter to achieve EBU R128 loudness normalization for your audio and video files. You will learn the difference between one-pass and two-pass normalization, the key parameters of the filter, and the exac" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="how-to-use-ffmpeg-loudnorm-for-ebu-r128">How to Use FFmpeg
+Loudnorm for EBU R128</h1>
+<p>This guide explains how to use the FFmpeg <code>loudnorm</code>
+filter to achieve EBU R128 loudness normalization for your audio and
+video files. You will learn the difference between one-pass and two-pass
+normalization, the key parameters of the filter, and the exact
+command-line syntax required to target the standard -23 LUFS integration
+limit.</p>
+<h2 id="understanding-ebu-r128-targets">Understanding EBU R128
+Targets</h2>
+<p>The EBU R128 broadcasting standard regulates audio delivery using
+specific loudness metrics rather than peak levels. The primary targets
+for standard compliance are: * <strong>Integrated Loudness (I):</strong>
+-23.0 LUFS (Loudness Units Full Scale) * <strong>Loudness Range
+(LRA):</strong> 18.0 LU * <strong>Maximum True Peak (TP):</strong> -1.0
+dBTP (Decibels Relative to Full Scale)</p>
+<p>The <code>loudnorm</code> filter in FFmpeg uses these parameters to
+dynamically adjust your audio to meet these standards.</p>
+<h2 id="one-pass-loudness-normalization">One-Pass Loudness
+Normalization</h2>
+<p>One-pass normalization is fast and suitable for live streaming or
+quick processing. It estimates the loudness of the incoming audio on the
+fly.</p>
+<p>To perform a one-pass normalization to EBU R128 standards, use the
+following command:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-filter:a</span> loudnorm=I=-23:LRA=18:TP=-1.0 <span class="at">-c:v</span> copy output.mp4</span></code></pre></div>
+<p>In this command: * <code>I=-23</code> sets the target integrated
+loudness to -23 LUFS. * <code>LRA=18</code> sets the target loudness
+range to 18 LU. * <code>TP=-1.0</code> sets the maximum true peak to
+-1.0 dBTP. * <code>-c:v copy</code> copies the video stream without
+re-encoding, saving time.</p>
+<h2 id="two-pass-loudness-normalization-recommended">Two-Pass Loudness
+Normalization (Recommended)</h2>
+<p>For strict EBU R128 compliance, a two-pass approach is highly
+recommended. The first pass analyzes the entire audio file to gather
+precise statistics, and the second pass applies the normalization using
+those statistics to prevent compression artifacts or clipping.</p>
+<h3 id="pass-1-analyze-the-audio">Pass 1: Analyze the Audio</h3>
+<p>Run the analysis command to output the loudness metadata in JSON
+format:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-filter:a</span> loudnorm=I=-23:LRA=18:TP=-1.0:print_format=json <span class="at">-f</span> null <span class="at">-</span></span></code></pre></div>
+<p>This command will print a JSON block at the end of the console output
+that looks like this:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode json"><code class="sourceCode json"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="fu">{</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&quot;input_i&quot;</span> <span class="fu">:</span> <span class="st">&quot;-15.30&quot;</span><span class="fu">,</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&quot;input_lra&quot;</span> <span class="fu">:</span> <span class="st">&quot;11.20&quot;</span><span class="fu">,</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&quot;input_tp&quot;</span> <span class="fu">:</span> <span class="st">&quot;0.50&quot;</span><span class="fu">,</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&quot;input_thresh&quot;</span> <span class="fu">:</span> <span class="st">&quot;-25.80&quot;</span><span class="fu">,</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&quot;output_i&quot;</span> <span class="fu">:</span> <span class="st">&quot;-23.00&quot;</span><span class="fu">,</span></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&quot;output_lra&quot;</span> <span class="fu">:</span> <span class="st">&quot;10.10&quot;</span><span class="fu">,</span></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&quot;output_tp&quot;</span> <span class="fu">:</span> <span class="st">&quot;-1.00&quot;</span><span class="fu">,</span></span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&quot;output_thresh&quot;</span> <span class="fu">:</span> <span class="st">&quot;-33.20&quot;</span><span class="fu">,</span></span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&quot;normalization_type&quot;</span> <span class="fu">:</span> <span class="st">&quot;dynamic&quot;</span><span class="fu">,</span></span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&quot;target_offset&quot;</span> <span class="fu">:</span> <span class="st">&quot;0.00&quot;</span></span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a><span class="fu">}</span></span></code></pre></div>
+<h3 id="pass-2-apply-the-normalization">Pass 2: Apply the
+Normalization</h3>
+<p>Copy the <code>input_*</code> values from the JSON output and plug
+them into the second pass command using the corresponding
+<code>measured_*</code> parameters:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-filter:a</span> loudnorm=I=-23:LRA=18:TP=-1.0:measured_I=-15.30:measured_LRA=11.20:measured_TP=0.50:measured_thresh=-25.80:linear=true:print_format=summary <span class="at">-c:v</span> copy output.mp4</span></code></pre></div>
+<ul>
+<li><code>linear=true</code> ensures the filter performs linear
+normalization if possible, preserving the original dynamic range of the
+audio.</li>
+<li>The <code>measured_</code> parameters tell FFmpeg exactly what the
+input level is, allowing it to apply a precise gain adjustment to meet
+the EBU R128 standard perfectly.</li>
+</ul></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

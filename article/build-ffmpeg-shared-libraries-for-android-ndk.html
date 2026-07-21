@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Build FFmpeg Shared Libraries for Android NDK - ffmpeg</title>
+    <meta name="description" content="This guide provides a step-by-step walkthrough on how to compile FFmpeg source code into shared libraries (.so files) specifically for Android NDK integration. You will learn how to set up the Android NDK environment, configure the FFmpeg build script fo">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/build-ffmpeg-shared-libraries-for-android-ndk">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Build FFmpeg Shared Libraries for Android NDK - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/build-ffmpeg-shared-libraries-for-android-ndk" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This guide provides a step-by-step walkthrough on how to compile FFmpeg source code into shared libraries (.so files) specifically for Android NDK integration. You will learn how to set up the Android NDK environment, configure the FFmpeg build script fo" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="build-ffmpeg-shared-libraries-for-android-ndk">Build FFmpeg
+Shared Libraries for Android NDK</h1>
+<p>This guide provides a step-by-step walkthrough on how to compile
+FFmpeg source code into shared libraries (<code>.so</code> files)
+specifically for Android NDK integration. You will learn how to set up
+the Android NDK environment, configure the FFmpeg build script for
+modern CPU architectures (such as <code>arm64-v8a</code> and
+<code>armeabi-v7a</code>), compile the binaries, and import them into an
+Android Studio project.</p>
+<hr />
+<h2 id="prerequisites">Prerequisites</h2>
+<p>Before starting, ensure you have the following environment
+prepared:</p>
+<ul>
+<li><strong>Operating System</strong>: Linux (Ubuntu recommended) or
+macOS. If you are on Windows, use Windows Subsystem for Linux
+(WSL).</li>
+<li><strong>Android NDK</strong>: Download and extract the Android NDK
+(r21 or newer recommended) to a known directory.</li>
+<li><strong>FFmpeg Source</strong>: Download and extract the latest
+stable FFmpeg source code from the official website.</li>
+<li><strong>Build Tools</strong>: Ensure <code>make</code>,
+<code>gcc</code>, and <code>git</code> are installed on your host
+system.</li>
+</ul>
+<hr />
+<h2 id="step-1-set-up-the-compilation-script">Step 1: Set Up the
+Compilation Script</h2>
+<p>Modern Android NDK releases (r19 and newer) use the Clang compiler by
+default. You do not need to create a standalone toolchain; instead, you
+can point your compiler variables directly to the toolchain embedded
+inside the NDK directory.</p>
+<p>Navigate to your extracted FFmpeg source directory and create a shell
+script named <code>build_android.sh</code>:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="bu">cd</span> /path/to/ffmpeg-source</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">touch</span> build_android.sh</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="fu">chmod</span> +x build_android.sh</span></code></pre></div>
+<p>Open <code>build_android.sh</code> in a text editor and add the
+following script. This script targets the <strong>arm64-v8a</strong>
+architecture, which is standard for modern 64-bit Android devices.</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co">#!/bin/bash</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Set your NDK path here</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="va">NDK</span><span class="op">=</span>/path/to/your/android-ndk</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a><span class="co"># Set the host system (linux-x86_64, darwin-x86_64, etc.)</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a><span class="va">HOST_PLATFORM</span><span class="op">=</span>linux-x86_64</span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a><span class="co"># Define target API and Architecture</span></span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a><span class="va">API</span><span class="op">=</span>21</span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a><span class="va">ARCH</span><span class="op">=</span>aarch64</span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a><span class="va">CPU</span><span class="op">=</span>armv8-a</span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a><span class="va">TOOLCHAIN</span><span class="op">=</span><span class="va">$NDK</span>/toolchains/llvm/prebuilt/<span class="va">$HOST_PLATFORM</span></span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a><span class="va">OUTPUT_DIR</span><span class="op">=</span><span class="va">$(</span><span class="bu">pwd</span><span class="va">)</span>/android/<span class="va">$ARCH</span></span>
+<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-16"><a href="#cb2-16" aria-hidden="true" tabindex="-1"></a><span class="co"># Compiler configurations</span></span>
+<span id="cb2-17"><a href="#cb2-17" aria-hidden="true" tabindex="-1"></a><span class="va">CC</span><span class="op">=</span><span class="va">$TOOLCHAIN</span>/bin/aarch64-linux-android<span class="va">$API</span>-clang</span>
+<span id="cb2-18"><a href="#cb2-18" aria-hidden="true" tabindex="-1"></a><span class="va">CXX</span><span class="op">=</span><span class="va">$TOOLCHAIN</span>/bin/aarch64-linux-android<span class="va">$API</span>-clang++</span>
+<span id="cb2-19"><a href="#cb2-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-20"><a href="#cb2-20" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span><span class="fu"> build_ffmpeg</span> <span class="kw">{</span></span>
+<span id="cb2-21"><a href="#cb2-21" aria-hidden="true" tabindex="-1"></a>  <span class="ex">./configure</span> <span class="dt">\</span></span>
+<span id="cb2-22"><a href="#cb2-22" aria-hidden="true" tabindex="-1"></a>    <span class="at">--prefix</span><span class="op">=</span><span class="va">$OUTPUT_DIR</span> <span class="dt">\</span></span>
+<span id="cb2-23"><a href="#cb2-23" aria-hidden="true" tabindex="-1"></a>    <span class="at">--enable-shared</span> <span class="dt">\</span></span>
+<span id="cb2-24"><a href="#cb2-24" aria-hidden="true" tabindex="-1"></a>    <span class="at">--disable-static</span> <span class="dt">\</span></span>
+<span id="cb2-25"><a href="#cb2-25" aria-hidden="true" tabindex="-1"></a>    <span class="at">--disable-doc</span> <span class="dt">\</span></span>
+<span id="cb2-26"><a href="#cb2-26" aria-hidden="true" tabindex="-1"></a>    <span class="at">--disable-ffmpeg</span> <span class="dt">\</span></span>
+<span id="cb2-27"><a href="#cb2-27" aria-hidden="true" tabindex="-1"></a>    <span class="at">--disable-ffplay</span> <span class="dt">\</span></span>
+<span id="cb2-28"><a href="#cb2-28" aria-hidden="true" tabindex="-1"></a>    <span class="at">--disable-ffprobe</span> <span class="dt">\</span></span>
+<span id="cb2-29"><a href="#cb2-29" aria-hidden="true" tabindex="-1"></a>    <span class="at">--disable-symver</span> <span class="dt">\</span></span>
+<span id="cb2-30"><a href="#cb2-30" aria-hidden="true" tabindex="-1"></a>    <span class="at">--cross-prefix</span><span class="op">=</span><span class="va">$TOOLCHAIN</span>/bin/aarch64-linux-android- <span class="dt">\</span></span>
+<span id="cb2-31"><a href="#cb2-31" aria-hidden="true" tabindex="-1"></a>    <span class="at">--target-os</span><span class="op">=</span>android <span class="dt">\</span></span>
+<span id="cb2-32"><a href="#cb2-32" aria-hidden="true" tabindex="-1"></a>    <span class="at">--arch</span><span class="op">=</span><span class="va">$ARCH</span> <span class="dt">\</span></span>
+<span id="cb2-33"><a href="#cb2-33" aria-hidden="true" tabindex="-1"></a>    <span class="at">--cpu</span><span class="op">=</span><span class="va">$CPU</span> <span class="dt">\</span></span>
+<span id="cb2-34"><a href="#cb2-34" aria-hidden="true" tabindex="-1"></a>    <span class="at">--cc</span><span class="op">=</span><span class="va">$CC</span> <span class="dt">\</span></span>
+<span id="cb2-35"><a href="#cb2-35" aria-hidden="true" tabindex="-1"></a>    <span class="at">--cxx</span><span class="op">=</span><span class="va">$CXX</span> <span class="dt">\</span></span>
+<span id="cb2-36"><a href="#cb2-36" aria-hidden="true" tabindex="-1"></a>    <span class="at">--enable-cross-compile</span> <span class="dt">\</span></span>
+<span id="cb2-37"><a href="#cb2-37" aria-hidden="true" tabindex="-1"></a>    <span class="at">--sysroot</span><span class="op">=</span><span class="va">$TOOLCHAIN</span>/sysroot <span class="dt">\</span></span>
+<span id="cb2-38"><a href="#cb2-38" aria-hidden="true" tabindex="-1"></a>    <span class="at">--extra-cflags</span><span class="op">=</span><span class="st">&quot;-Os -fPIC&quot;</span> <span class="dt">\</span></span>
+<span id="cb2-39"><a href="#cb2-39" aria-hidden="true" tabindex="-1"></a>    <span class="at">--extra-ldflags</span><span class="op">=</span><span class="st">&quot;&quot;</span> <span class="dt">\</span></span>
+<span id="cb2-40"><a href="#cb2-40" aria-hidden="true" tabindex="-1"></a>    <span class="va">$ADDITIONAL_CONFIGURE_FLAGS</span></span>
+<span id="cb2-41"><a href="#cb2-41" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-42"><a href="#cb2-42" aria-hidden="true" tabindex="-1"></a>  <span class="fu">make</span> clean</span>
+<span id="cb2-43"><a href="#cb2-43" aria-hidden="true" tabindex="-1"></a>  <span class="fu">make</span> <span class="at">-j</span><span class="va">$(</span><span class="fu">nproc</span><span class="va">)</span></span>
+<span id="cb2-44"><a href="#cb2-44" aria-hidden="true" tabindex="-1"></a>  <span class="fu">make</span> install</span>
+<span id="cb2-45"><a href="#cb2-45" aria-hidden="true" tabindex="-1"></a><span class="kw">}</span></span>
+<span id="cb2-46"><a href="#cb2-46" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-47"><a href="#cb2-47" aria-hidden="true" tabindex="-1"></a><span class="ex">build_ffmpeg</span></span></code></pre></div>
+<p><em>Note: Replace <code>/path/to/your/android-ndk</code> with the
+absolute path to your downloaded NDK, and adjust
+<code>HOST_PLATFORM</code> to <code>darwin-x86_64</code> if you are on
+macOS.</em></p>
+<hr />
+<h2 id="step-2-compile-the-libraries">Step 2: Compile the Libraries</h2>
+<p>Execute the build script in your terminal:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">./build_android.sh</span></span></code></pre></div>
+<p>Once the compilation is complete, you will find a new directory named
+<code>android/aarch64</code> inside your FFmpeg source folder. This
+folder contains: * <code>include/</code>: The header files
+(<code>.h</code>) required for C/C++ compilation. * <code>lib/</code>:
+The shared libraries (<code>.so</code> files, e.g.,
+<code>libavcodec.so</code>, <code>libavformat.so</code>,
+<code>libavutil.so</code>).</p>
+<p>To target other architectures (like 32-bit <code>armeabi-v7a</code>),
+duplicate the script and modify the <code>ARCH</code>, <code>CPU</code>,
+<code>CC</code>, <code>CXX</code>, and <code>--cross-prefix</code>
+variables to point to the respective 32-bit compilers (e.g.,
+<code>armv7a-linux-androideabi$API-clang</code>).</p>
+<hr />
+<h2 id="step-3-integrate-into-android-studio">Step 3: Integrate into
+Android Studio</h2>
+<p>Once you have generated the <code>.so</code> files, you must add them
+to your Android project’s C++ configuration.</p>
+<h3 id="copy-files-to-your-android-project">1. Copy Files to Your
+Android Project</h3>
+<p>Copy the generated <code>.so</code> files and header files into your
+Android project’s directory structure:</p>
+<ul>
+<li>Place the <code>.so</code> files in:
+<code>app/src/main/jniLibs/arm64-v8a/</code></li>
+<li>Place the header folders (like <code>libavcodec/</code>,
+<code>libavformat/</code>) in:
+<code>app/src/main/cpp/include/</code></li>
+</ul>
+<h3 id="configure-cmakelists.txt">2. Configure CMakeLists.txt</h3>
+<p>Configure your <code>app/src/main/cpp/CMakeLists.txt</code> file to
+locate and link the prebuilt FFmpeg shared libraries. Add the following
+directives:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode cmake"><code class="sourceCode cmake"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="kw">cmake_minimum_required</span>(<span class="ot">VERSION</span> <span class="dt">3.10.2</span>)</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="kw">project</span>(<span class="st">&quot;ffmpeg_android&quot;</span>)</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a><span class="co"># Define path to prebuilt JNI libraries</span></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a><span class="kw">set</span>(JNI_LIBS_DIR <span class="dv">${CMAKE_SOURCE_DIR}</span>/../jniLibs/<span class="dv">${ANDROID_ABI}</span>)</span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a><span class="co"># Import FFmpeg avcodec as a shared library</span></span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a><span class="kw">add_library</span>(<span class="bn">avcodec</span> <span class="ot">SHARED</span> <span class="ot">IMPORTED</span>)</span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a><span class="kw">set_target_properties</span>(<span class="bn">avcodec</span> <span class="ot">PROPERTIES</span></span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a>    <span class="ot">IMPORTED_LOCATION</span> <span class="dv">${JNI_LIBS_DIR}</span>/libavcodec.so)</span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a><span class="co"># Import FFmpeg avformat as a shared library</span></span>
+<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a><span class="kw">add_library</span>(<span class="bn">avformat</span> <span class="ot">SHARED</span> <span class="ot">IMPORTED</span>)</span>
+<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a><span class="kw">set_target_properties</span>(<span class="bn">avformat</span> <span class="ot">PROPERTIES</span></span>
+<span id="cb4-16"><a href="#cb4-16" aria-hidden="true" tabindex="-1"></a>    <span class="ot">IMPORTED_LOCATION</span> <span class="dv">${JNI_LIBS_DIR}</span>/libavformat.so)</span>
+<span id="cb4-17"><a href="#cb4-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-18"><a href="#cb4-18" aria-hidden="true" tabindex="-1"></a><span class="co"># Import FFmpeg avutil as a shared library</span></span>
+<span id="cb4-19"><a href="#cb4-19" aria-hidden="true" tabindex="-1"></a><span class="kw">add_library</span>(<span class="bn">avutil</span> <span class="ot">SHARED</span> <span class="ot">IMPORTED</span>)</span>
+<span id="cb4-20"><a href="#cb4-20" aria-hidden="true" tabindex="-1"></a><span class="kw">set_target_properties</span>(<span class="bn">avutil</span> <span class="ot">PROPERTIES</span></span>
+<span id="cb4-21"><a href="#cb4-21" aria-hidden="true" tabindex="-1"></a>    <span class="ot">IMPORTED_LOCATION</span> <span class="dv">${JNI_LIBS_DIR}</span>/libavutil.so)</span>
+<span id="cb4-22"><a href="#cb4-22" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-23"><a href="#cb4-23" aria-hidden="true" tabindex="-1"></a><span class="co"># Add include directories for header files</span></span>
+<span id="cb4-24"><a href="#cb4-24" aria-hidden="true" tabindex="-1"></a><span class="kw">include_directories</span>(<span class="dv">${CMAKE_SOURCE_DIR}</span>/include)</span>
+<span id="cb4-25"><a href="#cb4-25" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-26"><a href="#cb4-26" aria-hidden="true" tabindex="-1"></a><span class="co"># Create your native wrapper library</span></span>
+<span id="cb4-27"><a href="#cb4-27" aria-hidden="true" tabindex="-1"></a><span class="kw">add_library</span>(<span class="bn">native-lib</span> <span class="ot">SHARED</span> native-lib.cpp)</span>
+<span id="cb4-28"><a href="#cb4-28" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-29"><a href="#cb4-29" aria-hidden="true" tabindex="-1"></a><span class="co"># Link your library with FFmpeg libraries</span></span>
+<span id="cb4-30"><a href="#cb4-30" aria-hidden="true" tabindex="-1"></a><span class="kw">target_link_libraries</span>(<span class="bn">native-lib</span></span>
+<span id="cb4-31"><a href="#cb4-31" aria-hidden="true" tabindex="-1"></a>    avcodec</span>
+<span id="cb4-32"><a href="#cb4-32" aria-hidden="true" tabindex="-1"></a>    avformat</span>
+<span id="cb4-33"><a href="#cb4-33" aria-hidden="true" tabindex="-1"></a>    avutil</span>
+<span id="cb4-34"><a href="#cb4-34" aria-hidden="true" tabindex="-1"></a>    log)</span></code></pre></div>
+<h3 id="load-libraries-in-kotlin-or-java">3. Load Libraries in Kotlin or
+Java</h3>
+<p>Before calling any native method using FFmpeg in your Android
+codebase, load the compiled libraries into memory in your activity or
+class file:</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode kotlin"><code class="sourceCode kotlin"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="kw">companion</span> <span class="kw">object</span> <span class="op">{</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>    init <span class="op">{</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>        System<span class="op">.</span>loadLibrary<span class="op">(</span><span class="st">&quot;avutil&quot;</span><span class="op">)</span></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>        System<span class="op">.</span>loadLibrary<span class="op">(</span><span class="st">&quot;avcodec&quot;</span><span class="op">)</span></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>        System<span class="op">.</span>loadLibrary<span class="op">(</span><span class="st">&quot;avformat&quot;</span><span class="op">)</span></span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>        System<span class="op">.</span>loadLibrary<span class="op">(</span><span class="st">&quot;native-lib&quot;</span><span class="op">)</span></span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

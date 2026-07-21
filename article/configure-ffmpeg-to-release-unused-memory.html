@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Configure FFmpeg to Release Unused Memory - ffmpeg</title>
+    <meta name="description" content="FFmpeg is a powerful tool for processing audio and video, but it can sometimes retain large amounts of system memory after processing frames instead of returning it to the operating system. This article explains how to configure FFmpeg's environment and">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/configure-ffmpeg-to-release-unused-memory">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Configure FFmpeg to Release Unused Memory - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/configure-ffmpeg-to-release-unused-memory" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="FFmpeg is a powerful tool for processing audio and video, but it can sometimes retain large amounts of system memory after processing frames instead of returning it to the operating system. This article explains how to configure FFmpeg's environment and" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="configure-ffmpeg-to-release-unused-memory">Configure FFmpeg to
+Release Unused Memory</h1>
+<p>FFmpeg is a powerful tool for processing audio and video, but it can
+sometimes retain large amounts of system memory after processing frames
+instead of returning it to the operating system. This article explains
+how to configure FFmpeg’s environment and memory allocator settings to
+force the immediate release of unused memory back to the OS, preventing
+memory bloat during long-running or batch-processing tasks.</p>
+<h3 id="use-environment-variables-to-tune-glibc-memory-allocation">Use
+Environment Variables to Tune glibc Memory Allocation</h3>
+<p>By default, FFmpeg on Linux uses the standard GNU C Library (glibc)
+allocator, which keeps freed memory in thread-specific pools (arenas)
+for future reuse rather than returning it to the OS. You can change this
+behavior by setting specific environment variables before running your
+FFmpeg command.</p>
+<ol type="1">
+<li><p><strong><code>MALLOC_MMAP_THRESHOLD_</code></strong>: This
+variable defines the threshold (in bytes) above which memory allocations
+are performed using <code>mmap</code> instead of <code>brk</code>.
+Memory allocated via <code>mmap</code> is returned directly to the
+operating system as soon as it is freed. Setting this to a lower value
+forces FFmpeg to use <code>mmap</code> for smaller video frame
+buffers:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="bu">export</span> <span class="va">MALLOC_MMAP_THRESHOLD_</span><span class="op">=</span>131072</span></code></pre></div></li>
+<li><p><strong><code>MALLOC_TRIM_THRESHOLD_</code></strong>: This
+defines the amount of free space at the top of the heap that must exist
+before glibc performs a “trim” operation to release memory back to the
+OS. Setting this to a lower value forces more aggressive memory
+reclamation:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="bu">export</span> <span class="va">MALLOC_TRIM_THRESHOLD_</span><span class="op">=</span>65536</span></code></pre></div></li>
+</ol>
+<p>Combine these variables when running your FFmpeg command:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="va">MALLOC_MMAP_THRESHOLD_</span><span class="op">=</span>131072 <span class="va">MALLOC_TRIM_THRESHOLD_</span><span class="op">=</span>65536 <span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 output.mkv</span></code></pre></div>
+<h3 id="preload-jemalloc-for-efficient-memory-management">Preload
+jemalloc for Efficient Memory Management</h3>
+<p>The standard glibc allocator suffers from high memory fragmentation
+under heavy multi-threaded workloads like video encoding. Replacing it
+with <code>jemalloc</code>, a memory allocator designed to actively
+release unused pages to the OS, is the most effective solution.</p>
+<ol type="1">
+<li><p>Install <code>jemalloc</code> on your system:</p>
+<ul>
+<li><strong>Ubuntu/Debian:</strong>
+<code>sudo apt-get install libjemalloc-dev</code></li>
+<li><strong>CentOS/RHEL:</strong>
+<code>sudo dnf install jemalloc</code></li>
+</ul></li>
+<li><p>Run FFmpeg with <code>jemalloc</code> loaded via
+<code>LD_PRELOAD</code>, and configure it to aggressively decay
+(release) unused dirty memory immediately:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="va">LD_PRELOAD</span><span class="op">=</span><span class="st">&quot;/usr/lib/x86_64-linux-gnu/libjemalloc.so&quot;</span> <span class="dt">\</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="va">MALLOC_CONF</span><span class="op">=</span><span class="st">&quot;dirty_decay_ms:0,muzzy_decay_ms:0&quot;</span> <span class="dt">\</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 output.mkv</span></code></pre></div>
+<p><em>(Note: Adjust the path to <code>libjemalloc.so</code> based on
+your Linux distribution’s library path).</em></p></li>
+</ol>
+<h3 id="limit-thread-count-to-reduce-arena-creation">Limit Thread Count
+to Reduce Arena Creation</h3>
+<p>FFmpeg automatically spawns multiple threads for decoding, encoding,
+and filtering. Each thread creates its own glibc memory arena,
+compounding memory retention issues.</p>
+<p>You can restrict the maximum number of threads FFmpeg is allowed to
+spawn by using the <code>-threads</code> global option:</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-threads</span> 4 <span class="at">-i</span> input.mp4 output.mkv</span></code></pre></div>
+<p>Reducing the thread count directly reduces the number of memory pools
+glibc manages, allowing the OS to reclaim unused memory much faster.</p></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

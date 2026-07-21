@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Configure DSD Decimation and Cutoff in FFmpeg - ffmpeg</title>
+    <meta name="description" content="This article explains how to configure decimation and cutoff frequency when decoding Direct Stream Digital (DSD) files to Pulse Code Modulation (PCM) using FFmpeg. You will learn how FFmpeg handles DSD decimation by default, how to customize the output s">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/configure-dsd-decimation-and-cutoff-in-ffmpeg">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Configure DSD Decimation and Cutoff in FFmpeg - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/configure-dsd-decimation-and-cutoff-in-ffmpeg" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article explains how to configure decimation and cutoff frequency when decoding Direct Stream Digital (DSD) files to Pulse Code Modulation (PCM) using FFmpeg. You will learn how FFmpeg handles DSD decimation by default, how to customize the output s" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="configure-dsd-decimation-and-cutoff-in-ffmpeg">Configure DSD
+Decimation and Cutoff in FFmpeg</h1>
+<p>This article explains how to configure decimation and cutoff
+frequency when decoding Direct Stream Digital (DSD) files to Pulse Code
+Modulation (PCM) using FFmpeg. You will learn how FFmpeg handles DSD
+decimation by default, how to customize the output sample rate
+(resampling), and how to apply low-pass filters to eliminate
+high-frequency DSD quantization noise.</p>
+<hr />
+<h2 id="understanding-dsd-to-pcm-conversion-in-ffmpeg">Understanding DSD
+to PCM Conversion in FFmpeg</h2>
+<p>DSD audio uses a 1-bit high-sample-rate format (typically 2.8224 MHz
+for DSD64). When FFmpeg decodes DSD to PCM, it uses an internal library
+called <code>dsd2pcm</code>.</p>
+<ul>
+<li><strong>Decimation:</strong> By default, FFmpeg decimates the signal
+by a fixed factor of 8. For DSD64, this outputs a 352.8 kHz PCM
+stream.</li>
+<li><strong>Cutoff Frequency:</strong> Because DSD relies on noise
+shaping, there is a massive amount of high-frequency quantization noise
+above 20 kHz. To prevent this noise from reaching your DAC or speakers,
+a low-pass filter must be applied to establish a cutoff frequency.</li>
+</ul>
+<hr />
+<h2 id="configuring-decimation-output-sample-rate">Configuring
+Decimation (Output Sample Rate)</h2>
+<p>Because the decoder’s hardware-level decimation is fixed at 8x,
+further decimation is achieved using FFmpeg’s resampling filters. You
+can downsample the output to standard rates like 88.2 kHz or 176.4 kHz
+using the <code>-ar</code> flag or the <code>aresample</code>
+filter.</p>
+<p>For the highest quality, use the SoX resampler engine:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.dsf <span class="at">-af</span> <span class="st">&quot;aresample=resampler=soxr&quot;</span> <span class="at">-ar</span> 88200 output.flac</span></code></pre></div>
+<p>In this command, the DSD file is decoded to 352.8 kHz PCM and then
+decimated further to 88.2 kHz.</p>
+<hr />
+<h2 id="configuring-the-cutoff-frequency">Configuring the Cutoff
+Frequency</h2>
+<p>To remove high-frequency noise, you must chain a <code>lowpass</code>
+audio filter to the command. The <code>f</code> parameter defines the
+cutoff frequency in Hertz.</p>
+<p>Recommended cutoff frequencies: * <strong>DSD64:</strong> 24,000 Hz
+to 30,000 Hz * <strong>DSD128:</strong> 40,000 Hz to 50,000 Hz</p>
+<h3 id="example-24-khz-cutoff-and-88.2-khz-decimation-dsd64">Example: 24
+kHz Cutoff and 88.2 kHz Decimation (DSD64)</h3>
+<p>To convert a DSD64 file (<code>.dsf</code> or <code>.dff</code>) to
+an 88.2 kHz FLAC file with a steep 24 kHz cutoff filter:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.dsf <span class="at">-af</span> <span class="st">&quot;lowpass=f=24000, aresample=resampler=soxr&quot;</span> <span class="at">-ar</span> 88200 output.flac</span></code></pre></div>
+<h3 id="example-40-khz-cutoff-and-176.4-khz-decimation-dsd128">Example:
+40 kHz Cutoff and 176.4 kHz Decimation (DSD128)</h3>
+<p>To convert a high-rate DSD128 file to 176.4 kHz PCM while preserving
+more high-frequency headroom with a 40 kHz cutoff:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.dsf <span class="at">-af</span> <span class="st">&quot;lowpass=f=40000, aresample=resampler=soxr&quot;</span> <span class="at">-ar</span> 176400 output.wav</span></code></pre></div>
+<h3 id="double-pole-low-pass-filter-for-steeper-roll-off">Double-Pole
+Low-Pass Filter for Steeper Roll-Off</h3>
+<p>A single low-pass filter might have a shallow slope. To create a
+steeper roll-off to completely isolate ultrasonic noise, you can stack
+two low-pass filters in your filtergraph:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.dsf <span class="at">-af</span> <span class="st">&quot;lowpass=f=24000, lowpass=f=24000, aresample=resampler=soxr&quot;</span> <span class="at">-ar</span> 88200 output.flac</span></code></pre></div></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

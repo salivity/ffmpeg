@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Use avformat_alloc_output_context2 - ffmpeg</title>
+    <meta name="description" content="This article explains how to allocate an output format context using the avformatallocoutputcontext2 function in the FFmpeg C API. You will learn the purpose of the function, its parameter requirements, how FFmpeg deduces the output format, and how to im">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/how-to-use-avformat-alloc-output-context2">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Use avformat_alloc_output_context2 - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/how-to-use-avformat-alloc-output-context2" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article explains how to allocate an output format context using the avformatallocoutputcontext2 function in the FFmpeg C API. You will learn the purpose of the function, its parameter requirements, how FFmpeg deduces the output format, and how to im" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="how-to-use-avformat_alloc_output_context2">How to Use
+avformat_alloc_output_context2</h1>
+<p>This article explains how to allocate an output format context using
+the <code>avformat_alloc_output_context2</code> function in the FFmpeg C
+API. You will learn the purpose of the function, its parameter
+requirements, how FFmpeg deduces the output format, and how to implement
+it in your C code to prepare for media muxing.</p>
+<h3 id="function-signature-and-parameters">Function Signature and
+Parameters</h3>
+<p>The <code>avformat_alloc_output_context2</code> function is the
+standard way to initialize an <code>AVFormatContext</code> for writing
+media files. It allocates the context and automatically selects the
+appropriate output container format based on the arguments you
+provide.</p>
+<p>Its prototype is defined in
+<code>&lt;libavformat/avformat.h&gt;</code> as follows:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode c"><code class="sourceCode c"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="dt">int</span> avformat_alloc_output_context2<span class="op">(</span>AVFormatContext <span class="op">**</span>ctx<span class="op">,</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>                                   <span class="dt">const</span> AVOutputFormat <span class="op">*</span>oformat<span class="op">,</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>                                   <span class="dt">const</span> <span class="dt">char</span> <span class="op">*</span>format_name<span class="op">,</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>                                   <span class="dt">const</span> <span class="dt">char</span> <span class="op">*</span>filename<span class="op">);</span></span></code></pre></div>
+<ul>
+<li><strong><code>ctx</code></strong>: A pointer to an
+<code>AVFormatContext</code> pointer. This will be populated with the
+allocated context if the function succeeds. If allocation fails, it is
+set to <code>NULL</code>.</li>
+<li><strong><code>oformat</code></strong>: A pointer to an existing
+<code>AVOutputFormat</code> structure. You can pass <code>NULL</code> if
+you want FFmpeg to determine the format automatically.</li>
+<li><strong><code>format_name</code></strong>: A string representing the
+desired output format (e.g., <code>"mp4"</code>, <code>"mpegts"</code>,
+<code>"flv"</code>). If <code>NULL</code>, FFmpeg will deduce the format
+from the filename extension.</li>
+<li><strong><code>filename</code></strong>: The path or URL of the
+output file. This string is used to guess the output format if both
+<code>oformat</code> and <code>format_name</code> are
+<code>NULL</code>.</li>
+</ul>
+<p>The function returns <code>0</code> on success, or a negative
+<code>AVERROR</code> code on failure.</p>
+<h3 id="code-example">Code Example</h3>
+<p>Below is a complete, minimal C example demonstrating how to allocate
+an output format context using a target filename.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode c"><code class="sourceCode c"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;stdio.h&gt;</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;libavformat/avformat.h&gt;</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="dt">int</span> main<span class="op">()</span> <span class="op">{</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>    AVFormatContext <span class="op">*</span>output_context <span class="op">=</span> NULL<span class="op">;</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>    <span class="dt">const</span> <span class="dt">char</span> <span class="op">*</span>filename <span class="op">=</span> <span class="st">&quot;output_video.mp4&quot;</span><span class="op">;</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>    <span class="co">// Allocate the output context based on the file extension</span></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>    <span class="dt">int</span> ret <span class="op">=</span> avformat_alloc_output_context2<span class="op">(&amp;</span>output_context<span class="op">,</span> NULL<span class="op">,</span> NULL<span class="op">,</span> filename<span class="op">);</span></span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="op">(</span>ret <span class="op">&lt;</span> <span class="dv">0</span><span class="op">)</span> <span class="op">{</span></span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a>        <span class="dt">char</span> err_buf<span class="op">[</span>AV_ERROR_MAX_STRING_SIZE<span class="op">];</span></span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a>        av_strerror<span class="op">(</span>ret<span class="op">,</span> err_buf<span class="op">,</span> <span class="kw">sizeof</span><span class="op">(</span>err_buf<span class="op">));</span></span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a>        fprintf<span class="op">(</span>stderr<span class="op">,</span> <span class="st">&quot;Could not allocate output context: </span><span class="sc">%s\n</span><span class="st">&quot;</span><span class="op">,</span> err_buf<span class="op">);</span></span>
+<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> ret<span class="op">;</span></span>
+<span id="cb2-16"><a href="#cb2-16" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb2-17"><a href="#cb2-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-18"><a href="#cb2-18" aria-hidden="true" tabindex="-1"></a>    printf<span class="op">(</span><span class="st">&quot;Successfully allocated output context for format: </span><span class="sc">%s\n</span><span class="st">&quot;</span><span class="op">,</span> </span>
+<span id="cb2-19"><a href="#cb2-19" aria-hidden="true" tabindex="-1"></a>           output_context<span class="op">-&gt;</span>oformat<span class="op">-&gt;</span>name<span class="op">);</span></span>
+<span id="cb2-20"><a href="#cb2-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-21"><a href="#cb2-21" aria-hidden="true" tabindex="-1"></a>    <span class="co">// Perform further operations like adding streams and writing headers here</span></span>
+<span id="cb2-22"><a href="#cb2-22" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-23"><a href="#cb2-23" aria-hidden="true" tabindex="-1"></a>    <span class="co">// Always free the context when finished to prevent memory leaks</span></span>
+<span id="cb2-24"><a href="#cb2-24" aria-hidden="true" tabindex="-1"></a>    avformat_free_context<span class="op">(</span>output_context<span class="op">);</span></span>
+<span id="cb2-25"><a href="#cb2-25" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-26"><a href="#cb2-26" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="dv">0</span><span class="op">;</span></span>
+<span id="cb2-27"><a href="#cb2-27" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<h3 id="format-selection-priority">Format Selection Priority</h3>
+<p>When calling <code>avformat_alloc_output_context2</code>, FFmpeg
+determines the output container format using a strict priority queue
+based on your inputs:</p>
+<ol type="1">
+<li><strong>Explicit Format Object</strong>: If <code>oformat</code> is
+not <code>NULL</code>, FFmpeg uses that specific format.</li>
+<li><strong>Explicit Format Name</strong>: If <code>oformat</code> is
+<code>NULL</code> but <code>format_name</code> is provided (e.g.,
+<code>"mpegts"</code>), FFmpeg searches for a matching format.</li>
+<li><strong>Filename Extension</strong>: If both <code>oformat</code>
+and <code>format_name</code> are <code>NULL</code>, FFmpeg parses the
+extension of the <code>filename</code> (e.g., <code>.mkv</code>) and
+assigns the corresponding format.</li>
+</ol>
+<p>If FFmpeg cannot match a format using any of these methods, the
+function returns a negative error code (usually
+<code>AVERROR_MUXER_NOT_FOUND</code>).</p></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

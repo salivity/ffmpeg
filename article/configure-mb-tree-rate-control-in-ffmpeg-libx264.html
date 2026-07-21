@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Configure MB-Tree Rate Control in FFmpeg libx264 - ffmpeg</title>
+    <meta name="description" content="This article explains how to configure the Macroblock Tree (MB-Tree) rate control option within the libx264 encoder in FFmpeg. You will learn what MB-Tree does, why you might want to enable or disable it, and the precise FFmpeg commands and parameters re">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/configure-mb-tree-rate-control-in-ffmpeg-libx264">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Configure MB-Tree Rate Control in FFmpeg libx264 - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/configure-mb-tree-rate-control-in-ffmpeg-libx264" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article explains how to configure the Macroblock Tree (MB-Tree) rate control option within the libx264 encoder in FFmpeg. You will learn what MB-Tree does, why you might want to enable or disable it, and the precise FFmpeg commands and parameters re" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="configure-mb-tree-rate-control-in-ffmpeg-libx264">Configure
+MB-Tree Rate Control in FFmpeg libx264</h1>
+<p>This article explains how to configure the Macroblock Tree (MB-Tree)
+rate control option within the <code>libx264</code> encoder in FFmpeg.
+You will learn what MB-Tree does, why you might want to enable or
+disable it, and the precise FFmpeg commands and parameters required to
+control its behavior to optimize your video encoding quality and file
+size.</p>
+<h2 id="what-is-mb-tree-rate-control">What is MB-Tree Rate Control?</h2>
+<p>Macroblock Tree (MB-Tree) is a temporary rate control algorithm in
+the <code>libx264</code> encoder. It analyzes the propagation of data
+across video frames over time. By tracking which macroblocks (blocks of
+pixels) are referenced repeatedly across multiple frames—such as a
+static background—MB-Tree allocates more bitrate to these “source”
+blocks. Conversely, it reduces the bitrate for blocks that are quickly
+replaced or rarely referenced (like fast-moving objects).</p>
+<p>By default, MB-Tree is enabled in <code>libx264</code> when using
+Constant Rate Factor (CRF) or Average Bitrate (ABR) encoding. While it
+generally improves compression efficiency by 10% to 20%, it can
+occasionally cause visual issues like color banding or blockiness in
+dark, flat, or high-motion scenes.</p>
+<h2 id="how-to-disable-mb-tree-in-ffmpeg">How to Disable MB-Tree in
+FFmpeg</h2>
+<p>If you notice pulsing artifacts, quality degradation in dark scenes,
+or excessive compression artifacts in detailed textures, you can disable
+MB-Tree. To turn off MB-Tree, pass the <code>no-mbtree=1</code> flag
+inside the <code>-x264-params</code> or <code>-x264opts</code> private
+option flags.</p>
+<p>Here is the standard FFmpeg command to disable MB-Tree:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-c:v</span> libx264 <span class="at">-crf</span> 20 <span class="at">-x264-params</span> no-mbtree=1 <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<h2 id="how-to-enable-mb-tree">How to Enable MB-Tree</h2>
+<p>Because MB-Tree is active by default, you do not need to explicitly
+declare it. However, if you want to ensure it is active—especially when
+overriding previous presets or configurations—you can explicitly enable
+it using:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-c:v</span> libx264 <span class="at">-crf</span> 20 <span class="at">-x264-params</span> mbtree=1 <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<h2 id="fine-tuning-mb-tree-with-lookahead">Fine-Tuning MB-Tree with
+Lookahead</h2>
+<p>MB-Tree relies heavily on the “lookahead” buffer, which dictates how
+many frames the encoder analyzes ahead of the current frame to map
+macroblock propagation. The default lookahead value is <code>40</code>
+frames.</p>
+<p>To make MB-Tree more effective (at the cost of higher RAM usage and
+slight latency), you can increase the lookahead frame count:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-c:v</span> libx264 <span class="at">-crf</span> 20 <span class="at">-x264-params</span> mbtree=1:rc-lookahead=60 <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<p>To decrease memory usage or latency, you can lower the lookahead
+value:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-c:v</span> libx264 <span class="at">-crf</span> 20 <span class="at">-x264-params</span> mbtree=1:rc-lookahead=20 <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<h2 id="when-to-keep-mb-tree-enabled-vs.-disabled">When to Keep MB-Tree
+Enabled vs. Disabled</h2>
+<ul>
+<li><strong>Keep Enabled (Default):</strong> Best for general video
+streaming, talking-head videos, desktop recordings, and standard movie
+encoding where you want the lowest possible file size for a target
+quality level.</li>
+<li><strong>Disable:</strong> Recommended for high-bitrate archival,
+complex animated content (which can suffer from banding), videos with
+high-contrast dark scenes, or scenarios where you require fast encoding
+with lower RAM consumption.</li>
+</ul></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

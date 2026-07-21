@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Use the FFmpeg drawgrid Filter - ffmpeg</title>
+    <meta name="description" content="This article provides a practical guide on how to use the drawgrid filter in FFmpeg to overlay a grid on your videos. You will learn the basic syntax, key parameters such as cell size, position, line thickness, and color, and see real-world examples rang">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/how-to-use-the-ffmpeg-drawgrid-filter">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Use the FFmpeg drawgrid Filter - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/how-to-use-the-ffmpeg-drawgrid-filter" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article provides a practical guide on how to use the drawgrid filter in FFmpeg to overlay a grid on your videos. You will learn the basic syntax, key parameters such as cell size, position, line thickness, and color, and see real-world examples rang" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="how-to-use-the-ffmpeg-drawgrid-filter">How to Use the FFmpeg
+drawgrid Filter</h1>
+<p>This article provides a practical guide on how to use the
+<code>drawgrid</code> filter in FFmpeg to overlay a grid on your videos.
+You will learn the basic syntax, key parameters such as cell size,
+position, line thickness, and color, and see real-world examples ranging
+from simple grids to creating a “rule of thirds” overlay for video
+analysis.</p>
+<p>The <code>drawgrid</code> filter in FFmpeg allows you to draw a grid
+of colored lines over an input video. This is highly useful for video
+analysis, alignment, calibration, or creating specific visual
+effects.</p>
+<h3 id="basic-syntax-and-parameters">Basic Syntax and Parameters</h3>
+<p>The basic syntax for the <code>drawgrid</code> filter is:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">-vf</span> <span class="st">&quot;drawgrid=w=width:h=height:x=x_offset:y=y_offset:c=color:t=thickness&quot;</span></span></code></pre></div>
+<p>Here are the primary parameters you can configure:</p>
+<ul>
+<li><strong><code>w</code> (or <code>width</code>):</strong> The width
+of each grid cell. This can be a pixel value or an expression (e.g.,
+<code>iw/3</code> for one-third of the input width).</li>
+<li><strong><code>h</code> (or <code>height</code>):</strong> The height
+of each grid cell.</li>
+<li><strong><code>x</code>:</strong> The horizontal offset for the first
+grid line (default is 0).</li>
+<li><strong><code>y</code>:</strong> The vertical offset for the first
+grid line (default is 0).</li>
+<li><strong><code>c</code> (or <code>color</code>):</strong> The color
+of the grid lines. You can use standard color names (like
+<code>red</code>, <code>blue</code>, <code>white</code>) or hex codes.
+You can also specify opacity, such as <code>white@0.5</code>.</li>
+<li><strong><code>t</code> (or <code>thickness</code>):</strong> The
+thickness of the grid lines in pixels (default is 1).</li>
+</ul>
+<h3 id="practical-examples">Practical Examples</h3>
+<h4 id="draw-a-simple-100x100-pixel-grid">1. Draw a Simple 100x100 Pixel
+Grid</h4>
+<p>To overlay a simple red grid where each square is 100 by 100 pixels,
+and the lines are 2 pixels thick, use the following command:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;drawgrid=w=100:h=100:t=2:c=red&quot;</span> output.mp4</span></code></pre></div>
+<h4 id="create-a-rule-of-thirds-grid">2. Create a “Rule of Thirds”
+Grid</h4>
+<p>For video editing and composition analysis, you may want to divide
+the screen into a 3x3 grid. You can achieve this by using the input
+width (<code>iw</code>) and input height (<code>ih</code>)
+variables:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;drawgrid=w=iw/3:h=ih/3:t=3:c=blue&quot;</span> output.mp4</span></code></pre></div>
+<p>This command automatically calculates the dimensions of the grid
+cells based on the resolution of the input video, drawing blue lines
+that divide the screen into equal thirds.</p>
+<h4 id="grid-with-offsets-and-semi-transparent-lines">3. Grid with
+Offsets and Semi-Transparent Lines</h4>
+<p>If you want to shift the grid starting point and make the lines less
+distracting, you can define offsets (<code>x</code> and <code>y</code>)
+and use a semi-transparent white color:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;drawgrid=x=50:y=50:w=200:h=200:t=1:c=white@0.4&quot;</span> output.mp4</span></code></pre></div>
+<p>In this example, the grid starts 50 pixels away from the top-left
+corner, and the white grid lines are rendered with 40% opacity.</p></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

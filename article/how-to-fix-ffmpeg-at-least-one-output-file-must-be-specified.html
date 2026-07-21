@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Fix FFmpeg At Least One Output File Must Be Specified - ffmpeg</title>
+    <meta name="description" content="The "At least one output file must be specified" error in FFmpeg is a common issue that occurs when the command-line tool cannot identify the destination file for your media conversion. This guide explains why this error happens, highlights the most comm">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/how-to-fix-ffmpeg-at-least-one-output-file-must-be-specified">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Fix FFmpeg At Least One Output File Must Be Specified - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/how-to-fix-ffmpeg-at-least-one-output-file-must-be-specified" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="The "At least one output file must be specified" error in FFmpeg is a common issue that occurs when the command-line tool cannot identify the destination file for your media conversion. This guide explains why this error happens, highlights the most comm" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1
+id="how-to-fix-ffmpeg-at-least-one-output-file-must-be-specified">How to
+Fix FFmpeg At Least One Output File Must Be Specified</h1>
+<p>The “At least one output file must be specified” error in FFmpeg is a
+common issue that occurs when the command-line tool cannot identify the
+destination file for your media conversion. This guide explains why this
+error happens, highlights the most common syntax mistakes that trigger
+it, and provides clear, step-by-step examples to help you correct your
+FFmpeg commands.</p>
+<h2 id="understand-ffmpeg-command-structure">Understand FFmpeg Command
+Structure</h2>
+<p>To fix this error, it helps to understand how FFmpeg reads your
+commands. FFmpeg expects arguments to be entered in a specific
+order:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="pp">[</span><span class="ss">global_options</span><span class="pp">]</span> <span class="pp">[</span><span class="ss">input_options</span><span class="pp">]</span> <span class="at">-i</span> input_file <span class="pp">[</span><span class="ss">output_options</span><span class="pp">]</span> output_file</span></code></pre></div>
+<p>FFmpeg parses commands from left to right. The output file must
+always be the very last argument in your command, and it must not be
+preceded by any flags (like <code>-i</code>) that define it as an
+input.</p>
+<hr />
+<h2 id="common-causes-and-solutions">Common Causes and Solutions</h2>
+<h3 id="the-output-file-is-missing">1. The Output File is Missing</h3>
+<p>The most straightforward reason for this error is simply forgetting
+to type the name of the output file at the end of your command.</p>
+<ul>
+<li><p><strong>Incorrect Command:</strong></p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-c:v</span> libx264</span></code></pre></div>
+<p><em>In this example, FFmpeg knows the input file and the video codec,
+but it does not know where to save the result.</em></p></li>
+<li><p><strong>Correct Command:</strong></p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-c:v</span> libx264 output.mp4</span></code></pre></div></li>
+</ul>
+<hr />
+<h3 id="output-options-placed-after-the-output-file">2. Output Options
+Placed After the Output File</h3>
+<p>If you place any settings, flags, or options after the designated
+output file name, FFmpeg will treat those options as a new set of
+instructions and assume you forgot to specify the final output
+destination.</p>
+<ul>
+<li><p><strong>Incorrect Command:</strong></p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 output.mp4 <span class="at">-an</span></span></code></pre></div>
+<p><em>Here, <code>-an</code> (which disables audio) is placed after
+<code>output.mp4</code>. FFmpeg assumes <code>output.mp4</code> is an
+input or a misplaced option, leaving no specified output.</em></p></li>
+<li><p><strong>Correct Command:</strong></p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-an</span> output.mp4</span></code></pre></div></li>
+</ul>
+<hr />
+<h3 id="missing-the--i-flag-before-the-input-file">3. Missing the
+<code>-i</code> Flag Before the Input File</h3>
+<p>If you forget to put the <code>-i</code> flag before your input file,
+FFmpeg will treat your input file as a global option and may mistake
+your intended output file as the input file instead.</p>
+<ul>
+<li><p><strong>Incorrect Command:</strong></p>
+<div class="sourceCode" id="cb6"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> input.mp4 output.mp4</span></code></pre></div></li>
+<li><p><strong>Correct Command:</strong></p>
+<div class="sourceCode" id="cb7"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 output.mp4</span></code></pre></div></li>
+</ul>
+<hr />
+<h3 id="unescaped-spaces-in-file-names">4. Unescaped Spaces in File
+Names</h3>
+<p>If your input or output file names contain spaces and are not wrapped
+in quotation marks, FFmpeg will split the file name into separate
+arguments. This disrupts the command sequence and triggers the
+error.</p>
+<ul>
+<li><p><strong>Incorrect Command:</strong></p>
+<div class="sourceCode" id="cb8"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 my holiday video.mp4</span></code></pre></div>
+<p><em>FFmpeg reads <code>my</code> as the output file, and then gets
+confused by the trailing <code>holiday video.mp4</code>
+arguments.</em></p></li>
+<li><p><strong>Correct Command:</strong> Wrap the file path in double
+quotes:</p>
+<div class="sourceCode" id="cb9"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="st">&quot;my holiday video.mp4&quot;</span></span></code></pre></div></li>
+</ul></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

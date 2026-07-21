@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FFmpeg Hardware Multi-Bitrate Live Transcoding - ffmpeg</title>
+    <meta name="description" content="This article explains how to efficiently transcode a single live input stream into multiple output bitrates using a single, hardware-accelerated pipeline in FFmpeg. By leveraging GPU acceleration (such as NVIDIA NVENC/NVDEC) and FFmpeg's hardware filter">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/ffmpeg-hardware-multi-bitrate-live-transcoding">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="FFmpeg Hardware Multi-Bitrate Live Transcoding - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/ffmpeg-hardware-multi-bitrate-live-transcoding" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article explains how to efficiently transcode a single live input stream into multiple output bitrates using a single, hardware-accelerated pipeline in FFmpeg. By leveraging GPU acceleration (such as NVIDIA NVENC/NVDEC) and FFmpeg's hardware filter" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="ffmpeg-hardware-multi-bitrate-live-transcoding">FFmpeg Hardware
+Multi-Bitrate Live Transcoding</h1>
+<p>This article explains how to efficiently transcode a single live
+input stream into multiple output bitrates using a single,
+hardware-accelerated pipeline in FFmpeg. By leveraging GPU acceleration
+(such as NVIDIA NVENC/NVDEC) and FFmpeg’s hardware filter graph, you can
+minimize CPU usage, eliminate system memory bottlenecks, and optimize
+delivery for adaptive bitrate (ABR) live streaming.</p>
+<h2 id="the-hardware-accelerated-pipeline-concept">The
+Hardware-Accelerated Pipeline Concept</h2>
+<p>To achieve maximum performance, the entire transcoding
+pipeline—decoding, scaling, and encoding—must remain inside the GPU’s
+video memory (VRAM). Copying video frames back and forth between system
+RAM (CPU) and VRAM (GPU) introduces latency and consumes significant
+system bandwidth.</p>
+<p>By using NVIDIA’s CUDA-accelerated tools within FFmpeg, we can ingest
+a stream, decode it to VRAM, split and scale it to various resolutions
+on the GPU, and encode those streams simultaneously using NVENC.</p>
+<h2 id="the-ffmpeg-command">The FFmpeg Command</h2>
+<p>Below is a production-ready FFmpeg command that takes a single 1080p
+live input and transcodes it into three distinct resolutions (1080p,
+720p, and 480p) using NVIDIA GPU acceleration, outputting an HLS
+directory structure with a master playlist.</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-hwaccel</span> cuda <span class="at">-hwaccel_output_format</span> cuda <span class="at">-i</span> rtmp://localhost/live/input <span class="dt">\</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>-filter_complex <span class="st">&quot;[0:v]split=3[v1][v2][v3]; </span><span class="dt">\</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="st">                 [v1]scale_cuda=1920:1080[out1]; </span><span class="dt">\</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="st">                 [v2]scale_cuda=1280:720[out2]; </span><span class="dt">\</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="st">                 [v3]scale_cuda=854:480[out3]&quot;</span> <span class="dt">\</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>-map <span class="st">&quot;[out1]&quot;</span> <span class="at">-c:v:0</span> h264_nvenc <span class="at">-b:v:0</span> 5000k <span class="at">-g</span> 50 <span class="at">-keyint_min</span> 50 <span class="at">-sc_threshold</span> 0 <span class="dt">\</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>-map <span class="st">&quot;[out2]&quot;</span> <span class="at">-c:v:1</span> h264_nvenc <span class="at">-b:v:1</span> 3000k <span class="at">-g</span> 50 <span class="at">-keyint_min</span> 50 <span class="at">-sc_threshold</span> 0 <span class="dt">\</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>-map <span class="st">&quot;[out3]&quot;</span> <span class="at">-c:v:2</span> h264_nvenc <span class="at">-b:v:2</span> 1400k <span class="at">-g</span> 50 <span class="at">-keyint_min</span> 50 <span class="at">-sc_threshold</span> 0 <span class="dt">\</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>-map 0:a <span class="at">-c:a:0</span> aac <span class="at">-b:a:0</span> 128k <span class="dt">\</span></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>-map 0:a <span class="at">-c:a:1</span> aac <span class="at">-b:a:1</span> 128k <span class="dt">\</span></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>-map 0:a <span class="at">-c:a:2</span> aac <span class="at">-b:a:2</span> 96k <span class="dt">\</span></span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>-f hls <span class="at">-hls_time</span> 2 <span class="at">-hls_playlist_type</span> event <span class="dt">\</span></span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>-master_pl_name master.m3u8 <span class="dt">\</span></span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>-var_stream_map <span class="st">&quot;v:0,a:0 v:1,a:1 v:2,a:2&quot;</span> /var/www/html/live/stream_%v.m3u8</span></code></pre></div>
+<h2 id="how-the-pipeline-works">How the Pipeline Works</h2>
+<h3 id="gpu-decoding-and-memory-management">1. GPU Decoding and Memory
+Management</h3>
+<ul>
+<li><code>-hwaccel cuda</code>: Tells FFmpeg to use CUDA to
+hardware-accelerate the decoding process of the input stream.</li>
+<li><code>-hwaccel_output_format cuda</code>: Forces the decoded frames
+to remain inside GPU memory (CUDA frames) rather than downloading them
+back to system memory.</li>
+</ul>
+<h3 id="hardware-accelerated-filtering">2. Hardware-Accelerated
+Filtering</h3>
+<ul>
+<li><code>[0:v]split=3[v1][v2][v3]</code>: This filter splits the single
+GPU memory pointer of the decoded video stream into three parallel
+pathways inside VRAM.</li>
+<li><code>scale_cuda=W:H</code>: Instead of the standard CPU-based
+<code>scale</code> filter, <code>scale_cuda</code> resizes the frames
+directly inside the GPU cores. This avoids bringing the video frames to
+the CPU for scaling.</li>
+</ul>
+<h3 id="dedicated-hardware-encoding">3. Dedicated Hardware Encoding</h3>
+<ul>
+<li><code>-c:v h264_nvenc</code>: Uses the physical NVIDIA NVENC ASIC on
+the graphics card to encode the streams.</li>
+<li><code>-g 50 -keyint_min 50 -sc_threshold 0</code>: These settings
+are crucial for Adaptive Bitrate (ABR) streaming. They force a strict
+Group of Pictures (GOP) size of 50 frames (2 seconds at 25 FPS) and
+disable scene change detection. This ensures that keyframes line up
+perfectly across all three output resolutions, allowing players to
+transition smoothly between qualities.</li>
+</ul>
+<h3 id="audio-mapping-and-hls-packager">4. Audio Mapping and HLS
+Packager</h3>
+<ul>
+<li>The audio is copied and encoded into different bitrates using the
+CPU-based <code>aac</code> encoder (since audio encoding consumes
+negligible system resources).</li>
+<li><code>-f hls</code>: Packets are packaged on-the-fly into HTTP Live
+Streaming (HLS) segments.</li>
+<li><code>-var_stream_map</code>: Maps the respective scaled video
+outputs to their corresponding audio streams, outputting a consolidated
+<code>master.m3u8</code> file for client playback.</li>
+</ul></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

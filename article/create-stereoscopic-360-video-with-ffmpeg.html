@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Stereoscopic 360 Video with FFmpeg - ffmpeg</title>
+    <meta name="description" content="This article provides a practical guide on how to use the command-line tool FFmpeg to merge separate left-eye and right-eye video feeds into a single stereoscopic 360-degree video suitable for VR headsets. You will learn the exact FFmpeg commands needed">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/create-stereoscopic-360-video-with-ffmpeg">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Create Stereoscopic 360 Video with FFmpeg - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/create-stereoscopic-360-video-with-ffmpeg" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article provides a practical guide on how to use the command-line tool FFmpeg to merge separate left-eye and right-eye video feeds into a single stereoscopic 360-degree video suitable for VR headsets. You will learn the exact FFmpeg commands needed" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="create-stereoscopic-360-video-with-ffmpeg">Create Stereoscopic
+360 Video with FFmpeg</h1>
+<p>This article provides a practical guide on how to use the
+command-line tool FFmpeg to merge separate left-eye and right-eye video
+feeds into a single stereoscopic 360-degree video suitable for VR
+headsets. You will learn the exact FFmpeg commands needed to stack your
+video files, configure the correct format for VR players, and prepare
+the output file for proper 3D playback.</p>
+<hr />
+<h2 id="understanding-the-stereoscopic-360-vr-format">Understanding the
+Stereoscopic 360 VR Format</h2>
+<p>To play a 3D 360-degree video in a VR headset, the left-eye and
+right-eye views must be combined into a single video file. The industry
+standard format for this is <strong>Top-Bottom (Over-Under)</strong>,
+where the top half of the frame contains the left-eye projection and the
+bottom half contains the right-eye projection.</p>
+<p>For 360-degree video, each eye’s input is typically in an
+equirectangular projection with a 2:1 aspect ratio (such as 4096x2048).
+When stacked vertically, the final video container will have a 1:1
+square aspect ratio (such as 4096x4096).</p>
+<h2 id="stacking-left-and-right-videos-vertically-top-bottom">Stacking
+Left and Right Videos Vertically (Top-Bottom)</h2>
+<p>To combine your separate left and right video files into a Top-Bottom
+stereoscopic layout, use FFmpeg’s <code>vstack</code> filter.</p>
+<p>Run the following command in your terminal:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> left_eye.mp4 <span class="at">-i</span> right_eye.mp4 <span class="at">-filter_complex</span> <span class="st">&quot;[0:v][1:v]vstack=inputs=2[v]&quot;</span> <span class="at">-map</span> <span class="st">&quot;[v]&quot;</span> <span class="at">-map</span> 0:a<span class="pp">?</span> <span class="at">-c:v</span> libx264 <span class="at">-crf</span> 18 <span class="at">-pix_fmt</span> yuv420p output_tb_360.mp4</span></code></pre></div>
+<h3 id="command-breakdown">Command Breakdown:</h3>
+<ul>
+<li><strong><code>-i left_eye.mp4 -i right_eye.mp4</code></strong>:
+Specifies the two input video files (left eye first, right eye
+second).</li>
+<li><strong><code>-filter_complex "[0:v][1:v]vstack=inputs=2[v]"</code></strong>:
+Takes the video streams of both inputs and stacks them vertically. The
+left eye <code>[0:v]</code> becomes the top half, and the right eye
+<code>[1:v]</code> becomes the bottom half.</li>
+<li><strong><code>-map "[v]"</code></strong>: Maps the stacked video
+filter output to the final file.</li>
+<li><strong><code>-map 0:a?</code></strong>: Copies the audio from the
+first input file (the question mark ensures the command doesn’t fail if
+the input has no audio).</li>
+<li><strong><code>-c:v libx264</code></strong>: Encodes the video using
+the H.264 codec, which is widely supported by VR headsets like the Meta
+Quest.</li>
+<li><strong><code>-crf 18</code></strong>: Sets the Constant Rate Factor
+for high-quality output (lower numbers mean higher quality; 18–22 is
+ideal for VR).</li>
+<li><strong><code>-pix_fmt yuv420p</code></strong>: Sets the pixel
+format to YUV 4:2:0, which is required for hardware decoding
+compatibility on most VR headsets.</li>
+</ul>
+<hr />
+<h2
+id="stacking-left-and-right-videos-horizontally-side-by-side">Stacking
+Left and Right Videos Horizontally (Side-by-Side)</h2>
+<p>While Top-Bottom is preferred for 360 VR, some players require a
+<strong>Side-by-Side (SBS)</strong> format. To stack the videos
+horizontally, use the <code>hstack</code> filter:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> left_eye.mp4 <span class="at">-i</span> right_eye.mp4 <span class="at">-filter_complex</span> <span class="st">&quot;[0:v][1:v]hstack=inputs=2[v]&quot;</span> <span class="at">-map</span> <span class="st">&quot;[v]&quot;</span> <span class="at">-map</span> 0:a<span class="pp">?</span> <span class="at">-c:v</span> libx264 <span class="at">-crf</span> 18 <span class="at">-pix_fmt</span> yuv420p output_sbs_360.mp4</span></code></pre></div>
+<hr />
+<h2 id="injecting-vr-spatial-metadata">Injecting VR Spatial
+Metadata</h2>
+<p>Simply stacking the videos is not enough for most VR players to
+automatically recognize the file as a 3D 360-degree video. Without
+spatial metadata, the player will display the video as a flat,
+split-screen video.</p>
+<h3 id="option-1-injecting-metadata-during-encoding-with-ffmpeg">Option
+1: Injecting metadata during encoding with FFmpeg</h3>
+<p>Modern versions of FFmpeg allow you to inject spherical metadata
+natively using the <code>-sv3d</code> option. Run this command to encode
+and inject the metadata simultaneously for a Top-Bottom (Over-Under)
+setup:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> left_eye.mp4 <span class="at">-i</span> right_eye.mp4 <span class="at">-filter_complex</span> <span class="st">&quot;[0:v][1:v]vstack=inputs=2[v]&quot;</span> <span class="at">-map</span> <span class="st">&quot;[v]&quot;</span> <span class="at">-map</span> 0:a<span class="pp">?</span> <span class="at">-c:v</span> libx264 <span class="at">-crf</span> 18 <span class="at">-pix_fmt</span> yuv420p <span class="at">-sv3d</span> <span class="st">&quot;type=equirectangular:layout=top-bottom&quot;</span> output_vr_ready.mp4</span></code></pre></div>
+<h3
+id="option-2-post-processing-with-google-spatial-media-metadata-tool">Option
+2: Post-processing with Google Spatial Media Metadata Tool</h3>
+<p>If your media player does not recognize the native FFmpeg metadata,
+you can use the command-line version of the <strong>Google Spatial Media
+Metadata Tool</strong> to inject the metadata after rendering:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">python</span> spatialmedia <span class="at">-i</span> <span class="at">--stereo</span><span class="op">=</span>top-bottom output_tb_360.mp4 output_vr_final.mp4</span></code></pre></div>
+<p>Once metadata is injected, transfer the final file to your VR headset
+or upload it to a compatible VR video platform for immersive 3D 360
+playback.</p></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

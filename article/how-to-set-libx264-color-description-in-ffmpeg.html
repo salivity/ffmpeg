@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Set libx264 Color Description in FFmpeg - ffmpeg</title>
+    <meta name="description" content="This article explains how to configure color description parameters—specifically color primaries, transfer characteristics, and matrix coefficients—when encoding video using the libx264 library in FFmpeg. Properly setting these parameters ensures acc">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/how-to-set-libx264-color-description-in-ffmpeg">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Set libx264 Color Description in FFmpeg - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/how-to-set-libx264-color-description-in-ffmpeg" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article explains how to configure color description parameters—specifically color primaries, transfer characteristics, and matrix coefficients—when encoding video using the libx264 library in FFmpeg. Properly setting these parameters ensures acc" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="how-to-set-libx264-color-description-in-ffmpeg">How to Set
+libx264 Color Description in FFmpeg</h1>
+<p>This article explains how to configure color description
+parameters—specifically color primaries, transfer characteristics, and
+matrix coefficients—when encoding video using the <code>libx264</code>
+library in FFmpeg. Properly setting these parameters ensures accurate
+color reproduction across different playback devices and streaming
+platforms, preventing issues like washed-out colors.</p>
+<p>When encoding video with <code>libx264</code>, you should explicitly
+define the color space metadata using three primary flags:
+<code>-color_primaries</code>, <code>-color_trc</code> (transfer
+characteristics), and <code>-colorspace</code> (matrix coefficients).
+You can also define the luma range using the <code>-color_range</code>
+flag.</p>
+<h3 id="core-color-description-parameters">Core Color Description
+Parameters</h3>
+<ol type="1">
+<li><strong><code>-color_primaries</code></strong>: Defines the color
+gamut (the coordinate system of the red, green, and blue
+primaries).</li>
+<li><strong><code>-color_trc</code></strong>: Defines the transfer
+characteristics (the opto-electronic transfer function/gamma
+curve).</li>
+<li><strong><code>-colorspace</code></strong>: Defines the matrix
+coefficients used to convert RGB to YUV.</li>
+<li><strong><code>-color_range</code></strong>: Defines whether the
+color levels are limited (broadcast/TV) or full (PC).</li>
+</ol>
+<h3 id="configuration-examples">Configuration Examples</h3>
+<h4 id="standard-hd-video-bt.709">1. Standard HD Video (BT.709)</h4>
+<p>For standard 1080p high-definition video, you should set these
+parameters to BT.709. This is the most common configuration for web
+delivery:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-c:v</span> libx264 <span class="at">-color_primaries</span> bt709 <span class="at">-color_trc</span> bt709 <span class="at">-colorspace</span> bt709 <span class="at">-color_range</span> tv output.mp4</span></code></pre></div>
+<h4 id="ultra-hd-4k-sdr-video-bt.2020-sdr">2. Ultra HD / 4K SDR Video
+(BT.2020 SDR)</h4>
+<p>For 4K Standard Dynamic Range video, use the BT.2020 color space
+flags:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-c:v</span> libx264 <span class="at">-color_primaries</span> bt2020 <span class="at">-color_trc</span> bt2020-10 <span class="at">-colorspace</span> bt2020nc <span class="at">-color_range</span> tv output.mp4</span></code></pre></div>
+<h4 id="full-range-rgb-to-limited-range-yuv">3. Full Range RGB to
+Limited Range YUV</h4>
+<p>If you are converting screen recordings or animations that use
+full-range RGB, it is best practice to enforce limited-range YUV with
+the correct matrix for standard web players:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-c:v</span> libx264 <span class="at">-pix_fmt</span> yuv420p <span class="at">-color_primaries</span> bt709 <span class="at">-color_trc</span> bt709 <span class="at">-colorspace</span> bt709 <span class="at">-color_range</span> tv output.mp4</span></code></pre></div>
+<h3 id="common-parameter-values">Common Parameter Values</h3>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th style="text-align: left;">Parameter</th>
+<th style="text-align: left;">Common Values</th>
+<th style="text-align: left;">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td
+style="text-align: left;"><strong><code>-color_primaries</code></strong></td>
+<td style="text-align: left;"><code>bt709</code>, <code>bt2020</code>,
+<code>smpte170m</code> (NTSC)</td>
+<td style="text-align: left;">Colorspace gamut standard</td>
+</tr>
+<tr>
+<td
+style="text-align: left;"><strong><code>-color_trc</code></strong></td>
+<td style="text-align: left;"><code>bt709</code>, <code>smpte2084</code>
+(HDR10), <code>arib-std-b67</code> (HLG)</td>
+<td style="text-align: left;">Gamma curve / Transfer function</td>
+</tr>
+<tr>
+<td
+style="text-align: left;"><strong><code>-colorspace</code></strong></td>
+<td style="text-align: left;"><code>bt709</code>, <code>bt2020nc</code>,
+<code>smpte170m</code></td>
+<td style="text-align: left;">RGB to YUV matrix coefficients</td>
+</tr>
+<tr>
+<td
+style="text-align: left;"><strong><code>-color_range</code></strong></td>
+<td style="text-align: left;"><code>tv</code> (limited/mpeg),
+<code>pc</code> (full/jpeg)</td>
+<td style="text-align: left;">Pixel value range (16-235 vs 0-255)</td>
+</tr>
+</tbody>
+</table>
+<p>Explicitly declaring these values writes the metadata directly into
+the H.264 bitstream VUI (Video Usability Information) parameters. This
+guarantees that media players (like VLC, QuickTime, and web browsers)
+interpret and render the colors exactly as intended.</p></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

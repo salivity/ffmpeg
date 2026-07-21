@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Detecting and Logging Dropped Video Frames in FFmpeg - ffmpeg</title>
+    <meta name="description" content="This article provides a practical guide on how to identify and log dropped frames during video processing using FFmpeg on a Linux environment. You will learn the specific command-line flags required to surface drop statistics, how to interpret the consol">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/detecting-and-logging-dropped-video-frames-in-ffmpeg">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Detecting and Logging Dropped Video Frames in FFmpeg - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/detecting-and-logging-dropped-video-frames-in-ffmpeg" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article provides a practical guide on how to identify and log dropped frames during video processing using FFmpeg on a Linux environment. You will learn the specific command-line flags required to surface drop statistics, how to interpret the consol" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="detecting-and-logging-dropped-video-frames-in-ffmpeg">Detecting
+and Logging Dropped Video Frames in FFmpeg</h1>
+<p>This article provides a practical guide on how to identify and log
+dropped frames during video processing using FFmpeg on a Linux
+environment. You will learn the specific command-line flags required to
+surface drop statistics, how to interpret the console output, and how to
+redirect these metrics into a dedicated log file for automated
+analysis.</p>
+<h3 id="understanding-dropped-frames-in-ffmpeg">Understanding Dropped
+Frames in FFmpeg</h3>
+<p>When FFmpeg processes a video—whether it is decoding, encoding, or
+streaming—it expects a consistent flow of timestamps. If your system
+encounters hardware bottlenecks (like high CPU utilization or slow disk
+I/O) or if the input live stream suffers from network jitter, FFmpeg may
+be forced to drop frames to keep up.</p>
+<p>By default, FFmpeg prints a summary of frame statistics to the
+standard error stream (<code>stderr</code>), but capturing the exact
+moment and frequency of dropped frames requires specific
+configuration.</p>
+<h3 id="the-standard-ffmpeg-command-for-monitoring-drops">The Standard
+FFmpeg Command for Monitoring Drops</h3>
+<p>To actively monitor frame drops during a conversion or streaming
+process, you can utilize the <code>-loglevel</code> and
+<code>-stats</code> flags. Here is a baseline command template:</p>
+<p><code>ffmpeg -i input.mp4 -loglevel info -vsync cfr output.mp4</code></p>
+<p>While the video processes, keep your eyes on the console status line.
+FFmpeg continuously updates a string that looks similar to this:</p>
+<p><code>frame=  412 fps= 30 q=28.0 size=    4608kB time=00:00:13.73 bitrate=2748.1kbits/s speed=0.98x drop=12</code></p>
+<p>The key metric here is <strong><code>drop=12</code></strong>. This
+explicitly tells you that 12 frames have been discarded since the
+processing started. If this number stays at 0, your system is processing
+the video smoothly without losing data.</p>
+<h3 id="logging-dropped-frames-to-a-file">Logging Dropped Frames to a
+File</h3>
+<p>If you are running automated scripts or need to analyze the logs
+after a long encode, viewing the live console isn’t enough. Because
+FFmpeg outputs its progress reports to <code>stderr</code>, you must
+redirect that stream to a text file.</p>
+<p>You can capture the full operational log by appending redirection
+operators at the end of your Linux command:</p>
+<p><code>ffmpeg -i input.mp4 output.mp4 &gt; ffmpeg_output.log 2&gt;&amp;1</code></p>
+<p>In this command:</p>
+<ul>
+<li><code>&gt;</code> redirects the standard output
+(<code>stdout</code>) to <code>ffmpeg_output.log</code>.</li>
+<li><code>2&gt;&amp;1</code> forces the standard error
+(<code>stderr</code>), which contains the drop statistics, to be sent to
+the same file.</li>
+</ul>
+<h3 id="filtering-the-log-for-dropped-frames">Filtering the Log for
+Dropped Frames</h3>
+<p>Because the resulting log file can be incredibly dense, you can use
+standard Linux command-line utilities like <code>grep</code> to isolate
+the instances where frames were dropped.</p>
+<p>If you want to scan an existing log file specifically for lines
+containing drop statistics, use the following command:</p>
+<p><code>grep -E "drop=[1-9]" ffmpeg_output.log</code></p>
+<p>This regular expression filters the log and displays only the lines
+where the <code>drop=</code> count is greater than zero, allowing you to
+pinpoint exactly when the performance degradation occurred during the
+video timeline.</p></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

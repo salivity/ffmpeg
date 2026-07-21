@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Overlay Video in Video with Border in FFmpeg - ffmpeg</title>
+    <meta name="description" content="This guide demonstrates how to overlay one video on top of another—commonly known as a picture-in-picture effect—and apply a custom-colored border to the overlay video using FFmpeg. You will learn the exact command-line syntax, how the padding and ov">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/how-to-overlay-video-in-video-with-border-in-ffmpeg">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Overlay Video in Video with Border in FFmpeg - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/how-to-overlay-video-in-video-with-border-in-ffmpeg" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This guide demonstrates how to overlay one video on top of another—commonly known as a picture-in-picture effect—and apply a custom-colored border to the overlay video using FFmpeg. You will learn the exact command-line syntax, how the padding and ov" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="how-to-overlay-video-in-video-with-border-in-ffmpeg">How to
+Overlay Video in Video with Border in FFmpeg</h1>
+<p>This guide demonstrates how to overlay one video on top of
+another—commonly known as a picture-in-picture effect—and apply a
+custom-colored border to the overlay video using FFmpeg. You will learn
+the exact command-line syntax, how the padding and overlay filters work,
+and how to customize the border size, color, and position to suit your
+needs.</p>
+<h3 id="the-ffmpeg-command">The FFmpeg Command</h3>
+<p>To achieve this effect, you need to scale the overlay video, apply a
+pad filter to create the border, and then use the overlay filter to
+position it on top of the background video.</p>
+<p>Run the following command in your terminal:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> background.mp4 <span class="at">-i</span> overlay.mp4 <span class="at">-filter_complex</span> <span class="st">&quot;[1:v]scale=400:-1,pad=iw+10:ih+10:5:5:color=red[pip];[0:v][pip]overlay=W-w-20:20&quot;</span> <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<h3 id="how-the-command-works">How the Command Works</h3>
+<p>The command uses a <code>filter_complex</code> graph to process both
+video streams. Here is the step-by-step breakdown of how the filters
+work:</p>
+<ol type="1">
+<li><strong><code>[1:v]scale=400:-1</code></strong>: This takes the
+second input video (<code>overlay.mp4</code>) and scales its width to
+400 pixels. The <code>-1</code> automatically calculates the height to
+maintain the original aspect ratio.</li>
+<li><strong><code>pad=iw+10:ih+10:5:5:color=red</code></strong>: This
+filter creates the custom border.
+<ul>
+<li><code>iw+10</code> and <code>ih+10</code> increase the overall width
+and height of the overlay frame by 10 pixels (adding 5 pixels to each
+side).</li>
+<li>The <code>5:5</code> offset places the original video 5 pixels from
+the top and left of the new, larger frame.</li>
+<li><code>color=red</code> fills the padded area with your custom color.
+You can use standard color names (like <code>blue</code>,
+<code>green</code>, <code>yellow</code>) or hex codes (like
+<code>0x00FF00</code>).</li>
+<li><code>[pip]</code> names this processed stream “pip”
+(picture-in-picture).</li>
+</ul></li>
+<li><strong><code>[0:v][pip]overlay=W-w-20:20</code></strong>: This
+merges the two streams.
+<ul>
+<li><code>[0:v]</code> is the background video, and <code>[pip]</code>
+is the modified overlay.</li>
+<li><code>W-w-20</code> places the overlay on the right side, 20 pixels
+away from the edge (<code>W</code> is background width, <code>w</code>
+is overlay width).</li>
+<li><code>20</code> places the overlay 20 pixels down from the top
+edge.</li>
+</ul></li>
+<li><strong><code>-c:a copy</code></strong>: This copies the audio
+stream from the background video without re-encoding it, which saves
+processing time.</li>
+</ol>
+<h3 id="customizing-your-setup">Customizing Your Setup</h3>
+<ul>
+<li><strong>Change Border Thickness</strong>: To make a thicker 10-pixel
+border, increase the padding values. Use
+<code>pad=iw+20:ih+20:10:10:color=blue</code>.</li>
+<li><strong>Change Position</strong>:
+<ul>
+<li>For the top-left corner: <code>overlay=20:20</code></li>
+<li>For the bottom-right corner: <code>overlay=W-w-20:H-h-20</code>
+(where <code>H</code> is background height and <code>h</code> is overlay
+height).</li>
+<li>For the bottom-left corner: <code>overlay=20:H-h-20</code></li>
+</ul></li>
+</ul></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

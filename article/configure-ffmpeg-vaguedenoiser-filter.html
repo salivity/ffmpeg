@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Configure FFmpeg Vaguedenoiser Filter - ffmpeg</title>
+    <meta name="description" content="This article explains how to configure the vaguedenoiser filter in FFmpeg to effectively reduce video noise. It provides a direct overview of how to adjust the noise threshold, select the optimal thresholding method, and configure the wavelet properties">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/configure-ffmpeg-vaguedenoiser-filter">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Configure FFmpeg Vaguedenoiser Filter - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/configure-ffmpeg-vaguedenoiser-filter" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article explains how to configure the vaguedenoiser filter in FFmpeg to effectively reduce video noise. It provides a direct overview of how to adjust the noise threshold, select the optimal thresholding method, and configure the wavelet properties" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="configure-ffmpeg-vaguedenoiser-filter">Configure FFmpeg
+Vaguedenoiser Filter</h1>
+<p>This article explains how to configure the <code>vaguedenoiser</code>
+filter in FFmpeg to effectively reduce video noise. It provides a direct
+overview of how to adjust the noise threshold, select the optimal
+thresholding method, and configure the wavelet properties to balance
+video quality and processing performance.</p>
+<p>The <code>vaguedenoiser</code> filter is a wavelet-based video
+denoiser that transforms video frames into the frequency domain, filters
+out noise coefficients, and reconstructs the image. It is highly
+effective at removing high-frequency noise while preserving image
+details.</p>
+<h3 id="setting-the-denoising-threshold-threshold">1. Setting the
+Denoising Threshold (<code>threshold</code>)</h3>
+<p>The <code>threshold</code> parameter determines the strength of the
+noise reduction. Coefficients below this value are treated as noise and
+are attenuated or discarded.</p>
+<ul>
+<li><strong>Parameter:</strong> <code>threshold</code> (or
+<code>t</code>)</li>
+<li><strong>Value:</strong> A float value (default is
+<code>2</code>).</li>
+<li><strong>Usage:</strong> Higher values result in stronger denoising
+but can blur fine textures and details. Lower values preserve more
+details but leave more noise in the video.</li>
+</ul>
+<h3 id="choosing-the-filtering-method-method">2. Choosing the Filtering
+Method (<code>method</code>)</h3>
+<p>The <code>method</code> parameter determines how the filter handles
+coefficients that fall below or near the threshold.</p>
+<ul>
+<li><strong>Parameter:</strong> <code>method</code> (or
+<code>m</code>)</li>
+<li><strong>Values:</strong>
+<ul>
+<li><code>hard</code> (or <code>0</code>): Hard thresholding. This
+completely discards coefficients below the threshold and leaves those
+above unchanged. It is highly effective but can introduce “ringing”
+artifacts.</li>
+<li><code>soft</code> (or <code>1</code>): Soft thresholding. This
+discards coefficients below the threshold and shrinks the remaining
+coefficients. It produces a smoother image but can cause overall
+blurring.</li>
+<li><code>garrote</code> (or <code>2</code>): Non-negative garrote
+thresholding (default). This acts as an intermediate approach,
+preserving sharp edges better than soft thresholding while avoiding the
+harsh artifacts of hard thresholding.</li>
+</ul></li>
+</ul>
+<h3 id="managing-wavelet-properties-nsteps">3. Managing Wavelet
+Properties (<code>nsteps</code>)</h3>
+<p>While the <code>vaguedenoiser</code> filter uses a fixed
+Cohen-Daubechies-Feauveau 9/7 wavelet type, you can configure how the
+wavelet decomposition is applied using the <code>nsteps</code>
+parameter.</p>
+<ul>
+<li><strong>Parameter:</strong> <code>nsteps</code> (or
+<code>n</code>)</li>
+<li><strong>Value:</strong> An integer (default is <code>6</code>).</li>
+<li><strong>Usage:</strong> This defines the number of times the
+low-pass filter is applied. Higher values allow the filter to target
+larger, lower-frequency noise patterns at the expense of higher CPU
+usage. Fewer steps speed up processing and target only fine,
+high-frequency grain.</li>
+</ul>
+<h3 id="fine-tuning-denoising-percentage-percent">4. Fine-Tuning
+Denoising Percentage (<code>percent</code>)</h3>
+<p>To prevent the video from looking overly processed or plastic, you
+can mix the original frames with the denoised frames using the
+<code>percent</code> parameter.</p>
+<ul>
+<li><strong>Parameter:</strong> <code>percent</code> (or
+<code>p</code>)</li>
+<li><strong>Value:</strong> A float from <code>0</code> to
+<code>100</code> (default is <code>85</code>).</li>
+<li><strong>Usage:</strong> Setting this to <code>100</code> applies
+full denoising. Lowering this value mixes some of the original video
+back in, preserving a natural grain structure.</li>
+</ul>
+<h3 id="example-commands">Example Commands</h3>
+<p>To apply the filter with a moderate threshold of <code>3</code>,
+using the <code>soft</code> thresholding method, and <code>4</code>
+decomposition steps:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;vaguedenoiser=threshold=3:method=soft:nsteps=4&quot;</span> output.mp4</span></code></pre></div>
+<p>To apply a more natural-looking denoise using the default
+<code>garrote</code> method, a threshold of <code>2.5</code>, and
+retaining <code>20%</code> of the original noise:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;vaguedenoiser=threshold=2.5:method=garrote:nsteps=5:percent=80&quot;</span> output.mp4</span></code></pre></div></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

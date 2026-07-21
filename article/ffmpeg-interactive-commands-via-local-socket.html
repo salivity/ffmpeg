@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FFmpeg Interactive Commands via Local Socket - ffmpeg</title>
+    <meta name="description" content="This article explains how to dynamically control FFmpeg filters during runtime using interactive commands sent through a local Unix socket. You will learn how to configure FFmpeg with the ZeroMQ (zmq) filter, set up a local IPC socket, and send real-time">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/ffmpeg-interactive-commands-via-local-socket">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="FFmpeg Interactive Commands via Local Socket - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/ffmpeg-interactive-commands-via-local-socket" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article explains how to dynamically control FFmpeg filters during runtime using interactive commands sent through a local Unix socket. You will learn how to configure FFmpeg with the ZeroMQ (zmq) filter, set up a local IPC socket, and send real-time" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="ffmpeg-interactive-commands-via-local-socket">FFmpeg Interactive
+Commands via Local Socket</h1>
+<p>This article explains how to dynamically control FFmpeg filters
+during runtime using interactive commands sent through a local Unix
+socket. You will learn how to configure FFmpeg with the ZeroMQ
+(<code>zmq</code>) filter, set up a local IPC socket, and send real-time
+commands to modify video and audio filter parameters on the fly without
+restarting your processing pipeline.</p>
+<hr />
+<h3 id="prerequisites">Prerequisites</h3>
+<p>To send interactive commands to FFmpeg via a local socket, your
+FFmpeg build must be compiled with ZeroMQ support. You can verify this
+by running the following command in your terminal:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-filters</span> <span class="kw">|</span> <span class="fu">grep</span> zmq</span></code></pre></div>
+<p>If you see <code>zmq</code> (video) and <code>azmq</code> (audio) in
+the output, your installation is ready.</p>
+<hr />
+<h3 id="step-1-start-ffmpeg-with-the-zmq-filter">Step 1: Start FFmpeg
+with the ZMQ Filter</h3>
+<p>The <code>zmq</code> filter acts as a local socket server inside
+FFmpeg. It listens for incoming commands and dispatches them to target
+filters in your filtergraph.</p>
+<p>To bind FFmpeg to a local Unix domain socket (IPC), use the following
+syntax:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;zmq=bind_address=&#39;ipc:///tmp/ffmpeg.sock&#39;,drawtext=fontfile=Arial.ttf:text=&#39;Initial Text&#39;:x=10:y=10&quot;</span> output.mp4</span></code></pre></div>
+<p>In this command: *
+<code>zmq=bind_address='ipc:///tmp/ffmpeg.sock'</code> creates a local
+socket file at <code>/tmp/ffmpeg.sock</code>. * <code>drawtext</code> is
+the target filter we want to control interactively. By default, FFmpeg
+assigns it the identifier <code>Parsed_drawtext_1</code>.</p>
+<hr />
+<h3 id="step-2-write-a-client-to-send-interactive-commands">Step 2:
+Write a Client to Send Interactive Commands</h3>
+<p>Because the <code>zmq</code> filter utilizes ZeroMQ’s
+<code>REP</code> (Reply) socket pattern, you cannot use standard utility
+tools like <code>netcat</code> (<code>nc</code>) to write raw text
+directly to the socket. Instead, you must use a ZeroMQ-compatible
+client.</p>
+<p>Below is a simple Python script using the <code>pyzmq</code> library
+to send interactive commands to the FFmpeg local socket.</p>
+<h4 id="install-the-dependency">Install the Dependency</h4>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">pip</span> install pyzmq</span></code></pre></div>
+<h4 id="the-python-command-sender-script-send_command.py">The Python
+Command Sender Script (<code>send_command.py</code>)</h4>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> zmq</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> sys</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Define the local socket address</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>socket_address <span class="op">=</span> <span class="st">&quot;ipc:///tmp/ffmpeg.sock&quot;</span></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Initialize ZeroMQ context and REQ (Request) socket</span></span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>context <span class="op">=</span> zmq.Context()</span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>socket <span class="op">=</span> context.socket(zmq.REQ)</span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>socket.<span class="ex">connect</span>(socket_address)</span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a><span class="co"># Command format: [Target Filter] [Command] [Arguments]</span></span>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a><span class="co"># Example: Parsed_drawtext_1 reinit text=&#39;Dynamic Text Update&#39;</span></span>
+<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a>command <span class="op">=</span> <span class="st">&quot;Parsed_drawtext_1 reinit text=&#39;Dynamic Text Update&#39;&quot;</span></span>
+<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-16"><a href="#cb4-16" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f&quot;Sending command: </span><span class="sc">{</span>command<span class="sc">}</span><span class="ss">&quot;</span>)</span>
+<span id="cb4-17"><a href="#cb4-17" aria-hidden="true" tabindex="-1"></a>socket.send_string(command)</span>
+<span id="cb4-18"><a href="#cb4-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-19"><a href="#cb4-19" aria-hidden="true" tabindex="-1"></a><span class="co"># Wait for FFmpeg&#39;s response</span></span>
+<span id="cb4-20"><a href="#cb4-20" aria-hidden="true" tabindex="-1"></a>reply <span class="op">=</span> socket.recv_string()</span>
+<span id="cb4-21"><a href="#cb4-21" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f&quot;FFmpeg Reply: </span><span class="sc">{</span>reply<span class="sc">}</span><span class="ss">&quot;</span>)</span></code></pre></div>
+<p>Run this script while FFmpeg is running, and the text overlay on your
+output video will instantly change to “Dynamic Text Update”.</p>
+<hr />
+<h3 id="step-3-using-the-sendcmd-filter-via-socket">Step 3: Using the
+<code>sendcmd</code> Filter via Socket</h3>
+<p>If you prefer to use the <code>sendcmd</code> (or
+<code>asendcmd</code>) filter to queue up multiple timed commands
+interactively, you can target the <code>sendcmd</code> filter directly
+through the ZMQ socket.</p>
+<h4 id="run-ffmpeg-with-sendcmd-and-zmq">Run FFmpeg with
+<code>sendcmd</code> and <code>zmq</code>:</h4>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;zmq=bind_address=&#39;ipc:///tmp/ffmpeg.sock&#39;,sendcmd=f=NULL,drawtext=text=&#39;Static&#39;&quot;</span> output.mp4</span></code></pre></div>
+<h4 id="send-commands-to-sendcmd">Send Commands to
+<code>sendcmd</code>:</h4>
+<p>The <code>sendcmd</code> filter accepts a <code>reinit</code> command
+followed by a timeline-based command string. You can send this block
+over the ZMQ socket using your Python script:</p>
+<div class="sourceCode" id="cb6"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>command <span class="op">=</span> <span class="st">&quot;Parsed_sendcmd_0 reinit 2.0 drawtext reinit text=&#39;Updated after 2 seconds&#39;&quot;</span></span></code></pre></div>
+<p>When FFmpeg receives this command via the local socket, it passes the
+instruction to <code>sendcmd</code>, which schedules the text change to
+execute exactly at the 2.0-second mark of the video playback
+timeline.</p></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

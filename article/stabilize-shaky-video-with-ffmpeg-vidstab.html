@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stabilize Shaky Video with FFmpeg Vidstab - ffmpeg</title>
+    <meta name="description" content="This guide explains how to use the FFmpeg vidstabdetect and vidstabtransform filters to stabilize shaky video footage. You will learn how to run a two-pass stabilization process and configure virtual camera panning to create smooth, professional-looking">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/stabilize-shaky-video-with-ffmpeg-vidstab">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Stabilize Shaky Video with FFmpeg Vidstab - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/stabilize-shaky-video-with-ffmpeg-vidstab" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This guide explains how to use the FFmpeg vidstabdetect and vidstabtransform filters to stabilize shaky video footage. You will learn how to run a two-pass stabilization process and configure virtual camera panning to create smooth, professional-looking" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="stabilize-shaky-video-with-ffmpeg-vidstab">Stabilize Shaky Video
+with FFmpeg Vidstab</h1>
+<p>This guide explains how to use the FFmpeg <code>vidstabdetect</code>
+and <code>vidstabtransform</code> filters to stabilize shaky video
+footage. You will learn how to run a two-pass stabilization process and
+configure virtual camera panning to create smooth, professional-looking
+video transitions.</p>
+<p>To stabilize a video using FFmpeg’s <code>vid.stab</code> library,
+you must perform a two-pass process. The first pass analyzes the video’s
+motion, and the second pass applies the stabilization using virtual
+camera panning to smooth out the shakes.</p>
+<h3 id="step-1-analyze-the-video-first-pass">Step 1: Analyze the Video
+(First Pass)</h3>
+<p>The first step uses the <code>vidstabdetect</code> filter to analyze
+the video frames and generate a file containing motion data (usually
+named <code>transforms.trf</code>).</p>
+<p>Run the following command:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> vidstabdetect=shakiness=10:accuracy=15:result=transforms.trf <span class="at">-f</span> null <span class="at">-</span></span></code></pre></div>
+<ul>
+<li><strong><code>shakiness=10</code></strong>: Sets how shaky the
+original video is (on a scale from 1 to 10). A higher value is better
+for very shaky footage.</li>
+<li><strong><code>accuracy=15</code></strong>: Determines the accuracy
+of the detection (from 1 to 15). Higher values yield better results but
+take longer to process.</li>
+<li><strong><code>result=transforms.trf</code></strong>: The path where
+the motion data file will be saved.</li>
+<li><strong><code>-f null -</code></strong>: Tells FFmpeg not to write
+an output video file during this analysis pass, saving processing
+time.</li>
+</ul>
+<h3 id="step-2-apply-stabilization-and-virtual-panning-second-pass">Step
+2: Apply Stabilization and Virtual Panning (Second Pass)</h3>
+<p>Once the <code>transforms.trf</code> file is generated, you use the
+<code>vidstabtransform</code> filter to read this data and render the
+stabilized video. This is where you configure virtual camera panning to
+smooth out transitions.</p>
+<p>Run the following command:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> vidstabtransform=input=transforms.trf:smoothing=30:maxshift=100:maxangle=-1:crop=black:zoom=5 output.mp4</span></code></pre></div>
+<ul>
+<li><strong><code>input=transforms.trf</code></strong>: Directs the
+filter to the motion data file created in the first step.</li>
+<li><strong><code>smoothing=30</code></strong>: Controls the virtual
+camera panning. This value represents the number of frames to look ahead
+and behind to smooth the camera path. A higher number (e.g., 30–50)
+results in a smoother, more gradual “pan” effect, while lower numbers
+keep the camera closer to the original movement.</li>
+<li><strong><code>maxshift=100</code></strong>: Sets the maximum number
+of pixels the image can be shifted to compensate for shakiness.</li>
+<li><strong><code>maxangle=-1</code></strong>: Sets the maximum angle in
+radians for camera rotation. A value of <code>-1</code> allows the
+filter to calculate the optimal rotation limit automatically.</li>
+<li><strong><code>crop=black</code></strong>: Specifies what to do with
+the empty borders created by shifting the video. Setting this to
+<code>black</code> leaves black borders, which allows you to see the
+stabilization boundary.</li>
+<li><strong><code>zoom=5</code></strong>: Zooms into the video by 5% to
+crop out the black borders generated by the camera stabilization
+movement. Adjust this value depending on how much shifting occurs.</li>
+</ul></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Load Multi-Threaded ffmpeg.wasm and Configure COOP/COEP - ffmpeg</title>
+    <meta name="description" content="This article provides a step-by-step guide on how to load and run the multi-threaded version of ffmpeg.wasm in your web applications. You will learn how to set up the necessary Cross-Origin Opener Policy (COOP) and Cross-Origin Embedder Policy (COEP) hea">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/load-multi-threaded-ffmpeg-wasm-and-configure-coop-coep">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Load Multi-Threaded ffmpeg.wasm and Configure COOP/COEP - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/load-multi-threaded-ffmpeg-wasm-and-configure-coop-coep" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article provides a step-by-step guide on how to load and run the multi-threaded version of ffmpeg.wasm in your web applications. You will learn how to set up the necessary Cross-Origin Opener Policy (COOP) and Cross-Origin Embedder Policy (COEP) hea" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="load-multi-threaded-ffmpeg.wasm-and-configure-coopcoep">Load
+Multi-Threaded ffmpeg.wasm and Configure COOP/COEP</h1>
+<p>This article provides a step-by-step guide on how to load and run the
+multi-threaded version of <code>ffmpeg.wasm</code> in your web
+applications. You will learn how to set up the necessary Cross-Origin
+Opener Policy (COOP) and Cross-Origin Embedder Policy (COEP) headers on
+your server to enable <code>SharedArrayBuffer</code> support, followed
+by the JavaScript code required to initialize the multi-threaded FFmpeg
+core.</p>
+<h2 id="why-coop-and-coep-headers-are-required">Why COOP and COEP
+Headers are Required</h2>
+<p>Multi-threaded <code>ffmpeg.wasm</code> relies on Web Workers and
+<code>SharedArrayBuffer</code> to share memory across multiple threads.
+Due to security vulnerabilities like Spectre, modern web browsers
+restrict the use of <code>SharedArrayBuffer</code> by default.</p>
+<p>To enable this feature, your server must serve the HTML page with
+specific HTTP response headers that place the document in a secure,
+isolated context.</p>
+<h3 id="the-required-headers">The Required Headers</h3>
+<p>You must configure your web server to send the following two HTTP
+headers:</p>
+<pre class="http"><code>Cross-Origin-Opener-Policy: same-origin
+Cross-Origin-Embedder-Policy: require-corp</code></pre>
+<h3 id="server-configuration-examples">Server Configuration
+Examples</h3>
+<h4 id="node.js-express">Node.js (Express)</h4>
+<p>If you are using Express, you can set these headers using
+middleware:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> express <span class="op">=</span> <span class="pp">require</span>(<span class="st">&#39;express&#39;</span>)<span class="op">;</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> app <span class="op">=</span> <span class="fu">express</span>()<span class="op">;</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>app<span class="op">.</span><span class="fu">use</span>((req<span class="op">,</span> res<span class="op">,</span> next) <span class="kw">=&gt;</span> {</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>  res<span class="op">.</span><span class="fu">setHeader</span>(<span class="st">&#39;Cross-Origin-Opener-Policy&#39;</span><span class="op">,</span> <span class="st">&#39;same-origin&#39;</span>)<span class="op">;</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>  res<span class="op">.</span><span class="fu">setHeader</span>(<span class="st">&#39;Cross-Origin-Embedder-Policy&#39;</span><span class="op">,</span> <span class="st">&#39;require-corp&#39;</span>)<span class="op">;</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">next</span>()<span class="op">;</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>})<span class="op">;</span></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>app<span class="op">.</span><span class="fu">use</span>(express<span class="op">.</span><span class="fu">static</span>(<span class="st">&#39;public&#39;</span>))<span class="op">;</span></span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>app<span class="op">.</span><span class="fu">listen</span>(<span class="dv">3000</span>)<span class="op">;</span></span></code></pre></div>
+<h4 id="nginx">Nginx</h4>
+<p>For an Nginx server, add these directives to your configuration
+block:</p>
+<pre class="nginx"><code>server {
+    listen 80;
+    server_name localhost;
+
+    location / {
+        add_header Cross-Origin-Opener-Policy &quot;same-origin&quot;;
+        add_header Cross-Origin-Embedder-Policy &quot;require-corp&quot;;
+        root /usr/share/nginx/html;
+        index index.html;
+    }
+}</code></pre>
+<h4 id="next.js-next.config.js">Next.js
+(<code>next.config.js</code>)</h4>
+<p>If you are using Next.js, configure the headers in your configuration
+file:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>module<span class="op">.</span><span class="at">exports</span> <span class="op">=</span> {</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">async</span> <span class="fu">headers</span>() {</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> [</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>      {</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>        <span class="dt">source</span><span class="op">:</span> <span class="st">&#39;/(.*)&#39;</span><span class="op">,</span></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>        <span class="dt">headers</span><span class="op">:</span> [</span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>          {</span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>            <span class="dt">key</span><span class="op">:</span> <span class="st">&#39;Cross-Origin-Opener-Policy&#39;</span><span class="op">,</span></span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>            <span class="dt">value</span><span class="op">:</span> <span class="st">&#39;same-origin&#39;</span><span class="op">,</span></span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>          }<span class="op">,</span></span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a>          {</span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a>            <span class="dt">key</span><span class="op">:</span> <span class="st">&#39;Cross-Origin-Embedder-Policy&#39;</span><span class="op">,</span></span>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a>            <span class="dt">value</span><span class="op">:</span> <span class="st">&#39;require-corp&#39;</span><span class="op">,</span></span>
+<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a>          }<span class="op">,</span></span>
+<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a>        ]<span class="op">,</span></span>
+<span id="cb4-16"><a href="#cb4-16" aria-hidden="true" tabindex="-1"></a>      }<span class="op">,</span></span>
+<span id="cb4-17"><a href="#cb4-17" aria-hidden="true" tabindex="-1"></a>    ]<span class="op">;</span></span>
+<span id="cb4-18"><a href="#cb4-18" aria-hidden="true" tabindex="-1"></a>  }<span class="op">,</span></span>
+<span id="cb4-19"><a href="#cb4-19" aria-hidden="true" tabindex="-1"></a>}<span class="op">;</span></span></code></pre></div>
+<hr />
+<h2 id="loading-multi-threaded-ffmpeg.wasm">Loading Multi-Threaded
+ffmpeg.wasm</h2>
+<p>Once the headers are configured, you can load the multi-threaded
+version of <code>ffmpeg.wasm</code> in your frontend application. You
+must use the multi-threaded version of the core library
+(<code>@ffmpeg/core-mt</code>) and explicitly define the worker URL
+during initialization.</p>
+<h3 id="step-1-install-dependencies">Step 1: Install Dependencies</h3>
+<p>Install the latest versions of <code>@ffmpeg/ffmpeg</code> and
+<code>@ffmpeg/util</code>:</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="ex">npm</span> install @ffmpeg/ffmpeg @ffmpeg/util</span></code></pre></div>
+<h3 id="step-2-initialize-and-load-ffmpeg">Step 2: Initialize and Load
+FFmpeg</h3>
+<p>Import the required modules and load the multi-threaded core assets.
+Using a CDN like unpkg is standard, but you can also host these files
+locally on your server.</p>
+<div class="sourceCode" id="cb6"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> { FFmpeg } <span class="im">from</span> <span class="st">&#39;@ffmpeg/ffmpeg&#39;</span><span class="op">;</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> { toBlobURL } <span class="im">from</span> <span class="st">&#39;@ffmpeg/util&#39;</span><span class="op">;</span></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> ffmpeg <span class="op">=</span> <span class="kw">new</span> <span class="fu">FFmpeg</span>()<span class="op">;</span></span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a><span class="kw">async</span> <span class="kw">function</span> <span class="fu">loadMultiThreadedFFmpeg</span>() {</span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>  <span class="co">// Use the multi-threaded (core-mt) version of ffmpeg.wasm</span></span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> baseURL <span class="op">=</span> <span class="st">&#39;https://unpkg.com/@ffmpeg/core-mt@0.12.6/dist/esm&#39;</span><span class="op">;</span></span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>  <span class="cf">try</span> {</span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a>    <span class="cf">await</span> ffmpeg<span class="op">.</span><span class="fu">load</span>({</span>
+<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a>      <span class="dt">coreURL</span><span class="op">:</span> <span class="cf">await</span> <span class="fu">toBlobURL</span>(<span class="vs">`</span><span class="sc">${</span>baseURL<span class="sc">}</span><span class="vs">/ffmpeg-core.js`</span><span class="op">,</span> <span class="st">&#39;text/javascript&#39;</span>)<span class="op">,</span></span>
+<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a>      <span class="dt">wasmURL</span><span class="op">:</span> <span class="cf">await</span> <span class="fu">toBlobURL</span>(<span class="vs">`</span><span class="sc">${</span>baseURL<span class="sc">}</span><span class="vs">/ffmpeg-core.wasm`</span><span class="op">,</span> <span class="st">&#39;application/wasm&#39;</span>)<span class="op">,</span></span>
+<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a>      <span class="co">// workerURL is required for multi-threading</span></span>
+<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a>      <span class="dt">workerURL</span><span class="op">:</span> <span class="cf">await</span> <span class="fu">toBlobURL</span>(<span class="vs">`</span><span class="sc">${</span>baseURL<span class="sc">}</span><span class="vs">/ffmpeg-core.worker.js`</span><span class="op">,</span> <span class="st">&#39;text/javascript&#39;</span>)<span class="op">,</span></span>
+<span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a>    })<span class="op">;</span></span>
+<span id="cb6-17"><a href="#cb6-17" aria-hidden="true" tabindex="-1"></a>    <span class="bu">console</span><span class="op">.</span><span class="fu">log</span>(<span class="st">&#39;Multi-threaded ffmpeg.wasm loaded successfully!&#39;</span>)<span class="op">;</span></span>
+<span id="cb6-18"><a href="#cb6-18" aria-hidden="true" tabindex="-1"></a>  } <span class="cf">catch</span> (error) {</span>
+<span id="cb6-19"><a href="#cb6-19" aria-hidden="true" tabindex="-1"></a>    <span class="bu">console</span><span class="op">.</span><span class="fu">error</span>(<span class="st">&#39;Failed to load multi-threaded ffmpeg.wasm:&#39;</span><span class="op">,</span> error)<span class="op">;</span></span>
+<span id="cb6-20"><a href="#cb6-20" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb6-21"><a href="#cb6-21" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb6-22"><a href="#cb6-22" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-23"><a href="#cb6-23" aria-hidden="true" tabindex="-1"></a><span class="fu">loadMultiThreadedFFmpeg</span>()<span class="op">;</span></span></code></pre></div>
+<h3 id="verifying-the-setup">Verifying the Setup</h3>
+<p>To confirm that multi-threading is working: 1. Open your browser’s
+Developer Tools (F12). 2. Go to the <strong>Network</strong> tab, reload
+the page, and select your main HTML document. Check the <strong>Response
+Headers</strong> to ensure
+<code>Cross-Origin-Opener-Policy: same-origin</code> and
+<code>Cross-Origin-Embedder-Policy: require-corp</code> are present. 3.
+Check the <strong>Console</strong> to ensure no
+<code>SharedArrayBuffer</code> or CORS-related errors are thrown during
+<code>ffmpeg.load()</code>.</p></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

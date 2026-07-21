@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Use the arealtime Filter in FFmpeg - ffmpeg</title>
+    <meta name="description" content="This guide explains how to use the arealtime filter in FFmpeg to throttle audio processing to real-time speed. You will learn what the arealtime filter does, why it is essential for live streaming applications, and how to implement it in your FFmpeg comm">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/how-to-use-the-arealtime-filter-in-ffmpeg">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Use the arealtime Filter in FFmpeg - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/how-to-use-the-arealtime-filter-in-ffmpeg" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This guide explains how to use the arealtime filter in FFmpeg to throttle audio processing to real-time speed. You will learn what the arealtime filter does, why it is essential for live streaming applications, and how to implement it in your FFmpeg comm" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="how-to-use-the-arealtime-filter-in-ffmpeg">How to Use the
+arealtime Filter in FFmpeg</h1>
+<p>This guide explains how to use the <code>arealtime</code> filter in
+FFmpeg to throttle audio processing to real-time speed. You will learn
+what the <code>arealtime</code> filter does, why it is essential for
+live streaming applications, and how to implement it in your FFmpeg
+command-line workflows with practical examples.</p>
+<h2 id="what-is-the-arealtime-filter">What is the arealtime Filter?</h2>
+<p>The <code>arealtime</code> filter is an audio filter in FFmpeg that
+slows down the processing of audio data to match real-time playback
+speed (wall-clock time). By default, FFmpeg processes media files as
+fast as your CPU allows. While high-speed processing is ideal for
+rendering or transcoding files, it can overwhelm streaming servers or
+cause synchronization issues during live broadcasts.</p>
+<p>The <code>arealtime</code> filter acts as a buffer, releasing audio
+frames only when their presentation timestamps (PTS) match the actual
+elapsed time.</p>
+<h2 id="when-to-use-arealtime-vs.-the--re-option">When to Use arealtime
+vs. the -re Option</h2>
+<p>FFmpeg has a global input option, <code>-re</code>, which reads input
+at the native frame rate. While <code>-re</code> works well for simple
+demuxing, it applies to the entire input demuxer and can sometimes be
+inaccurate in complex filtergraphs or when dealing with variable frame
+rates.</p>
+<p>You should use <code>arealtime</code> (often alongside its video
+counterpart, <code>realtime</code>) when: * You are using complex
+filtergraphs (<code>-filter_complex</code>) where input-level throttling
+is insufficient. * You only want to throttle specific audio streams
+while letting others process at maximum speed. * You need precise,
+filter-level control over the timing of your output stream.</p>
+<h2 id="basic-syntax-and-examples">Basic Syntax and Examples</h2>
+<p>The <code>arealtime</code> filter does not require any mandatory
+arguments to function at normal 1x speed.</p>
+<h3 id="example-1-streaming-audio-in-real-time">Example 1: Streaming
+Audio in Real-Time</h3>
+<p>To stream a local audio file to an icecast server or a UDP address in
+real-time, apply the <code>-af</code> (audio filter) flag followed by
+<code>arealtime</code>:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp3 <span class="at">-af</span> arealtime <span class="at">-f</span> mpegts udp://127.0.0.1:12345</span></code></pre></div>
+<h3
+id="example-2-synchronizing-audio-and-video-in-a-filtergraph">Example 2:
+Synchronizing Audio and Video in a Filtergraph</h3>
+<p>When streaming video and audio together, you must throttle both
+streams. Use the <code>realtime</code> filter for video and the
+<code>arealtime</code> filter for audio within a complex
+filtergraph:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-filter_complex</span> <span class="st">&quot;[0:v]realtime[v];[0:a]arealtime[a]&quot;</span> <span class="at">-map</span> <span class="st">&quot;[v]&quot;</span> <span class="at">-map</span> <span class="st">&quot;[a]&quot;</span> <span class="at">-f</span> flv rtmp://your-live-server/live/stream</span></code></pre></div>
+<p>In this command: * <code>[0:v]realtime[v]</code> processes the video
+stream at real-time speed. * <code>[0:a]arealtime[a]</code> processes
+the audio stream at real-time speed. * The <code>-map</code> options
+ensure the throttled streams are sent to the RTMP output
+destination.</p>
+<h2 id="available-parameters">Available Parameters</h2>
+<p>The <code>arealtime</code> filter supports one optional
+parameter:</p>
+<ul>
+<li><strong>speed</strong>: Allows you to speed up or slow down the
+real-time target. For example, a speed value of <code>2</code> will
+process the audio at twice the real-time speed, while <code>0.5</code>
+will process it at half speed. The default value is <code>1</code>.</li>
+</ul>
+<h3 id="example-3-running-at-custom-speed">Example 3: Running at Custom
+Speed</h3>
+<p>If you want to stream audio at 1.5x real-time speed, use the
+following syntax:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.wav <span class="at">-af</span> <span class="st">&quot;arealtime=speed=1.5&quot;</span> <span class="at">-f</span> mpegts udp://127.0.0.1:12345</span></code></pre></div></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

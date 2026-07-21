@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Use FFmpeg Phase Filter for Analog Video - ffmpeg</title>
+    <meta name="description" content="This article provides a practical guide on using the FFmpeg phase filter to correct phase shifts between the odd and even fields of digitized analog video. You will learn how phase offsets occur during the digitization of analog tapes like VHS, the synta">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/how-to-use-ffmpeg-phase-filter-for-analog-video">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Use FFmpeg Phase Filter for Analog Video - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/how-to-use-ffmpeg-phase-filter-for-analog-video" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article provides a practical guide on using the FFmpeg phase filter to correct phase shifts between the odd and even fields of digitized analog video. You will learn how phase offsets occur during the digitization of analog tapes like VHS, the synta" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="how-to-use-ffmpeg-phase-filter-for-analog-video">How to Use
+FFmpeg Phase Filter for Analog Video</h1>
+<p>This article provides a practical guide on using the FFmpeg
+<code>phase</code> filter to correct phase shifts between the odd and
+even fields of digitized analog video. You will learn how phase offsets
+occur during the digitization of analog tapes like VHS, the syntax and
+modes of the <code>phase</code> filter, and how to apply the correct
+commands to realign misaligned video fields.</p>
+<h2 id="understanding-field-phase-shifts-in-analog-video">Understanding
+Field Phase Shifts in Analog Video</h2>
+<p>When analog video (such as VHS or Betamax) is digitized, it is
+captured as interlaced frames consisting of two fields: the top (odd)
+field and the bottom (even) field. If the capture hardware or software
+experiences timing sync issues, a phase shift can occur. This shift
+causes the top and bottom fields of the same point in time to be
+temporally or spatially misaligned, resulting in heavy combing
+artifacts, horizontal jitter, or a “shivering” effect on static
+shots.</p>
+<p>The FFmpeg <code>phase</code> filter analyzes the input video,
+detects these phase errors, and shifts the fields relative to each other
+to restore proper alignment.</p>
+<h2 id="ffmpeg-phase-filter-syntax-and-modes">FFmpeg Phase Filter Syntax
+and Modes</h2>
+<p>The basic syntax for the phase filter is:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">-vf</span> <span class="st">&quot;phase=mode&quot;</span></span></code></pre></div>
+<p>The <code>mode</code> parameter defines how FFmpeg will analyze and
+align the fields. The most common modes include:</p>
+<ul>
+<li><strong><code>a</code> (Auto):</strong> Automatically detects the
+phase shift by analyzing the current, previous, and next frames, and
+shifts the fields to find the best match. This is the recommended
+starting point for most analog captures.</li>
+<li><strong><code>A</code> (Auto-preserve):</strong> Similar to auto
+mode, but it attempts to preserve the original field order if it cannot
+confidently determine a better match.</li>
+<li><strong><code>t</code> (Top Field First):</strong> Forces the filter
+to treat the input as Top Field First (TFF).</li>
+<li><strong><code>b</code> (Bottom Field First):</strong> Forces the
+filter to treat the input as Bottom Field First (BFF).</li>
+<li><strong><code>p</code> (Progressive):</strong> Forces progressive
+mode, assuming no phase shift between fields.</li>
+<li><strong><code>u</code> (Unchanged):</strong> Performs the analysis
+but does not apply any phase correction to the output.</li>
+</ul>
+<h2 id="step-by-step-implementation">Step-by-Step Implementation</h2>
+<h3 id="step-1-automatic-phase-correction">Step 1: Automatic Phase
+Correction</h3>
+<p>For most digitized analog tapes, using the auto-detection mode is the
+most effective approach. Run the following command to let FFmpeg
+automatically detect and correct the field phase shift:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;phase=a&quot;</span> <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<h3 id="step-2-manual-correction-for-stubborn-tapes">Step 2: Manual
+Correction for Stubborn Tapes</h3>
+<p>If the automatic mode produces inconsistent results (which can happen
+with severely degraded tapes), you can manually force the field order to
+correct the alignment.</p>
+<p>If your source is Top Field First but suffers from phase lag, force
+top-field alignment:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;phase=t&quot;</span> <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<p>If your source is Bottom Field First, use:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;phase=b&quot;</span> <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<h3 id="step-3-combining-phase-correction-with-deinterlacing">Step 3:
+Combining Phase Correction with Deinterlacing</h3>
+<p>The <code>phase</code> filter only corrects the phase shift; it does
+not deinterlace the video. If you plan to deinterlace your analog video
+for modern progressive displays (using a filter like <code>yadif</code>
+or <code>bwdif</code>), you <strong>must</strong> apply the
+<code>phase</code> filter <em>before</em> the deinterlacer in your
+filter chain.</p>
+<p>To chain the filters correctly, separate them with a comma:</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;phase=a,yadif=mode=send_frame:parity=auto&quot;</span> <span class="at">-c:v</span> libx264 <span class="at">-crf</span> 18 <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<p>In this command, FFmpeg first aligns the misaligned fields using
+<code>phase=a</code>, and then cleanly deinterlaces the corrected fields
+using <code>yadif</code>. This prevents the deinterlacer from creating
+duplicate frames or blurring the image due to the initial phase
+offset.</p></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

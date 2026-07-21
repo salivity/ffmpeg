@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CUDA Hardware-Accelerated Scaling in FFmpeg on Linux - ffmpeg</title>
+    <meta name="description" content="Using NVIDIA CUDA for hardware-accelerated scaling in FFmpeg on Linux allows you to offload demanding video resizing tasks from the CPU to the GPU, drastically improving processing speeds and reducing system overhead. This guide provides a straightforwar">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/cuda-hardware-accelerated-scaling-in-ffmpeg-on-linux">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="CUDA Hardware-Accelerated Scaling in FFmpeg on Linux - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/cuda-hardware-accelerated-scaling-in-ffmpeg-on-linux" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Using NVIDIA CUDA for hardware-accelerated scaling in FFmpeg on Linux allows you to offload demanding video resizing tasks from the CPU to the GPU, drastically improving processing speeds and reducing system overhead. This guide provides a straightforwar" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="cuda-hardware-accelerated-scaling-in-ffmpeg-on-linux">CUDA
+Hardware-Accelerated Scaling in FFmpeg on Linux</h1>
+<p>Using NVIDIA CUDA for hardware-accelerated scaling in FFmpeg on Linux
+allows you to offload demanding video resizing tasks from the CPU to the
+GPU, drastically improving processing speeds and reducing system
+overhead. This guide provides a straightforward overview of how to
+leverage CUDA-backed filters like <code>scale_cuda</code> and
+<code>scale_npp</code> within your FFmpeg commands. You will learn the
+necessary prerequisites, the correct syntax for end-to-end GPU
+processing, and how to successfully execute hardware-accelerated scaling
+on a Linux environment.</p>
+<h3 id="prerequisites-and-system-requirements">Prerequisites and System
+Requirements</h3>
+<p>To utilize CUDA scaling, your Linux system must have the appropriate
+NVIDIA hardware and software stack installed. Because standard
+distribution packages often omit hardware acceleration features due to
+licensing, you generally need a custom-built version of FFmpeg.</p>
+<ul>
+<li><strong>NVIDIA Driver:</strong> A proprietary NVIDIA driver
+installed and functioning.</li>
+<li><strong>CUDA Toolkit:</strong> The CUDA development toolkit matching
+your driver version.</li>
+<li><strong>nv-codec-headers:</strong> NVIDIA’s hardware acceleration
+headers, required to compile FFmpeg with NVENC/NVDEC support.</li>
+<li><strong>FFmpeg Compilation:</strong> FFmpeg must be configured and
+compiled with the flags <code>--enable-cuda</code>,
+<code>--enable-cuvid</code>, <code>--enable-nvenc</code>, and
+<code>--enable-libnpp</code> (if using NPP-based scaling).</li>
+</ul>
+<h3 id="understanding-the-cuda-scaling-pipeline">Understanding the CUDA
+Scaling Pipeline</h3>
+<p>To get the maximum performance benefit, the video decoding, scaling,
+and encoding should all happen on the GPU. Passing frames back and forth
+between system memory (RAM) and graphics memory (VRAM) creates a
+bottleneck that negates the speed of hardware acceleration.</p>
+<p>An efficient pipeline uses <code>nvdec</code> to decode the video
+directly into VRAM, applies the CUDA scale filter, and passes the scaled
+frames directly to <code>nvenc</code> for encoding.</p>
+<h3 id="command-examples-for-cuda-scaling">Command Examples for CUDA
+Scaling</h3>
+<p>There are two primary filters used for CUDA-based scaling in FFmpeg:
+<code>scale_cuda</code> (built directly into the CUDA subsystem) and
+<code>scale_npp</code> (which utilizes the NVIDIA Performance Primitives
+library). The <code>scale_cuda</code> filter is generally preferred for
+its simplicity and efficiency in pure pipeline workflows.</p>
+<h4 id="example-1-full-hardware-pipeline-with-scale_cuda">Example 1:
+Full Hardware Pipeline with scale_cuda</h4>
+<p>This command decodes an input video on the GPU, resizes it to 1080p
+using CUDA, and encodes it using the H.264 CUDA encoder without the
+video data ever leaving the graphics card.</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-hwaccel</span> cuda <span class="at">-hwaccel_output_format</span> cuda <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;scale_cuda=1920:1080&quot;</span> <span class="at">-c:v</span> h264_nvenc output.mp4</span></code></pre></div>
+<ul>
+<li><code>-hwaccel cuda</code>: Tells FFmpeg to use CUDA hardware
+acceleration for decoding.</li>
+<li><code>-hwaccel_output_format cuda</code>: Keeps the decoded video
+frames in VRAM rather than copying them back to the CPU.</li>
+<li><code>-vf "scale_cuda=1920:1080"</code>: Applies the
+hardware-accelerated CUDA scaling filter.</li>
+</ul>
+<h4 id="example-2-hybrid-pipeline-cpu-decode-to-gpu-scale">Example 2:
+Hybrid Pipeline (CPU Decode to GPU Scale)</h4>
+<p>If your input format is not supported by NVIDIA’s hardware decoder,
+you must decode it via the CPU, upload the frames to the GPU for
+scaling, and then encode.</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input_software.mp4 <span class="at">-vf</span> <span class="st">&quot;hwupload_cuda,scale_cuda=1280:720&quot;</span> <span class="at">-c:v</span> h264_nvenc output.mp4</span></code></pre></div>
+<ul>
+<li><code>hwupload_cuda</code>: Pushes the software-decoded frames from
+system RAM into NVIDIA VRAM so the <code>scale_cuda</code> filter can
+process them.</li>
+</ul>
+<h3 id="performance-and-advanced-tuning">Performance and Advanced
+Tuning</h3>
+<p>When scaling with CUDA, you can also specify the interpolation
+algorithm to balance quality and performance. The
+<code>scale_cuda</code> filter supports options such as
+<code>bilinear</code>, <code>bicubic</code>, and
+<code>lanczos</code>.</p>
+<p>To change the algorithm, append the <code>interp</code> option to
+your filter chain:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-hwaccel</span> cuda <span class="at">-hwaccel_output_format</span> cuda <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;scale_cuda=1920:1080:interp=lanczos&quot;</span> <span class="at">-c:v</span> h264_nvenc output.mp4</span></code></pre></div>
+<p>By keeping the entire lifecycle of the video frame inside the GPU
+infrastructure, CUDA scaling enables rapid, high-throughput video
+processing ideal for Linux-based media servers and automation
+pipelines.</p></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

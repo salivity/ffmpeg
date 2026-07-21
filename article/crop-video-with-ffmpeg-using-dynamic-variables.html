@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crop video with FFmpeg using dynamic variables - ffmpeg</title>
+    <meta name="description" content="This guide explains how to use the FFmpeg crop filter with dynamic variables to create responsive or moving video crops. By leveraging built-in expressions and variables like frame number, time, and input dimensions, you can automate cropping patterns wi">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/crop-video-with-ffmpeg-using-dynamic-variables">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Crop video with FFmpeg using dynamic variables - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/crop-video-with-ffmpeg-using-dynamic-variables" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This guide explains how to use the FFmpeg crop filter with dynamic variables to create responsive or moving video crops. By leveraging built-in expressions and variables like frame number, time, and input dimensions, you can automate cropping patterns wi" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="crop-video-with-ffmpeg-using-dynamic-variables">Crop video with
+FFmpeg using dynamic variables</h1>
+<p>This guide explains how to use the FFmpeg <code>crop</code> filter
+with dynamic variables to create responsive or moving video crops. By
+leveraging built-in expressions and variables like frame number, time,
+and input dimensions, you can automate cropping patterns without
+manually calculating static pixel values for every frame.</p>
+<h2 id="understanding-the-ffmpeg-crop-filter-syntax">Understanding the
+FFmpeg Crop Filter Syntax</h2>
+<p>The basic syntax for the FFmpeg crop filter is:</p>
+<p><code>crop=w:h:x:y</code></p>
+<ul>
+<li><strong><code>w</code></strong>: The width of the output crop
+(defaults to input width <code>iw</code>).</li>
+<li><strong><code>h</code></strong>: The height of the output crop
+(defaults to input height <code>ih</code>).</li>
+<li><strong><code>x</code></strong>: The horizontal position of the left
+edge of the crop area (defaults to central).</li>
+<li><strong><code>y</code></strong>: The vertical position of the top
+edge of the crop area (defaults to central).</li>
+</ul>
+<h2 id="key-dynamic-variables">Key Dynamic Variables</h2>
+<p>FFmpeg allows you to use mathematical expressions and constants in
+these parameters. The most useful dynamic variables include:</p>
+<ul>
+<li><strong><code>iw</code> / <code>in_w</code></strong>: Input video
+width in pixels.</li>
+<li><strong><code>ih</code> / <code>in_h</code></strong>: Input video
+height in pixels.</li>
+<li><strong><code>ow</code> / <code>out_w</code></strong>: Output
+(cropped) video width.</li>
+<li><strong><code>oh</code> / <code>out_h</code></strong>: Output
+(cropped) video height.</li>
+<li><strong><code>n</code></strong>: The frame number (starting from
+0).</li>
+<li><strong><code>t</code></strong>: The timestamp of the current frame
+in seconds.</li>
+</ul>
+<h2 id="practical-examples-of-dynamic-cropping">Practical Examples of
+Dynamic Cropping</h2>
+<h3 id="centering-a-crop-relative-to-input-dimensions">1. Centering a
+Crop Relative to Input Dimensions</h3>
+<p>You can dynamically calculate the center of any video, regardless of
+its original size, by using the input and output dimensions.</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;crop=640:480:(iw-ow)/2:(ih-oh)/2&quot;</span> output.mp4</span></code></pre></div>
+<p>In this command, <code>(iw-ow)/2</code> automatically calculates the
+correct starting <code>x</code> coordinate, and <code>(ih-oh)/2</code>
+calculates the <code>y</code> coordinate to keep the 640x480 crop
+perfectly centered.</p>
+<h3 id="panning-across-a-video-over-time">2. Panning Across a Video Over
+Time</h3>
+<p>To create a “pan” or “slide” effect, you can use the time variable
+(<code>t</code>) to continuously change the <code>x</code> or
+<code>y</code> coordinates.</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;crop=400:400:t*50:0&quot;</span> output.mp4</span></code></pre></div>
+<p>This crops a 400x400 area that moves horizontally to the right at a
+rate of 50 pixels per second.</p>
+<h3 id="creating-a-bouncing-or-sinusoidal-movement">3. Creating a
+Bouncing or Sinusoidal Movement</h3>
+<p>You can use trigonometric functions like <code>sin()</code> or
+<code>cos()</code> to create oscillating movements.</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;crop=300:300:(iw-ow)/2+(iw-ow)/2*sin(t):(ih-oh)/2&quot;</span> output.mp4</span></code></pre></div>
+<p>This keeps the crop height centered on the y-axis while making the
+crop window slide back and forth horizontally across the input video
+based on the sine wave of the current time.</p>
+<h3 id="cropping-based-on-frame-count">4. Cropping Based on Frame
+Count</h3>
+<p>If you prefer to link the crop position to the exact frame number
+rather than elapsed time, use the <code>n</code> variable.</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;crop=iw-2*n:ih-2*n&quot;</span> output.mp4</span></code></pre></div>
+<p>This command creates a continuous digital zoom-in effect by shrinking
+both the crop width and height by 2 pixels with every passing frame.</p></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

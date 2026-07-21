@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Multi-Resolution DASH Ladder with FFmpeg - ffmpeg</title>
+    <meta name="description" content="This article provides a complete, step-by-step guide to generating a multi-resolution Dynamic Adaptive Streaming over HTTP (DASH) bitrate ladder using FFmpeg. You will learn how to take a single source video, transcode it into multiple resolutions and bi">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/create-multi-resolution-dash-ladder-with-ffmpeg">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Create Multi-Resolution DASH Ladder with FFmpeg - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/create-multi-resolution-dash-ladder-with-ffmpeg" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article provides a complete, step-by-step guide to generating a multi-resolution Dynamic Adaptive Streaming over HTTP (DASH) bitrate ladder using FFmpeg. You will learn how to take a single source video, transcode it into multiple resolutions and bi" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="create-multi-resolution-dash-ladder-with-ffmpeg">Create
+Multi-Resolution DASH Ladder with FFmpeg</h1>
+<p>This article provides a complete, step-by-step guide to generating a
+multi-resolution Dynamic Adaptive Streaming over HTTP (DASH) bitrate
+ladder using FFmpeg. You will learn how to take a single source video,
+transcode it into multiple resolutions and bitrates with aligned
+keyframes, and package the output into a playback-ready DASH manifest
+(<code>.mpd</code>) and media segments.</p>
+<hr />
+<h3 id="step-1-understand-the-requirements-for-dash">Step 1: Understand
+the Requirements for DASH</h3>
+<p>To ensure seamless switching between resolutions during playback,
+your adaptive bitrate (ABR) ladder must meet two strict criteria: 1.
+<strong>Identical Keyframe Intervals (GOP Size):</strong> Keyframes must
+occur at the exact same timestamps across all video streams. If a player
+switches from 1080p to 720p, it must do so at a keyframe boundary. 2.
+<strong>Segment Alignment:</strong> The audio and video segments must be
+cut at identical intervals (typically between 2 to 6 seconds).</p>
+<h3 id="step-2-the-ffmpeg-command">Step 2: The FFmpeg Command</h3>
+<p>To create a three-tier DASH ladder (1080p, 720p, and 480p) from an
+input file named <code>input.mp4</code>, run the following command in
+your terminal:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="dt">\</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">-map</span> 0:v:0 <span class="at">-map</span> 0:v:0 <span class="at">-map</span> 0:v:0 <span class="at">-map</span> 0:a:0 <span class="dt">\</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">-b:v:0</span> 4500k <span class="at">-s:v:0</span> 1920x1080 <span class="at">-profile:v:0</span> high <span class="dt">\</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">-b:v:1</span> 2500k <span class="at">-s:v:1</span> 1280x720 <span class="at">-profile:v:1</span> main <span class="dt">\</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">-b:v:2</span> 1000k <span class="at">-s:v:2</span> 854x480 <span class="at">-profile:v:2</span> main <span class="dt">\</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">-b:a:0</span> 128k <span class="dt">\</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">-c:v</span> libx264 <span class="at">-pix_fmt</span> yuv420p <span class="dt">\</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>  <span class="at">-c:a</span> aac <span class="dt">\</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>  <span class="at">-keyint_min</span> 48 <span class="at">-g</span> 48 <span class="at">-sc_threshold</span> 0 <span class="dt">\</span></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>  <span class="at">-bf</span> 3 <span class="at">-b_strategy</span> 1 <span class="dt">\</span></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>  <span class="at">-use_timeline</span> 1 <span class="at">-use_template</span> 1 <span class="dt">\</span></span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>  <span class="at">-window_size</span> 5 <span class="at">-adaptation_sets</span> <span class="st">&quot;id=0,streams=v id=1,streams=a&quot;</span> <span class="dt">\</span></span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>  <span class="at">-f</span> dash manifest.mpd</span></code></pre></div>
+<h3 id="step-3-command-breakdown">Step 3: Command Breakdown</h3>
+<p>Here is what each part of the command does:</p>
+<h4 id="stream-mapping">Stream Mapping</h4>
+<ul>
+<li><code>-map 0:v:0</code> (repeated three times): Instructs FFmpeg to
+read the first video stream of the input file three separate times to
+create three independent output video streams.</li>
+<li><code>-map 0:a:0</code>: Instructs FFmpeg to read the first audio
+stream once.</li>
+</ul>
+<h4 id="video-representation-settings">Video Representation
+Settings</h4>
+<ul>
+<li><code>-b:v:[index]</code>: Sets the target bitrate for each video
+stream (e.g., <code>4500k</code> for 1080p, <code>2500k</code> for 720p,
+and <code>1000k</code> for 480p).</li>
+<li><code>-s:v:[index]</code>: Sets the resolution scale for each stream
+(e.g., <code>1920x1080</code>, <code>1280x720</code>,
+<code>854x480</code>).</li>
+<li><code>-profile:v:[index]</code>: Sets the H.264 profile. Use
+<code>high</code> for 1080p for better compression, and
+<code>main</code> for lower resolutions to ensure compatibility with
+older devices.</li>
+</ul>
+<h4 id="encoder-and-keyframe-settings">Encoder and Keyframe
+Settings</h4>
+<ul>
+<li><code>-c:v libx264 -pix_fmt yuv420p</code>: Encodes the video using
+the H.264 codec with a standard 8-bit YUV 4:2:0 color space.</li>
+<li><code>-c:a aac -b:a:0 128k</code>: Encodes the audio to AAC format
+at a bitrate of 128 kbps.</li>
+<li><code>-g 48 -keyint_min 48</code>: Forces a keyframe (I-frame) every
+48 frames. Assuming a 24 fps source video, this guarantees a keyframe
+precisely every 2 seconds. Adjust this number based on your source
+framerate (e.g., use <code>60</code> for 30 fps video).</li>
+<li><code>-sc_threshold 0</code>: Disables scene change detection. This
+prevents FFmpeg from inserting extra keyframes at scene transitions,
+keeping the GOP size strictly locked.</li>
+</ul>
+<h4 id="dash-packaging-settings">DASH Packaging Settings</h4>
+<ul>
+<li><code>-f dash</code>: Specifies the output format as DASH.</li>
+<li><code>-use_timeline 1</code>: Enables the Media Presentation
+Description (MPD) timeline, ensuring highly accurate playback
+synchronization.</li>
+<li><code>-use_template 1</code>: Uses template-based URLs for segment
+naming (e.g., <code>chunk-stream0-00001.m4s</code>), which reduces the
+size of the XML manifest file.</li>
+<li><code>-window_size 5</code>: Retains only the 5 most recent segments
+in the manifest (highly useful for live streaming). For video-on-demand
+(VOD), you can omit this option to keep all segments.</li>
+<li><code>-adaptation_sets "id=0,streams=v id=1,streams=a"</code>:
+Groups all video streams into Adaptation Set 0 and the audio stream into
+Adaptation Set 1. This tells the video player that the video streams are
+alternative representations of the same content and can be swapped
+dynamically.</li>
+<li><code>manifest.mpd</code>: The name of the output index file. FFmpeg
+will write this file alongside the video and audio segment files
+(<code>.m4s</code>) in your working directory.</li>
+</ul></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

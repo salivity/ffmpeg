@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Configure Tempo Factor in FFmpeg Atempo Filter - ffmpeg</title>
+    <meta name="description" content="Adjusting audio playback speed without altering its pitch is a common task in audio and video processing. This guide demonstrates how to configure the tempo factor using the FFmpeg atempo filter, explaining the syntax, parameter limits, and how to chain">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/configure-tempo-factor-in-ffmpeg-atempo-filter">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Configure Tempo Factor in FFmpeg Atempo Filter - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/configure-tempo-factor-in-ffmpeg-atempo-filter" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Adjusting audio playback speed without altering its pitch is a common task in audio and video processing. This guide demonstrates how to configure the tempo factor using the FFmpeg atempo filter, explaining the syntax, parameter limits, and how to chain" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="configure-tempo-factor-in-ffmpeg-atempo-filter">Configure Tempo
+Factor in FFmpeg Atempo Filter</h1>
+<p>Adjusting audio playback speed without altering its pitch is a common
+task in audio and video processing. This guide demonstrates how to
+configure the tempo factor using the FFmpeg <code>atempo</code> filter,
+explaining the syntax, parameter limits, and how to chain filters for
+extreme speed adjustments.</p>
+<h2 id="basic-syntax-of-the-atempo-filter">Basic Syntax of the Atempo
+Filter</h2>
+<p>The <code>atempo</code> filter accepts a single float value as its
+tempo factor. The basic syntax for applying this filter is:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp3 <span class="at">-filter:a</span> <span class="st">&quot;atempo=FACTOR&quot;</span> output.mp3</span></code></pre></div>
+<p>You can also use the shorthand <code>-af</code> instead of
+<code>-filter:a</code>.</p>
+<h2 id="allowed-value-limits">Allowed Value Limits</h2>
+<p>The <code>atempo</code> filter has a strict limitation on the range
+of the tempo factor: * <strong>Minimum value:</strong> <code>0.5</code>
+(slows the audio down to half speed) * <strong>Maximum value:</strong>
+<code>2.0</code> (doubles the audio speed)</p>
+<p>If you need to go beyond these limits, you must chain multiple
+<code>atempo</code> filters together.</p>
+<h2 id="practical-examples">Practical Examples</h2>
+<h3 id="speed-up-audio-1.5x-speed">1. Speed Up Audio (1.5x Speed)</h3>
+<p>To increase the audio speed by 50%, set the tempo factor to
+<code>1.5</code>:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp3 <span class="at">-filter:a</span> <span class="st">&quot;atempo=1.5&quot;</span> output.mp3</span></code></pre></div>
+<h3 id="slow-down-audio-0.75x-speed">2. Slow Down Audio (0.75x
+Speed)</h3>
+<p>To decrease the audio speed to 75% of the original, set the tempo
+factor to <code>0.75</code>:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp3 <span class="at">-filter:a</span> <span class="st">&quot;atempo=0.75&quot;</span> output.mp3</span></code></pre></div>
+<h3 id="exceeding-the-limits-e.g.-4x-speed">3. Exceeding the Limits
+(e.g., 4x Speed)</h3>
+<p>Since the maximum factor for a single filter is <code>2.0</code>, you
+can multiply the effect by chaining filters separated by commas. To
+achieve a 4x speed increase (<span class="math inline">\(2.0 \times 2.0
+= 4.0\)</span>):</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp3 <span class="at">-filter:a</span> <span class="st">&quot;atempo=2.0,atempo=2.0&quot;</span> output.mp3</span></code></pre></div>
+<p>To achieve an 8x speed increase, chain three filters:</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp3 <span class="at">-filter:a</span> <span class="st">&quot;atempo=2.0,atempo=2.0,atempo=2.0&quot;</span> output.mp3</span></code></pre></div>
+<h3 id="adjusting-audio-and-video-simultaneously">4. Adjusting Audio and
+Video Simultaneously</h3>
+<p>When speeding up a video file, you must adjust both the video
+presentation timestamp (<code>setpts</code>) and the audio tempo
+(<code>atempo</code>) so they remain in sync.</p>
+<p>To speed up both video and audio to 1.5x speed:</p>
+<div class="sourceCode" id="cb6"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-filter:v</span> <span class="st">&quot;setpts=0.67*PTS&quot;</span> <span class="at">-filter:a</span> <span class="st">&quot;atempo=1.5&quot;</span> output.mp4</span></code></pre></div>
+<p><em>(Note: The video PTS factor is the inverse of the speed change:
+<span class="math inline">\(1 / 1.5 \approx 0.67\)</span>)</em></p></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bounce an Image in FFmpeg with Overlay Filter - ffmpeg</title>
+    <meta name="description" content="This article explains how to use the FFmpeg overlay filter to create a bouncing image effect over a video. By applying mathematical expressions to the X and Y coordinates of the overlay, you can make any image bounce off the edges of the screen, mimickin">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/bounce-an-image-in-ffmpeg-with-overlay-filter">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Bounce an Image in FFmpeg with Overlay Filter - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/bounce-an-image-in-ffmpeg-with-overlay-filter" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article explains how to use the FFmpeg overlay filter to create a bouncing image effect over a video. By applying mathematical expressions to the X and Y coordinates of the overlay, you can make any image bounce off the edges of the screen, mimickin" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="bounce-an-image-in-ffmpeg-with-overlay-filter">Bounce an Image
+in FFmpeg with Overlay Filter</h1>
+<p>This article explains how to use the FFmpeg <code>overlay</code>
+filter to create a bouncing image effect over a video. By applying
+mathematical expressions to the X and Y coordinates of the overlay, you
+can make any image bounce off the edges of the screen, mimicking the
+classic DVD screensaver effect.</p>
+<h2 id="the-bouncing-equation">The Bouncing Equation</h2>
+<p>To achieve a constant-speed, linear bouncing motion, you must use a
+triangle wave formula. In FFmpeg, this is achieved using the
+<code>mod</code> (modulo) and <code>abs</code> (absolute value)
+functions.</p>
+<p>The standard formula for a bouncing coordinate is:</p>
+<pre class="text"><code>Position = (Boundary - Element_Size) - abs(mod(t * Speed, 2 * (Boundary - Element_Size)) - (Boundary - Element_Size))</code></pre>
+<p>In FFmpeg’s <code>overlay</code> filter, the variables are defined
+as: * <code>W</code>: Width of the main background video *
+<code>H</code>: Height of the main background video * <code>w</code>:
+Width of the overlay image * <code>h</code>: Height of the overlay image
+* <code>t</code>: Current timestamp in seconds</p>
+<h2 id="the-ffmpeg-command">The FFmpeg Command</h2>
+<p>To apply this to both the horizontal (<code>x</code>) and vertical
+(<code>y</code>) axes with different speeds (to ensure it bounces
+dynamically rather than in a straight diagonal line), use the following
+command:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> background.mp4 <span class="at">-i</span> logo.png <span class="at">-filter_complex</span> <span class="dt">\</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="st">&quot;[0:v][1:v]overlay=x=&#39;(W-w)-abs(mod(t*200,2*(W-w))-(W-w))&#39;:y=&#39;(H-h)-abs(mod(t*150,2*(H-h))-(H-h))&#39;&quot;</span> <span class="dt">\</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>output.mp4</span></code></pre></div>
+<h3 id="how-the-math-works">How the Math Works</h3>
+<ol type="1">
+<li><strong><code>W-w</code></strong>: This calculates the maximum
+travel distance. The image cannot move further than the background width
+minus the image’s own width.</li>
+<li><strong><code>t*200</code></strong>: This sets the speed. In this
+case, the image moves at a rate of 200 pixels per second along the
+X-axis. Change <code>200</code> (X-axis speed) and <code>150</code>
+(Y-axis speed) to adjust how fast the image moves.</li>
+<li><strong><code>mod(t*Speed, 2*Distance)</code></strong>: This creates
+a continuous ramp that climbs from <code>0</code> to twice the maximum
+distance, then resets to <code>0</code>.</li>
+<li><strong><code>abs(... - Distance)</code></strong>: This offsets the
+ramp and folds the upper half backward, turning the saw-tooth motion
+into a continuous triangle wave (up and down, or left and right).</li>
+<li><strong><code>(W-w) - ...</code></strong>: This final subtraction
+ensures the image starts moving in the correct direction and stays
+within the visible boundaries of the video.</li>
+</ol></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

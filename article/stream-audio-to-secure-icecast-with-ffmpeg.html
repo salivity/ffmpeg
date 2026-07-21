@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stream Audio to Secure Icecast with FFmpeg - ffmpeg</title>
+    <meta name="description" content="This article provides a step-by-step guide on how to securely stream audio to an Icecast server using SSL/TLS encryption and the FFmpeg command-line tool. You will learn how to configure your FFmpeg command to establish a secure connection, format your s">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/stream-audio-to-secure-icecast-with-ffmpeg">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Stream Audio to Secure Icecast with FFmpeg - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/stream-audio-to-secure-icecast-with-ffmpeg" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article provides a step-by-step guide on how to securely stream audio to an Icecast server using SSL/TLS encryption and the FFmpeg command-line tool. You will learn how to configure your FFmpeg command to establish a secure connection, format your s" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="stream-audio-to-secure-icecast-with-ffmpeg">Stream Audio to
+Secure Icecast with FFmpeg</h1>
+<p>This article provides a step-by-step guide on how to securely stream
+audio to an Icecast server using SSL/TLS encryption and the FFmpeg
+command-line tool. You will learn how to configure your FFmpeg command
+to establish a secure connection, format your streaming URLs correctly,
+and troubleshoot common SSL handshake issues, ensuring your broadcast
+source remains encrypted and secure.</p>
+<hr />
+<h3 id="prerequisites">Prerequisites</h3>
+<p>Before you begin, ensure you have the following: *
+<strong>FFmpeg</strong> installed on your system (built with SSL
+support, which is standard in most modern distributions). *
+<strong>Icecast Server</strong> credentials, including the secure port
+(usually <code>8443</code>), source password, and mount point. * An
+active <strong>SSL Certificate</strong> installed on your Icecast server
+(e.g., Let’s Encrypt).</p>
+<hr />
+<h3 id="the-secure-icecast-connection-url">The Secure Icecast Connection
+URL</h3>
+<p>FFmpeg uses the <code>icecast://</code> protocol to send audio to
+Icecast servers. To force FFmpeg to connect over a secure SSL/TLS
+connection, you must append the <code>?tls=1</code> parameter to the end
+of your Icecast URL.</p>
+<p>The standard format for a secure Icecast destination URL is:</p>
+<pre class="text"><code>icecast://source:PASSWORD@HOST:SECURE_PORT/MOUNTPOINT?tls=1</code></pre>
+<hr />
+<h3 id="step-by-step-command-configuration">Step-by-Step Command
+Configuration</h3>
+<p>To stream audio, you need to define your input source, configure the
+audio encoding settings, and output it to the secure Icecast
+destination.</p>
+<h4 id="example-1-streaming-an-mp3-fileplaylist">Example 1: Streaming an
+MP3 File/Playlist</h4>
+<p>To stream an existing audio file securely using the MP3 format, run
+the following command:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-re</span> <span class="at">-i</span> input.mp3 <span class="at">-c:a</span> libmp3lame <span class="at">-b:a</span> 128k <span class="at">-content_type</span> audio/mpeg <span class="at">-f</span> mp3 <span class="st">&quot;icecast://source:your_password@yourserver.com:8443/stream.mp3?tls=1&quot;</span></span></code></pre></div>
+<p><strong>Parameter Breakdown:</strong> * <code>-re</code>: Reads the
+input file in real-time (essential for streaming pre-recorded files). *
+<code>-i input.mp3</code>: Specifies your input audio file. *
+<code>-c:a libmp3lame</code>: Encodes the audio using the MP3 codec. *
+<code>-b:a 128k</code>: Sets the audio bitrate to 128 kbps. *
+<code>-content_type audio/mpeg</code>: Informs Icecast of the MIME type
+of the stream. * <code>-f mp3</code>: Forces the output format to MP3. *
+<code>"icecast://...&amp;tls=1"</code>: The secure destination path
+(wrapped in quotes to prevent terminal shell parsing issues with the
+<code>?</code> character).</p>
+<h4 id="example-2-streaming-live-audio-microphoneline-in">Example 2:
+Streaming Live Audio (Microphone/Line-In)</h4>
+<p>To capture live audio from your system’s default input device and
+stream it securely in AAC format:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-f</span> alsa <span class="at">-i</span> default <span class="at">-c:a</span> aac <span class="at">-b:a</span> 192k <span class="at">-content_type</span> audio/aac <span class="at">-f</span> adts <span class="st">&quot;icecast://source:your_password@yourserver.com:8443/live.aac?tls=1&quot;</span></span></code></pre></div>
+<p><em>(Note: Replace <code>-f alsa -i default</code> with
+<code>-f dshow -i audio="Your Microphone Name"</code> on Windows, or
+<code>-f avfoundation -i ":0"</code> on macOS).</em></p>
+<hr />
+<h3 id="troubleshooting-ssl-verification-issues">Troubleshooting SSL
+Verification Issues</h3>
+<p>If you are using a self-signed SSL certificate or a certificate from
+a custom Certificate Authority (CA), FFmpeg might reject the connection
+due to verification failure. You can handle this in two ways:</p>
+<h4 id="trusting-a-custom-ca-file">1. Trusting a Custom CA File</h4>
+<p>If you have the CA certificate file, tell FFmpeg to trust it during
+the connection:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp3 <span class="at">-c:a</span> libmp3lame <span class="at">-b:a</span> 128k <span class="at">-f</span> mp3 <span class="at">-tls_verify</span> 1 <span class="at">-ca_file</span> /path/to/certificate.pem <span class="st">&quot;icecast://source:password@yourserver.com:8443/stream?tls=1&quot;</span></span></code></pre></div>
+<h4 id="disabling-ssl-verification-not-recommended-for-production">2.
+Disabling SSL Verification (Not Recommended for Production)</h4>
+<p>If you need to bypass certificate verification completely for testing
+purposes, you can instruct FFmpeg to ignore verification errors by
+adding <code>-tls_verify 0</code>:</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp3 <span class="at">-c:a</span> libmp3lame <span class="at">-b:a</span> 128k <span class="at">-f</span> mp3 <span class="at">-tls_verify</span> 0 <span class="st">&quot;icecast://source:password@yourserver.com:8443/stream?tls=1&quot;</span></span></code></pre></div></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

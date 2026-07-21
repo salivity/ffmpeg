@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Capture macOS Audio with FFmpeg and CoreAudio - ffmpeg</title>
+    <meta name="description" content="This guide provides a straightforward walkthrough on how to capture system and input audio on macOS using FFmpeg and the native CoreAudio framework via the AVFoundation device. You will learn how to identify your Mac's audio devices, configure the correc">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/capture-macos-audio-with-ffmpeg-and-coreaudio">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Capture macOS Audio with FFmpeg and CoreAudio - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/capture-macos-audio-with-ffmpeg-and-coreaudio" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This guide provides a straightforward walkthrough on how to capture system and input audio on macOS using FFmpeg and the native CoreAudio framework via the AVFoundation device. You will learn how to identify your Mac's audio devices, configure the correc" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="capture-macos-audio-with-ffmpeg-and-coreaudio">Capture macOS
+Audio with FFmpeg and CoreAudio</h1>
+<p>This guide provides a straightforward walkthrough on how to capture
+system and input audio on macOS using FFmpeg and the native CoreAudio
+framework via the AVFoundation device. You will learn how to identify
+your Mac’s audio devices, configure the correct FFmpeg commands, and
+record high-quality audio directly from the terminal.</p>
+<h2 id="step-1-list-available-audio-devices">Step 1: List Available
+Audio Devices</h2>
+<p>FFmpeg interfaces with macOS CoreAudio using the
+<code>avfoundation</code> input device. First, you must list the
+available hardware and virtual audio devices connected to your system to
+find their index numbers or names.</p>
+<p>Open your Terminal and run the following command:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-f</span> avfoundation <span class="at">-list_devices</span> true <span class="at">-i</span> <span class="st">&quot;&quot;</span></span></code></pre></div>
+<p>The output will display a list of video and audio devices. Look under
+the <strong>AVFoundation audio devices</strong> section. Note the index
+number or the exact name of the device you want to capture (for example,
+<code>[1] MacBook Pro Microphone</code>).</p>
+<h2 id="step-2-record-audio-from-an-input-device">Step 2: Record Audio
+from an Input Device</h2>
+<p>Once you have identified the device index, you can start recording.
+In AVFoundation, the input option <code>-i</code> uses the format
+<code>"[video_index]:[audio_index]"</code>. To record audio only, leave
+the video index blank and put a colon before the audio index.</p>
+<p>Run the following command to record audio using device index
+<code>1</code> and save it as an MP3 file:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-f</span> avfoundation <span class="at">-i</span> <span class="st">&quot;:1&quot;</span> output.mp3</span></code></pre></div>
+<p>To record using the device name instead of the index, use:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-f</span> avfoundation <span class="at">-i</span> <span class="st">&quot;:Built-in Microphone&quot;</span> output.wav</span></code></pre></div>
+<p>Press <code>q</code> in your terminal window to stop the recording at
+any time.</p>
+<h2 id="step-3-capture-system-audio-internal-sound">Step 3: Capture
+System Audio (Internal Sound)</h2>
+<p>By default, macOS CoreAudio does not allow direct recording of system
+output (the sound coming out of your speakers) due to security
+restrictions. To capture system audio with FFmpeg, you must install a
+virtual audio loopback driver such as <strong>BlackHole</strong> (an
+open-source audio driver).</p>
+<ol type="1">
+<li><p>Install BlackHole (e.g., BlackHole 2ch) via Homebrew:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">brew</span> install blackhole-2ch</span></code></pre></div></li>
+<li><p>Open <strong>Audio MIDI Setup</strong> on your Mac (found in
+Applications &gt; Utilities).</p></li>
+<li><p>Click the <code>+</code> icon in the bottom left and select
+<strong>Create Multi-Output Device</strong>.</p></li>
+<li><p>Check the box for both your primary output device (e.g., MacBook
+Pro Speakers) and <strong>BlackHole 2ch</strong>. This allows you to
+hear the audio while routing it to the virtual driver.</p></li>
+<li><p>Set your Mac’s system output to this new Multi-Output
+Device.</p></li>
+<li><p>Run the list command again to find the index of BlackHole:</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-f</span> avfoundation <span class="at">-list_devices</span> true <span class="at">-i</span> <span class="st">&quot;&quot;</span></span></code></pre></div></li>
+<li><p>Start recording the system audio using the BlackHole index
+(assuming BlackHole is index <code>2</code>):</p>
+<div class="sourceCode" id="cb6"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-f</span> avfoundation <span class="at">-i</span> <span class="st">&quot;:2&quot;</span> system_audio.wav</span></code></pre></div></li>
+</ol></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

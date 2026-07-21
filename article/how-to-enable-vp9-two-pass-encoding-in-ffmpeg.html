@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Enable VP9 Two-Pass Encoding in FFmpeg - ffmpeg</title>
+    <meta name="description" content="This article provides a straightforward guide on how to enable and configure two-pass encoding for the VP9 video codec using FFmpeg. You will learn the specific command-line syntax required to run both passes, which optimizes video quality and file size">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/how-to-enable-vp9-two-pass-encoding-in-ffmpeg">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Enable VP9 Two-Pass Encoding in FFmpeg - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/how-to-enable-vp9-two-pass-encoding-in-ffmpeg" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article provides a straightforward guide on how to enable and configure two-pass encoding for the VP9 video codec using FFmpeg. You will learn the specific command-line syntax required to run both passes, which optimizes video quality and file size" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="how-to-enable-vp9-two-pass-encoding-in-ffmpeg">How to Enable VP9
+Two-Pass Encoding in FFmpeg</h1>
+<p>This article provides a straightforward guide on how to enable and
+configure two-pass encoding for the VP9 video codec using FFmpeg. You
+will learn the specific command-line syntax required to run both passes,
+which optimizes video quality and file size by analyzing the video
+dynamics before final compression.</p>
+<p>Two-pass encoding is the recommended method for encoding VP9 videos
+because it allows the encoder to allocate bitrate more efficiently. The
+first pass analyzes the video content and writes a log file, while the
+second pass uses this log file to perform the actual encoding.</p>
+<h3 id="step-1-run-the-first-pass">Step 1: Run the First Pass</h3>
+<p>In the first pass, FFmpeg analyzes the input video and creates a log
+file (usually named <code>ffmpeg2pass-0.log</code>). You should disable
+audio processing during this step using the <code>-an</code> flag to
+speed up the process. The output video is discarded using
+<code>-f null</code>.</p>
+<p>For Linux and macOS:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-c:v</span> libvpx-vp9 <span class="at">-b:v</span> 2M <span class="at">-pass</span> 1 <span class="at">-an</span> <span class="at">-f</span> null /dev/null</span></code></pre></div>
+<p>For Windows:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode cmd"><code class="sourceCode dosbat"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>ffmpeg <span class="at">-i</span> input.mp4 <span class="at">-c:</span>v libvpx<span class="at">-vp9</span> <span class="at">-b:</span>v 2M <span class="at">-pass</span> 1 <span class="at">-an</span> <span class="at">-f</span> null NUL</span></code></pre></div>
+<h3 id="step-2-run-the-second-pass">Step 2: Run the Second Pass</h3>
+<p>In the second pass, FFmpeg reads the log file generated in the first
+pass and performs the actual video and audio encoding to output the
+final WebM file.</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-c:v</span> libvpx-vp9 <span class="at">-b:v</span> 2M <span class="at">-pass</span> 2 <span class="at">-c:a</span> libopus <span class="at">-b:a</span> 128k output.webm</span></code></pre></div>
+<h3 id="parameter-breakdown">Parameter Breakdown</h3>
+<ul>
+<li><strong><code>-c:v libvpx-vp9</code></strong>: Specifies the VP9
+video encoder.</li>
+<li><strong><code>-b:v 2M</code></strong>: Sets the target video bitrate
+(e.g., 2 Megabits per second). Ensure this value is identical in both
+passes.</li>
+<li><strong><code>-pass 1</code> and <code>-pass 2</code></strong>:
+Tells the encoder which pass of the two-pass process is being
+executed.</li>
+<li><strong><code>-an</code></strong>: Disables audio. This is used in
+the first pass because audio analysis is not needed to calculate video
+bitrate allocation.</li>
+<li><strong><code>-c:a libopus -b:a 128k</code></strong>: Encodes the
+audio using the Opus codec at 128 kbps during the second pass.</li>
+</ul>
+<h3 id="speed-and-quality-optimization-optional">Speed and Quality
+Optimization (Optional)</h3>
+<p>VP9 encoding can be slow. To speed up the process, you can add the
+<code>-row-mt 1</code> flag to enable row-based multi-threading, and use
+the <code>-speed</code> (or <code>-cpu-used</code>) parameter.</p>
+<p>For the first pass, you can use a faster speed setting (e.g.,
+<code>-speed 4</code>):</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-c:v</span> libvpx-vp9 <span class="at">-b:v</span> 2M <span class="at">-speed</span> 4 <span class="at">-row-mt</span> 1 <span class="at">-pass</span> 1 <span class="at">-an</span> <span class="at">-f</span> null /dev/null</span></code></pre></div>
+<p>For the second pass, use a lower speed setting for better compression
+quality (e.g., <code>-speed 1</code> or <code>-speed 2</code>):</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-c:v</span> libvpx-vp9 <span class="at">-b:v</span> 2M <span class="at">-speed</span> 1 <span class="at">-row-mt</span> 1 <span class="at">-pass</span> 2 <span class="at">-c:a</span> libopus <span class="at">-b:a</span> 128k output.webm</span></code></pre></div></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

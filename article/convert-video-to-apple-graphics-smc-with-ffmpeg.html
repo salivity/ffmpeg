@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Convert Video to Apple Graphics SMC with FFmpeg - ffmpeg</title>
+    <meta name="description" content="This article explains how to transcode video files into the legacy Apple Graphics (SMC) format. While FFmpeg natively supports decoding SMC video, it does not feature a native SMC encoder; therefore, this guide covers how to use FFmpeg to prepare compati">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/convert-video-to-apple-graphics-smc-with-ffmpeg">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Convert Video to Apple Graphics SMC with FFmpeg - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/convert-video-to-apple-graphics-smc-with-ffmpeg" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article explains how to transcode video files into the legacy Apple Graphics (SMC) format. While FFmpeg natively supports decoding SMC video, it does not feature a native SMC encoder; therefore, this guide covers how to use FFmpeg to prepare compati" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="convert-video-to-apple-graphics-smc-with-ffmpeg">Convert Video
+to Apple Graphics SMC with FFmpeg</h1>
+<p>This article explains how to transcode video files into the legacy
+Apple Graphics (SMC) format. While FFmpeg natively supports decoding SMC
+video, it does not feature a native SMC encoder; therefore, this guide
+covers how to use FFmpeg to prepare compatible intermediate files,
+utilize FFmpeg’s closest active alternative (QuickTime Animation), and
+use legacy tools to complete the Apple Graphics (SMC) encoding
+process.</p>
+<hr />
+<h3 id="the-ffmpeg-limitation-decoding-vs.-encoding">The FFmpeg
+Limitation: Decoding vs. Encoding</h3>
+<p>FFmpeg includes a decoder for the Apple Graphics codec (identified by
+the format tag <code>smc</code>), which allows you to read and play
+these legacy files. However, <strong>FFmpeg does not have a native
+encoder for SMC</strong>.</p>
+<p>If you attempt to run a command forcing the SMC encoder, such as:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-c:v</span> smc output.mov</span></code></pre></div>
+<p>FFmpeg will return an error stating that the encoder ‘smc’ is not
+found. To successfully transcode a video to Apple Graphics (SMC) today,
+you must use a two-step process: export a compatible 8-bit palettized
+file using FFmpeg, and then compress it using legacy Apple software.</p>
+<hr />
+<h3 id="step-1-export-a-compatible-intermediate-file-using-ffmpeg">Step
+1: Export a Compatible Intermediate File using FFmpeg</h3>
+<p>The Apple Graphics (SMC) codec is an 8-bit palettized format
+originally designed for 8-bit color displays in the early 1990s. To
+prepare your modern video for SMC encoding, you should use FFmpeg to
+downsample the video to an 8-bit palette and save it in a lossless
+QuickTime format.</p>
+<p>Run the following command to convert your modern video into an 8-bit
+palettized uncompressed QuickTime file:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-pix_fmt</span> pal8 <span class="at">-c:v</span> rawvideo output_pal8.mov</span></code></pre></div>
+<ul>
+<li><code>-i input.mp4</code>: Specifies your source video.</li>
+<li><code>-pix_fmt pal8</code>: Forces the pixel format to an 8-bit
+color palette (essential for SMC compatibility).</li>
+<li><code>-c:v rawvideo</code>: Keeps the video uncompressed to prevent
+generational quality loss before the final encode.</li>
+</ul>
+<hr />
+<h3 id="step-2-encode-to-apple-graphics-smc-via-legacy-tools">Step 2:
+Encode to Apple Graphics (SMC) via Legacy Tools</h3>
+<p>Because FFmpeg cannot write the SMC stream itself, you must import
+the <code>output_pal8.mov</code> file generated in Step 1 into a legacy
+QuickTime-compatible application.</p>
+<p>The most reliable tools for this are <strong>QuickTime Player 7
+Pro</strong> (on macOS Mojave or older, or Windows) or <strong>Adobe
+Media Encoder (CS6 or older)</strong>.</p>
+<ol type="1">
+<li>Open <code>output_pal8.mov</code> in <strong>QuickTime Player 7
+Pro</strong>.</li>
+<li>Click <strong>File</strong> &gt; <strong>Export…</strong></li>
+<li>In the “Export:” dropdown, select <strong>Movie to QuickTime
+Movie</strong> and click <strong>Options…</strong></li>
+<li>Under the Video panel, click <strong>Settings…</strong></li>
+<li>In the Compression Type dropdown, select <strong>Graphics</strong>
+(which is the official name for the SMC codec).</li>
+<li>Set the color depth to <strong>256 Colors</strong> (SMC’s
+limit).</li>
+<li>Click <strong>OK</strong> and save your newly compressed SMC
+video.</li>
+</ol>
+<hr />
+<h3 id="the-ffmpeg-alternative-quicktime-animation-rle">The FFmpeg
+Alternative: QuickTime Animation (RLE)</h3>
+<p>If you need a retro-compatible codec but require a 100% automated
+FFmpeg workflow without legacy GUI tools, you should use the
+<strong>QuickTime Animation (RLE)</strong> codec instead. It is from the
+same era, supported by the same legacy machines, and FFmpeg <em>can</em>
+encode it directly.</p>
+<p>To transcode your video to QuickTime Animation RLE using FFmpeg,
+run:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-c:v</span> qtrle <span class="at">-pix_fmt</span> rgb24 output_animation.mov</span></code></pre></div>
+<p>This will produce a <code>.mov</code> file encoded with the
+<code>qtrle</code> codec, which offers similar legacy compatibility to
+SMC but can be created entirely within command-line workflows.</p></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

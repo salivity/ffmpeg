@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Use FFmpeg sidechaingate Filter - ffmpeg</title>
+    <meta name="description" content="This guide explains how to use the sidechaingate filter in FFmpeg to apply sidechain gating to your audio files. You will learn the basic syntax, the primary parameters that control the gate's behavior (such as threshold, attack, and release), and see pr">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/how-to-use-ffmpeg-sidechaingate-filter">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Use FFmpeg sidechaingate Filter - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/how-to-use-ffmpeg-sidechaingate-filter" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This guide explains how to use the sidechaingate filter in FFmpeg to apply sidechain gating to your audio files. You will learn the basic syntax, the primary parameters that control the gate's behavior (such as threshold, attack, and release), and see pr" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="how-to-use-ffmpeg-sidechaingate-filter">How to Use FFmpeg
+sidechaingate Filter</h1>
+<p>This guide explains how to use the <code>sidechaingate</code> filter
+in FFmpeg to apply sidechain gating to your audio files. You will learn
+the basic syntax, the primary parameters that control the gate’s
+behavior (such as threshold, attack, and release), and see practical
+command-line examples for controlling one audio track’s volume using the
+level of another.</p>
+<h2 id="understanding-sidechain-gating-in-ffmpeg">Understanding
+Sidechain Gating in FFmpeg</h2>
+<p>A noise gate reduces the volume of an audio signal when it falls
+below a certain threshold. In <em>sidechain</em> gating, the gate on the
+main audio channel is opened or closed based on the volume level of a
+second, separate audio channel (the sidechain/detection signal).</p>
+<p>The FFmpeg <code>sidechaingate</code> filter (also accessible via the
+alias <code>asgated</code>) requires two audio inputs: 1. <strong>First
+input:</strong> The audio signal you want to gate (the primary audio).
+2. <strong>Second input:</strong> The control signal (the sidechain
+audio).</p>
+<h2 id="key-parameters">Key Parameters</h2>
+<p>You can customize the filter using several parameters formatted as
+<code>key=value</code> pairs separated by colons:</p>
+<ul>
+<li><strong>level_in</strong>: Set the input level of the primary audio
+(default: <code>1</code>).</li>
+<li><strong>range</strong>: Set the level of reduction when the gate is
+closed (default: <code>0.06125</code>). Lower values reduce the quiet
+parts more drastically.</li>
+<li><strong>threshold</strong>: The signal level of the sidechain input
+above which the gate opens (default: <code>0.125</code>).</li>
+<li><strong>ratio</strong>: The reduction ratio (default:
+<code>2</code>).</li>
+<li><strong>attack</strong>: The time in milliseconds it takes for the
+gate to fully open once the sidechain exceeds the threshold (default:
+<code>20</code>).</li>
+<li><strong>release</strong>: The time in milliseconds it takes for the
+gate to close once the sidechain drops below the threshold (default:
+<code>250</code>).</li>
+<li><strong>detection</strong>: Choose how the sidechain signal level is
+detected: <code>peak</code> or <code>rms</code> (default:
+<code>rms</code>).</li>
+</ul>
+<h2 id="basic-command-syntax">Basic Command Syntax</h2>
+<p>To use the filter, you must use <code>-filter_complex</code> because
+the filter requires two distinct input streams.</p>
+<p>Here is the template command:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> main_audio.wav <span class="at">-i</span> sidechain_audio.wav <span class="at">-filter_complex</span> <span class="st">&quot;[0:a][1:a]sidechaingate=threshold=0.15:attack=10:release=150[outa]&quot;</span> <span class="at">-map</span> <span class="st">&quot;[outa]&quot;</span> output.wav</span></code></pre></div>
+<h3 id="command-breakdown">Command Breakdown:</h3>
+<ul>
+<li><code>-i main_audio.wav</code>: Instantiates the first input stream
+(index <code>0:a</code>), which is the audio you want to modify.</li>
+<li><code>-i sidechain_audio.wav</code>: Instantiates the second input
+stream (index <code>1:a</code>), which acts as the trigger.</li>
+<li><code>-filter_complex "[0:a][1:a]sidechaingate=...[outa]"</code>:
+Feeds both audio streams into the <code>sidechaingate</code> filter. The
+output of this filter is labeled <code>[outa]</code>.</li>
+<li><code>threshold=0.15</code>: Sets the gate to open when the
+sidechain audio level rises above <code>0.15</code>.</li>
+<li><code>attack=10:release=150</code>: Configures a fast 10ms opening
+time and a smooth 150ms closing time.</li>
+<li><code>-map "[outa]"</code>: Tells FFmpeg to write the processed
+audio to the output file.</li>
+</ul>
+<h2 id="practical-example-gating-synth-pads-with-a-kick-drum">Practical
+Example: Gating Synth Pads with a Kick Drum</h2>
+<p>A common music production technique is to gate a sustaining
+synthesizer pad using a transient kick drum. This creates a rhythmic,
+pumping effect where the synth is only heard when the kick drum
+hits.</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> pad.wav <span class="at">-i</span> kick.wav <span class="at">-filter_complex</span> <span class="st">&quot;[0:a][1:a]sidechaingate=threshold=0.2:range=0.01:attack=5:release=100[out]&quot;</span> <span class="at">-map</span> <span class="st">&quot;[out]&quot;</span> rhythmic_pad.wav</span></code></pre></div>
+<p>In this setup: * <code>range=0.01</code> ensures that when the kick
+drum is silent, the pad is almost completely muted. *
+<code>attack=5</code> makes the gate open almost instantly when the kick
+strikes. * <code>release=100</code> allows the pad sound to fade out
+quickly but smoothly after each kick hit.</p></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

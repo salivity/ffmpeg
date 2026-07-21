@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Use FFmpeg Signature Filter for Video Fingerprinting - ffmpeg</title>
+    <meta name="description" content="This guide explains how to use the FFmpeg signature filter to generate and compare unique perceptual fingerprints of video files. You will learn the command-line syntax for creating signature files in both binary and XML formats, as well as how to compar">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/how-to-use-ffmpeg-signature-filter-for-video-fingerprinting">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Use FFmpeg Signature Filter for Video Fingerprinting - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/how-to-use-ffmpeg-signature-filter-for-video-fingerprinting" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This guide explains how to use the FFmpeg signature filter to generate and compare unique perceptual fingerprints of video files. You will learn the command-line syntax for creating signature files in both binary and XML formats, as well as how to compar" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="how-to-use-ffmpeg-signature-filter-for-video-fingerprinting">How
+to Use FFmpeg Signature Filter for Video Fingerprinting</h1>
+<p>This guide explains how to use the FFmpeg <code>signature</code>
+filter to generate and compare unique perceptual fingerprints of video
+files. You will learn the command-line syntax for creating signature
+files in both binary and XML formats, as well as how to compare two
+videos directly to detect duplicate content, even if the files have
+different resolutions, bitrates, or compression levels.</p>
+<hr />
+<h2 id="what-is-a-perceptual-video-fingerprint">What is a Perceptual
+Video Fingerprint?</h2>
+<p>Unlike cryptographic hash functions (such as MD5 or SHA-256), which
+change completely if a single pixel or byte is altered, a
+<strong>perceptual video fingerprint</strong> represents the actual
+visual content of the video.</p>
+<p>FFmpeg’s <code>signature</code> filter analyzes the luminance and
+spatial characteristics of video frames to generate a robust
+fingerprint. This fingerprint remains virtually identical even if the
+video is resized, transcoded to a different format, or slightly
+compressed.</p>
+<hr />
+<h2 id="step-1-generating-a-video-signature-file">Step 1: Generating a
+Video Signature File</h2>
+<p>To generate and save a perceptual fingerprint of a video to a file,
+use the <code>signature</code> filter. You can export the fingerprint in
+either <code>binary</code> (more compact) or <code>xml</code>
+(human-readable) format.</p>
+<p>Run the following command to generate a binary signature:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;signature=format=binary:filename=video_signature.bin&quot;</span> <span class="at">-f</span> null <span class="at">-</span></span></code></pre></div>
+<h3 id="command-breakdown">Command Breakdown:</h3>
+<ul>
+<li><code>-i input.mp4</code>: Specifies the input video file.</li>
+<li><code>-vf "signature=..."</code>: Applies the signature video
+filter.
+<ul>
+<li><code>format=binary</code>: Sets the output format of the signature
+file.</li>
+<li><code>filename=video_signature.bin</code>: Defines the output path
+for the fingerprint file.</li>
+</ul></li>
+<li><code>-f null -</code>: Tells FFmpeg not to output a new video file,
+avoiding unnecessary disk space usage and speeding up the process.</li>
+</ul>
+<p>To generate an XML version instead, change the format and file
+extension:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;signature=format=xml:filename=video_signature.xml&quot;</span> <span class="at">-f</span> null <span class="at">-</span></span></code></pre></div>
+<hr />
+<h2 id="step-2-comparing-two-videos-directly">Step 2: Comparing Two
+Videos Directly</h2>
+<p>You can compare two video streams in real-time to check if they
+contain the same content by feeding both files into FFmpeg and using the
+<code>signature</code> filter with multiple inputs.</p>
+<p>Run this command to compare two videos:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> video1.mp4 <span class="at">-i</span> video2.mp4 <span class="at">-filter_complex</span> <span class="st">&quot;[0:v][1:v]signature=nb_inputs=2:detect=on&quot;</span> <span class="at">-f</span> null <span class="at">-</span></span></code></pre></div>
+<h3 id="command-breakdown-1">Command Breakdown:</h3>
+<ul>
+<li><code>-i video1.mp4 -i video2.mp4</code>: Inputs both videos you
+want to compare.</li>
+<li><code>-filter_complex</code>: Uses a complex filtergraph to handle
+multiple video inputs.</li>
+<li><code>[0:v][1:v]</code>: Selects the video streams from the first
+and second input files.</li>
+<li><code>signature=nb_inputs=2</code>: Instructs the filter to accept
+two input streams.</li>
+<li><code>detect=on</code>: Enables the detection engine to analyze and
+report matches in the terminal output.</li>
+</ul>
+<hr />
+<h2 id="step-3-understanding-the-matching-output">Step 3: Understanding
+the Matching Output</h2>
+<p>When you run the comparison command, FFmpeg will output the detection
+results directly to your console. Look for lines resembling the
+following:</p>
+<pre class="text"><code>[Parsed_signature_0 @ 0x7fa8bb40c100] matching of input 0 and input 1 at 0.000000s and 0.000000s, duration 10.4s</code></pre>
+<p>If the videos are different, FFmpeg will not output any matching
+lines. If they are identical or highly similar, the console output will
+specify the exact timestamps where the match begins and how long the
+matching sequence lasts.</p>
+<hr />
+<h2 id="advanced-configuration-options">Advanced Configuration
+Options</h2>
+<p>You can fine-tune the matching sensitivity and behavior of the
+<code>signature</code> filter using additional parameters:</p>
+<h3 id="adjusting-similarity-threshold">Adjusting Similarity
+Threshold</h3>
+<p>The <code>threshold</code> parameter controls how strict the matching
+algorithm is. The default value is <code>90</code>. * <strong>Lower
+values</strong> (e.g., <code>70</code>) make the detection more strict,
+reducing false positives but potentially missing highly compressed
+duplicates. * <strong>Higher values</strong> (e.g., <code>120</code>)
+make the detection more tolerant of changes like noise, watermarks, or
+severe compression.</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> video1.mp4 <span class="at">-i</span> video2.mp4 <span class="at">-filter_complex</span> <span class="st">&quot;[0:v][1:v]signature=nb_inputs=2:detect=on:threshold=100&quot;</span> <span class="at">-f</span> null <span class="at">-</span></span></code></pre></div>
+<h3 id="setting-minimum-matching-duration">Setting Minimum Matching
+Duration</h3>
+<p>By default, the filter requires a minimum sequence of frames to match
+before declaring a fit. You can change this using the
+<code>min_duration</code> parameter (expressed in frames, default is 90
+frames).</p>
+<div class="sourceCode" id="cb6"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> video1.mp4 <span class="at">-i</span> video2.mp4 <span class="at">-filter_complex</span> <span class="st">&quot;[0:v][1:v]signature=nb_inputs=2:detect=on:min_duration=150&quot;</span> <span class="at">-f</span> null <span class="at">-</span></span></code></pre></div></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

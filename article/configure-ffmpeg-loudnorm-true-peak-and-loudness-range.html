@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Configure FFmpeg Loudnorm True Peak and Loudness Range - ffmpeg</title>
+    <meta name="description" content="This article provides a practical guide on how to configure the True Peak (tp) and Loudness Range (lra) target parameters in FFmpeg's loudnorm filter. You will learn the correct command-line syntax for both single-pass and two-pass audio normalization to">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/configure-ffmpeg-loudnorm-true-peak-and-loudness-range">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Configure FFmpeg Loudnorm True Peak and Loudness Range - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/configure-ffmpeg-loudnorm-true-peak-and-loudness-range" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article provides a practical guide on how to configure the True Peak (tp) and Loudness Range (lra) target parameters in FFmpeg's loudnorm filter. You will learn the correct command-line syntax for both single-pass and two-pass audio normalization to" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1
+id="configure-ffmpeg-loudnorm-true-peak-and-loudness-range">Configure
+FFmpeg Loudnorm True Peak and Loudness Range</h1>
+<p>This article provides a practical guide on how to configure the True
+Peak (<code>tp</code>) and Loudness Range (<code>lra</code>) target
+parameters in FFmpeg’s <code>loudnorm</code> filter. You will learn the
+correct command-line syntax for both single-pass and two-pass audio
+normalization to meet specific broadcast or streaming standards.</p>
+<p>The <code>loudnorm</code> filter in FFmpeg is an automatic loudness
+normalization filter that complies with the EBU R128 standard. To
+customize the output audio to your specific target requirements, you
+must define the target parameters within the filter argument.</p>
+<h3 id="key-parameters">Key Parameters</h3>
+<ul>
+<li><strong><code>i</code> (Integrated Loudness):</strong> The target
+integrated loudness in LUFS. The default is <code>-24.0</code>.</li>
+<li><strong><code>lra</code> (Loudness Range):</strong> The target
+loudness range in LU. The default is <code>7.0</code>.</li>
+<li><strong><code>tp</code> (True Peak):</strong> The target maximum
+true peak in dBTP. The default is <code>-2.0</code>.</li>
+</ul>
+<h3 id="basic-syntax-single-pass">Basic Syntax (Single-Pass)</h3>
+<p>For a quick, single-pass normalization where you set the True Peak to
+<code>-1.0</code> dBTP and Loudness Range to <code>15.0</code> LU, use
+the following syntax:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.wav <span class="at">-filter:a</span> loudnorm=i=-24:tp=-1.0:lra=15.0 output.wav</span></code></pre></div>
+<p>In this example: * <code>i=-24</code> sets the target integrated
+loudness to -24 LUFS. * <code>tp=-1.0</code> limits the maximum true
+peak to -1.0 dBTP. * <code>lra=15.0</code> sets the allowed loudness
+dynamic range to 15 LU.</p>
+<h3 id="recommended-workflow-two-pass">Recommended Workflow
+(Two-Pass)</h3>
+<p>While single-pass is fast, it relies on estimation. For
+professional-grade compliance, a two-pass approach is highly
+recommended.</p>
+<p><strong>Pass 1: Analyze the Audio</strong> Run the filter with
+<code>print_format=json</code> to analyze the input file’s current
+properties.</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.wav <span class="at">-filter:a</span> loudnorm=print_format=json <span class="at">-f</span> null <span class="at">-</span></span></code></pre></div>
+<p>This command outputs JSON data in your terminal containing measured
+values such as <code>input_i</code>, <code>input_lra</code>,
+<code>input_tp</code>, and <code>input_thresh</code>.</p>
+<p><strong>Pass 2: Apply Normalization with Targets</strong> Use the
+measured values from Pass 1 along with your desired <code>tp</code> and
+<code>lra</code> targets to perform the final normalization.</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.wav <span class="at">-filter:a</span> loudnorm=i=-24:tp=-1.5:lra=10.0:measured_i=-18.5:measured_tp=1.2:measured_lra=12.1:measured_thresh=-29.4 output.wav</span></code></pre></div>
+<p>By providing the measured input values to the filter, FFmpeg can
+precisely adjust the audio to meet your exact <code>tp</code> and
+<code>lra</code> targets without unexpected compression or clipping.</p></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

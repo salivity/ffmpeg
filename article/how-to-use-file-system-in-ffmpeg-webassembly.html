@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Use File System in FFmpeg WebAssembly - ffmpeg</title>
+    <meta name="description" content="Running FFmpeg in the browser via WebAssembly (Wasm) requires a virtual file system to read input media and write output results, as Wasm cannot directly access the user's local hard drive. This article explains how to interact with the Emscripten Virtua">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/how-to-use-file-system-in-ffmpeg-webassembly">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Use File System in FFmpeg WebAssembly - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/how-to-use-file-system-in-ffmpeg-webassembly" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Running FFmpeg in the browser via WebAssembly (Wasm) requires a virtual file system to read input media and write output results, as Wasm cannot directly access the user's local hard drive. This article explains how to interact with the Emscripten Virtua" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="how-to-use-file-system-in-ffmpeg-webassembly">How to Use File
+System in FFmpeg WebAssembly</h1>
+<p>Running FFmpeg in the browser via WebAssembly (Wasm) requires a
+virtual file system to read input media and write output results, as
+Wasm cannot directly access the user’s local hard drive. This article
+explains how to interact with the Emscripten Virtual File System (MEMFS)
+used by <code>@ffmpeg/ffmpeg</code>, write input files from browser
+memory, execute processing commands, read the resulting output, and
+capture standard input/output (stdio) for progress logging.</p>
+<h2 id="understanding-the-virtual-file-system-memfs">Understanding the
+Virtual File System (MEMFS)</h2>
+<p>Because WebAssembly runs in a secure browser sandbox, it operates on
+an in-memory virtual file system called MEMFS. When you run FFmpeg
+Wasm:</p>
+<ol type="1">
+<li>You must first load your input media file into the browser (e.g.,
+via an HTML <code>&lt;input type="file"&gt;</code> or a URL fetch).</li>
+<li>You write this file data into FFmpeg’s virtual file system.</li>
+<li>You execute the FFmpeg command, referencing the virtual file
+name.</li>
+<li>FFmpeg writes the processed output back into the virtual file
+system.</li>
+<li>You read the output file from the virtual file system into browser
+memory to download it or display it in an HTML5 player.</li>
+</ol>
+<h2 id="step-1-initialize-ffmpeg-and-capture-logs-standard-io">Step 1:
+Initialize FFmpeg and Capture Logs (Standard I/O)</h2>
+<p>Standard output (stdout) and standard error (stderr) are essential
+for tracking conversion progress and debugging errors. You can intercept
+these logs by binding an event listener to your FFmpeg instance before
+loading it.</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> { FFmpeg } <span class="im">from</span> <span class="st">&#39;@ffmpeg/ffmpeg&#39;</span><span class="op">;</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> { fetchFile } <span class="im">from</span> <span class="st">&#39;@ffmpeg/util&#39;</span><span class="op">;</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> ffmpeg <span class="op">=</span> <span class="kw">new</span> <span class="fu">FFmpeg</span>()<span class="op">;</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="co">// Handle Standard I/O (stdout / stderr)</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>ffmpeg<span class="op">.</span><span class="fu">on</span>(<span class="st">&#39;log&#39;</span><span class="op">,</span> ({ type<span class="op">,</span> message }) <span class="kw">=&gt;</span> {</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>    <span class="bu">console</span><span class="op">.</span><span class="fu">log</span>(<span class="vs">`[FFmpeg </span><span class="sc">${</span>type<span class="sc">}</span><span class="vs">]: </span><span class="sc">${</span>message<span class="sc">}</span><span class="vs">`</span>)<span class="op">;</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>})<span class="op">;</span></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a><span class="co">// Track progress</span></span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>ffmpeg<span class="op">.</span><span class="fu">on</span>(<span class="st">&#39;progress&#39;</span><span class="op">,</span> ({ progress<span class="op">,</span> time }) <span class="kw">=&gt;</span> {</span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>    <span class="bu">console</span><span class="op">.</span><span class="fu">log</span>(<span class="vs">`Progress: </span><span class="sc">${</span>(progress <span class="op">*</span> <span class="dv">100</span>)<span class="op">.</span><span class="fu">toFixed</span>(<span class="dv">2</span>)<span class="sc">}</span><span class="vs">% (Time: </span><span class="sc">${</span>time<span class="sc">}</span><span class="vs">ms)`</span>)<span class="op">;</span></span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>})<span class="op">;</span></span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a><span class="cf">await</span> ffmpeg<span class="op">.</span><span class="fu">load</span>()<span class="op">;</span></span></code></pre></div>
+<h2 id="step-2-write-files-to-the-virtual-file-system">Step 2: Write
+Files to the Virtual File System</h2>
+<p>To process a file, you must convert it into a <code>Uint8Array</code>
+and write it to the virtual root directory using
+<code>ffmpeg.writeFile()</code>.</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co">// Obtain a File object from an HTML input element</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> fileInput <span class="op">=</span> <span class="bu">document</span><span class="op">.</span><span class="fu">getElementById</span>(<span class="st">&#39;upload&#39;</span>)<span class="op">;</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> file <span class="op">=</span> fileInput<span class="op">.</span><span class="at">files</span>[<span class="dv">0</span>]<span class="op">;</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="co">// Write the file to the virtual file system as &#39;input.mp4&#39;</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a><span class="cf">await</span> ffmpeg<span class="op">.</span><span class="fu">writeFile</span>(<span class="st">&#39;input.mp4&#39;</span><span class="op">,</span> <span class="cf">await</span> <span class="fu">fetchFile</span>(file))<span class="op">;</span></span></code></pre></div>
+<h2 id="step-3-execute-the-ffmpeg-command">Step 3: Execute the FFmpeg
+Command</h2>
+<p>Run your FFmpeg command by passing an array of arguments to the
+<code>exec()</code> method. Ensure the input and output filenames match
+the virtual file system paths.</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co">// Convert input.mp4 to output.mp3</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="cf">await</span> ffmpeg<span class="op">.</span><span class="fu">exec</span>([<span class="st">&#39;-i&#39;</span><span class="op">,</span> <span class="st">&#39;input.mp4&#39;</span><span class="op">,</span> <span class="st">&#39;output.mp3&#39;</span>])<span class="op">;</span></span></code></pre></div>
+<h2 id="step-4-read-output-from-the-virtual-file-system">Step 4: Read
+Output from the Virtual File System</h2>
+<p>Once execution is complete, read the output file from the virtual
+file system using <code>ffmpeg.readFile()</code>. You can then convert
+this data into a Blob URL for browser playback or download.</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co">// Read the generated file from MEMFS</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> data <span class="op">=</span> <span class="cf">await</span> ffmpeg<span class="op">.</span><span class="fu">readFile</span>(<span class="st">&#39;output.mp3&#39;</span>)<span class="op">;</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a><span class="co">// Convert the Uint8Array to a Blob URL</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> audioBlob <span class="op">=</span> <span class="kw">new</span> <span class="bu">Blob</span>([data<span class="op">.</span><span class="at">buffer</span>]<span class="op">,</span> { <span class="dt">type</span><span class="op">:</span> <span class="st">&#39;audio/mp3&#39;</span> })<span class="op">;</span></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> audioUrl <span class="op">=</span> URL<span class="op">.</span><span class="fu">createObjectURL</span>(audioBlob)<span class="op">;</span></span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a><span class="co">// Assign to an HTML audio element or trigger a download</span></span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> audioPlayer <span class="op">=</span> <span class="bu">document</span><span class="op">.</span><span class="fu">getElementById</span>(<span class="st">&#39;audio-player&#39;</span>)<span class="op">;</span></span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>audioPlayer<span class="op">.</span><span class="at">src</span> <span class="op">=</span> audioUrl<span class="op">;</span></span></code></pre></div>
+<h2 id="step-5-clean-up-memory">Step 5: Clean Up Memory</h2>
+<p>Because MEMFS stores files in browser RAM, keeping large video files
+in the virtual file system can cause the browser tab to crash due to
+out-of-memory errors. Always delete files after processing them.</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="co">// Remove files from the virtual file system</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="cf">await</span> ffmpeg<span class="op">.</span><span class="fu">deleteFile</span>(<span class="st">&#39;input.mp4&#39;</span>)<span class="op">;</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="cf">await</span> ffmpeg<span class="op">.</span><span class="fu">deleteFile</span>(<span class="st">&#39;output.mp3&#39;</span>)<span class="op">;</span></span></code></pre></div></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

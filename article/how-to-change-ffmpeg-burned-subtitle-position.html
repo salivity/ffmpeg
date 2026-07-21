@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Change FFmpeg Burned Subtitle Position - ffmpeg</title>
+    <meta name="description" content="Burning subtitles directly into a video (hardsubbing) is a reliable way to ensure they display correctly on any media player. This guide explains how to change the vertical alignment and position of these subtitles using FFmpeg's subtitles filter and the">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/how-to-change-ffmpeg-burned-subtitle-position">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Change FFmpeg Burned Subtitle Position - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/how-to-change-ffmpeg-burned-subtitle-position" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Burning subtitles directly into a video (hardsubbing) is a reliable way to ensure they display correctly on any media player. This guide explains how to change the vertical alignment and position of these subtitles using FFmpeg's subtitles filter and the" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="how-to-change-ffmpeg-burned-subtitle-position">How to Change
+FFmpeg Burned Subtitle Position</h1>
+<p>Burning subtitles directly into a video (hardsubbing) is a reliable
+way to ensure they display correctly on any media player. This guide
+explains how to change the vertical alignment and position of these
+subtitles using FFmpeg’s <code>subtitles</code> filter and the
+<code>force_style</code> parameter. You will learn how to adjust
+vertical margins and change text alignment for both SRT and ASS subtitle
+formats.</p>
+<h2 id="the-force_style-option">The <code>force_style</code> Option</h2>
+<p>When burning subtitles using the <code>subtitles</code> filter,
+FFmpeg allows you to override the subtitle styles using SubStation Alpha
+(ASS) style properties. To change the vertical position, you will
+primarily use the <code>MarginV</code> and <code>Alignment</code>
+properties.</p>
+<ul>
+<li><strong><code>MarginV</code></strong>: Sets the vertical margin
+between the subtitle text and the bottom/top of the video frame in
+pixels.</li>
+<li><strong><code>Alignment</code></strong>: Sets the text alignment
+using a numeric grid system.</li>
+</ul>
+<h2
+id="method-1-adjusting-the-vertical-margin-moving-subtitles-up-or-down">Method
+1: Adjusting the Vertical Margin (Moving Subtitles Up or Down)</h2>
+<p>To move bottom-aligned subtitles higher up the screen, increase the
+<code>MarginV</code> value. The default value is usually around 10 to 15
+pixels.</p>
+<p>Run the following command to lift the subtitles 80 pixels from the
+bottom of the screen:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;subtitles=subs.srt:force_style=&#39;MarginV=80&#39;&quot;</span> output.mp4</span></code></pre></div>
+<p>To move the subtitles even higher, simply increase the
+<code>MarginV</code> value:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;subtitles=subs.srt:force_style=&#39;MarginV=150&#39;&quot;</span> output.mp4</span></code></pre></div>
+<h2
+id="method-2-changing-the-vertical-alignment-top-middle-bottom">Method
+2: Changing the Vertical Alignment (Top, Middle, Bottom)</h2>
+<p>To position subtitles at the top or center of the screen, you must
+change the <code>Alignment</code> property. The alignment numbers are
+based on the standard numpad layout:</p>
+<ul>
+<li><strong>Bottom positions:</strong> <code>1</code> (Left),
+<code>2</code> (Centered), <code>3</code> (Right)</li>
+<li><strong>Top positions:</strong> <code>5</code> (Left),
+<code>6</code> (Centered), <code>7</code> (Right)</li>
+<li><strong>Middle positions:</strong> <code>9</code> (Left),
+<code>10</code> (Centered), <code>11</code> (Right)</li>
+</ul>
+<h3 id="burn-subtitles-at-the-top-of-the-video">Burn Subtitles at the
+Top of the Video</h3>
+<p>To place the subtitles at the top-center of the video, set
+<code>Alignment=6</code>. When alignment is set to the top, the
+<code>MarginV</code> value controls the distance from the <em>top</em>
+edge of the video frame.</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;subtitles=subs.srt:force_style=&#39;Alignment=6,MarginV=40&#39;&quot;</span> output.mp4</span></code></pre></div>
+<h3 id="burn-subtitles-in-the-exact-middle-of-the-video">Burn Subtitles
+in the Exact Middle of the Video</h3>
+<p>To place the subtitles in the vertical center of the frame, set
+<code>Alignment=10</code>:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;subtitles=subs.srt:force_style=&#39;Alignment=10&#39;&quot;</span> output.mp4</span></code></pre></div>
+<h2 id="styling-srt-vs.-ass-subtitles">Styling SRT vs. ASS
+Subtitles</h2>
+<ul>
+<li><strong>SRT Files:</strong> The commands shown above work perfectly
+with <code>.srt</code> files. FFmpeg converts the SRT styles on the fly
+using your <code>force_style</code> inputs.</li>
+<li><strong>ASS Files:</strong> If you are using <code>.ass</code>
+files, the styling and positioning are usually embedded directly within
+the file itself. While you can still override them using
+<code>force_style</code>, it is often easier to open the
+<code>.ass</code> file in a text editor (or subtitle editor like
+Aegisub) and modify the <code>MarginV</code> and <code>Alignment</code>
+values in the style headers.</li>
+</ul></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

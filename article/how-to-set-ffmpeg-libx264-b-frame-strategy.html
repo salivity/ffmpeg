@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Set ffmpeg libx264 B-Frame Strategy - ffmpeg</title>
+    <meta name="description" content="This article explains how to configure the B-frame decision strategy in FFmpeg using the libx264 encoder. It covers the available configuration options, the differences between strategy levels, and provides practical command-line examples to help you opt">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/how-to-set-ffmpeg-libx264-b-frame-strategy">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Set ffmpeg libx264 B-Frame Strategy - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/how-to-set-ffmpeg-libx264-b-frame-strategy" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article explains how to configure the B-frame decision strategy in FFmpeg using the libx264 encoder. It covers the available configuration options, the differences between strategy levels, and provides practical command-line examples to help you opt" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="how-to-set-ffmpeg-libx264-b-frame-strategy">How to Set ffmpeg
+libx264 B-Frame Strategy</h1>
+<p>This article explains how to configure the B-frame decision strategy
+in FFmpeg using the <code>libx264</code> encoder. It covers the
+available configuration options, the differences between strategy
+levels, and provides practical command-line examples to help you
+optimize your video encoding for speed or quality.</p>
+<p>The B-frame strategy determines how the <code>libx264</code> encoder
+decides when and how many B-frames (bi-directional predictive frames) to
+use. Adjusting this setting allows you to balance encoding efficiency,
+visual quality, and processing speed.</p>
+<h3 id="the-b-frame-strategy-options">The B-Frame Strategy Options</h3>
+<p>In FFmpeg, you configure the B-frame strategy using the
+<code>-b_strategy</code> flag or via the <code>-x264-params</code>
+option. The strategy accepts three main values:</p>
+<ul>
+<li><strong><code>0</code> (Disabled / Fast):</strong> The encoder does
+not use adaptive B-frame placement. It will strictly use the maximum
+number of B-frames specified by the <code>-bf</code> parameter,
+regardless of the video content. This is the fastest method but offers
+the lowest compression efficiency.</li>
+<li><strong><code>1</code> (Fast / Standard):</strong> A fast,
+low-complexity decision algorithm. It dynamically chooses when to use
+B-frames to save space, offering a good balance between encoding speed
+and compression.</li>
+<li><strong><code>2</code> (Optimal / Slow):</strong> A high-complexity
+path-finding algorithm (sometimes referred to as the “Trellis”
+decision). It evaluates multiple frame combinations to find the absolute
+best placement for B-frames. This yields the highest quality and best
+compression but significantly slows down the encoding process.</li>
+</ul>
+<h3 id="how-to-configure-the-strategy-in-ffmpeg">How to Configure the
+Strategy in FFmpeg</h3>
+<p>To change the B-frame strategy, you must combine it with the
+<code>-bf</code> option, which sets the maximum consecutive B-frames the
+encoder is allowed to use.</p>
+<h4 id="method-1-using-native-ffmpeg-flags">Method 1: Using native
+FFmpeg flags</h4>
+<p>You can set the strategy directly using the <code>-b_strategy</code>
+flag:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-c:v</span> libx264 <span class="at">-bf</span> 3 <span class="at">-b_strategy</span> 2 <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<p>In this command: * <code>-bf 3</code> sets the maximum number of
+consecutive B-frames to 3. * <code>-b_strategy 2</code> enables the
+optimal, high-quality decision algorithm.</p>
+<h4 id="method-2-using-the--x264-params-flag-recommended">Method 2:
+Using the <code>-x264-params</code> flag (Recommended)</h4>
+<p>Passing the parameter directly to the <code>libx264</code> library
+via <code>-x264-params</code> is often the most reliable method:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-c:v</span> libx264 <span class="at">-bf</span> 4 <span class="at">-x264-params</span> b-strategy=1 <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<p>In this command: * <code>-bf 4</code> allows up to 4 consecutive
+B-frames. * <code>-x264-params b-strategy=1</code> applies the fast
+adaptive algorithm.</p>
+<h3 id="preset-defaults">Preset Defaults</h3>
+<p>If you do not manually set the B-frame strategy, it is determined by
+the <code>-preset</code> you choose: * <code>ultrafast</code> and
+<code>superfast</code> use <code>0</code>. * <code>veryfast</code>,
+<code>faster</code>, and <code>fast</code> use <code>1</code>. *
+<code>medium</code> (the default preset), <code>slow</code>,
+<code>slower</code>, and <code>veryslow</code> use <code>2</code>.</p></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

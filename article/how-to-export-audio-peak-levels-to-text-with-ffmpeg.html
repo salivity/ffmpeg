@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Export Audio Peak Levels to Text with FFmpeg - ffmpeg</title>
+    <meta name="description" content="This article provides a quick and direct guide on how to analyze an audio file's peak levels using FFmpeg and export that metadata into a text file. By utilizing FFmpeg's built-in audio filters and command-line redirection, you can quickly extract volume">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/how-to-export-audio-peak-levels-to-text-with-ffmpeg">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Export Audio Peak Levels to Text with FFmpeg - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/how-to-export-audio-peak-levels-to-text-with-ffmpeg" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article provides a quick and direct guide on how to analyze an audio file's peak levels using FFmpeg and export that metadata into a text file. By utilizing FFmpeg's built-in audio filters and command-line redirection, you can quickly extract volume" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="how-to-export-audio-peak-levels-to-text-with-ffmpeg">How to
+Export Audio Peak Levels to Text with FFmpeg</h1>
+<p>This article provides a quick and direct guide on how to analyze an
+audio file’s peak levels using FFmpeg and export that metadata into a
+text file. By utilizing FFmpeg’s built-in audio filters and command-line
+redirection, you can quickly extract volume statistics without needing
+to render a new audio file.</p>
+<h3 id="the-standard-method-using-the-volumedetect-filter">The Standard
+Method: Using the volumedetect Filter</h3>
+<p>FFmpeg does not write metadata directly to a text file via standard
+output options, as volume statistics are printed to the system’s
+standard error stream (<code>stderr</code>). To capture this data, you
+must run the volume detection filter and redirect the stream output to a
+<code>.txt</code> file.</p>
+<p>Run the following command in your terminal or command prompt:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.wav <span class="at">-filter:a</span> volumedetect <span class="at">-f</span> null <span class="at">-</span> <span class="dv">2</span><span class="op">&gt;</span> peak_levels.txt</span></code></pre></div>
+<h3 id="command-breakdown">Command Breakdown:</h3>
+<ul>
+<li><strong><code>-i input.wav</code></strong>: Specifies your input
+audio or video file.</li>
+<li><strong><code>-filter:a volumedetect</code></strong>: Calls the
+audio filter that analyzes the volume levels of the stream.</li>
+<li><strong><code>-f null -</code></strong>: Instructs FFmpeg to discard
+the output video/audio stream so that no new media file is created,
+making the process incredibly fast.</li>
+<li><strong><code>2&gt; peak_levels.txt</code></strong>: Redirects the
+standard error stream (where the volume information is printed) into a
+text file named <code>peak_levels.txt</code>.</li>
+</ul>
+<h3 id="reading-the-output-file">Reading the Output File</h3>
+<p>Once the process finishes, open the generated
+<code>peak_levels.txt</code> file. Near the bottom of the file, you will
+find the volume metadata, which looks similar to this:</p>
+<pre class="text"><code>[parsed_volumedetect_0 @ 0x55bf30bc7ec0] n_samples: 441000
+[parsed_volumedetect_0 @ 0x55bf30bc7ec0] max_volume: -1.2 dB
+[parsed_volumedetect_0 @ 0x55bf30bc7ec0] mean_volume: -18.5 dB
+[parsed_volumedetect_0 @ 0x55bf30bc7ec0] histogram_1db: 124</code></pre>
+<p>The <strong><code>max_volume</code></strong> value represents the
+peak level of your audio file (in this case, <code>-1.2 dB</code>).</p>
+<h3
+id="advanced-method-using-the-astats-filter-for-multi-channel-peaks">Advanced
+Method: Using the astats Filter for Multi-Channel Peaks</h3>
+<p>If you need precise peak measurements for individual channels (such
+as Left and Right in a stereo file), use the <code>astats</code> filter
+instead:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.wav <span class="at">-filter:a</span> astats=metadata=1 <span class="at">-f</span> null <span class="at">-</span> <span class="dv">2</span><span class="op">&gt;</span> channel_peaks.txt</span></code></pre></div>
+<p>Inside the resulting <code>channel_peaks.txt</code> file, search for
+the <code>Peak level dB</code> values to get the exact peak levels for
+each individual audio channel.</p></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

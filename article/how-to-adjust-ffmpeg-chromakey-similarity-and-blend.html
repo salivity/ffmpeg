@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Adjust FFmpeg Chromakey Similarity and Blend - ffmpeg</title>
+    <meta name="description" content="This article provides a straightforward guide on how to fine-tune green screen removal in FFmpeg by adjusting the similarity and blend parameters of the chromakey filter. You will learn what these parameters do, how they affect your video output, and how">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/how-to-adjust-ffmpeg-chromakey-similarity-and-blend">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Adjust FFmpeg Chromakey Similarity and Blend - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/how-to-adjust-ffmpeg-chromakey-similarity-and-blend" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article provides a straightforward guide on how to fine-tune green screen removal in FFmpeg by adjusting the similarity and blend parameters of the chromakey filter. You will learn what these parameters do, how they affect your video output, and how" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="how-to-adjust-ffmpeg-chromakey-similarity-and-blend">How to
+Adjust FFmpeg Chromakey Similarity and Blend</h1>
+<p>This article provides a straightforward guide on how to fine-tune
+green screen removal in FFmpeg by adjusting the <code>similarity</code>
+and <code>blend</code> parameters of the <code>chromakey</code> filter.
+You will learn what these parameters do, how they affect your video
+output, and how to apply them using practical command-line examples to
+achieve clean, professional-looking overlays.</p>
+<h2 id="understanding-the-chromakey-parameters">Understanding the
+Chromakey Parameters</h2>
+<p>The <code>chromakey</code> filter in FFmpeg is used to make a
+specific color in a video transparent (usually green or blue). To get a
+clean key without harsh edges or leftover background colors, you must
+adjust two critical parameters: <code>similarity</code> and
+<code>blend</code>.</p>
+<ul>
+<li><strong>Similarity (<code>similarity</code>):</strong> This
+parameter controls how closely a pixel’s color must match the target key
+color to be replaced.
+<ul>
+<li><strong>Range:</strong> <code>0.01</code> to <code>1.0</code>
+(Default is <code>0.01</code>).</li>
+<li><strong>Usage:</strong> A low value only removes the exact color
+specified. Because real-world lighting creates gradients and shadows on
+a green screen, you usually need to increase this value (typically
+between <code>0.1</code> and <code>0.3</code>) to key out the entire
+background. If you set it too high, parts of your subject matching the
+key color will start to disappear.</li>
+</ul></li>
+<li><strong>Blend (<code>blend</code>):</strong> This parameter controls
+the smoothness of the boundary edges. It creates a semi-transparent
+transition gradient between the keyed-out background and the foreground
+subject.
+<ul>
+<li><strong>Range:</strong> <code>0.0</code> to <code>1.0</code>
+(Default is <code>0.0</code>).</li>
+<li><strong>Usage:</strong> A value of <code>0.0</code> results in hard,
+jagged edges. Increasing this value (typically between <code>0.05</code>
+and <code>0.2</code>) softens the edges and helps eliminate color
+“spill” around hair or fine details, making the subject blend naturally
+with the new background.</li>
+</ul></li>
+</ul>
+<h2 id="ffmpeg-command-syntax">FFmpeg Command Syntax</h2>
+<p>The basic syntax for applying the <code>chromakey</code> filter with
+named parameters is:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">-vf</span> <span class="st">&quot;chromakey=color=COLOR:similarity=VALUE:blend=VALUE&quot;</span></span></code></pre></div>
+<h3 id="example-1-outputting-a-transparent-video">Example 1: Outputting
+a Transparent Video</h3>
+<p>To key out a pure green screen (<code>0x00FF00</code>) with a
+similarity of <code>0.15</code> and a blend of <code>0.08</code>, and
+output it to a format that supports transparency (like Apple ProRes or
+VP9):</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;chromakey=color=0x00FF00:similarity=0.15:blend=0.08&quot;</span> <span class="at">-c:v</span> prores_ks <span class="at">-pix_fmt</span> yuva444p10le output.mov</span></code></pre></div>
+<h3 id="example-2-overlaying-onto-a-new-background">Example 2:
+Overlaying Onto a New Background</h3>
+<p>Most of the time, you will want to key the green screen video and
+immediately place it over a background image or video. This is done
+using a filtergraph (<code>-filter_complex</code>) with the
+<code>overlay</code> filter:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> background.mp4 <span class="at">-i</span> greenscreen.mp4 <span class="at">-filter_complex</span> <span class="st">&quot;[1:v]chromakey=color=0x3b7a57:similarity=0.2:blend=0.1[keyed];[0:v][keyed]overlay=x=0:y=0[out]&quot;</span> <span class="at">-map</span> <span class="st">&quot;[out]&quot;</span> output.mp4</span></code></pre></div>
+<p>In this command: * <code>0x3b7a57</code> is the hex code for the
+specific shade of green in the video. * <code>similarity=0.2</code>
+expands the color range to catch shadows. * <code>blend=0.1</code>
+smooths out the edges of the subject.</p>
+<h2 id="how-to-dial-in-the-perfect-settings">How to Dial in the Perfect
+Settings</h2>
+<p>Since every video has different lighting, follow these steps to find
+the optimal values for your footage:</p>
+<ol type="1">
+<li><strong>Identify the exact key color:</strong> Use a color picker
+tool on your source video to find the hex code of the green screen
+closest to your subject’s edge.</li>
+<li><strong>Start with similarity:</strong> Set <code>blend</code> to
+<code>0.0</code> and increase <code>similarity</code> incrementally
+(e.g., <code>0.10</code>, <code>0.12</code>, <code>0.15</code>) until
+the green background completely disappears. Stop before your foreground
+subject begins to fade.</li>
+<li><strong>Adjust the blend:</strong> Once the background is gone, look
+closely at the edges of your subject. They will likely look pixelated or
+sharp. Slowly increase the <code>blend</code> value (e.g.,
+<code>0.05</code>, <code>0.10</code>) until the edges look soft and
+natural.</li>
+</ol></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

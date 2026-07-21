@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Convert Quake Demo Files to Video Using FFmpeg - ffmpeg</title>
+    <meta name="description" content="This article explains how to play and convert video game demo files (such as Quake .dem files) into standard video formats using FFmpeg. Because game demo files contain engine telemetry and player inputs rather than actual video frames, they cannot be di">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/convert-quake-demo-files-to-video-using-ffmpeg">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Convert Quake Demo Files to Video Using FFmpeg - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/convert-quake-demo-files-to-video-using-ffmpeg" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article explains how to play and convert video game demo files (such as Quake .dem files) into standard video formats using FFmpeg. Because game demo files contain engine telemetry and player inputs rather than actual video frames, they cannot be di" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="convert-quake-demo-files-to-video-using-ffmpeg">Convert Quake
+Demo Files to Video Using FFmpeg</h1>
+<p>This article explains how to play and convert video game demo files
+(such as Quake <code>.dem</code> files) into standard video formats
+using FFmpeg. Because game demo files contain engine telemetry and
+player inputs rather than actual video frames, they cannot be directly
+converted by FFmpeg. Instead, you must play the demo inside the game
+engine and capture or stream the rendering output into FFmpeg to create
+a shareable video file.</p>
+<h2 id="why-you-cannot-convert-demo-files-directly">Why You Cannot
+Convert Demo Files Directly</h2>
+<p>Game demo files (with extensions like <code>.dem</code>,
+<code>.rec</code>, or <code>.rcy</code>) are not video files. They are
+data logs that record player coordinates, camera angles, inputs, and
+game events. To view them, the game engine must “replay” these events in
+real-time. Because there are no video streams inside a <code>.dem</code>
+file, FFmpeg cannot open them directly.</p>
+<p>To convert a demo into a video, you must play the demo in-game and
+record the output.</p>
+<hr />
+<h2 id="step-1-how-to-play-the-demo-file">Step 1: How to Play the Demo
+File</h2>
+<p>Before capturing, you must ensure the demo plays correctly inside the
+game engine.</p>
+<ol type="1">
+<li><p>Place the demo file (e.g., <code>mydemo.dem</code>) into your
+game’s data directory (for Quake, this is usually the <code>id1</code>
+folder).</p></li>
+<li><p>Launch the game or a modern source port (such as
+<strong>DarkPlaces</strong> for Quake).</p></li>
+<li><p>Open the developer console by pressing the tilde key
+(<code>~</code>).</p></li>
+<li><p>Type the play command and press Enter:</p>
+<pre class="text"><code>play mydemo</code></pre></li>
+</ol>
+<hr />
+<h2 id="step-2-convert-the-demo-to-video-using-ffmpeg">Step 2: Convert
+the Demo to Video Using FFmpeg</h2>
+<p>There are two primary methods to convert the running demo into a
+video file using FFmpeg: capturing your screen in real-time, or
+exporting raw frames from the game engine and encoding them.</p>
+<h3 id="method-a-real-time-screen-capture-with-ffmpeg">Method A:
+Real-Time Screen Capture with FFmpeg</h3>
+<p>You can run the game demo in windowed mode and use FFmpeg to record
+that specific window or your entire screen.</p>
+<p><strong>For Windows (using gdigrab):</strong> 1. Run your game in
+windowed mode. Note the exact title of the window (e.g., “Quake”). 2.
+Open your command prompt and run the following FFmpeg command to capture
+the window at 60 FPS:
+<code>bash    ffmpeg -f gdigrab -framerate 60 -i title="Quake" -c:v libx264 -pix_fmt yuv420p output.mp4</code>
+3. Play the demo in the game. Press <code>q</code> in the command prompt
+to stop recording when the demo ends.</p>
+<p><strong>For Linux (using x11grab):</strong> 1. Run the game in
+windowed mode. 2. Run the following command, adjusting
+<code>-video_size</code> to match your game window resolution:
+<code>bash    ffmpeg -f x11grab -framerate 60 -video_size 1920x1080 -i :0.0 -c:v libx264 -pix_fmt yuv420p output.mp4</code></p>
+<hr />
+<h3 id="method-b-in-engine-frame-export-highest-quality">Method B:
+In-Engine Frame Export (Highest Quality)</h3>
+<p>For the best visual quality without stuttering, you can configure the
+game engine to output raw video or image sequences during playback, and
+then compile them with FFmpeg.</p>
+<p><strong>1. Export the demo from the game engine:</strong> Many Quake
+source ports (like DarkPlaces) allow you to capture raw video directly
+to your disk. * While playing the demo, open the game console and type:
+<code>text   cl_capturevideo 1</code> * This will output a large,
+uncompressed <code>.avi</code> file or a sequence of <code>.tga</code>
+images in your game folder. Once the demo finishes, turn off capturing
+by typing <code>cl_capturevideo 0</code>.</p>
+<p><strong>2. Compress the exported file with FFmpeg:</strong> Because
+the exported file from the engine is uncompressed and massive, use
+FFmpeg to compress it into an efficient MP4 file:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> captured_video.avi <span class="at">-c:v</span> libx264 <span class="at">-crf</span> 18 <span class="at">-preset</span> slow <span class="at">-c:a</span> aac <span class="at">-b:a</span> 192k final_output.mp4</span></code></pre></div>
+<p>If the engine exported an image sequence (e.g.,
+<code>frame_0001.tga</code>, <code>frame_0002.tga</code>), use this
+command to compile them into a video:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-framerate</span> 60 <span class="at">-i</span> frame_%04d.tga <span class="at">-c:v</span> libx264 <span class="at">-pix_fmt</span> yuv420p final_output.mp4</span></code></pre></div></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

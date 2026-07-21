@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FFmpeg Zoompan Filter Ken Burns Effect Tutorial - ffmpeg</title>
+    <meta name="description" content="This guide explains how to use the FFmpeg zoompan filter to apply a dynamic Ken Burns effect—slowly zooming and panning—to a static image. You will learn the basic syntax, the mathematical formulas behind the filter's variables, and how to execute a">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/ffmpeg-zoompan-filter-ken-burns-effect-tutorial">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="FFmpeg Zoompan Filter Ken Burns Effect Tutorial - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/ffmpeg-zoompan-filter-ken-burns-effect-tutorial" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This guide explains how to use the FFmpeg zoompan filter to apply a dynamic Ken Burns effect—slowly zooming and panning—to a static image. You will learn the basic syntax, the mathematical formulas behind the filter's variables, and how to execute a" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="ffmpeg-zoompan-filter-ken-burns-effect-tutorial">FFmpeg Zoompan
+Filter Ken Burns Effect Tutorial</h1>
+<p>This guide explains how to use the FFmpeg <code>zoompan</code> filter
+to apply a dynamic Ken Burns effect—slowly zooming and panning—to a
+static image. You will learn the basic syntax, the mathematical formulas
+behind the filter’s variables, and how to execute a complete command to
+generate a high-quality video from a single photo.</p>
+<h2 id="the-basic-ken-burns-command">The Basic Ken Burns Command</h2>
+<p>To create a smooth zoom towards the center of an image, use the
+following FFmpeg command:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-loop</span> 1 <span class="at">-i</span> input.jpg <span class="at">-vf</span> <span class="st">&quot;zoompan=z=&#39;zoom+0.0015&#39;:x=&#39;iw/2-(iw/zoom/2)&#39;:y=&#39;ih/2-(ih/zoom/2)&#39;:d=125:s=1920x1080&quot;</span> <span class="at">-c:v</span> libx264 <span class="at">-t</span> 5 <span class="at">-pix_fmt</span> yuv420p output.mp4</span></code></pre></div>
+<h3 id="command-breakdown">Command Breakdown</h3>
+<ul>
+<li><strong><code>-loop 1 -i input.jpg</code></strong>: Loops the single
+input image to act as a continuous video stream.</li>
+<li><strong><code>zoompan</code></strong>: The filter used to apply the
+motion.
+<ul>
+<li><strong><code>z='zoom+0.0015'</code></strong>: Increments the zoom
+factor by 0.0015 on every frame. The default zoom starts at 1.0.</li>
+<li><strong><code>x='iw/2-(iw/zoom/2)'</code></strong>: Calculates the X
+coordinate of the zoom window to keep the horizontal focus centered.
+<code>iw</code> is the Input Width.</li>
+<li><strong><code>y='ih/2-(ih/zoom/2)'</code></strong>: Calculates the Y
+coordinate to keep the vertical focus centered. <code>ih</code> is the
+Input Height.</li>
+<li><strong><code>d=125</code></strong>: Sets the duration of the filter
+effect to 125 frames. At the default output framerate of 25 fps, this
+equals 5 seconds.</li>
+<li><strong><code>s=1920x1080</code></strong>: Defines the output
+resolution (Full HD).</li>
+</ul></li>
+<li><strong><code>-c:v libx264</code></strong>: Encodes the video using
+the H.264 codec.</li>
+<li><strong><code>-t 5</code></strong>: Limits the output video length
+to 5 seconds.</li>
+<li><strong><code>-pix_fmt yuv420p</code></strong>: Ensures pixel format
+compatibility for standard media players.</li>
+</ul>
+<hr />
+<h2 id="adjusting-the-movement-and-direction">Adjusting the Movement and
+Direction</h2>
+<p>You can customize the Ken Burns effect by changing the <code>x</code>
+and <code>y</code> equations to control where the camera pans.</p>
+<h3 id="zooming-into-the-top-left-corner">Zooming into the Top-Left
+Corner</h3>
+<p>To zoom into the top-left corner, set both the X and Y coordinates to
+zero:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="va">zoompan</span><span class="op">=</span>z=<span class="st">&#39;zoom+0.0015&#39;</span>:x=0:y=0:d=125:s=1920x1080</span></code></pre></div>
+<h3 id="zooming-into-the-bottom-right-corner">Zooming into the
+Bottom-Right Corner</h3>
+<p>To zoom into the bottom-right corner, offset the focus point using
+the maximum boundaries of the zoomed frame:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="va">zoompan</span><span class="op">=</span>z=<span class="st">&#39;zoom+0.0015&#39;</span>:x=<span class="st">&#39;iw-(iw/zoom)&#39;</span>:y=<span class="st">&#39;ih-(ih/zoom)&#39;</span>:d=125:s=1920x1080</span></code></pre></div>
+<h3 id="pan-left-to-right-no-zoom">Pan Left-to-Right (No Zoom)</h3>
+<p>To pan across an image without changing the scale, set a constant
+zoom level greater than 1 (e.g., <code>1.5</code>) and transition the X
+coordinate based on the current frame (<code>on</code>):</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="va">zoompan</span><span class="op">=</span>z=1.5:x=<span class="st">&#39;(iw-iw/zoom)*(on/d)&#39;</span>:y=<span class="st">&#39;ih/2-(ih/zoom/2)&#39;</span>:d=125:s=1920x1080</span></code></pre></div>
+<hr />
+<h2 id="preventing-jitter-and-shaking">Preventing Jitter and
+Shaking</h2>
+<p>The <code>zoompan</code> filter performs coordinate calculations
+using integers, which can cause the camera motion to appear shaky or
+jittery. To achieve a perfectly smooth Ken Burns effect, pre-scale your
+input image to a higher resolution before applying the
+<code>zoompan</code> filter.</p>
+<p>Add a scale filter directly before the <code>zoompan</code> filter in
+your filtergraph:</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-loop</span> 1 <span class="at">-i</span> input.jpg <span class="at">-vf</span> <span class="st">&quot;scale=3840:-1,zoompan=z=&#39;zoom+0.001&#39;:x=&#39;iw/2-(iw/zoom/2)&#39;:y=&#39;ih/2-(ih/zoom/2)&#39;:d=125:s=1920x1080&quot;</span> <span class="at">-c:v</span> libx264 <span class="at">-t</span> 5 <span class="at">-pix_fmt</span> yuv420p output.mp4</span></code></pre></div>
+<p>In this optimized command, <code>scale=3840:-1</code> upscale-sizes
+the image width to 3840 pixels (maintaining aspect ratio) before the
+zoom is calculated, which provides more pixel data for smoother
+fractional coordinate transitions.</p></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

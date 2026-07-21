@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Use unsharp_opencl in FFmpeg - ffmpeg</title>
+    <meta name="description" content="This article provides a quick overview and practical guide on how to use the unsharpopencl filter in FFmpeg. You will learn how to leverage OpenCL hardware acceleration to apply sharpening or blurring effects to your videos, reducing CPU usage by offload">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/how-to-use-unsharp-opencl-in-ffmpeg">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Use unsharp_opencl in FFmpeg - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/how-to-use-unsharp-opencl-in-ffmpeg" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article provides a quick overview and practical guide on how to use the unsharpopencl filter in FFmpeg. You will learn how to leverage OpenCL hardware acceleration to apply sharpening or blurring effects to your videos, reducing CPU usage by offload" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="how-to-use-unsharp_opencl-in-ffmpeg">How to Use unsharp_opencl
+in FFmpeg</h1>
+<p>This article provides a quick overview and practical guide on how to
+use the <code>unsharp_opencl</code> filter in FFmpeg. You will learn how
+to leverage OpenCL hardware acceleration to apply sharpening or blurring
+effects to your videos, reducing CPU usage by offloading the processing
+to your graphics card (GPU).</p>
+<p>The <code>unsharp_opencl</code> filter is the hardware-accelerated
+counterpart to FFmpeg’s standard <code>unsharp</code> filter. It uses
+OpenCL to perform image sharpening and blurring, which is highly
+beneficial for processing high-resolution video streams like 4K in
+real-time.</p>
+<h2 id="prerequisites">Prerequisites</h2>
+<p>Before using the filter, ensure your system meets the following
+requirements: 1. <strong>FFmpeg with OpenCL support:</strong> Your
+FFmpeg binary must be compiled with the <code>--enable-opencl</code>
+flag. You can verify this by running <code>ffmpeg -protocols</code> or
+<code>ffmpeg -buildconf</code> and looking for OpenCL. 2. <strong>GPU
+Drivers:</strong> You must have compatible OpenCL drivers installed for
+your Nvidia, AMD, or Intel GPU.</p>
+<h2 id="basic-syntax-and-command-structure">Basic Syntax and Command
+Structure</h2>
+<p>Because OpenCL operates on GPU memory, you cannot simply apply the
+filter directly to a standard CPU-decoded video stream. You must
+initialize the OpenCL hardware device, upload the video frames to the
+GPU, apply the filter, and then download the frames back to system
+memory (unless you are encoding using a hardware encoder).</p>
+<p>Here is the template for a basic command using CPU decoding/encoding
+and OpenCL processing:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-init_hw_device</span> opencl=gpu:0 <span class="at">-filter_hw_device</span> gpu <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;format=nv12,hwupload,unsharp_opencl=luma_amount=1.5,hwdownload,format=nv12&quot;</span> output.mp4</span></code></pre></div>
+<h3 id="command-breakdown">Command Breakdown:</h3>
+<ul>
+<li><strong><code>-init_hw_device opencl=gpu:0</code></strong>:
+Initializes the OpenCL hardware device. <code>gpu:0</code> refers to the
+first available GPU.</li>
+<li><strong><code>-filter_hw_device gpu</code></strong>: Instructs
+FFmpeg to use the newly initialized GPU device for filtering.</li>
+<li><strong><code>format=nv12</code></strong>: Converts the input video
+to a compatible pixel format before uploading.</li>
+<li><strong><code>hwupload</code></strong>: Uploads the video frames
+from system memory to GPU memory.</li>
+<li><strong><code>unsharp_opencl=luma_amount=1.5</code></strong>:
+Applies the OpenCL sharpening filter to the luma channel.</li>
+<li><strong><code>hwdownload</code></strong>: Downloads the processed
+frames from GPU memory back to system memory.</li>
+<li><strong><code>format=nv12</code></strong>: Restores the appropriate
+software pixel format for the output encoder.</li>
+</ul>
+<h2 id="filter-parameters">Filter Parameters</h2>
+<p>The <code>unsharp_opencl</code> filter accepts several parameters to
+fine-tune the sharpening or blurring effect:</p>
+<ul>
+<li><strong><code>luma_msize_x</code> /
+<code>luma_msize_y</code></strong>: Sets the horizontal and vertical
+kernel size for the luma channel. Must be an odd integer between 3 and
+23 (default is 5).</li>
+<li><strong><code>luma_amount</code></strong>: The strength of the
+effect for the luma channel.
+<ul>
+<li>A positive value (e.g., <code>1.5</code>) sharpens the image.</li>
+<li>A negative value (e.g., <code>-1.5</code>) blurs the image.</li>
+<li>Default is 1.0. Range is -2.0 to 5.0.</li>
+</ul></li>
+<li><strong><code>chroma_msize_x</code> /
+<code>chroma_msize_y</code></strong>: Sets the horizontal and vertical
+kernel size for the chroma (color) channels. Must be an odd integer
+between 3 and 23 (default is 5).</li>
+<li><strong><code>chroma_amount</code></strong>: The strength of the
+effect for the chroma channel (default is 0.0, which leaves color
+sharpening disabled).</li>
+</ul>
+<h2 id="practical-examples">Practical Examples</h2>
+<h3 id="strong-sharpening-example">Strong Sharpening Example</h3>
+<p>To apply a strong sharpening effect to both the luma (brightness) and
+chroma (color) channels:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-init_hw_device</span> opencl=gpu <span class="at">-filter_hw_device</span> gpu <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;format=nv12,hwupload,unsharp_opencl=luma_msize_x=7:luma_msize_y=7:luma_amount=2.0:chroma_msize_x=5:chroma_msize_y=5:chroma_amount=1.0,hwdownload,format=nv12&quot;</span> <span class="at">-c:v</span> libx264 <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<h3 id="soft-blur-example">Soft Blur Example</h3>
+<p>To apply a slight blur effect instead of sharpening, use negative
+amount values:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-init_hw_device</span> opencl=gpu <span class="at">-filter_hw_device</span> gpu <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;format=nv12,hwupload,unsharp_opencl=luma_amount=-1.0:chroma_amount=-1.0,hwdownload,format=nv12&quot;</span> <span class="at">-c:v</span> libx264 <span class="at">-c:a</span> copy output.mp4</span></code></pre></div></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

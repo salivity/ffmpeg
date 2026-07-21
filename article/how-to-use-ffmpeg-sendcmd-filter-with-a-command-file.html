@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Use FFmpeg sendcmd Filter with a Command File - ffmpeg</title>
+    <meta name="description" content="This article explains how to write and format a command file for the FFmpeg sendcmd and asendcmd filters. You will learn the exact syntax rules, how to structure time intervals, and how to apply these commands to dynamically alter video and audio filter">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/how-to-use-ffmpeg-sendcmd-filter-with-a-command-file">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Use FFmpeg sendcmd Filter with a Command File - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/how-to-use-ffmpeg-sendcmd-filter-with-a-command-file" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article explains how to write and format a command file for the FFmpeg sendcmd and asendcmd filters. You will learn the exact syntax rules, how to structure time intervals, and how to apply these commands to dynamically alter video and audio filter" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="how-to-use-ffmpeg-sendcmd-filter-with-a-command-file">How to Use
+FFmpeg sendcmd Filter with a Command File</h1>
+<p>This article explains how to write and format a command file for the
+FFmpeg <code>sendcmd</code> and <code>asendcmd</code> filters. You will
+learn the exact syntax rules, how to structure time intervals, and how
+to apply these commands to dynamically alter video and audio filter
+parameters during playback or processing.</p>
+<p>The <code>sendcmd</code> filter reads a list of commands from a text
+file or direct string and passes them to other filters in the
+filtergraph at specified timestamps. This allows you to dynamically
+change parameters—such as text content, volume, position, or crop
+factors—without splitting the video into multiple segments.</p>
+<h2 id="syntax-of-the-command-file">1. Syntax of the Command File</h2>
+<p>The command file is a plain text file where each line defines a time
+trigger, a target filter, the command name, and the arguments.</p>
+<p>The basic syntax for a single command line is:</p>
+<pre class="text"><code>[time] [target] [command] [arguments];</code></pre>
+<h3 id="syntax-breakdown">Syntax Breakdown:</h3>
+<ul>
+<li><strong><code>[time]</code></strong>: The exact time or time range
+when the command triggers.
+<ul>
+<li><em>Single timestamp:</em> <code>5.0</code> (triggers exactly at 5
+seconds).</li>
+<li><em>Time range:</em> <code>5.0-10.0</code> (triggers at 5 seconds,
+and can revert or apply a different state at 10 seconds depending on the
+filter’s behavior).</li>
+<li><em>Format:</em> Can be expressed in seconds (e.g.,
+<code>12.34</code>) or as <code>HH:MM:SS.milli</code> (e.g.,
+<code>00:01:15.500</code>).</li>
+</ul></li>
+<li><strong><code>[target]</code></strong>: The specific filter to
+control.
+<ul>
+<li>Use the filter name (e.g., <code>drawtext</code>).</li>
+<li>To target a specific instance of a filter, use
+<code>filter_name@instance_name</code> (e.g.,
+<code>drawtext@title</code>).</li>
+</ul></li>
+<li><strong><code>[command]</code></strong>: The command supported by
+the target filter. For most filters, this is <code>reinit</code> to
+reinitialize parameters.</li>
+<li><strong><code>[arguments]</code></strong>: The parameters you want
+to change, formatted as <code>key=value</code> pairs. Multiple
+parameters must be separated by colons <code>:</code> or commas
+<code>,</code> depending on the filter’s syntax.</li>
+<li><strong><code>;</code> (Semicolon)</strong>: Every command line must
+end with a semicolon.</li>
+<li><strong><code>#</code> (Comments)</strong>: Any line starting with
+<code>#</code> is ignored by FFmpeg.</li>
+</ul>
+<hr />
+<h2 id="example-of-a-command-file">2. Example of a Command File</h2>
+<p>Below is an example of a command file named
+<code>commands.txt</code>. It targets a <code>drawtext</code> filter
+with the instance name <code>mytext</code> to change the text content
+and its vertical position at different timestamps.</p>
+<pre class="text"><code># Change the text to &quot;Intro&quot; at 2 seconds
+2.0 drawtext@mytext reinit text=&#39;Intro&#39;:y=100;
+
+# Move the text lower and change content at 5 seconds
+5.0 drawtext@mytext reinit text=&#39;Main Segment&#39;:y=300;
+
+# Change the text to &quot;Outro&quot; at 10 seconds
+10.0 drawtext@mytext reinit text=&#39;Outro&#39;:y=100;</code></pre>
+<hr />
+<h2 id="running-the-ffmpeg-command">3. Running the FFmpeg Command</h2>
+<p>To use the command file, you must reference it using the
+<code>f</code> parameter in the <code>sendcmd</code> filter. You must
+also assign the corresponding instance name (using <code>@name</code>)
+to the filter you want to control.</p>
+<p>Here is the FFmpeg command line structure:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;sendcmd=f=commands.txt,drawtext@mytext=text=&#39;Default&#39;:x=100:y=100:fontfile=font.ttf:fontsize=24:fontcolor=white&quot;</span> <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<h3 id="how-this-command-works">How this command works:</h3>
+<ol type="1">
+<li><code>-vf "sendcmd=f=commands.txt,...</code> tells FFmpeg to load
+the triggers from <code>commands.txt</code>.</li>
+<li><code>drawtext@mytext</code> defines an instance of the
+<code>drawtext</code> filter named <code>mytext</code>.</li>
+<li>As the video processes, the <code>sendcmd</code> filter intercepts
+the timestamps specified in <code>commands.txt</code> and updates the
+parameters of <code>drawtext@mytext</code> in real-time.</li>
+</ol></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

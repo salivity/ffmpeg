@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FFmpeg VP9 Hardware Transcoding with NVDEC on Linux - ffmpeg</title>
+    <meta name="description" content="This guide provides a straightforward walk-through on how to leverage NVIDIA hardware acceleration (NVDEC) to decode VP9 video files and transcode them efficiently using FFmpeg on a Linux system. You will learn the necessary system prerequisites, the exa">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/ffmpeg-vp9-hardware-transcoding-with-nvdec-on-linux">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="FFmpeg VP9 Hardware Transcoding with NVDEC on Linux - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/ffmpeg-vp9-hardware-transcoding-with-nvdec-on-linux" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This guide provides a straightforward walk-through on how to leverage NVIDIA hardware acceleration (NVDEC) to decode VP9 video files and transcode them efficiently using FFmpeg on a Linux system. You will learn the necessary system prerequisites, the exa" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="ffmpeg-vp9-hardware-transcoding-with-nvdec-on-linux">FFmpeg VP9
+Hardware Transcoding with NVDEC on Linux</h1>
+<p>This guide provides a straightforward walk-through on how to leverage
+NVIDIA hardware acceleration (NVDEC) to decode VP9 video files and
+transcode them efficiently using FFmpeg on a Linux system. You will
+learn the necessary system prerequisites, the exact FFmpeg command
+structures to initiate the hardware-accelerated pipeline, and how to
+verify that your GPU is handling the decoding workload.</p>
+<h3 id="prerequisites">Prerequisites</h3>
+<p>Before starting, ensure your system meets the following requirements:
+* <strong>NVIDIA GPU:</strong> A graphics card that supports VP9
+hardware decoding (GeForce GTX 950/960 with GM206, or any Pascal
+architecture and newer GPUs). * <strong>NVIDIA Drivers:</strong>
+Proprietary NVIDIA drivers installed and configured. * <strong>FFmpeg
+with CUDA support:</strong> FFmpeg must be compiled with NVDEC/NVENC
+support. You can verify this by running:
+<code>bash     ffmpeg -decoders | grep vp9</code> Look for
+<code>vp9_cuvid</code> (NVIDIA CUVID/NVDEC VP9 decoder) in the
+output.</p>
+<h3 id="the-full-hardware-transcoding-command">The Full Hardware
+Transcoding Command</h3>
+<p>To decode a VP9 video using NVDEC and transcode it to H.264 using
+NVENC (keeping the entire pipeline on the GPU to avoid CPU bottlenecks),
+use the following command:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-hwaccel</span> cuda <span class="at">-hwaccel_output_format</span> cuda <span class="at">-c:v</span> vp9_cuvid <span class="at">-i</span> input.webm <span class="at">-c:v</span> h264_nvenc <span class="at">-preset</span> p4 <span class="at">-b:v</span> 5M output.mp4</span></code></pre></div>
+<h4 id="command-breakdown">Command Breakdown:</h4>
+<ul>
+<li><code>-hwaccel cuda</code>: Enables CUDA hardware acceleration for
+the transcoding pipeline.</li>
+<li><code>-hwaccel_output_format cuda</code>: Keeps the decoded video
+frames in GPU VRAM to prevent slow copying back to system memory
+(RAM).</li>
+<li><code>-c:v vp9_cuvid</code>: Explicitly specifies the NVDEC
+hardware-accelerated VP9 decoder.</li>
+<li><code>-i input.webm</code>: The input VP9 video file.</li>
+<li><code>-c:v h264_nvenc</code>: Specifies the NVIDIA
+hardware-accelerated H.264 encoder for the output file (you can also use
+<code>hevc_nvenc</code> for H.265/HEVC).</li>
+<li><code>-preset p4</code>: Sets the NVENC encoding preset (ranging
+from p1 for fastest to p7 for slowest/best quality).</li>
+<li><code>-b:v 5M</code>: Sets the target video bitrate to 5 Mbps.</li>
+</ul>
+<h3 id="decoding-with-gpu-and-encoding-with-cpu">Decoding with GPU and
+Encoding with CPU</h3>
+<p>If you want to decode using the GPU but encode using a
+software/CPU-based encoder like x264, you must omit the CUDA hardware
+output format flag to copy the frames back to system memory:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-hwaccel</span> cuda <span class="at">-c:v</span> vp9_cuvid <span class="at">-i</span> input.webm <span class="at">-c:v</span> libx264 <span class="at">-crf</span> 23 output.mp4</span></code></pre></div>
+<h3 id="verifying-hardware-utilization">Verifying Hardware
+Utilization</h3>
+<p>To confirm that your GPU is actively decoding the VP9 video, open a
+separate terminal window while the FFmpeg command is running and
+execute:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">nvidia-smi</span></span></code></pre></div>
+<p>In the output, verify that <code>ffmpeg</code> is listed under the
+“Processes” section, and check that the “DEC” (Decoder) utilization
+percentage is active.</p></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

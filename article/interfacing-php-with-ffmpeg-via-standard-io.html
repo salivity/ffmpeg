@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interfacing PHP with FFmpeg via Standard IO - ffmpeg</title>
+    <meta name="description" content="Interfacing PHP with the FFmpeg binary via standard input, output, and error streams (I/O) allows you to process media files dynamically in memory without writing temporary files to disk. This article provides a straightforward guide on using PHP's proco">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/interfacing-php-with-ffmpeg-via-standard-io">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Interfacing PHP with FFmpeg via Standard IO - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/interfacing-php-with-ffmpeg-via-standard-io" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Interfacing PHP with the FFmpeg binary via standard input, output, and error streams (I/O) allows you to process media files dynamically in memory without writing temporary files to disk. This article provides a straightforward guide on using PHP's proco" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="interfacing-php-with-ffmpeg-via-standard-io">Interfacing PHP
+with FFmpeg via Standard IO</h1>
+<p>Interfacing PHP with the FFmpeg binary via standard input, output,
+and error streams (I/O) allows you to process media files dynamically in
+memory without writing temporary files to disk. This article provides a
+straightforward guide on using PHP’s <code>proc_open</code> function to
+pass video data directly to FFmpeg via <code>stdin</code>, retrieve the
+processed output through <code>stdout</code>, and capture diagnostic
+logs using <code>stderr</code>.</p>
+<h2 id="understanding-the-ffmpeg-pipeline">1. Understanding the FFmpeg
+Pipeline</h2>
+<p>To redirect standard I/O streams, you must instruct FFmpeg to read
+from and write to the system pipes instead of physical files.</p>
+<ul>
+<li><strong>Input:</strong> Use <code>pipe:0</code> or <code>-</code> as
+the input filename to tell FFmpeg to read from standard input
+(<code>stdin</code>).</li>
+<li><strong>Output:</strong> Use <code>pipe:1</code> or <code>-</code>
+as the output filename to write to standard output
+(<code>stdout</code>).</li>
+<li><strong>Format:</strong> When streaming via stdout, you must
+explicitly define a container format using the <code>-f</code> flag
+(e.g., <code>-f mp4</code>, <code>-f mpegts</code>), as FFmpeg cannot
+guess the format from a pipe’s file extension. For MP4 streams, you must
+also use the <code>-movflags frag_keyframe+empty_moov</code> option to
+make the output streamable.</li>
+</ul>
+<h2 id="setting-up-proc_open-in-php">2. Setting Up
+<code>proc_open</code> in PHP</h2>
+<p>PHP’s <code>proc_open</code> execution function allows fine-grained
+control over execution pipes. You define a descriptor specification
+array to map PHP file pointers to FFmpeg’s standard streams.</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode php"><code class="sourceCode php"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="va">$descriptors</span> <span class="op">=</span> [</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>    <span class="dv">0</span> =&gt; [<span class="st">&#39;pipe&#39;</span><span class="ot">,</span> <span class="st">&#39;r&#39;</span>]<span class="ot">,</span> <span class="co">// stdin (write to FFmpeg)</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>    <span class="dv">1</span> =&gt; [<span class="st">&#39;pipe&#39;</span><span class="ot">,</span> <span class="st">&#39;w&#39;</span>]<span class="ot">,</span> <span class="co">// stdout (read from FFmpeg)</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>    <span class="dv">2</span> =&gt; [<span class="st">&#39;pipe&#39;</span><span class="ot">,</span> <span class="st">&#39;w&#39;</span>]  <span class="co">// stderr (read FFmpeg errors/logs)</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>]<span class="ot">;</span></span></code></pre></div>
+<h2 id="implementation-code">3. Implementation Code</h2>
+<p>Below is a complete, non-blocking PHP script that reads a source
+video file, streams it into FFmpeg to convert it, and captures the
+output.</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode php"><code class="sourceCode php"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">&lt;?php</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="co">// Define the FFmpeg command</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="co">// This example converts an incoming stream to an MP4 with streaming-compatible flags</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="va">$cmd</span> <span class="op">=</span> <span class="st">&#39;ffmpeg -i pipe:0 -f mp4 -movflags frag_keyframe+empty_moov pipe:1&#39;</span><span class="ot">;</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a><span class="va">$descriptors</span> <span class="op">=</span> [</span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>    <span class="dv">0</span> =&gt; [<span class="st">&#39;pipe&#39;</span><span class="ot">,</span> <span class="st">&#39;r&#39;</span>]<span class="ot">,</span> <span class="co">// stdin</span></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>    <span class="dv">1</span> =&gt; [<span class="st">&#39;pipe&#39;</span><span class="ot">,</span> <span class="st">&#39;w&#39;</span>]<span class="ot">,</span> <span class="co">// stdout</span></span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>    <span class="dv">2</span> =&gt; [<span class="st">&#39;pipe&#39;</span><span class="ot">,</span> <span class="st">&#39;w&#39;</span>]  <span class="co">// stderr</span></span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>]<span class="ot">;</span></span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a><span class="va">$process</span> <span class="op">=</span> <span class="fu">proc_open</span>(<span class="va">$cmd</span><span class="ot">,</span> <span class="va">$descriptors</span><span class="ot">,</span> <span class="va">$pipes</span>)<span class="ot">;</span></span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> (<span class="fu">is_resource</span>(<span class="va">$process</span>)) {</span>
+<span id="cb2-16"><a href="#cb2-16" aria-hidden="true" tabindex="-1"></a>    <span class="co">// Set all stream pipes to non-blocking mode to prevent deadlocks</span></span>
+<span id="cb2-17"><a href="#cb2-17" aria-hidden="true" tabindex="-1"></a>    <span class="fu">stream_set_blocking</span>(<span class="va">$pipes</span>[<span class="dv">0</span>]<span class="ot">,</span> <span class="dv">0</span>)<span class="ot">;</span></span>
+<span id="cb2-18"><a href="#cb2-18" aria-hidden="true" tabindex="-1"></a>    <span class="fu">stream_set_blocking</span>(<span class="va">$pipes</span>[<span class="dv">1</span>]<span class="ot">,</span> <span class="dv">0</span>)<span class="ot">;</span></span>
+<span id="cb2-19"><a href="#cb2-19" aria-hidden="true" tabindex="-1"></a>    <span class="fu">stream_set_blocking</span>(<span class="va">$pipes</span>[<span class="dv">2</span>]<span class="ot">,</span> <span class="dv">0</span>)<span class="ot">;</span></span>
+<span id="cb2-20"><a href="#cb2-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-21"><a href="#cb2-21" aria-hidden="true" tabindex="-1"></a>    <span class="co">// Load sample input data (e.g., a local video file)</span></span>
+<span id="cb2-22"><a href="#cb2-22" aria-hidden="true" tabindex="-1"></a>    <span class="va">$inputData</span> <span class="op">=</span> <span class="fu">file_get_contents</span>(<span class="st">&#39;input.avi&#39;</span>)<span class="ot">;</span></span>
+<span id="cb2-23"><a href="#cb2-23" aria-hidden="true" tabindex="-1"></a>    <span class="va">$inputLength</span> <span class="op">=</span> <span class="fu">strlen</span>(<span class="va">$inputData</span>)<span class="ot">;</span></span>
+<span id="cb2-24"><a href="#cb2-24" aria-hidden="true" tabindex="-1"></a>    <span class="va">$bytesWritten</span> <span class="op">=</span> <span class="dv">0</span><span class="ot">;</span></span>
+<span id="cb2-25"><a href="#cb2-25" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb2-26"><a href="#cb2-26" aria-hidden="true" tabindex="-1"></a>    <span class="va">$outputData</span> <span class="op">=</span> <span class="st">&#39;&#39;</span><span class="ot">;</span></span>
+<span id="cb2-27"><a href="#cb2-27" aria-hidden="true" tabindex="-1"></a>    <span class="va">$errorData</span> <span class="op">=</span> <span class="st">&#39;&#39;</span><span class="ot">;</span></span>
+<span id="cb2-28"><a href="#cb2-28" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-29"><a href="#cb2-29" aria-hidden="true" tabindex="-1"></a>    <span class="co">// Loop until the process finishes and all buffers are cleared</span></span>
+<span id="cb2-30"><a href="#cb2-30" aria-hidden="true" tabindex="-1"></a>    <span class="cf">while</span> (<span class="kw">true</span>) {</span>
+<span id="cb2-31"><a href="#cb2-31" aria-hidden="true" tabindex="-1"></a>        <span class="va">$read</span> <span class="op">=</span> [<span class="va">$pipes</span>[<span class="dv">1</span>]<span class="ot">,</span> <span class="va">$pipes</span>[<span class="dv">2</span>]]<span class="ot">;</span></span>
+<span id="cb2-32"><a href="#cb2-32" aria-hidden="true" tabindex="-1"></a>        <span class="va">$write</span> <span class="op">=</span> (<span class="va">$bytesWritten</span> <span class="op">&lt;</span> <span class="va">$inputLength</span>) <span class="ot">?</span> [<span class="va">$pipes</span>[<span class="dv">0</span>]] <span class="ot">:</span> <span class="kw">null</span><span class="ot">;</span></span>
+<span id="cb2-33"><a href="#cb2-33" aria-hidden="true" tabindex="-1"></a>        <span class="va">$except</span> <span class="op">=</span> <span class="kw">null</span><span class="ot">;</span></span>
+<span id="cb2-34"><a href="#cb2-34" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-35"><a href="#cb2-35" aria-hidden="true" tabindex="-1"></a>        <span class="co">// Wait for activity on the streams</span></span>
+<span id="cb2-36"><a href="#cb2-36" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> (<span class="fu">stream_select</span>(<span class="va">$read</span><span class="ot">,</span> <span class="va">$write</span><span class="ot">,</span> <span class="va">$except</span><span class="ot">,</span> <span class="dv">1</span>) <span class="op">===</span> <span class="kw">false</span>) {</span>
+<span id="cb2-37"><a href="#cb2-37" aria-hidden="true" tabindex="-1"></a>            <span class="cf">break</span><span class="ot">;</span></span>
+<span id="cb2-38"><a href="#cb2-38" aria-hidden="true" tabindex="-1"></a>        }</span>
+<span id="cb2-39"><a href="#cb2-39" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-40"><a href="#cb2-40" aria-hidden="true" tabindex="-1"></a>        <span class="co">// Write chunk of input data to FFmpeg&#39;s stdin</span></span>
+<span id="cb2-41"><a href="#cb2-41" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> (<span class="va">$write</span> <span class="op">&amp;&amp;</span> <span class="fu">in_array</span>(<span class="va">$pipes</span>[<span class="dv">0</span>]<span class="ot">,</span> <span class="va">$write</span>)) {</span>
+<span id="cb2-42"><a href="#cb2-42" aria-hidden="true" tabindex="-1"></a>            <span class="va">$chunk</span> <span class="op">=</span> <span class="fu">substr</span>(<span class="va">$inputData</span><span class="ot">,</span> <span class="va">$bytesWritten</span><span class="ot">,</span> <span class="dv">65536</span>)<span class="ot">;</span></span>
+<span id="cb2-43"><a href="#cb2-43" aria-hidden="true" tabindex="-1"></a>            <span class="va">$written</span> <span class="op">=</span> <span class="fu">fwrite</span>(<span class="va">$pipes</span>[<span class="dv">0</span>]<span class="ot">,</span> <span class="va">$chunk</span>)<span class="ot">;</span></span>
+<span id="cb2-44"><a href="#cb2-44" aria-hidden="true" tabindex="-1"></a>            <span class="cf">if</span> (<span class="va">$written</span> <span class="op">&gt;</span> <span class="dv">0</span>) {</span>
+<span id="cb2-45"><a href="#cb2-45" aria-hidden="true" tabindex="-1"></a>                <span class="va">$bytesWritten</span> <span class="op">+=</span> <span class="va">$written</span><span class="ot">;</span></span>
+<span id="cb2-46"><a href="#cb2-46" aria-hidden="true" tabindex="-1"></a>            }</span>
+<span id="cb2-47"><a href="#cb2-47" aria-hidden="true" tabindex="-1"></a>            <span class="co">// Close stdin once all input data has been sent</span></span>
+<span id="cb2-48"><a href="#cb2-48" aria-hidden="true" tabindex="-1"></a>            <span class="cf">if</span> (<span class="va">$bytesWritten</span> <span class="op">&gt;=</span> <span class="va">$inputLength</span>) {</span>
+<span id="cb2-49"><a href="#cb2-49" aria-hidden="true" tabindex="-1"></a>                <span class="fu">fclose</span>(<span class="va">$pipes</span>[<span class="dv">0</span>])<span class="ot">;</span></span>
+<span id="cb2-50"><a href="#cb2-50" aria-hidden="true" tabindex="-1"></a>            }</span>
+<span id="cb2-51"><a href="#cb2-51" aria-hidden="true" tabindex="-1"></a>        }</span>
+<span id="cb2-52"><a href="#cb2-52" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-53"><a href="#cb2-53" aria-hidden="true" tabindex="-1"></a>        <span class="co">// Read chunk of output data from FFmpeg&#39;s stdout</span></span>
+<span id="cb2-54"><a href="#cb2-54" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> (<span class="fu">in_array</span>(<span class="va">$pipes</span>[<span class="dv">1</span>]<span class="ot">,</span> <span class="va">$read</span>)) {</span>
+<span id="cb2-55"><a href="#cb2-55" aria-hidden="true" tabindex="-1"></a>            <span class="va">$chunk</span> <span class="op">=</span> <span class="fu">fread</span>(<span class="va">$pipes</span>[<span class="dv">1</span>]<span class="ot">,</span> <span class="dv">65536</span>)<span class="ot">;</span></span>
+<span id="cb2-56"><a href="#cb2-56" aria-hidden="true" tabindex="-1"></a>            <span class="cf">if</span> (<span class="va">$chunk</span> <span class="op">!==</span> <span class="kw">false</span>) {</span>
+<span id="cb2-57"><a href="#cb2-57" aria-hidden="true" tabindex="-1"></a>                <span class="va">$outputData</span> <span class="op">.=</span> <span class="va">$chunk</span><span class="ot">;</span></span>
+<span id="cb2-58"><a href="#cb2-58" aria-hidden="true" tabindex="-1"></a>            }</span>
+<span id="cb2-59"><a href="#cb2-59" aria-hidden="true" tabindex="-1"></a>        }</span>
+<span id="cb2-60"><a href="#cb2-60" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-61"><a href="#cb2-61" aria-hidden="true" tabindex="-1"></a>        <span class="co">// Read chunk of logs/errors from FFmpeg&#39;s stderr</span></span>
+<span id="cb2-62"><a href="#cb2-62" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> (<span class="fu">in_array</span>(<span class="va">$pipes</span>[<span class="dv">2</span>]<span class="ot">,</span> <span class="va">$read</span>)) {</span>
+<span id="cb2-63"><a href="#cb2-63" aria-hidden="true" tabindex="-1"></a>            <span class="va">$chunk</span> <span class="op">=</span> <span class="fu">fread</span>(<span class="va">$pipes</span>[<span class="dv">2</span>]<span class="ot">,</span> <span class="dv">65536</span>)<span class="ot">;</span></span>
+<span id="cb2-64"><a href="#cb2-64" aria-hidden="true" tabindex="-1"></a>            <span class="cf">if</span> (<span class="va">$chunk</span> <span class="op">!==</span> <span class="kw">false</span>) {</span>
+<span id="cb2-65"><a href="#cb2-65" aria-hidden="true" tabindex="-1"></a>                <span class="va">$errorData</span> <span class="op">.=</span> <span class="va">$chunk</span><span class="ot">;</span></span>
+<span id="cb2-66"><a href="#cb2-66" aria-hidden="true" tabindex="-1"></a>            }</span>
+<span id="cb2-67"><a href="#cb2-67" aria-hidden="true" tabindex="-1"></a>        }</span>
+<span id="cb2-68"><a href="#cb2-68" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-69"><a href="#cb2-69" aria-hidden="true" tabindex="-1"></a>        <span class="co">// Terminate loop if the process has stopped</span></span>
+<span id="cb2-70"><a href="#cb2-70" aria-hidden="true" tabindex="-1"></a>        <span class="va">$status</span> <span class="op">=</span> <span class="fu">proc_get_status</span>(<span class="va">$process</span>)<span class="ot">;</span></span>
+<span id="cb2-71"><a href="#cb2-71" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> (<span class="op">!</span><span class="va">$status</span>[<span class="st">&#39;running&#39;</span>] <span class="op">&amp;&amp;</span> <span class="fu">feof</span>(<span class="va">$pipes</span>[<span class="dv">1</span>]) <span class="op">&amp;&amp;</span> <span class="fu">feof</span>(<span class="va">$pipes</span>[<span class="dv">2</span>])) {</span>
+<span id="cb2-72"><a href="#cb2-72" aria-hidden="true" tabindex="-1"></a>            <span class="cf">break</span><span class="ot">;</span></span>
+<span id="cb2-73"><a href="#cb2-73" aria-hidden="true" tabindex="-1"></a>        }</span>
+<span id="cb2-74"><a href="#cb2-74" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb2-75"><a href="#cb2-75" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-76"><a href="#cb2-76" aria-hidden="true" tabindex="-1"></a>    <span class="co">// Clean up remaining open pipes and close the process</span></span>
+<span id="cb2-77"><a href="#cb2-77" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> (<span class="fu">is_resource</span>(<span class="va">$pipes</span>[<span class="dv">0</span>])) <span class="fu">fclose</span>(<span class="va">$pipes</span>[<span class="dv">0</span>])<span class="ot">;</span></span>
+<span id="cb2-78"><a href="#cb2-78" aria-hidden="true" tabindex="-1"></a>    <span class="fu">fclose</span>(<span class="va">$pipes</span>[<span class="dv">1</span>])<span class="ot">;</span></span>
+<span id="cb2-79"><a href="#cb2-79" aria-hidden="true" tabindex="-1"></a>    <span class="fu">fclose</span>(<span class="va">$pipes</span>[<span class="dv">2</span>])<span class="ot">;</span></span>
+<span id="cb2-80"><a href="#cb2-80" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb2-81"><a href="#cb2-81" aria-hidden="true" tabindex="-1"></a>    <span class="va">$exitCode</span> <span class="op">=</span> <span class="fu">proc_close</span>(<span class="va">$process</span>)<span class="ot">;</span></span>
+<span id="cb2-82"><a href="#cb2-82" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-83"><a href="#cb2-83" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> (<span class="va">$exitCode</span> <span class="op">===</span> <span class="dv">0</span>) {</span>
+<span id="cb2-84"><a href="#cb2-84" aria-hidden="true" tabindex="-1"></a>        <span class="co">// Save the processed standard output data to a file</span></span>
+<span id="cb2-85"><a href="#cb2-85" aria-hidden="true" tabindex="-1"></a>        <span class="fu">file_put_contents</span>(<span class="st">&#39;output.mp4&#39;</span><span class="ot">,</span> <span class="va">$outputData</span>)<span class="ot">;</span></span>
+<span id="cb2-86"><a href="#cb2-86" aria-hidden="true" tabindex="-1"></a>        <span class="kw">echo</span> <span class="st">&quot;Conversion successful!&quot;</span><span class="ot">;</span></span>
+<span id="cb2-87"><a href="#cb2-87" aria-hidden="true" tabindex="-1"></a>    } <span class="cf">else</span> {</span>
+<span id="cb2-88"><a href="#cb2-88" aria-hidden="true" tabindex="-1"></a>        <span class="kw">echo</span> <span class="st">&quot;Error during conversion (Exit code: </span><span class="va">$exitCode</span><span class="st">):</span><span class="sc">\n</span><span class="st">&quot;</span><span class="ot">;</span></span>
+<span id="cb2-89"><a href="#cb2-89" aria-hidden="true" tabindex="-1"></a>        <span class="kw">echo</span> <span class="va">$errorData</span><span class="ot">;</span></span>
+<span id="cb2-90"><a href="#cb2-90" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb2-91"><a href="#cb2-91" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<h2 id="key-considerations">4. Key Considerations</h2>
+<ul>
+<li><strong>Deadlock Prevention:</strong> Do not write all data to
+<code>stdin</code> before reading from <code>stdout</code>. FFmpeg’s
+internal output buffers will fill up, causing the process to block
+indefinitely. Always use <code>stream_select</code> to read and write
+concurrently.</li>
+<li><strong>Memory Limits:</strong> Storing entire video files in PHP
+variables (<code>$inputData</code> and <code>$outputData</code>)
+consumes substantial system memory. For large files, stream the data in
+chunks from a file pointer or socket instead of storing the entire
+payload in RAM.</li>
+<li><strong>Binary Paths:</strong> Ensure the <code>ffmpeg</code> binary
+is in your system’s PATH environmental variable, or provide the absolute
+path (e.g., <code>/usr/bin/ffmpeg</code> or
+<code>C:\ffmpeg\bin\ffmpeg.exe</code>) in the command string.</li>
+</ul></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

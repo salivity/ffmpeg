@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Convert QTVR Files Using FFmpeg - ffmpeg</title>
+    <meta name="description" content="Apple QuickTime VR (QTVR) is a legacy interactive media format used for displaying panoramic images and 3D objects. Since modern media players no longer support the interactive components of QTVR, you must decode and convert these files to retrieve their">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/how-to-convert-qtvr-files-using-ffmpeg">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Convert QTVR Files Using FFmpeg - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/how-to-convert-qtvr-files-using-ffmpeg" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Apple QuickTime VR (QTVR) is a legacy interactive media format used for displaying panoramic images and 3D objects. Since modern media players no longer support the interactive components of QTVR, you must decode and convert these files to retrieve their" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="how-to-convert-qtvr-files-using-ffmpeg">How to Convert QTVR
+Files Using FFmpeg</h1>
+<p>Apple QuickTime VR (QTVR) is a legacy interactive media format used
+for displaying panoramic images and 3D objects. Since modern media
+players no longer support the interactive components of QTVR, you must
+decode and convert these files to retrieve their visual content. This
+guide explains how to use FFmpeg to inspect QTVR files, extract their
+underlying video frames or panorama strips, and convert them into widely
+compatible modern formats like MP4 and JPEG.</p>
+<h3 id="understanding-qtvr-and-ffmpeg-limitations">Understanding QTVR
+and FFmpeg Limitations</h3>
+<p>QTVR files (<code>.mov</code>) contain standard video and image
+tracks wrapped in proprietary Apple metadata that handles user
+interactivity (such as panning and zooming). FFmpeg cannot preserve the
+interactive VR functionality. However, it can decode the legacy video
+codecs (like Cinepak, Sorenson Video, or QDesign Music) used inside the
+QTVR container and extract the raw visual assets.</p>
+<h3 id="step-1-inspect-the-qtvr-file-structure">Step 1: Inspect the QTVR
+File Structure</h3>
+<p>Before converting, analyze the file to see how many streams it
+contains and what codecs were used. Run the following command in your
+terminal:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mov</span></code></pre></div>
+<p>Look at the output under the “Stream” sections. You will typically
+see a video stream encoded in <code>svq3</code> (Sorenson Video 3),
+<code>rpza</code>, or <code>cvid</code> (Cinepak).</p>
+<h3 id="step-2-convert-the-qtvr-movie-to-mp4">Step 2: Convert the QTVR
+Movie to MP4</h3>
+<p>If your QTVR file is an “Object” movie (a series of frames showing an
+object from different angles) or a panoramic video track, you can
+convert it into a standard, non-interactive MP4 video using the H.264
+codec.</p>
+<p>Run this command:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mov <span class="at">-c:v</span> libx264 <span class="at">-pix_fmt</span> yuv420p output.mp4</span></code></pre></div>
+<ul>
+<li><strong><code>-c:v libx264</code></strong>: Converts the legacy
+video codec to H.264.</li>
+<li><strong><code>-pix_fmt yuv420p</code></strong>: Ensures pixel format
+compatibility with modern web browsers and media players.</li>
+</ul>
+<h3 id="step-3-extract-panorama-frames-as-images">Step 3: Extract
+Panorama Frames as Images</h3>
+<p>If the QTVR file is a static panorama, it often consists of a single
+wide strip or a series of tiled images. You can extract every frame from
+the QTVR file as a high-quality JPEG image. This allows you to
+reconstruct the panorama manually in modern image editing or stitching
+software.</p>
+<p>Run this command to extract the frames:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mov <span class="at">-an</span> <span class="at">-f</span> image2 image_%03d.jpg</span></code></pre></div>
+<ul>
+<li><strong><code>-an</code></strong>: Disables audio recording (as QTVR
+files rarely contain useful audio).</li>
+<li><strong><code>image_%03d.jpg</code></strong>: Saves the frames
+sequentially as <code>image_001.jpg</code>, <code>image_002.jpg</code>,
+etc.</li>
+</ul>
+<h3 id="step-4-extract-specific-video-tracks-multi-track-files">Step 4:
+Extract Specific Video Tracks (Multi-Track Files)</h3>
+<p>Some QTVR files contain multiple video tracks (e.g., one for the
+preview, one for the high-resolution panorama, and one for the
+hot-spots). To extract a specific track, map the correct stream during
+conversion.</p>
+<p>If your inspect command from Step 1 showed multiple video streams
+(e.g., Stream #0:0 and Stream #0:1), you can extract only the
+high-resolution stream (for example, Stream #0:1) with this command:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mov <span class="at">-map</span> 0:1 <span class="at">-c:v</span> libx264 <span class="at">-pix_fmt</span> yuv420p high_res_output.mp4</span></code></pre></div>
+<ul>
+<li><strong><code>-map 0:1</code></strong>: Directs FFmpeg to only
+process the second stream of the first input file.</li>
+</ul></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

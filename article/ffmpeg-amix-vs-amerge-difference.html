@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FFmpeg amix vs amerge Difference - ffmpeg</title>
+    <meta name="description" content="When working with audio in FFmpeg, combining multiple audio tracks is a common task, but the method you choose depends on your desired output. This article explains the difference between the amix and amerge filters, helping you understand when to mix au">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/ffmpeg-amix-vs-amerge-difference">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="FFmpeg amix vs amerge Difference - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/ffmpeg-amix-vs-amerge-difference" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="When working with audio in FFmpeg, combining multiple audio tracks is a common task, but the method you choose depends on your desired output. This article explains the difference between the amix and amerge filters, helping you understand when to mix au" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="ffmpeg-amix-vs-amerge-difference">FFmpeg amix vs amerge
+Difference</h1>
+<p>When working with audio in FFmpeg, combining multiple audio tracks is
+a common task, but the method you choose depends on your desired output.
+This article explains the difference between the <code>amix</code> and
+<code>amerge</code> filters, helping you understand when to mix audio
+signals together and when to merge them into a single multi-channel
+stream.</p>
+<h2 id="what-is-the-amix-filter">What is the <code>amix</code>
+Filter?</h2>
+<p>The <code>amix</code> filter mixes multiple audio inputs into a
+single audio output. It overlays the audio signals on top of each other
+within the same channels. For example, if you input two stereo tracks,
+<code>amix</code> will blend them together into a single stereo track
+where you can hear both sounds playing simultaneously.</p>
+<h3 id="key-characteristics-of-amix">Key Characteristics of
+<code>amix</code></h3>
+<ul>
+<li><strong>Channel Layout:</strong> The output channel layout is
+usually the same as the input with the most channels (e.g., mixing
+stereo and mono results in stereo).</li>
+<li><strong>Use Case:</strong> Perfect for adding background music to a
+voiceover or sound effects to a video.</li>
+<li><strong>Duration:</strong> By default, the output duration matches
+the longest input, though this can be configured using the
+<code>duration</code> option.</li>
+</ul>
+<h3 id="example-command">Example Command</h3>
+<p>To mix a voiceover (<code>voice.mp3</code>) and background music
+(<code>music.mp3</code>) into one output:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> voice.mp3 <span class="at">-i</span> music.mp3 <span class="at">-filter_complex</span> amix=inputs=2:duration=first output.mp3</span></code></pre></div>
+<hr />
+<h2 id="what-is-the-amerge-filter">What is the <code>amerge</code>
+Filter?</h2>
+<p>The <code>amerge</code> filter merges two or more audio streams into
+a single multi-channel audio stream. Instead of blending the sounds
+together into the same channels, it places each input stream into its
+own dedicated channel. For example, merging two separate mono streams
+will create a single stereo stream where one input becomes the Left
+channel and the other becomes the Right channel.</p>
+<h3 id="key-characteristics-of-amerge">Key Characteristics of
+<code>amerge</code></h3>
+<ul>
+<li><strong>Channel Layout:</strong> The output channel count is the sum
+of the input channel counts (e.g., merging two 1-channel mono streams
+results in one 2-channel stereo stream).</li>
+<li><strong>Use Case:</strong> Perfect for combining separate microphone
+recordings into a single multi-channel file or creating surround sound
+tracks.</li>
+<li><strong>Requirements:</strong> All input streams must have the same
+sample rate. The output duration will automatically match the shortest
+input stream.</li>
+</ul>
+<h3 id="example-command-1">Example Command</h3>
+<p>To merge two mono audio files into a single stereo file:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> left.wav <span class="at">-i</span> right.wav <span class="at">-filter_complex</span> amerge=inputs=2 output.wav</span></code></pre></div>
+<hr />
+<h2 id="summary-of-key-differences">Summary of Key Differences</h2>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th style="text-align: left;">Feature</th>
+<th style="text-align: left;"><code>amix</code> (Mixing)</th>
+<th style="text-align: left;"><code>amerge</code> (Merging)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><strong>Primary Function</strong></td>
+<td style="text-align: left;">Blends multiple audio tracks into the same
+channels.</td>
+<td style="text-align: left;">Groups separate audio tracks into new,
+distinct channels.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Output Channels</strong></td>
+<td style="text-align: left;">Keeps the channel layout of the
+primary/widest input.</td>
+<td style="text-align: left;">Sums the input channels (e.g., 1 + 1 = 2
+channels).</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Common Use Case</strong></td>
+<td style="text-align: left;">Adding background music to a
+voiceover.</td>
+<td style="text-align: left;">Combining two mono mics into a single
+stereo track.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Input Requirements</strong></td>
+<td style="text-align: left;">Flexible; handles different sample rates
+and durations.</td>
+<td style="text-align: left;">Strict; requires identical sample
+rates.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Default Duration</strong></td>
+<td style="text-align: left;">Matches the longest input.</td>
+<td style="text-align: left;">Matches the shortest input.</td>
+</tr>
+</tbody>
+</table></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

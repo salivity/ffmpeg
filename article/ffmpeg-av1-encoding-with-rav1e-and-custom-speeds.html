@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FFmpeg AV1 Encoding with rav1e and Custom Speeds - ffmpeg</title>
+    <meta name="description" content="This article explains how to transcode video to the AV1 format using the librav1e encoder in FFmpeg. You will learn the correct command-line syntax, how the speed presets work, and how to configure custom speeds to balance encoding time and file size. Th">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/ffmpeg-av1-encoding-with-rav1e-and-custom-speeds">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="FFmpeg AV1 Encoding with rav1e and Custom Speeds - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/ffmpeg-av1-encoding-with-rav1e-and-custom-speeds" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article explains how to transcode video to the AV1 format using the librav1e encoder in FFmpeg. You will learn the correct command-line syntax, how the speed presets work, and how to configure custom speeds to balance encoding time and file size. Th" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="ffmpeg-av1-encoding-with-rav1e-and-custom-speeds">FFmpeg AV1
+Encoding with rav1e and Custom Speeds</h1>
+<p>This article explains how to transcode video to the AV1 format using
+the <code>librav1e</code> encoder in FFmpeg. You will learn the correct
+command-line syntax, how the speed presets work, and how to configure
+custom speeds to balance encoding time and file size.</p>
+<h2 id="understanding-rav1e-speed-settings">Understanding rav1e Speed
+Settings</h2>
+<p>The <code>rav1e</code> encoder is a Rust-based AV1 encoder known for
+its safety and clean code base. In FFmpeg, it is accessed via the
+<code>librav1e</code> codec library.</p>
+<p>The primary setting for controlling encoding performance is the
+<code>-speed</code> parameter (sometimes configured via
+<code>-rav1e-params speed=X</code>). * The speed scale ranges from
+<strong>0 to 10</strong>. * <strong>0</strong> is the slowest speed,
+offering the highest compression efficiency and best quality per
+megabyte. * <strong>10</strong> is the fastest speed, ideal for quick
+test encodes or real-time streaming, but at the cost of larger file
+sizes and lower quality. * The default speed preset is typically
+<strong>6</strong>.</p>
+<h2 id="basic-command-syntax">Basic Command Syntax</h2>
+<p>To transcode a video using <code>librav1e</code>, you must specify
+the video codec as <code>librav1e</code> and set your desired speed and
+quality. Quality is controlled using the quantizer parameter
+(<code>-qp</code>), which ranges from 0 (lossless) to 255 (lowest
+quality). A QP value between 80 and 120 is generally recommended for
+standard use.</p>
+<p>Here is the template command:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-c:v</span> librav1e <span class="at">-speed</span> 5 <span class="at">-qp</span> 100 <span class="at">-c:a</span> copy output.mkv</span></code></pre></div>
+<h2 id="custom-speed-examples">Custom Speed Examples</h2>
+<p>Depending on your hardware capability and patience, you can adjust
+the speed to fit your specific needs.</p>
+<h3 id="high-efficiency-encoding-slow-archive-quality">1.
+High-Efficiency Encoding (Slow / Archive Quality)</h3>
+<p>If you want the smallest possible file size and do not mind long
+encoding times, use a lower speed setting (between 0 and 3).</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-c:v</span> librav1e <span class="at">-speed</span> 2 <span class="at">-qp</span> 90 <span class="at">-c:a</span> flac output.mkv</span></code></pre></div>
+<h3 id="balanced-encoding-standard-use">2. Balanced Encoding (Standard
+Use)</h3>
+<p>For a good compromise between CPU usage and compression efficiency,
+use a speed setting in the middle of the range (between 4 and 6).</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-c:v</span> librav1e <span class="at">-speed</span> 5 <span class="at">-qp</span> 105 <span class="at">-c:a</span> aac <span class="at">-b:a</span> 128k output.mkv</span></code></pre></div>
+<h3 id="fast-encoding-testing-or-low-cpu-overhead">3. Fast Encoding
+(Testing or Low CPU Overhead)</h3>
+<p>If you need to quickly preview an encode or have limited computing
+power, use a high speed setting (between 7 and 10).</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-c:v</span> librav1e <span class="at">-speed</span> 8 <span class="at">-qp</span> 110 <span class="at">-c:a</span> copy output.mkv</span></code></pre></div>
+<h2 id="alternative-syntax-using-rav1e-params">Alternative Syntax using
+rav1e-params</h2>
+<p>You can also pass speed and other custom parameters directly to the
+encoder using the <code>-rav1e-params</code> flag. Use a colon
+(<code>:</code>) to separate multiple parameters:</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-c:v</span> librav1e <span class="at">-rav1e-params</span> speed=4:qp=100 <span class="at">-c:a</span> copy output.mkv</span></code></pre></div></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

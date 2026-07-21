@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Use the drawbox Filter in FFmpeg - ffmpeg</title>
+    <meta name="description" content="This guide explains how to use the FFmpeg drawbox filter to overlay colored rectangles and bounding boxes onto your videos. You will learn the fundamental syntax of the filter, understand its key parameters—such as coordinates, dimensions, color, and t">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/how-to-use-the-drawbox-filter-in-ffmpeg">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Use the drawbox Filter in FFmpeg - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/how-to-use-the-drawbox-filter-in-ffmpeg" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This guide explains how to use the FFmpeg drawbox filter to overlay colored rectangles and bounding boxes onto your videos. You will learn the fundamental syntax of the filter, understand its key parameters—such as coordinates, dimensions, color, and t" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="how-to-use-the-drawbox-filter-in-ffmpeg">How to Use the drawbox
+Filter in FFmpeg</h1>
+<p>This guide explains how to use the FFmpeg <code>drawbox</code> filter
+to overlay colored rectangles and bounding boxes onto your videos. You
+will learn the fundamental syntax of the filter, understand its key
+parameters—such as coordinates, dimensions, color, and thickness—and see
+practical command-line examples that you can immediately apply to your
+video editing and processing tasks.</p>
+<h2 id="understanding-the-drawbox-syntax">Understanding the drawbox
+Syntax</h2>
+<p>The <code>drawbox</code> video filter draws a colored box on an input
+image or video frame. The basic syntax for the filter is:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">-vf</span> <span class="st">&quot;drawbox=x=val:y=val:w=val:h=val:color=val:t=val&quot;</span></span></code></pre></div>
+<p>Here is a breakdown of the key parameters:</p>
+<ul>
+<li><strong><code>x</code></strong>: The x-coordinate of the top-left
+corner of the box. Default is 0.</li>
+<li><strong><code>y</code></strong>: The y-coordinate of the top-left
+corner of the box. Default is 0.</li>
+<li><strong><code>w</code></strong> (or <code>width</code>): The width
+of the box. Default is 0.</li>
+<li><strong><code>h</code></strong> (or <code>height</code>): The height
+of the box. Default is 0.</li>
+<li><strong><code>color</code></strong> (or <code>c</code>): The color
+of the box. You can use standard color names (like <code>red</code>,
+<code>blue</code>, <code>black</code>) or hexadecimal values (like
+<code>0xFF0000</code>). You can also append an opacity value (e.g.,
+<code>black@0.5</code> for 50% transparency). Default is
+<code>black</code>.</li>
+<li><strong><code>t</code></strong> (or <code>thickness</code>): The
+thickness of the box’s border. If set to <code>fill</code>,
+<code>max</code>, or left unset with specific configurations, it fills
+the entire box. Default is 3.</li>
+</ul>
+<p>You can use mathematical expressions and variables inside these
+parameters, such as <code>iw</code> (input width), <code>ih</code>
+(input height), <code>sar</code> (sample aspect ratio), and
+<code>dar</code> (display aspect ratio).</p>
+<h2 id="practical-examples">Practical Examples</h2>
+<h3 id="draw-a-simple-border-around-a-specific-area">1. Draw a Simple
+Border Around a Specific Area</h3>
+<p>To draw a red outline box that is 300 pixels wide and 200 pixels
+high, positioned at coordinates (100, 150) with a border thickness of 5
+pixels, use the following command:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;drawbox=x=100:y=150:w=300:h=200:color=red:t=5&quot;</span> <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<h3 id="draw-a-filled-semi-transparent-box">2. Draw a Filled
+Semi-Transparent Box</h3>
+<p>To draw a solid, semi-transparent black box (useful as a background
+for text or subtitles) that covers the bottom third of the video, use
+the <code>fill</code> value for thickness and input variables for
+dimensions:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;drawbox=x=0:y=ih-ih/3:w=iw:h=ih/3:color=black@0.6:t=fill&quot;</span> <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<p><em>In this example, <code>ih-ih/3</code> sets the starting
+y-coordinate to two-thirds of the way down the video, <code>iw</code>
+sets the width to the full width of the video, and
+<code>black@0.6</code> creates a black box with 60% opacity.</em></p>
+<h3 id="draw-a-centered-box">3. Draw a Centered Box</h3>
+<p>To place a 400x400 pixel blue box exactly in the center of your video
+frame, use mathematical formulas utilizing the input width
+(<code>iw</code>) and input height (<code>ih</code>):</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;drawbox=x=(iw-400)/2:y=(ih-400)/2:w=400:h=400:color=blue:t=4&quot;</span> <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<h3 id="inverting-the-box-colors">4. Inverting the Box Colors</h3>
+<p>FFmpeg allows you to invert the colors of the video inside the box
+area instead of applying a solid color. Set the <code>color</code>
+parameter to <code>invert</code>:</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;drawbox=x=100:y=100:w=200:h=200:color=invert:t=fill&quot;</span> <span class="at">-c:a</span> copy output.mp4</span></code></pre></div></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

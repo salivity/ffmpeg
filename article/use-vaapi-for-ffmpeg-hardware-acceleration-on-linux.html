@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Use VAAPI for FFmpeg Hardware Acceleration on Linux - ffmpeg</title>
+    <meta name="description" content="Using the Video Acceleration API (VAAPI) with FFmpeg on Linux allows you to offload video encoding, decoding, and filtering from your CPU to your graphics hardware (such as Intel or AMD GPUs). This guide provides a quick overview of verifying your VAAPI">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/use-vaapi-for-ffmpeg-hardware-acceleration-on-linux">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Use VAAPI for FFmpeg Hardware Acceleration on Linux - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/use-vaapi-for-ffmpeg-hardware-acceleration-on-linux" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Using the Video Acceleration API (VAAPI) with FFmpeg on Linux allows you to offload video encoding, decoding, and filtering from your CPU to your graphics hardware (such as Intel or AMD GPUs). This guide provides a quick overview of verifying your VAAPI" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="use-vaapi-for-ffmpeg-hardware-acceleration-on-linux">Use VAAPI
+for FFmpeg Hardware Acceleration on Linux</h1>
+<p>Using the Video Acceleration API (VAAPI) with FFmpeg on Linux allows
+you to offload video encoding, decoding, and filtering from your CPU to
+your graphics hardware (such as Intel or AMD GPUs). This guide provides
+a quick overview of verifying your VAAPI drivers, setting up the correct
+environment variables, and executing FFmpeg commands for
+hardware-accelerated H.264 and HEVC video processing. By configuring
+VAAPI correctly, you can drastically reduce CPU utilization and speed up
+media rendering workflows.</p>
+<h3 id="prerequisites-and-driver-verification">Prerequisites and Driver
+Verification</h3>
+<p>Before running FFmpeg with VAAPI, you must ensure that the proper
+hardware drivers are installed and that your user account has permission
+to access the video rendering nodes.</p>
+<ol type="1">
+<li><strong>Install Driver Packages:</strong> Intel users typically need
+the <code>intel-media-driver</code> (for modern Gen8+ graphics) or
+<code>i965-va-driver</code> (for older hardware). AMD users require the
+<code>mesa-va-drivers</code> package.</li>
+<li><strong>Check Render Group Permissions:</strong> Your user needs
+access to the <code>/dev/dri/renderD128</code> device. You can add your
+user to the appropriate group by running:
+<code>sudo usermod -aG video,render $USER</code> (relog for changes to
+take effect).</li>
+<li><strong>Verify VAAPI Support:</strong> Install the
+<code>vainfo</code> utility from your distribution’s package manager and
+run it in the terminal. A successful setup will output a list of
+supported entry points, such as <code>VAEntrypointVLD</code> (decoding)
+and <code>VAEntrypointEncSlice</code> (encoding).</li>
+</ol>
+<h3 id="choosing-the-correct-driver-variable">Choosing the Correct
+Driver Variable</h3>
+<p>If your system has multiple graphics devices or hybrid drivers, you
+may need to explicitly tell VAAPI which driver to load using environment
+variables.</p>
+<ul>
+<li><strong>For Intel Media Driver (iHD):</strong>
+<code>export LIBVA_DRIVER_NAME=iHD</code></li>
+<li><strong>For Intel Legacy Driver (i965):</strong>
+<code>export LIBVA_DRIVER_NAME=i965</code></li>
+<li><strong>For AMD Radeon (RadeonSI):</strong>
+<code>export LIBVA_DRIVER_NAME=radeonsi</code></li>
+</ul>
+<h3 id="hardware-accelerated-decoding-and-encoding">Hardware-Accelerated
+Decoding and Encoding</h3>
+<p>To utilize VAAPI, FFmpeg needs to initialize the hardware device,
+pass the video frames to the GPU memory, perform the operation, and
+either filter or write the output. The <code>-vaapi_device</code> flag
+defines the render node to use.</p>
+<h4 id="vaapi-accelerated-encoding-cpu-decoding">VAAPI Accelerated
+Encoding (CPU Decoding)</h4>
+<p>If your source video is in a format not supported by your GPU for
+decoding, or if you only want to accelerate the compression phase, use
+the following syntax to encode h264 via hardware:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-vaapi_device</span> /dev/dri/renderD128 <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;format=nv12,hwupload&quot;</span> <span class="at">-c:v</span> h264_vaapi output.mp4</span></code></pre></div>
+<p>In this command, <code>-vf "format=nv12,hwupload"</code> changes the
+pixel format to a GPU-compatible layout and uploads the raw frames into
+graphics memory before passing them to the <code>h264_vaapi</code>
+encoder.</p>
+<h4 id="full-hardware-transcoding-gpu-decoding-and-encoding">Full
+Hardware Transcoding (GPU Decoding and Encoding)</h4>
+<p>For maximum efficiency, you can decode the input stream on the GPU,
+keep the frames in hardware memory, and encode them without ever
+downloading the video data back to the CPU.</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-hwaccel</span> vaapi <span class="at">-hwaccel_device</span> /dev/dri/renderD128 <span class="at">-hwaccel_output_format</span> vaapi <span class="at">-i</span> input.mp4 <span class="at">-c:v</span> hevc_vaapi <span class="at">-b:v</span> 5M output.mp4</span></code></pre></div>
+<ul>
+<li><strong><code>-hwaccel vaapi</code></strong>: Enables VAAPI hardware
+acceleration for the input decoding phase.</li>
+<li><strong><code>-hwaccel_output_format vaapi</code></strong>:
+Instructs FFmpeg to keep the decoded frames inside GPU memory surfaces
+rather than copying them back to system RAM.</li>
+<li><strong><code>-c:v hevc_vaapi</code></strong>: Selects the
+hardware-accelerated HEVC/H.265 encoder.</li>
+<li><strong><code>-b:v 5M</code></strong>: Sets the target video bitrate
+to 5 Megabits per second.</li>
+</ul>
+<h3 id="hardware-filtering-and-scaling">Hardware Filtering and
+Scaling</h3>
+<p>If you need to resize or modify video dimensions during a hardware
+transcode, regular software filters like <code>-vf scale</code> will
+fail because the frames reside in GPU memory. Instead, you must use
+VAAPI-specific filters like <code>scale_vaapi</code>.</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-hwaccel</span> vaapi <span class="at">-hwaccel_device</span> /dev/dri/renderD128 <span class="at">-hwaccel_output_format</span> vaapi <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;scale_vaapi=1280:720&quot;</span> <span class="at">-c:v</span> h264_vaapi output_720p.mp4</span></code></pre></div>
+<p>This pipeline maintains the entire transcoding chain—decoding,
+scaling, and encoding—directly on your graphics hardware, ensuring
+minimal CPU overhead and optimal performance on Linux systems.</p></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Use FFmpeg aevalsrc Filter to Generate Custom Audio - ffmpeg</title>
+    <meta name="description" content="This article provides a practical guide on using FFmpeg's audio evaluation source filter (aevalsrc) to generate custom audio waveforms. You will learn the basic syntax of the filter, how to construct mathematical expressions for standard wave shapes—su">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/use-ffmpeg-aevalsrc-filter-to-generate-custom-audio">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Use FFmpeg aevalsrc Filter to Generate Custom Audio - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/use-ffmpeg-aevalsrc-filter-to-generate-custom-audio" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article provides a practical guide on using FFmpeg's audio evaluation source filter (aevalsrc) to generate custom audio waveforms. You will learn the basic syntax of the filter, how to construct mathematical expressions for standard wave shapes—su" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="use-ffmpeg-aevalsrc-filter-to-generate-custom-audio">Use FFmpeg
+aevalsrc Filter to Generate Custom Audio</h1>
+<p>This article provides a practical guide on using FFmpeg’s audio
+evaluation source filter (<code>aevalsrc</code>) to generate custom
+audio waveforms. You will learn the basic syntax of the filter, how to
+construct mathematical expressions for standard wave shapes—such as
+sine, square, and sawtooth waves—and how to combine these expressions to
+synthesize unique, custom audio signals directly from the command
+line.</p>
+<h2 id="understanding-the-aevalsrc-filter">Understanding the aevalsrc
+Filter</h2>
+<p>In FFmpeg, the <code>aevalsrc</code> filter (audio evaluation source)
+generates audio signals by evaluating mathematical expressions. It
+operates within the Libavfilter virtual input device
+(<code>-f lavfi</code>), allowing you to define the amplitude of an
+audio channel as a function of time.</p>
+<p>The most important variable in these expressions is <code>t</code>,
+which represents the current time in seconds.</p>
+<p>The basic command syntax is:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-f</span> lavfi <span class="at">-i</span> aevalsrc=<span class="st">&quot;expression&quot;</span> <span class="at">-t</span> duration output.wav</span></code></pre></div>
+<ul>
+<li><code>-f lavfi</code>: Specifies the Libavfilter virtual input.</li>
+<li><code>-i aevalsrc="..."</code>: Defines the audio generation
+expression.</li>
+<li><code>-t</code>: Sets the duration of the output file (e.g.,
+<code>5</code> for 5 seconds).</li>
+</ul>
+<hr />
+<h2 id="generating-standard-waveforms">Generating Standard
+Waveforms</h2>
+<p>You can generate different types of audio waves by applying
+mathematical formulas to the time variable <code>t</code>. In these
+examples, we will generate a standard A440 pitch (440 Hz).</p>
+<h3 id="sine-wave">1. Sine Wave</h3>
+<p>A sine wave produces a clean, smooth, fundamental tone. The
+mathematical formula is <code>sin(2 * PI * frequency * t)</code>.</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-f</span> lavfi <span class="at">-i</span> aevalsrc=<span class="st">&quot;sin(440*2*PI*t)&quot;</span> <span class="at">-t</span> 5 sine_440.wav</span></code></pre></div>
+<h3 id="square-wave">2. Square Wave</h3>
+<p>A square wave contains only odd harmonics, giving it a hollow, buzzy
+sound. You can generate it by taking the sign (<code>sgn</code>) of a
+sine wave.</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-f</span> lavfi <span class="at">-i</span> aevalsrc=<span class="st">&quot;sgn(sin(440*2*PI*t))&quot;</span> <span class="at">-t</span> 5 square_440.wav</span></code></pre></div>
+<h3 id="sawtooth-wave">3. Sawtooth Wave</h3>
+<p>A sawtooth wave contains both even and odd harmonics, producing a
+bright, harsh sound. It rises linearly and then drops sharply. This is
+achieved using the modulo/fractional part of the frequency over
+time.</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-f</span> lavfi <span class="at">-i</span> aevalsrc=<span class="st">&quot;2*(t*440-floor(t*440))-1&quot;</span> <span class="at">-t</span> 5 sawtooth_440.wav</span></code></pre></div>
+<hr />
+<h2 id="creating-custom-audio-waves">Creating Custom Audio Waves</h2>
+<p>By combining different waves and mathematical functions, you can
+synthesize complex custom sounds.</p>
+<h3 id="creating-chords-additive-synthesis">Creating Chords (Additive
+Synthesis)</h3>
+<p>To play multiple frequencies simultaneously, add the wave expressions
+together. To prevent digital clipping, scale the volume of each wave so
+the combined amplitude does not exceed <code>1.0</code>.</p>
+<p>The following command generates a major triad chord (C4, E4, and G4)
+by mixing three sine waves together at reduced volumes:</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-f</span> lavfi <span class="at">-i</span> aevalsrc=<span class="st">&quot;0.33*sin(261.63*2*PI*t) + 0.33*sin(329.63*2*PI*t) + 0.33*sin(392.00*2*PI*t)&quot;</span> <span class="at">-t</span> 5 chord.wav</span></code></pre></div>
+<h3 id="frequency-modulation-fm-synthesis">Frequency Modulation (FM
+Synthesis)</h3>
+<p>You can modulate the frequency of one wave using another wave. This
+technique creates complex, metallic, or sci-fi sound effects.</p>
+<p>In this example, a 220 Hz carrier wave is modulated by a 5 Hz
+modulator wave:</p>
+<div class="sourceCode" id="cb6"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-f</span> lavfi <span class="at">-i</span> aevalsrc=<span class="st">&quot;sin(2*PI*220*t + sin(2*PI*5*t)*10)&quot;</span> <span class="at">-t</span> 5 fm_synth.wav</span></code></pre></div>
+<h3 id="generating-stereo-audio">Generating Stereo Audio</h3>
+<p>You can generate distinct custom waves for the left and right
+channels by separating your expressions with a colon
+(<code>:</code>).</p>
+<p>The following command plays a 440 Hz sine wave in the left channel
+and a 444 Hz sine wave in the right channel, creating a binaural beat
+effect:</p>
+<div class="sourceCode" id="cb7"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-f</span> lavfi <span class="at">-i</span> aevalsrc=<span class="st">&quot;sin(440*2*PI*t):sin(444*2*PI*t)&quot;</span> <span class="at">-t</span> 5 binaural.wav</span></code></pre></div>
+<hr />
+<h2 id="specifying-sample-rate-and-channel-layout">Specifying Sample
+Rate and Channel Layout</h2>
+<p>By default, <code>aevalsrc</code> outputs audio at a sample rate of
+44,100 Hz. You can explicitly set the sample rate using the
+<code>s</code> parameter and define the channel layout using the
+<code>c</code> parameter.</p>
+<div class="sourceCode" id="cb8"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-f</span> lavfi <span class="at">-i</span> aevalsrc=<span class="st">&quot;sin(440*2*PI*t):s=48000:c=stereo&quot;</span> <span class="at">-t</span> 5 output_48k.wav</span></code></pre></div></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

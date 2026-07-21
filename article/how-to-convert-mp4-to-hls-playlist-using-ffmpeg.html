@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Convert MP4 to HLS Playlist Using FFmpeg - ffmpeg</title>
+    <meta name="description" content="Converting an MP4 video into an HTTP Live Streaming (HLS) playlist using FFmpeg on Linux allows you to deliver adaptive bitrate streaming to your viewers, optimizing playback for various internet speeds. This guide provides a straightforward, step-by-ste">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/how-to-convert-mp4-to-hls-playlist-using-ffmpeg">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Convert MP4 to HLS Playlist Using FFmpeg - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/how-to-convert-mp4-to-hls-playlist-using-ffmpeg" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Converting an MP4 video into an HTTP Live Streaming (HLS) playlist using FFmpeg on Linux allows you to deliver adaptive bitrate streaming to your viewers, optimizing playback for various internet speeds. This guide provides a straightforward, step-by-ste" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="how-to-convert-mp4-to-hls-playlist-using-ffmpeg">How to Convert
+MP4 to HLS Playlist Using FFmpeg</h1>
+<p>Converting an MP4 video into an HTTP Live Streaming (HLS) playlist
+using FFmpeg on Linux allows you to deliver adaptive bitrate streaming
+to your viewers, optimizing playback for various internet speeds. This
+guide provides a straightforward, step-by-step terminal command to split
+your video into standard <code>.ts</code> segments and generate the
+necessary <code>.m3u8</code> index file. By the end of this article, you
+will have a web-ready streaming setup deployed directly from your Linux
+command line.</p>
+<h3 id="prerequisite-install-ffmpeg">Prerequisite: Install FFmpeg</h3>
+<p>Before running the conversion command, ensure you have FFmpeg
+installed on your Linux system. You can verify your installation or
+install it using your package manager.</p>
+<ul>
+<li><strong>Ubuntu/Debian:</strong>
+<code>sudo apt update &amp;&amp; sudo apt install ffmpeg</code></li>
+<li><strong>CentOS/RHEL:</strong>
+<code>sudo dnf install ffmpeg</code></li>
+<li><strong>Verification:</strong> <code>ffmpeg -version</code></li>
+</ul>
+<h3 id="the-core-ffmpeg-command">The Core FFmpeg Command</h3>
+<p>To convert a standard <code>input.mp4</code> file into an HLS
+playlist, navigate to the directory containing your video and run the
+following command:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-codec:v</span> libx264 <span class="at">-codec:a</span> aac <span class="at">-map</span> 0 <span class="at">-f</span> hls <span class="at">-hls_time</span> 10 <span class="at">-hls_playlist_type</span> vod <span class="at">-hls_segment_filename</span> <span class="st">&quot;stream_%03d.ts&quot;</span> playlist.m3u8</span></code></pre></div>
+<h3 id="breakdown-of-the-command-options">Breakdown of the Command
+Options</h3>
+<p>Understanding what each flag does will help you customize the output
+to match your specific streaming requirements:</p>
+<ul>
+<li><strong><code>-i input.mp4</code></strong>: Specifies the path to
+your source MP4 video file.</li>
+<li><strong><code>-codec:v libx264</code></strong>: Encodes the video
+stream using the H.264 codec, which is widely compatible with almost all
+HLS-capable players.</li>
+<li><strong><code>-codec:a aac</code></strong>: Encodes the audio stream
+to AAC, the standard audio format required for HLS streaming.</li>
+<li><strong><code>-map 0</code></strong>: Includes all streams (video
+and audio) from the first input file into the output.</li>
+<li><strong><code>-f hls</code></strong>: Forces the output format to be
+HLS.</li>
+<li><strong><code>-hls_time 10</code></strong>: Sets the target segment
+length to 10 seconds. You can lower this number (e.g., to 4 or 6) if you
+want to optimize for lower latency, though 10 seconds is standard for
+Video-on-Demand (VOD).</li>
+<li><strong><code>-hls_playlist_type vod</code></strong>: Creates a
+Video-on-Demand playlist. This ensures the player knows the file has a
+fixed duration and embeds the <code>#EXT-X-PLAYLIST-TYPE:VOD</code>
+tag.</li>
+<li><strong><code>-hls_segment_filename "stream_%03d.ts"</code></strong>:
+Defines the naming convention for the individual video chunks. The
+<code>%03d</code> acts as a sequential counter, generating files named
+<code>stream_000.ts</code>, <code>stream_001.ts</code>, and so on.</li>
+<li><strong><code>playlist.m3u8</code></strong>: The name of the master
+index file that the web player will load.</li>
+</ul>
+<h3 id="verifying-the-output-files">Verifying the Output Files</h3>
+<p>Once the processing completes, check your target directory. You will
+see a collection of files generated by the command:</p>
+<ul>
+<li><strong><code>playlist.m3u8</code></strong>: The text-based index
+file that coordinates the playback order.</li>
+<li><strong>Multiple <code>.ts</code> files</strong>: The actual
+fragmented video data blocks.</li>
+</ul>
+<p>To serve these files to the public, you simply upload the entire
+batch of <code>.ts</code> files alongside the <code>.m3u8</code> file to
+your web server or cloud storage bucket, ensuring the directory
+structure remains intact.</p></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

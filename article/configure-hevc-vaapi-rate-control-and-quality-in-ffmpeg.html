@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Configure hevc_vaapi Rate Control and Quality in FFmpeg - ffmpeg</title>
+    <meta name="description" content="This article provides a straightforward guide on how to configure rate control modes and quality options when using the hardware-accelerated hevcvaapi encoder in FFmpeg. You will learn how to set Constant QP (CQP), Constant Bitrate (CBR), Variable Bitrat">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/configure-hevc-vaapi-rate-control-and-quality-in-ffmpeg">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Configure hevc_vaapi Rate Control and Quality in FFmpeg - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/configure-hevc-vaapi-rate-control-and-quality-in-ffmpeg" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article provides a straightforward guide on how to configure rate control modes and quality options when using the hardware-accelerated hevcvaapi encoder in FFmpeg. You will learn how to set Constant QP (CQP), Constant Bitrate (CBR), Variable Bitrat" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1
+id="configure-hevc_vaapi-rate-control-and-quality-in-ffmpeg">Configure
+hevc_vaapi Rate Control and Quality in FFmpeg</h1>
+<p>This article provides a straightforward guide on how to configure
+rate control modes and quality options when using the
+hardware-accelerated <code>hevc_vaapi</code> encoder in FFmpeg. You will
+learn how to set Constant QP (CQP), Constant Bitrate (CBR), Variable
+Bitrate (VBR), and Constant Quality (ICQ) modes, along with adjusting
+speed and compression presets.</p>
+<h2 id="basic-vaapi-pipeline-structure">Basic VAAPI Pipeline
+Structure</h2>
+<p>Before configuring rate control, ensure your FFmpeg command is
+structured to use VAAPI hardware acceleration. A typical transcode
+command looks like this:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-hwaccel</span> vaapi <span class="at">-hwaccel_device</span> /dev/dri/renderD128 <span class="at">-hwaccel_output_format</span> vaapi <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;scale_vaapi=format=nv12&quot;</span> <span class="at">-c:v</span> hevc_vaapi [quality/rate control options] output.mp4</span></code></pre></div>
+<h2 id="configuring-rate-control-modes">Configuring Rate Control
+Modes</h2>
+<p>The <code>hevc_vaapi</code> encoder uses the <code>-rc_mode</code>
+flag to define how bitrate and quality are managed.</p>
+<h3 id="constant-qp-cqp">1. Constant QP (CQP)</h3>
+<p>Constant QP mode applies a fixed quantization parameter to every
+frame. This mode prioritizes consistent image quality over file
+size.</p>
+<ul>
+<li><strong>Flag:</strong> <code>-rc_mode CQP</code></li>
+<li><strong>Quality Setting:</strong> Use <code>-qp</code> (ranges from
+0 to 51, where lower values mean higher quality and larger file sizes;
+20-25 is standard).</li>
+</ul>
+<p><strong>Example:</strong></p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-hwaccel</span> vaapi <span class="at">-hwaccel_device</span> /dev/dri/renderD128 <span class="at">-i</span> input.mp4 <span class="at">-c:v</span> hevc_vaapi <span class="at">-rc_mode</span> CQP <span class="at">-qp</span> 23 output.mp4</span></code></pre></div>
+<h3 id="constant-bitrate-cbr">2. Constant Bitrate (CBR)</h3>
+<p>CBR targets a strict, constant output bitrate. It is ideal for
+streaming scenarios where bandwidth is limited and predictable.</p>
+<ul>
+<li><strong>Flag:</strong> <code>-rc_mode CBR</code></li>
+<li><strong>Bitrate Setting:</strong> Use <code>-b:v</code> to set the
+target bitrate and match it with <code>-maxrate</code>.</li>
+</ul>
+<p><strong>Example:</strong></p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-hwaccel</span> vaapi <span class="at">-hwaccel_device</span> /dev/dri/renderD128 <span class="at">-i</span> input.mp4 <span class="at">-c:v</span> hevc_vaapi <span class="at">-rc_mode</span> CBR <span class="at">-b:v</span> 5M <span class="at">-maxrate</span> 5M output.mp4</span></code></pre></div>
+<h3 id="variable-bitrate-vbr">3. Variable Bitrate (VBR)</h3>
+<p>VBR allows the bitrate to fluctuate depending on the complexity of
+the video scene, maintaining a target average while capping the maximum
+spike.</p>
+<ul>
+<li><strong>Flag:</strong> <code>-rc_mode VBR</code></li>
+<li><strong>Bitrate Setting:</strong> Use <code>-b:v</code> for the
+average target bitrate and <code>-maxrate</code> for the maximum
+peak.</li>
+</ul>
+<p><strong>Example:</strong></p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-hwaccel</span> vaapi <span class="at">-hwaccel_device</span> /dev/dri/renderD128 <span class="at">-i</span> input.mp4 <span class="at">-c:v</span> hevc_vaapi <span class="at">-rc_mode</span> VBR <span class="at">-b:v</span> 5M <span class="at">-maxrate</span> 10M output.mp4</span></code></pre></div>
+<h3 id="intelligent-constant-quality-icq">4. Intelligent Constant
+Quality (ICQ)</h3>
+<p>If supported by your hardware driver (primarily Intel media drivers),
+ICQ offers a content-adaptive constant quality mode, which is more
+efficient than CQP.</p>
+<ul>
+<li><strong>Flag:</strong> <code>-rc_mode ICQ</code></li>
+<li><strong>Quality Setting:</strong> Use <code>-global_quality</code>
+(ranges from 1 to 51, with lower values yielding higher quality).</li>
+</ul>
+<p><strong>Example:</strong></p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-hwaccel</span> vaapi <span class="at">-hwaccel_device</span> /dev/dri/renderD128 <span class="at">-i</span> input.mp4 <span class="at">-c:v</span> hevc_vaapi <span class="at">-rc_mode</span> ICQ <span class="at">-global_quality</span> 20 output.mp4</span></code></pre></div>
+<h2 id="adjusting-quality-and-speed-presets">Adjusting Quality and Speed
+Presets</h2>
+<p>Apart from rate control, you can fine-tune the hardware encoder’s
+performance and compression efficiency.</p>
+<h3 id="compression-level-speed-vs.-quality">Compression Level (Speed
+vs. Quality)</h3>
+<p>VAAPI uses the <code>-compression_level</code> option to set the
+trade-off between encoding speed and compression efficiency. *
+<strong>Range:</strong> Typically <code>1</code> to <code>7</code> (on
+Intel drivers). * <strong>Behavior:</strong> <code>1</code> represents
+the slowest speed but the highest quality/compression efficiency.
+<code>7</code> represents the fastest speed but lowest compression
+efficiency. The default is usually <code>4</code>.</p>
+<p><strong>Example for maximum quality:</strong></p>
+<div class="sourceCode" id="cb6"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-hwaccel</span> vaapi <span class="at">-hwaccel_device</span> /dev/dri/renderD128 <span class="at">-i</span> input.mp4 <span class="at">-c:v</span> hevc_vaapi <span class="at">-rc_mode</span> VBR <span class="at">-b:v</span> 5M <span class="at">-compression_level</span> 1 output.mp4</span></code></pre></div>
+<h3 id="profile-and-tier">Profile and Tier</h3>
+<p>You can enforce specific HEVC profiles (such as Main or Main 10 for
+10-bit color) and tiers using the following options:</p>
+<ul>
+<li><strong>Profile:</strong> <code>-profile:v main</code> or
+<code>-profile:v main10</code></li>
+<li><strong>Tier:</strong> <code>-tier:v main</code> or
+<code>-tier:v high</code></li>
+</ul></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Stream Desktop Live Over RTSP Using FFmpeg - ffmpeg</title>
+    <meta name="description" content="This guide explains how to stream your live desktop activity over the Real-Time Streaming Protocol (RTSP) using the powerful, open-source command-line tool FFmpeg. You will learn how to capture your screen on Windows, macOS, and Linux, configure the FFmp">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/how-to-stream-desktop-live-over-rtsp-using-ffmpeg">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Stream Desktop Live Over RTSP Using FFmpeg - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/how-to-stream-desktop-live-over-rtsp-using-ffmpeg" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This guide explains how to stream your live desktop activity over the Real-Time Streaming Protocol (RTSP) using the powerful, open-source command-line tool FFmpeg. You will learn how to capture your screen on Windows, macOS, and Linux, configure the FFmp" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="how-to-stream-desktop-live-over-rtsp-using-ffmpeg">How to Stream
+Desktop Live Over RTSP Using FFmpeg</h1>
+<p>This guide explains how to stream your live desktop activity over the
+Real-Time Streaming Protocol (RTSP) using the powerful, open-source
+command-line tool FFmpeg. You will learn how to capture your screen on
+Windows, macOS, and Linux, configure the FFmpeg encoding parameters for
+low latency, and broadcast the feed to an RTSP server so it can be
+viewed on other devices.</p>
+<h2 id="prerequisite-setting-up-an-rtsp-server">Prerequisite: Setting Up
+an RTSP Server</h2>
+<p>FFmpeg does not act as an RTSP server by default; instead, it
+captures your screen and pushes (publishes) the stream to an existing
+RTSP server.</p>
+<p>Before running the FFmpeg command, you need an active RTSP server. A
+popular, lightweight, and free option is <strong>MediaMTX</strong>
+(formerly rtsp-simple-server). 1. Download and run MediaMTX on your
+local machine or a remote server. 2. It will start listening for RTSP
+publishers on port <code>8554</code> by default. 3. Your publishing URL
+will look like: <code>rtsp://localhost:8554/mystream</code>.</p>
+<hr />
+<h2 id="ffmpeg-commands-by-operating-system">FFmpeg Commands by
+Operating System</h2>
+<p>Once your RTSP server is running, use the appropriate command for
+your operating system to capture your screen and start streaming.</p>
+<h3 id="windows-using-gdigrab">1. Windows (using gdigrab)</h3>
+<p>Windows uses the <code>gdigrab</code> device to capture desktop
+input. Open Command Prompt or PowerShell and run:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-f</span> gdigrab <span class="at">-framerate</span> 30 <span class="at">-i</span> desktop <span class="at">-c:v</span> libx264 <span class="at">-pix_fmt</span> yuv420p <span class="at">-preset</span> ultrafast <span class="at">-tune</span> zerolatency <span class="at">-f</span> rtsp rtsp://localhost:8554/mystream</span></code></pre></div>
+<h3 id="linux-using-x11grab">2. Linux (using x11grab)</h3>
+<p>Linux systems running an X11 display server use <code>x11grab</code>.
+Open your terminal and run:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-f</span> x11grab <span class="at">-framerate</span> 30 <span class="at">-video_size</span> 1920x1080 <span class="at">-i</span> :0.0 <span class="at">-c:v</span> libx264 <span class="at">-pix_fmt</span> yuv420p <span class="at">-preset</span> ultrafast <span class="at">-tune</span> zerolatency <span class="at">-f</span> rtsp rtsp://localhost:8554/mystream</span></code></pre></div>
+<p><em>(Note: Replace <code>1920x1080</code> with your actual monitor
+resolution, and <code>:0.0</code> with your display identifier if
+different).</em></p>
+<h3 id="macos-using-avfoundation">3. macOS (using avfoundation)</h3>
+<p>macOS utilizes the <code>avfoundation</code> framework. First, list
+your available input devices to find your screen index:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-f</span> avfoundation <span class="at">-list_devices</span> true <span class="at">-i</span> <span class="st">&quot;&quot;</span></span></code></pre></div>
+<p>Identify the index number for your screen (usually <code>1</code> or
+<code>2</code>), then run:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-f</span> avfoundation <span class="at">-framerate</span> 30 <span class="at">-i</span> <span class="st">&quot;1&quot;</span> <span class="at">-c:v</span> libx264 <span class="at">-pix_fmt</span> yuv420p <span class="at">-preset</span> ultrafast <span class="at">-tune</span> zerolatency <span class="at">-f</span> rtsp rtsp://localhost:8554/mystream</span></code></pre></div>
+<p><em>(Note: Replace <code>"1"</code> with your designated screen
+index).</em></p>
+<hr />
+<h2 id="command-breakdown">Command Breakdown</h2>
+<p>Understanding the FFmpeg flags allows you to customize the stream to
+suit your network bandwidth and hardware:</p>
+<ul>
+<li><strong><code>-f gdigrab / x11grab / avfoundation</code></strong>:
+Specifies the format/driver used to capture the desktop.</li>
+<li><strong><code>-framerate 30</code></strong>: Captures the desktop at
+30 frames per second. You can increase this to <code>60</code> for
+smoother motion if your hardware permits.</li>
+<li><strong><code>-i</code></strong>: Specifies the input source (the
+desktop).</li>
+<li><strong><code>-c:v libx264</code></strong>: Encodes the video using
+the H.264 codec, which is highly compatible with almost all RTSP media
+players.</li>
+<li><strong><code>-pix_fmt yuv420p</code></strong>: Sets the pixel
+format to YUV 4:2:0, ensuring compatibility with standard video players
+like VLC.</li>
+<li><strong><code>-preset ultrafast</code></strong>: Instructs the
+encoder to prioritize speed over compression, minimizing CPU usage and
+latency.</li>
+<li><strong><code>-tune zerolatency</code></strong>: Eliminates frame
+buffering inside the encoder to achieve the lowest possible delay during
+live streaming.</li>
+<li><strong><code>-f rtsp</code></strong>: Forces the output format to
+RTSP.</li>
+</ul>
+<hr />
+<h2 id="how-to-view-the-live-stream">How to View the Live Stream</h2>
+<p>To verify that your live desktop stream is working:</p>
+<ol type="1">
+<li>Open a media player that supports RTSP streaming, such as
+<strong>VLC Media Player</strong>.</li>
+<li>Go to <strong>Media</strong> &gt; <strong>Open Network
+Stream</strong> (or press <code>Ctrl+N</code>).</li>
+<li>Enter your RTSP stream URL:
+<code>rtsp://localhost:8554/mystream</code> (replace
+<code>localhost</code> with the server’s IP address if viewing from
+another computer on the same network).</li>
+<li>Click <strong>Play</strong> to view your live desktop.</li>
+</ol></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

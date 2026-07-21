@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Change Video Brightness Over Time with FFmpeg sendcmd - ffmpeg</title>
+    <meta name="description" content="Adjusting video brightness dynamically during playback is a powerful technique for creating transitions, correcting exposure issues, or adding creative visual effects. This guide demonstrates how to use the FFmpeg sendcmd filter to pass commands to the e">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/how-to-change-video-brightness-over-time-with-ffmpeg-sendcmd">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Change Video Brightness Over Time with FFmpeg sendcmd - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/how-to-change-video-brightness-over-time-with-ffmpeg-sendcmd" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Adjusting video brightness dynamically during playback is a powerful technique for creating transitions, correcting exposure issues, or adding creative visual effects. This guide demonstrates how to use the FFmpeg sendcmd filter to pass commands to the e" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1
+id="how-to-change-video-brightness-over-time-with-ffmpeg-sendcmd">How to
+Change Video Brightness Over Time with FFmpeg sendcmd</h1>
+<p>Adjusting video brightness dynamically during playback is a powerful
+technique for creating transitions, correcting exposure issues, or
+adding creative visual effects. This guide demonstrates how to use the
+FFmpeg <code>sendcmd</code> filter to pass commands to the
+<code>eq</code> (equalizer) filter, allowing you to precisely control
+and alter a video’s brightness at specific timestamps.</p>
+<h3 id="understanding-the-components">Understanding the Components</h3>
+<p>To change brightness over time, you must chain two FFmpeg filters
+together: 1. <strong><code>sendcmd</code></strong>: This filter reads
+commands (either from a text file or an inline string) and dispatches
+them to other filters at designated timestamps. 2.
+<strong><code>eq</code></strong>: This filter adjusts video properties
+like brightness, contrast, and saturation. It accepts real-time commands
+to change these parameters during processing.</p>
+<p>The brightness parameter in the <code>eq</code> filter accepts values
+from <code>-1.0</code> (completely black) to <code>1.0</code>
+(completely white), with <code>0.0</code> being the default utility
+value.</p>
+<hr />
+<h3 id="method-1-using-an-inline-command-for-simple-changes">Method 1:
+Using an Inline Command (For Simple Changes)</h3>
+<p>For quick adjustments, you can write the commands directly inside
+your terminal command.</p>
+<p>Here is the basic syntax:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;sendcmd=c=&#39;[time] eq brightness [value]&#39;,eq&quot;</span> <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<h4 id="example">Example:</h4>
+<p>To start a video dark, increase the brightness at 2 seconds, and
+return it to normal at 5 seconds, use the following command:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;sendcmd=c=&#39;0.0 eq brightness -0.5, 2.0 eq brightness 0.3, 5.0 eq brightness 0.0&#39;,eq&quot;</span> <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<p><strong>How it works:</strong> * <code>0.0 eq brightness -0.5</code>:
+At 0 seconds, brightness is set to -0.5 (darker). *
+<code>2.0 eq brightness 0.3</code>: At 2 seconds, brightness changes to
+0.3 (brighter). * <code>5.0 eq brightness 0.0</code>: At 5 seconds,
+brightness resets to its default state. * <code>,eq</code>: This
+instantiates the <code>eq</code> filter immediately after
+<code>sendcmd</code> so it can receive the instructions.</p>
+<hr />
+<h3 id="method-2-using-a-command-file-for-complex-timelines">Method 2:
+Using a Command File (For Complex Timelines)</h3>
+<p>If you have many brightness changes to make, writing them inline can
+become messy. Instead, you can save your commands in a external text
+file.</p>
+<h4 id="step-1-create-the-command-file">Step 1: Create the command
+file</h4>
+<p>Create a text file named <code>brightness_commands.txt</code> and
+define your timeline:</p>
+<pre class="text"><code>0.0 eq brightness -0.4;
+2.5 eq brightness 0.2;
+4.0 eq brightness -0.1;
+6.0 eq brightness 0.0;</code></pre>
+<p><em>Note: Each command line must end with a semicolon
+(<code>;</code>).</em></p>
+<h4 id="step-2-run-the-ffmpeg-command">Step 2: Run the FFmpeg
+command</h4>
+<p>Point the <code>sendcmd</code> filter to your text file using the
+<code>f</code> (file) parameter:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;sendcmd=f=brightness_commands.txt,eq&quot;</span> <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<hr />
+<h3 id="key-considerations">Key Considerations</h3>
+<ul>
+<li><strong>Abrupt Changes vs. Interpolation</strong>: The
+<code>sendcmd</code> filter triggers instant state changes at the exact
+timestamp specified. It does not automatically fade or transition
+smoothly between values.</li>
+<li><strong>Audio stream</strong>: The <code>-c:a copy</code> flag is
+included in the examples to stream-copy the audio without re-encoding
+it, which saves processing time.</li>
+</ul></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

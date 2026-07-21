@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Capture SDI Video with FFmpeg on macOS - ffmpeg</title>
+    <meta name="description" content="Capturing high-quality SDI (Serial Digital Interface) video on macOS using FFmpeg requires configuring the correct input device framework, such as Apple's native AVFoundation or specialized vendor APIs like Blackmagic DeckLink. This guide provides a dire">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/capture-sdi-video-with-ffmpeg-on-macos">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Capture SDI Video with FFmpeg on macOS - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/capture-sdi-video-with-ffmpeg-on-macos" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Capturing high-quality SDI (Serial Digital Interface) video on macOS using FFmpeg requires configuring the correct input device framework, such as Apple's native AVFoundation or specialized vendor APIs like Blackmagic DeckLink. This guide provides a dire" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="capture-sdi-video-with-ffmpeg-on-macos">Capture SDI Video with
+FFmpeg on macOS</h1>
+<p>Capturing high-quality SDI (Serial Digital Interface) video on macOS
+using FFmpeg requires configuring the correct input device framework,
+such as Apple’s native AVFoundation or specialized vendor APIs like
+Blackmagic DeckLink. This guide provides a direct, step-by-step
+walkthrough to identify your connected SDI capture hardware, select the
+appropriate FFmpeg commands, and record high-definition video directly
+to your Mac.</p>
+<h3 id="step-1-install-ffmpeg-and-drivers">Step 1: Install FFmpeg and
+Drivers</h3>
+<p>Before capturing, ensure you have FFmpeg installed on your Mac. The
+easiest way to install it is via Homebrew:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">brew</span> install ffmpeg</span></code></pre></div>
+<p>If you are using a professional SDI capture card (such as a
+Blackmagic DeckLink or UltraStudio device), you must also install the
+manufacturer’s drivers, such as the Blackmagic Desktop Video
+Utility.</p>
+<hr />
+<h3 id="step-2-identify-your-sdi-capture-device">Step 2: Identify Your
+SDI Capture Device</h3>
+<p>macOS handles video capture devices through two primary interfaces:
+<strong>AVFoundation</strong> (for standard driverless USB/Thunderbolt
+capture devices) or <strong>DeckLink</strong> (for native Blackmagic
+hardware).</p>
+<h4 id="option-a-finding-avfoundation-devices">Option A: Finding
+AVFoundation Devices</h4>
+<p>To list all connected video and audio devices recognized by Apple’s
+native framework, run:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-f</span> avfoundation <span class="at">-list_devices</span> true <span class="at">-i</span> <span class="st">&quot;&quot;</span></span></code></pre></div>
+<p>Look at the output under
+<code>[AVFoundation input device @ ...]</code> to find the index number
+or exact name of your SDI capture card (e.g.,
+<code>[0] Blackmagic UltraStudio</code> or
+<code>[1] Cam Link 4K</code>).</p>
+<h4 id="option-b-finding-decklink-devices">Option B: Finding DeckLink
+Devices</h4>
+<p>If you are using a native Blackmagic device and your FFmpeg build
+supports it, list the devices using:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-f</span> decklink <span class="at">-list_devices</span> 1 <span class="at">-i</span> dummy</span></code></pre></div>
+<hr />
+<h3 id="step-3-capture-sdi-video">Step 3: Capture SDI Video</h3>
+<p>Choose the command below that matches your capture hardware
+setup.</p>
+<h4 id="method-1-capturing-via-avfoundation-standarduvc-devices">Method
+1: Capturing via AVFoundation (Standard/UVC Devices)</h4>
+<p>If your SDI capture card registers as a standard macOS webcam device
+(like AJA U-TAP or Magewell SDI), use the following command. Replace
+<code>"0"</code> with your video device index and <code>"1"</code> with
+your audio device index from Step 2:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-f</span> avfoundation <span class="at">-framerate</span> 30 <span class="at">-video_size</span> 1920x1080 <span class="at">-i</span> <span class="st">&quot;0:1&quot;</span> <span class="at">-c:v</span> libx264 <span class="at">-preset</span> veryfast <span class="at">-c:a</span> aac output.mp4</span></code></pre></div>
+<ul>
+<li><code>-f avfoundation</code>: Forces FFmpeg to use the macOS
+AVFoundation framework.</li>
+<li><code>-framerate 30</code>: Sets the capture frame rate (adjust to
+match your SDI source, e.g., <code>29.97</code>, <code>59.94</code>, or
+<code>60</code>).</li>
+<li><code>-video_size 1920x1080</code>: Sets the resolution.</li>
+<li><code>-i "0:1"</code>: Selects video device index <code>0</code> and
+audio device index <code>1</code>.</li>
+<li><code>-c:v libx264</code>: Encodes the video to H.264 format.</li>
+</ul>
+<h4 id="method-2-capturing-via-decklink-blackmagic-devices">Method 2:
+Capturing via DeckLink (Blackmagic Devices)</h4>
+<p>For native, low-latency capture from Blackmagic SDI hardware, you
+must specify both the device name and the exact video format of your SDI
+input signal (e.g., <code>hp50</code> for 1080p 50fps, or
+<code>hp5994</code> for 1080p 59.94fps).</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-f</span> decklink <span class="at">-format_code</span> hp60 <span class="at">-i</span> <span class="st">&quot;UltraStudio Recorder 3G&quot;</span> <span class="at">-c:v</span> libx264 <span class="at">-preset</span> intermediate <span class="at">-c:a</span> pcm_s16le output.mov</span></code></pre></div>
+<ul>
+<li><code>-f decklink</code>: Specifies the Blackmagic DeckLink input
+format.</li>
+<li><code>-format_code hp60</code>: Sets the incoming SDI signal format
+(in this case, 1080p 60fps).</li>
+<li><code>-i "UltraStudio Recorder 3G"</code>: The exact name of your
+hardware device as listed in Step 2.</li>
+<li><code>-c:a pcm_s16le</code>: Captures uncompressed broadcast-quality
+audio.</li>
+</ul>
+<hr />
+<h3 id="step-4-verify-your-sdi-stream">Step 4: Verify Your SDI
+Stream</h3>
+<p>If you encounter errors, the SDI signal format must exactly match
+your FFmpeg command configuration. If your camera outputs
+<code>1080i 59.94</code>, your FFmpeg <code>-video_size</code>,
+<code>-framerate</code>, or <code>-format_code</code> parameters must be
+adjusted to match those exact broadcast specifications, or the capture
+card will fail to lock onto the signal.</p></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

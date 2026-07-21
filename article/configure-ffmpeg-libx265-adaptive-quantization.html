@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Configure FFmpeg libx265 Adaptive Quantization - ffmpeg</title>
+    <meta name="description" content="Adaptive Quantization (AQ) in the libx265 encoder is a critical feature that improves visual quality by distributing bits more effectively across different parts of a video frame, preventing blockiness in flat areas and gradient banding. This article pro">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/configure-ffmpeg-libx265-adaptive-quantization">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Configure FFmpeg libx265 Adaptive Quantization - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/configure-ffmpeg-libx265-adaptive-quantization" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Adaptive Quantization (AQ) in the libx265 encoder is a critical feature that improves visual quality by distributing bits more effectively across different parts of a video frame, preventing blockiness in flat areas and gradient banding. This article pro" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="configure-ffmpeg-libx265-adaptive-quantization">Configure FFmpeg
+libx265 Adaptive Quantization</h1>
+<p>Adaptive Quantization (AQ) in the <code>libx265</code> encoder is a
+critical feature that improves visual quality by distributing bits more
+effectively across different parts of a video frame, preventing
+blockiness in flat areas and gradient banding. This article provides a
+straightforward guide on how to configure the AQ mode and its strength
+in FFmpeg using the <code>libx265</code> encoder parameters to optimize
+your HEVC/H.265 encodes.</p>
+<h2 id="understanding-the-aq-parameters">Understanding the AQ
+Parameters</h2>
+<p>To configure Adaptive Quantization in <code>libx265</code>, you must
+pass specific parameters to the encoder using the
+<code>-x265-params</code> flag in your FFmpeg command. The two primary
+parameters are <code>aq-mode</code> and <code>aq-strength</code>.</p>
+<h3 id="aq-mode-aq-mode">1. AQ Mode (<code>aq-mode</code>)</h3>
+<p>The <code>aq-mode</code> parameter determines how the encoder
+distributes bits across different regions of a frame. You can choose
+from five different modes:</p>
+<ul>
+<li><strong><code>aq-mode=0</code> (Disabled):</strong> Disables
+adaptive quantization entirely. This is rarely recommended as it often
+leads to visible artifacts in flat or dark areas.</li>
+<li><strong><code>aq-mode=1</code> (Uniform AQ):</strong> Distributes
+bits across the entire frame. This is the default setting.</li>
+<li><strong><code>aq-mode=2</code> (Auto-Variance AQ):</strong>
+Automatically decides the AQ strength per frame. It is highly effective
+at improving flat and dark areas.</li>
+<li><strong><code>aq-mode=3</code> (Auto-Variance AQ with bias to dark
+scenes):</strong> Biases the distribution toward dark scenes to prevent
+color banding and blocking in shadows. This is highly recommended for
+high-quality movie encodes.</li>
+<li><strong><code>aq-mode=4</code> (Edge-Directed AQ):</strong> Focuses
+on maintaining clean edges. This mode is particularly useful for
+animation, anime, and high-contrast content.</li>
+</ul>
+<h3 id="aq-strength-aq-strength">2. AQ Strength
+(<code>aq-strength</code>)</h3>
+<p>The <code>aq-strength</code> parameter adjusts the intensity of the
+chosen AQ mode. * <strong>Range:</strong> <code>0.0</code> to
+<code>3.0</code> * <strong>Default:</strong> <code>1.0</code> * A lower
+value (e.g., <code>0.8</code>) reduces the effect of AQ, while a higher
+value (e.g., <code>1.2</code> to <code>1.5</code>) increases the bit
+distribution variance, which can help eliminate banding in problematic
+videos but may increase the overall file size.</p>
+<hr />
+<h2 id="how-to-configure-aq-in-the-ffmpeg-command">How to Configure AQ
+in the FFmpeg Command</h2>
+<p>To apply these settings, define them inside the
+<code>-x265-params</code> argument, separating multiple parameters with
+colons (<code>:</code>).</p>
+<h3 id="basic-command-example">Basic Command Example</h3>
+<p>The following command encodes a video using <code>libx265</code> with
+AQ Mode 3 (biased to dark scenes) and an AQ Strength of 1.2:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-c:v</span> libx265 <span class="at">-crf</span> 22 <span class="at">-x265-params</span> aq-mode=3:aq-strength=1.2 <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<h3 id="configuration-recommendations">Configuration
+Recommendations</h3>
+<p>Depending on your source material, use the following configurations
+for optimal results:</p>
+<ul>
+<li><p><strong>For Movies and General Live-Action:</strong></p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">-x265-params</span> aq-mode=3:aq-strength=1.0</span></code></pre></div>
+<p><em>Why:</em> Prevents macroblocking and banding in dark scenes and
+shadows.</p></li>
+<li><p><strong>For Anime and 2D Animation:</strong></p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">-x265-params</span> aq-mode=4:aq-strength=1.1</span></code></pre></div>
+<p><em>Why:</em> Preserves clean line art and sharp edges typical in
+animated content.</p></li>
+<li><p><strong>For High-Bitrate Archiving:</strong></p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">-x265-params</span> aq-mode=2:aq-strength=1.0</span></code></pre></div>
+<p><em>Why:</em> Allows the encoder to dynamically adapt variance across
+frames without over-allocating bits to dark areas.</p></li>
+</ul></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

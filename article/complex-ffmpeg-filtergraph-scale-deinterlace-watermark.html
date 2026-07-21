@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Complex FFmpeg Filtergraph: Scale, Deinterlace, Watermark - ffmpeg</title>
+    <meta name="description" content="Building a complex video processing pipeline in FFmpeg requires combining multiple video operations into a single chain using the -filtercomplex flag. This article provides a clear, step-by-step guide to constructing an FFmpeg command that deinterlaces r">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/complex-ffmpeg-filtergraph-scale-deinterlace-watermark">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Complex FFmpeg Filtergraph: Scale, Deinterlace, Watermark - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/complex-ffmpeg-filtergraph-scale-deinterlace-watermark" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Building a complex video processing pipeline in FFmpeg requires combining multiple video operations into a single chain using the -filtercomplex flag. This article provides a clear, step-by-step guide to constructing an FFmpeg command that deinterlaces r" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="complex-ffmpeg-filtergraph-scale-deinterlace-watermark">Complex
+FFmpeg Filtergraph: Scale, Deinterlace, Watermark</h1>
+<p>Building a complex video processing pipeline in FFmpeg requires
+combining multiple video operations into a single chain using the
+<code>-filter_complex</code> flag. This article provides a clear,
+step-by-step guide to constructing an FFmpeg command that deinterlaces
+raw footage, rescales the resolution, overlays a watermark image, and
+encodes the final output using high-quality video settings.</p>
+<h3 id="the-complete-command">The Complete Command</h3>
+<p>To perform all these actions in a single pass without intermediate
+rendering, use the following FFmpeg command:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-i</span> watermark.png <span class="at">-filter_complex</span> <span class="dt">\</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="st">&quot;[0:v]yadif=0:-1:0[deinterlaced]; </span><span class="dt">\</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="st"> [deinterlaced]scale=1920:1080[scaled]; </span><span class="dt">\</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="st"> [scaled][1:v]overlay=W-w-20:H-h-20[outv]&quot;</span> <span class="dt">\</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>-map <span class="st">&quot;[outv]&quot;</span> <span class="at">-map</span> 0:a <span class="at">-c:v</span> libx264 <span class="at">-crf</span> 21 <span class="at">-preset</span> medium <span class="at">-c:a</span> aac <span class="at">-b:a</span> 128k output.mp4</span></code></pre></div>
+<h3 id="how-the-filtergraph-works">How the Filtergraph Works</h3>
+<p>The <code>-filter_complex</code> argument treats video processing as
+a directed graph. Inputs are sent into filters, and the labeled outputs
+of those filters are piped into subsequent operations.</p>
+<ol type="1">
+<li><strong>Deinterlacing (<code>yadif</code>):</strong>
+<ul>
+<li><code>[0:v]</code> targets the video stream of the first input
+(<code>input.mp4</code>).</li>
+<li><code>yadif=0:-1:0</code> applies the “Yet Another Deinterlacing
+Filter.” The parameters define the mode (0 outputs 1 frame per frame of
+input), parity (-1 auto-detects field dominance), and deinterlacing
+choice (0 deinterlaces all frames).</li>
+<li><code>[deinterlaced]</code> labels the clean progressive output
+stream.</li>
+</ul></li>
+<li><strong>Scaling (<code>scale</code>):</strong>
+<ul>
+<li><code>[deinterlaced]scale=1920:1080[scaled]</code> takes the
+deinterlaced output and resizes it to Full HD (1920x1080 pixels). If you
+want to maintain the aspect ratio while scaling, use
+<code>scale=1920:-1</code> instead.</li>
+<li><code>[scaled]</code> labels the resized output stream.</li>
+</ul></li>
+<li><strong>Watermarking (<code>overlay</code>):</strong>
+<ul>
+<li><code>[scaled][1:v]</code> takes the scaled video stream and pairs
+it with the video stream of the second input
+(<code>watermark.png</code>).</li>
+<li><code>overlay=W-w-20:H-h-20</code> places the watermark in the
+bottom-right corner. <code>W</code> and <code>H</code> represent the
+width and height of the main video, while <code>w</code> and
+<code>h</code> represent the width and height of the watermark. The
+<code>-20</code> adds a 20-pixel padding from the edges.</li>
+<li><code>[outv]</code> labels the final combined video stream.</li>
+</ul></li>
+</ol>
+<h3 id="mapping-and-encoding-the-output">Mapping and Encoding the
+Output</h3>
+<p>Once the filtergraph processing is complete, you must map the final
+streams and configure your encoders:</p>
+<ul>
+<li><strong><code>-map "[outv]"</code></strong>: Instructs FFmpeg to use
+the final processed video stream from your filtergraph in the output
+file.</li>
+<li><strong><code>-map 0:a</code></strong>: Maps the original audio from
+the first input file directly to the output without altering it.</li>
+<li><strong><code>-c:v libx264 -crf 21 -preset medium</code></strong>:
+Encodes the video to H.264. The Constant Rate Factor (<code>-crf</code>)
+controls visual quality (lower values mean higher quality; 18-23 is
+standard). The <code>-preset</code> configures encoding speed versus
+compression ratio.</li>
+<li><strong><code>-c:a aac -b:a 128k</code></strong>: Encodes the audio
+to AAC format at a standard bitrate of 128 kbps.</li>
+</ul></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

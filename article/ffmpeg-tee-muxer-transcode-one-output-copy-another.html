@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FFmpeg Tee Muxer: Transcode One Output Copy Another - ffmpeg</title>
+    <meta name="description" content="Using the FFmpeg tee muxer allows you to split an input stream into multiple outputs simultaneously. This guide explains how to configure the tee muxer to transcode one of those outputs (such as changing the bitrate or codec) while performing a direct st">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/ffmpeg-tee-muxer-transcode-one-output-copy-another">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="FFmpeg Tee Muxer: Transcode One Output Copy Another - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/ffmpeg-tee-muxer-transcode-one-output-copy-another" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Using the FFmpeg tee muxer allows you to split an input stream into multiple outputs simultaneously. This guide explains how to configure the tee muxer to transcode one of those outputs (such as changing the bitrate or codec) while performing a direct st" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="ffmpeg-tee-muxer-transcode-one-output-copy-another">FFmpeg Tee
+Muxer: Transcode One Output Copy Another</h1>
+<p>Using the FFmpeg <code>tee</code> muxer allows you to split an input
+stream into multiple outputs simultaneously. This guide explains how to
+configure the <code>tee</code> muxer to transcode one of those outputs
+(such as changing the bitrate or codec) while performing a direct stream
+copy (without re-encoding) on another, optimizing your system’s
+resources and stream delivery.</p>
+<hr />
+<h3 id="the-challenge-with-tee-and-transcoding">The Challenge with Tee
+and Transcoding</h3>
+<p>The <code>tee</code> muxer operates at the muxer level, meaning it
+receives already-encoded packets and writes them to multiple
+destinations. Because it does not encode data itself, you cannot
+transcode “inside” the <code>tee</code> muxer.</p>
+<p>To transcode one output and copy another, you must configure FFmpeg
+to generate <strong>two sets of streams</strong> in the encoder pipeline
+first: one copied stream and one transcoded stream. You then use the
+<code>tee</code> muxer’s <code>select</code> option to route each stream
+to its designated destination.</p>
+<h3 id="the-ffmpeg-command-syntax">The FFmpeg Command Syntax</h3>
+<p>Here is the template command to achieve this:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="dt">\</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">-map</span> 0:v <span class="at">-map</span> 0:a <span class="dt">\</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">-map</span> 0:v <span class="at">-map</span> 0:a <span class="dt">\</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">-c:v:0</span> copy <span class="at">-c:a:0</span> copy <span class="dt">\</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">-c:v:1</span> libx264 <span class="at">-b:v</span> 2500k <span class="at">-c:a:1</span> aac <span class="at">-b:a</span> 128k <span class="dt">\</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">-f</span> tee <span class="st">&quot;[select=\&#39;v:0,a:0\&#39;]output_copy.mp4|[select=\&#39;v:1,a:1\&#39;:f=flv]rtmp://live.twitch.tv/app/stream_key&quot;</span></span></code></pre></div>
+<h3 id="command-breakdown">Command Breakdown</h3>
+<h4 id="mapping-the-inputs">1. Mapping the Inputs</h4>
+<p>To create two independent output streams from a single input, you
+must map the input streams twice: * <code>-map 0:v -map 0:a</code> maps
+the video and audio to the first output stream group index
+(<code>0</code>). * <code>-map 0:v -map 0:a</code> maps them again to
+the second output stream group index (<code>1</code>).</p>
+<h4 id="defining-stream-specs-copy-vs.-transcode">2. Defining Stream
+Specs (Copy vs. Transcode)</h4>
+<p>Next, assign different encoder settings to each mapped stream using
+stream specifiers (<code>:0</code> and <code>:1</code>): * <strong>For
+the Copy Output (Index 0):</strong> <code>-c:v:0 copy -c:a:0 copy</code>
+tells FFmpeg to copy the original video and audio packets directly
+without re-encoding. * <strong>For the Transcoded Output (Index
+1):</strong> <code>-c:v:1 libx264 -b:v 2500k -c:a:1 aac -b:a 128k</code>
+transcodes the second stream into H.264 video at 2500k and AAC audio at
+128k.</p>
+<h4 id="routing-streams-with-the-tee-muxer">3. Routing Streams with the
+Tee Muxer</h4>
+<p>The <code>-f tee</code> flag initiates the muxer. Inside the tee
+arguments, outputs are separated by a pipe (<code>|</code>), and the
+<code>select</code> option filters which streams go where: *
+<code>[select=\'v:0,a:0\']output_copy.mp4</code> routes the copied
+streams (index 0) to a local MP4 file. *
+<code>[select=\'v:1,a:1\':f=flv]rtmp://...</code> routes the transcoded
+streams (index 1) to an RTMP server, forcing the FLV format with the
+<code>:f=flv</code> flag.</p>
+<h3 id="escaping-special-characters">Escaping Special Characters</h3>
+<p>Note the backslashes before the single quotes
+(<code>\'v:0,a:0\'</code>). Depending on your operating system’s
+terminal (Bash, Zsh, or Windows Command Prompt), you must escape single
+quotes and colons so the shell passes the string to FFmpeg correctly. If
+you are using Windows CMD, you may use double quotes instead of single
+quotes and omit the backslashes.</p></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

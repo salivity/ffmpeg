@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pad Vertical Video with Blurred Background in FFmpeg - ffmpeg</title>
+    <meta name="description" content="This article explains how to convert a vertical (9:16) video into a horizontal (16:9) video by padding the empty sides with a blurred, scaled-up version of the original footage. Using a single FFmpeg complex filtergraph (-filtercomplex), you can duplicat">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/pad-vertical-video-with-blurred-background-in-ffmpeg">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Pad Vertical Video with Blurred Background in FFmpeg - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/pad-vertical-video-with-blurred-background-in-ffmpeg" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article explains how to convert a vertical (9:16) video into a horizontal (16:9) video by padding the empty sides with a blurred, scaled-up version of the original footage. Using a single FFmpeg complex filtergraph (-filtercomplex), you can duplicat" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="pad-vertical-video-with-blurred-background-in-ffmpeg">Pad
+Vertical Video with Blurred Background in FFmpeg</h1>
+<p>This article explains how to convert a vertical (9:16) video into a
+horizontal (16:9) video by padding the empty sides with a blurred,
+scaled-up version of the original footage. Using a single FFmpeg complex
+filtergraph (<code>-filter_complex</code>), you can duplicate the video
+stream, apply scaling and blurring filters to one stream to create the
+background, and overlay the original vertical video centered on top of
+it.</p>
+<h3 id="the-ffmpeg-command">The FFmpeg Command</h3>
+<p>To pad a vertical video (such as a smartphone recording) to a
+standard landscape 1080p resolution (1920x1080) with a blurred
+background, run the following command in your terminal:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-filter_complex</span> <span class="st">&quot;[0:v]split=2[bg][fg];[bg]scale=1920:1080,boxblur=40:20[blurred];[fg]scale=-1:1080[foreground];[blurred][foreground]overlay=(W-w)/2:(H-h)/2&quot;</span> <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<h3 id="how-the-filtergraph-works">How the Filtergraph Works</h3>
+<p>The <code>-filter_complex</code> flag allows you to link multiple
+filters together. Here is a breakdown of how the filter chain processes
+the video:</p>
+<ol type="1">
+<li><p><strong><code>[0:v]split=2[bg][fg]</code></strong> This splits
+the input video stream (<code>[0:v]</code>) into two identical,
+independent streams labeled <code>[bg]</code> (background) and
+<code>[fg]</code> (foreground).</p></li>
+<li><p><strong><code>[bg]scale=1920:1080,boxblur=40:20[blurred]</code></strong></p>
+<ul>
+<li><strong><code>scale=1920:1080</code></strong>: Scales the background
+stream to fill a standard 1080p landscape frame.</li>
+<li><strong><code>boxblur=40:20</code></strong>: Applies a strong blur
+effect to the background video. The first number (<code>40</code>) is
+the blur radius, and the second number (<code>20</code>) is the power
+(how many times the blur filter is applied). You can increase or
+decrease these values to change the intensity of the blur.</li>
+<li>The resulting processed stream is labeled
+<code>[blurred]</code>.</li>
+</ul></li>
+<li><p><strong><code>[fg]scale=-1:1080[foreground]</code></strong> This
+scales the foreground video to match the height of the output frame
+(<code>1080</code> pixels) while setting the width to <code>-1</code>,
+which forces FFmpeg to automatically calculate the correct width to
+preserve the video’s original vertical aspect ratio. This stream is
+labeled <code>[foreground]</code>.</p></li>
+<li><p><strong><code>[blurred][foreground]overlay=(W-w)/2:(H-h)/2</code></strong>
+This overlays the <code>[foreground]</code> stream on top of the
+<code>[blurred]</code> background.</p>
+<ul>
+<li><strong><code>W</code> and <code>H</code></strong> represent the
+width and height of the background video (1920x1080).</li>
+<li><strong><code>w</code> and <code>h</code></strong> represent the
+width and height of the foreground vertical video.</li>
+<li><strong><code>(W-w)/2:(H-h)/2</code></strong> mathematically centers
+the vertical video horizontally and vertically on top of the blurred
+background.</li>
+</ul></li>
+</ol>
+<h3 id="adjusting-the-output-resolution">Adjusting the Output
+Resolution</h3>
+<p>If you want to output a different resolution, such as 720p (1280x720)
+or 4K (3840x2160), simply change the scaling values in the command.</p>
+<p>For 720p:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-filter_complex</span> <span class="st">&quot;[0:v]split=2[bg][fg];[bg]scale=1280:720,boxblur=40:20[blurred];[fg]scale=-1:720[foreground];[blurred][foreground]overlay=(W-w)/2:(H-h)/2&quot;</span> <span class="at">-c:a</span> copy output.mp4</span></code></pre></div></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

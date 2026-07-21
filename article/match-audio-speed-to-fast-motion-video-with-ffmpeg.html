@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Match Audio Speed to Fast Motion Video with FFmpeg - ffmpeg</title>
+    <meta name="description" content="When creating fast-motion video effects in FFmpeg, speeding up the video stream without adjusting the audio results in desynchronization. To keep the audio track perfectly aligned with the accelerated video, you must use the asetpts (audio set presentati">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/match-audio-speed-to-fast-motion-video-with-ffmpeg">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Match Audio Speed to Fast Motion Video with FFmpeg - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/match-audio-speed-to-fast-motion-video-with-ffmpeg" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="When creating fast-motion video effects in FFmpeg, speeding up the video stream without adjusting the audio results in desynchronization. To keep the audio track perfectly aligned with the accelerated video, you must use the asetpts (audio set presentati" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="match-audio-speed-to-fast-motion-video-with-ffmpeg">Match Audio
+Speed to Fast Motion Video with FFmpeg</h1>
+<p>When creating fast-motion video effects in FFmpeg, speeding up the
+video stream without adjusting the audio results in desynchronization.
+To keep the audio track perfectly aligned with the accelerated video,
+you must use the <code>asetpts</code> (audio set presentation timestamp)
+filter in combination with audio tempo or sample rate adjustments. This
+article provides a straightforward guide on how to use
+<code>asetpts</code> to match your audio to fast-motion video, covering
+both pitch-preserved and pitch-altered methods.</p>
+<hr />
+<h3 id="understanding-the-math">Understanding the Math</h3>
+<p>To speed up a video, you reduce its presentation timestamps (PTS)
+using the <code>setpts</code> filter. For example, to make a video play
+at <strong>double speed (2x)</strong>, you multiply the PTS by
+<code>0.5</code>:</p>
+<p><code>setpts=0.5*PTS</code></p>
+<p>To match this fast-motion effect, the audio stream must be modified
+to fit the exact same timeline. This requires adjusting the audio speed
+and using <code>asetpts=0.5*PTS</code> to scale the audio presentation
+timestamps.</p>
+<p>Here are the two ways to apply this filter depending on how you want
+the audio to sound.</p>
+<hr />
+<h3
+id="method-1-speeding-up-audio-with-pitch-preservation-normal-voice">Method
+1: Speeding Up Audio with Pitch Preservation (Normal Voice)</h3>
+<p>If you want the audio to play faster to match the video but want to
+keep the voice pitch sounding natural (avoiding the “chipmunk” effect),
+combine the <code>atempo</code> filter with <code>asetpts</code>.</p>
+<p>Use the following command to speed up both video and audio by
+<strong>2x</strong>:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-filter_complex</span> <span class="st">&quot;[0:v]setpts=0.5*PTS[v];[0:a]atempo=2.0,asetpts=0.5*PTS[a]&quot;</span> <span class="at">-map</span> <span class="st">&quot;[v]&quot;</span> <span class="at">-map</span> <span class="st">&quot;[a]&quot;</span> output.mp4</span></code></pre></div>
+<p><strong>How it works:</strong> * <code>setpts=0.5*PTS</code> speeds
+up the video by 2x. * <code>atempo=2.0</code> speeds up the audio data
+by 2x without changing the pitch. * <code>asetpts=0.5*PTS</code>
+rescales the audio timestamps to ensure they match the accelerated video
+timeline perfectly.</p>
+<hr />
+<h3
+id="method-2-speeding-up-audio-with-pitch-change-chipmunk-effect">Method
+2: Speeding Up Audio with Pitch Change (Chipmunk Effect)</h3>
+<p>If you want the classic “high-pitched fast-forward” sound to
+accompany your fast-motion video, you should use the
+<code>asetrate</code> filter alongside <code>asetpts</code>.</p>
+<p>For a <strong>2x speed increase</strong>, you must double the input
+sample rate (e.g., from 44,100 Hz to 88,200 Hz) and then reset the
+timestamps:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-filter_complex</span> <span class="st">&quot;[0:v]setpts=0.5*PTS[v];[0:a]asetrate=44100*2,asetpts=0.5*PTS[a]&quot;</span> <span class="at">-map</span> <span class="st">&quot;[v]&quot;</span> <span class="at">-map</span> <span class="st">&quot;[a]&quot;</span> output.mp4</span></code></pre></div>
+<p><strong>How it works:</strong> * <code>asetrate=44100*2</code>
+changes the sample rate configuration, which increases the playback
+speed and raises the pitch. <em>Note: Replace <code>44100</code> with
+your input file’s actual sample rate if different (e.g.,
+<code>48000</code>).</em> * <code>asetpts=0.5*PTS</code> rebuilds the
+audio timestamps so that the player renders the high-sample-rate audio
+at the accelerated speed, syncing it with the video.</p>
+<hr />
+<h3 id="formula-cheat-sheet-for-different-speeds">Formula Cheat Sheet
+for Different Speeds</h3>
+<p>To apply different fast-motion speeds, use this guide to calculate
+your filter values:</p>
+<table>
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+</colgroup>
+<thead>
+<tr>
+<th style="text-align: left;">Target Speed</th>
+<th style="text-align: left;">Video Filter (<code>setpts</code>)</th>
+<th style="text-align: left;">Audio Filter (<code>asetpts</code>)</th>
+<th style="text-align: left;">Audio Tempo (<code>atempo</code>)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><strong>1.5x Speed</strong></td>
+<td style="text-align: left;"><code>0.67*PTS</code></td>
+<td style="text-align: left;"><code>0.67*PTS</code></td>
+<td style="text-align: left;"><code>1.5</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>2x Speed</strong></td>
+<td style="text-align: left;"><code>0.5*PTS</code></td>
+<td style="text-align: left;"><code>0.5*PTS</code></td>
+<td style="text-align: left;"><code>2.0</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>3x Speed</strong></td>
+<td style="text-align: left;"><code>0.33*PTS</code></td>
+<td style="text-align: left;"><code>0.33*PTS</code></td>
+<td style="text-align: left;"><code>3.0</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>4x Speed</strong></td>
+<td style="text-align: left;"><code>0.25*PTS</code></td>
+<td style="text-align: left;"><code>0.25*PTS</code></td>
+<td style="text-align: left;"><code>4.0</code></td>
+</tr>
+</tbody>
+</table>
+<p><em>Note: The <code>atempo</code> filter in FFmpeg only supports
+values between <code>0.5</code> and <code>100.0</code>.</em></p></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

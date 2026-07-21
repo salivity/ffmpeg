@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Configure Ogg Vorbis Quality Scale in FFmpeg - ffmpeg</title>
+    <meta name="description" content="This article provides a quick guide on how to configure the audio quality scale (-aq) when encoding Ogg Vorbis audio using FFmpeg. You will learn how the quality scale works, the range of values you can use, and practical FFmpeg commands to achieve your">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/configure-ogg-vorbis-quality-scale-in-ffmpeg">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Configure Ogg Vorbis Quality Scale in FFmpeg - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/configure-ogg-vorbis-quality-scale-in-ffmpeg" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article provides a quick guide on how to configure the audio quality scale (-aq) when encoding Ogg Vorbis audio using FFmpeg. You will learn how the quality scale works, the range of values you can use, and practical FFmpeg commands to achieve your" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="configure-ogg-vorbis-quality-scale-in-ffmpeg">Configure Ogg
+Vorbis Quality Scale in FFmpeg</h1>
+<p>This article provides a quick guide on how to configure the audio
+quality scale (<code>-aq</code>) when encoding Ogg Vorbis audio using
+FFmpeg. You will learn how the quality scale works, the range of values
+you can use, and practical FFmpeg commands to achieve your desired audio
+bitrate and quality.</p>
+<p>To configure the quality of an Ogg Vorbis audio stream in FFmpeg, you
+use the <code>-aq</code> (audio quality) flag in combination with the
+<code>libvorbis</code> encoder. The <code>-aq</code> flag enables
+variable bitrate (VBR) encoding, which optimizes the file size by
+allocating more data to complex audio segments and less data to simpler
+ones.</p>
+<h3 id="the-vorbis-quality-scale">The Vorbis Quality Scale</h3>
+<p>The <code>-aq</code> scale for the <code>libvorbis</code> encoder
+ranges from <strong><code>-1.0</code> to <code>10.0</code></strong>.</p>
+<ul>
+<li><strong><code>-1.0</code></strong>: Lowest quality (approximately 45
+kbps)</li>
+<li><strong><code>3.0</code></strong>: Medium quality (approximately 112
+kbps, good for general use)</li>
+<li><strong><code>6.0</code></strong>: High quality (approximately 192
+kbps, recommended for music)</li>
+<li><strong><code>10.0</code></strong>: Highest quality (approximately
+500 kbps)</li>
+</ul>
+<p>Each increase of 1.0 on the scale roughly corresponds to an increase
+in audio fidelity and file size.</p>
+<h3 id="basic-command-syntax">Basic Command Syntax</h3>
+<p>To encode an audio file to Ogg Vorbis with a specific quality
+setting, use the following command structure:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.wav <span class="at">-c:a</span> libvorbis <span class="at">-aq</span> 5 output.ogg</span></code></pre></div>
+<p><strong>Command Breakdown:</strong> * <code>-i input.wav</code>:
+Specifies the input file. * <code>-c:a libvorbis</code>: Selects the
+Vorbis encoder. * <code>-aq 5</code>: Sets the quality scale to
+<code>5</code> (roughly 160 kbps). * <code>output.ogg</code>: Specifies
+the output file name and container.</p>
+<h3 id="recommended-quality-settings">Recommended Quality Settings</h3>
+<p>Depending on your use case, here are the recommended <code>-aq</code>
+values:</p>
+<table>
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+</colgroup>
+<thead>
+<tr>
+<th style="text-align: left;">Quality Level</th>
+<th style="text-align: left;"><code>-aq</code> Value</th>
+<th style="text-align: left;">Target Bitrate</th>
+<th style="text-align: left;">Ideal Use Case</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;">Low</td>
+<td style="text-align: left;"><code>1</code></td>
+<td style="text-align: left;">~80 kbps</td>
+<td style="text-align: left;">Voice recordings, podcasts</td>
+</tr>
+<tr>
+<td style="text-align: left;">Medium</td>
+<td style="text-align: left;"><code>3</code> to <code>4</code></td>
+<td style="text-align: left;">~112 - 128 kbps</td>
+<td style="text-align: left;">Standard streaming, web audio</td>
+</tr>
+<tr>
+<td style="text-align: left;">High</td>
+<td style="text-align: left;"><code>5</code> to <code>6</code></td>
+<td style="text-align: left;">~160 - 192 kbps</td>
+<td style="text-align: left;">High-fidelity music playback</td>
+</tr>
+<tr>
+<td style="text-align: left;">Very High</td>
+<td style="text-align: left;"><code>8</code></td>
+<td style="text-align: left;">~256 kbps</td>
+<td style="text-align: left;">Archiving, high-end audio setups</td>
+</tr>
+</tbody>
+</table>
+<p>By using the <code>-aq</code> flag instead of forcing a constant
+bitrate (<code>-b:a</code>), FFmpeg ensures the most efficient use of
+disk space while maintaining consistent acoustic quality throughout the
+duration of the audio track.</p></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Load TensorFlow and PyTorch Models in FFmpeg SR Filter - ffmpeg</title>
+    <meta name="description" content="This article provides a practical guide on how to load and execute deep learning models using the FFmpeg super-resolution (sr) filter. It covers the preparation of TensorFlow and PyTorch model files, the required format conversions, and the exact FFmpeg">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/load-tensorflow-and-pytorch-models-in-ffmpeg-sr-filter">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Load TensorFlow and PyTorch Models in FFmpeg SR Filter - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/load-tensorflow-and-pytorch-models-in-ffmpeg-sr-filter" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article provides a practical guide on how to load and execute deep learning models using the FFmpeg super-resolution (sr) filter. It covers the preparation of TensorFlow and PyTorch model files, the required format conversions, and the exact FFmpeg" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="load-tensorflow-and-pytorch-models-in-ffmpeg-sr-filter">Load
+TensorFlow and PyTorch Models in FFmpeg SR Filter</h1>
+<p>This article provides a practical guide on how to load and execute
+deep learning models using the FFmpeg super-resolution (<code>sr</code>)
+filter. It covers the preparation of TensorFlow and PyTorch model files,
+the required format conversions, and the exact FFmpeg commands needed to
+run super-resolution processing on your video files.</p>
+<h3 id="ffmpeg-dnn-backends">FFmpeg DNN Backends</h3>
+<p>The FFmpeg <code>sr</code> (super-resolution) filter relies on
+FFmpeg’s internal Deep Neural Network (DNN) interface. This interface
+supports three backends: 1. <strong>TensorFlow</strong>: Loads frozen
+TensorFlow models in <code>.pb</code> format. 2.
+<strong>OpenVINO</strong>: Loads Intel OpenVINO models in
+<code>.xml</code> and <code>.bin</code> formats. 3.
+<strong>Native</strong>: Loads simple models converted into FFmpeg’s
+native <code>.model</code> format.</p>
+<p>Because FFmpeg does not natively support PyTorch (<code>.pt</code> or
+<code>.pth</code>) files, PyTorch models must be converted to an
+intermediate format before they can be loaded.</p>
+<hr />
+<h3 id="loading-a-tensorflow-model">Loading a TensorFlow Model</h3>
+<p>To use a TensorFlow model with the <code>sr</code> filter, the model
+must be exported as a frozen graph (a <code>.pb</code> file) with fixed
+input and output tensor names.</p>
+<p>Run the following command to apply the TensorFlow model to a
+video:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;sr=dnn_backend=tensorflow:model=super_resolution_model.pb&quot;</span> output.mp4</span></code></pre></div>
+<p><strong>Key Parameters:</strong> *
+<code>dnn_backend=tensorflow</code>: Instructs FFmpeg to use the
+TensorFlow engine. * <code>model=super_resolution_model.pb</code>: The
+path to your frozen TensorFlow model file.</p>
+<hr />
+<h3 id="loading-a-pytorch-model">Loading a PyTorch Model</h3>
+<p>FFmpeg cannot load PyTorch <code>.pth</code> files directly. To use a
+PyTorch model, you must convert it to ONNX format first, and then
+convert that ONNX model into either a TensorFlow <code>.pb</code> file
+or an OpenVINO format.</p>
+<h4 id="step-1-export-pytorch-to-onnx">Step 1: Export PyTorch to
+ONNX</h4>
+<p>Use Python to export your PyTorch model to ONNX:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> torch</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Load your PyTorch model</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>model <span class="op">=</span> MySRModel()</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>model.load_state_dict(torch.load(<span class="st">&quot;model.pth&quot;</span>))</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>model.<span class="bu">eval</span>()</span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a><span class="co"># Create dummy input matching the model&#39;s expected input shape</span></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>dummy_input <span class="op">=</span> torch.randn(<span class="dv">1</span>, <span class="dv">3</span>, <span class="dv">360</span>, <span class="dv">640</span>) </span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a><span class="co"># Export to ONNX</span></span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a>torch.onnx.export(model, dummy_input, <span class="st">&quot;model.onnx&quot;</span>, opset_version<span class="op">=</span><span class="dv">11</span>)</span></code></pre></div>
+<h4 id="step-2-convert-onnx-to-tensorflow-.pb">Step 2: Convert ONNX to
+TensorFlow (.pb)</h4>
+<p>You can use the <code>onnx-tf</code> library in Python to convert the
+ONNX file into a TensorFlow format, which you can then freeze into a
+<code>.pb</code> file.</p>
+<h4 id="step-3-run-the-converted-model-in-ffmpeg">Step 3: Run the
+Converted Model in FFmpeg</h4>
+<p>Once converted, run the model using the appropriate backend. If you
+converted the PyTorch model to OpenVINO format (which often yields the
+best CPU performance), use the following command:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;sr=dnn_backend=openvino:model=model.xml&quot;</span> output.mp4</span></code></pre></div>
+<hr />
+<h3 id="specifying-options-and-scale-factor">Specifying Options and
+Scale Factor</h3>
+<p>The <code>sr</code> filter allows you to define the scale factor and
+specify the input/output layer names if your model uses non-standard
+tensor names.</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;sr=dnn_backend=tensorflow:model=model.pb:scale_factor=2:input=input_tensor_name:output=output_tensor_name&quot;</span> output.mp4</span></code></pre></div>
+<ul>
+<li><code>scale_factor</code>: The multiplier for the upscale resolution
+(e.g., <code>2</code>, <code>3</code>, or <code>4</code>). This must
+match the scaling factor the model was trained to handle.</li>
+<li><code>input</code>: The name of the input node in the model
+graph.</li>
+<li><code>output</code>: The name of the output node in the model
+graph.</li>
+</ul></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

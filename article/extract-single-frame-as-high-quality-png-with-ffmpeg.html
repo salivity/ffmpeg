@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Extract Single Frame as High-Quality PNG with FFmpeg - ffmpeg</title>
+    <meta name="description" content="This article demonstrates how to use the FFmpeg command-line tool to extract a single, frame-accurate image from a video at a specific timestamp. You will learn the exact command structure required to output a high-quality, lossless PNG image, along with">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/extract-single-frame-as-high-quality-png-with-ffmpeg">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Extract Single Frame as High-Quality PNG with FFmpeg - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/extract-single-frame-as-high-quality-png-with-ffmpeg" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article demonstrates how to use the FFmpeg command-line tool to extract a single, frame-accurate image from a video at a specific timestamp. You will learn the exact command structure required to output a high-quality, lossless PNG image, along with" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="extract-single-frame-as-high-quality-png-with-ffmpeg">Extract
+Single Frame as High-Quality PNG with FFmpeg</h1>
+<p>This article demonstrates how to use the FFmpeg command-line tool to
+extract a single, frame-accurate image from a video at a specific
+timestamp. You will learn the exact command structure required to output
+a high-quality, lossless PNG image, along with an explanation of how
+each parameter works to ensure the best possible visual quality.</p>
+<h2 id="the-standard-command">The Standard Command</h2>
+<p>To extract a single frame at a specific timestamp, use the following
+FFmpeg command:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-ss</span> 00:01:30 <span class="at">-i</span> input.mp4 <span class="at">-frames:v</span> 1 output.png</span></code></pre></div>
+<h3 id="parameter-breakdown">Parameter Breakdown</h3>
+<ul>
+<li><strong><code>-ss 00:01:30</code></strong>: Specifies the timestamp
+of the frame you want to extract. You can format this as
+<code>HH:MM:SS</code> (hours, minutes, seconds) or as a number of
+seconds (e.g., <code>90</code>). Placing this <em>before</em> the input
+file (<code>-i</code>) enables fast seeking.</li>
+<li><strong><code>-i input.mp4</code></strong>: Defines the path to your
+input video file.</li>
+<li><strong><code>-frames:v 1</code></strong>: Instructs FFmpeg to
+export exactly one video frame.</li>
+<li><strong><code>output.png</code></strong>: The name of the output
+file. Using the <code>.png</code> extension automatically tells FFmpeg
+to export the frame as a lossless PNG image.</li>
+</ul>
+<hr />
+<h2 id="ensuring-frame-accuracy">Ensuring Frame Accuracy</h2>
+<p>Placing the <code>-ss</code> parameter before the <code>-i</code>
+parameter is highly efficient because it skips to the timestamp quickly.
+However, this can sometimes result in a slightly inaccurate frame
+capture depending on the video’s keyframe placement.</p>
+<p>If you need absolute, frame-accurate precision, place the
+<code>-ss</code> parameter <em>after</em> the input file:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-ss</span> 00:01:30 <span class="at">-frames:v</span> 1 output.png</span></code></pre></div>
+<p><em>Note: This method is slower because FFmpeg must decode the video
+from the beginning up to the specified timestamp, but it guarantees you
+get the exact frame requested.</em></p>
+<hr />
+<h2 id="optimizing-for-maximum-quality-and-color-accuracy">Optimizing
+for Maximum Quality and Color Accuracy</h2>
+<p>Because PNG is a lossless format, FFmpeg will preserve the source
+quality by default. However, video files and image files often use
+different color spaces (YUV vs. RGB). To prevent color degradation or
+shifting during conversion, force FFmpeg to output a high-quality RGB
+pixel format using the <code>-pix_fmt</code> flag:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-ss</span> 00:01:30 <span class="at">-i</span> input.mp4 <span class="at">-frames:v</span> 1 <span class="at">-pix_fmt</span> rgb24 output.png</span></code></pre></div>
+<ul>
+<li><strong><code>-pix_fmt rgb24</code></strong>: Standard 8-bit RGB
+color depth. This ensures the output PNG uses standard,
+widely-compatible RGB colors.</li>
+<li><strong><code>-pix_fmt rgb48be</code></strong>: (Optional) If your
+source video is 10-bit or high-dynamic-range (HDR), use this to export a
+16-bit PNG and preserve the extended color depth.</li>
+</ul></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

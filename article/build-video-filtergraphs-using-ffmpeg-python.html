@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Build Video Filtergraphs Using ffmpeg-python - ffmpeg</title>
+    <meta name="description" content="This article provides a practical guide on how to build and execute complex video filtergraphs using the ffmpeg-python library. You will learn how to set up your environment, chain multiple video filters together (such as scaling, color adjustments, and">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/build-video-filtergraphs-using-ffmpeg-python">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Build Video Filtergraphs Using ffmpeg-python - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/build-video-filtergraphs-using-ffmpeg-python" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article provides a practical guide on how to build and execute complex video filtergraphs using the ffmpeg-python library. You will learn how to set up your environment, chain multiple video filters together (such as scaling, color adjustments, and" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="build-video-filtergraphs-using-ffmpeg-python">Build Video
+Filtergraphs Using ffmpeg-python</h1>
+<p>This article provides a practical guide on how to build and execute
+complex video filtergraphs using the <code>ffmpeg-python</code> library.
+You will learn how to set up your environment, chain multiple video
+filters together (such as scaling, color adjustments, and overlays), and
+run the final FFmpeg command directly from Python code.</p>
+<h2 id="getting-started">Getting Started</h2>
+<p>To use <code>ffmpeg-python</code>, you must have both the FFmpeg
+command-line tool and the Python wrapper installed on your system.</p>
+<p>First, install the Python library via pip:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">pip</span> install ffmpeg-python</span></code></pre></div>
+<p>Ensure that <code>ffmpeg</code> is installed on your operating system
+and added to your system’s PATH.</p>
+<h2 id="understanding-the-ffmpeg-python-api">Understanding the
+ffmpeg-python API</h2>
+<p>The <code>ffmpeg-python</code> library uses a fluent, node-based API
+to represent FFmpeg filtergraphs. In this paradigm, every input, filter,
+and output acts as a node in a directed acyclic graph (DAG). You pass
+streams from one node to the next by chaining method calls.</p>
+<h2 id="building-a-basic-filter-chain">Building a Basic Filter
+Chain</h2>
+<p>A basic filtergraph applies one or more filters sequentially to a
+single input stream. The example below scales an input video and adjusts
+its contrast.</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> ffmpeg</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Define the input stream</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>input_stream <span class="op">=</span> ffmpeg.<span class="bu">input</span>(<span class="st">&#39;input.mp4&#39;</span>)</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a><span class="co"># Chain filters: Scale to 1280x720, then adjust contrast and saturation</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>filtered_stream <span class="op">=</span> (</span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>    input_stream</span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>    .<span class="bu">filter</span>(<span class="st">&#39;scale&#39;</span>, <span class="dv">1280</span>, <span class="dv">720</span>)</span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>    .<span class="bu">filter</span>(<span class="st">&#39;eq&#39;</span>, contrast<span class="op">=</span><span class="fl">1.2</span>, saturation<span class="op">=</span><span class="fl">1.5</span>)</span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a><span class="co"># Define the output and run the pipeline</span></span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a>output_stream <span class="op">=</span> ffmpeg.output(filtered_stream, <span class="st">&#39;output.mp4&#39;</span>)</span>
+<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a>ffmpeg.run(output_stream)</span></code></pre></div>
+<p>In this code, <code>.filter()</code> accepts the name of the FFmpeg
+filter as the first argument, followed by positional or keyword
+arguments that match FFmpeg’s command-line parameters.</p>
+<h2
+id="building-complex-filtergraphs-overlays-and-multi-inputs">Building
+Complex Filtergraphs (Overlays and Multi-Inputs)</h2>
+<p>Filtergraphs often require merging multiple streams. The following
+example demonstrates how to overlay a logo onto a background video,
+which requires defining multiple input nodes and combining them.</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> ffmpeg</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Define inputs</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>video_input <span class="op">=</span> ffmpeg.<span class="bu">input</span>(<span class="st">&#39;background.mp4&#39;</span>)</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>logo_input <span class="op">=</span> ffmpeg.<span class="bu">input</span>(<span class="st">&#39;logo.png&#39;</span>)</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Scale the logo down to 150px wide, preserving aspect ratio</span></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>scaled_logo <span class="op">=</span> logo_input.<span class="bu">filter</span>(<span class="st">&#39;scale&#39;</span>, <span class="dv">150</span>, <span class="op">-</span><span class="dv">1</span>)</span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a><span class="co"># Overlay the scaled logo onto the background video at coordinates (x=50, y=50)</span></span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>overlayed_video <span class="op">=</span> ffmpeg.overlay(video_input, scaled_logo, x<span class="op">=</span><span class="dv">50</span>, y<span class="op">=</span><span class="dv">50</span>)</span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a><span class="co"># Output the combined streams</span></span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a>output <span class="op">=</span> ffmpeg.output(overlayed_video, <span class="st">&#39;overlay_output.mp4&#39;</span>)</span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a>ffmpeg.run(output)</span></code></pre></div>
+<h2 id="handling-audio-and-video-separately">Handling Audio and Video
+Separately</h2>
+<p>When applying video filters, the audio stream from the original file
+is often dropped unless explicitly included in the output. To preserve
+the original audio while filtering the video, you must pass both streams
+to the output node.</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> ffmpeg</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>input_file <span class="op">=</span> ffmpeg.<span class="bu">input</span>(<span class="st">&#39;input.mp4&#39;</span>)</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a><span class="co"># Split the input into video and audio streams</span></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>video <span class="op">=</span> input_file.video</span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>audio <span class="op">=</span> input_file.audio</span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a><span class="co"># Apply a fade-in effect to the video stream</span></span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>filtered_video <span class="op">=</span> video.<span class="bu">filter</span>(<span class="st">&#39;fade&#39;</span>, <span class="bu">type</span><span class="op">=</span><span class="st">&#39;in&#39;</span>, start_frame<span class="op">=</span><span class="dv">0</span>, nb_frames<span class="op">=</span><span class="dv">30</span>)</span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a><span class="co"># Recombine the filtered video with the untouched original audio</span></span>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a>output <span class="op">=</span> ffmpeg.output(filtered_video, audio, <span class="st">&#39;faded_output.mp4&#39;</span>)</span>
+<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a>ffmpeg.run(output)</span></code></pre></div></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

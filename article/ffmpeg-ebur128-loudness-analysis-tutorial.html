@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FFmpeg ebur128 Loudness Analysis Tutorial - ffmpeg</title>
+    <meta name="description" content="This article explains how to use the FFmpeg ebur128 filter to analyze the loudness of your audio files according to professional broadcasting standards. You will learn the core concepts of the EBU R128 standard, how to run basic and advanced command-line">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/ffmpeg-ebur128-loudness-analysis-tutorial">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="FFmpeg ebur128 Loudness Analysis Tutorial - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/ffmpeg-ebur128-loudness-analysis-tutorial" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article explains how to use the FFmpeg ebur128 filter to analyze the loudness of your audio files according to professional broadcasting standards. You will learn the core concepts of the EBU R128 standard, how to run basic and advanced command-line" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="ffmpeg-ebur128-loudness-analysis-tutorial">FFmpeg ebur128
+Loudness Analysis Tutorial</h1>
+<p>This article explains how to use the FFmpeg <code>ebur128</code>
+filter to analyze the loudness of your audio files according to
+professional broadcasting standards. You will learn the core concepts of
+the EBU R128 standard, how to run basic and advanced command-line scans,
+interpret the console output, and generate visual loudness graphs to
+ensure your audio meets platform requirements like YouTube, Spotify, or
+television broadcast specifications.</p>
+<h2 id="what-is-ebu-r128">What is EBU R128?</h2>
+<p>The EBU R128 standard regulates audio loudness to prevent sudden
+volume jumps between different programs or tracks. Instead of measuring
+peak audio levels, it measures perceived loudness using three main
+metrics: * <strong>Integrated Loudness (I):</strong> The average
+loudness of the entire file, measured in LUFS (Loudness Units Full
+Scale). Most streaming platforms target -14 LUFS, while TV broadcasts
+often target -23 or -24 LUFS. * <strong>Loudness Range (LRA):</strong>
+The statistical distribution of loudness over time, showing the dynamic
+range of the audio. * <strong>True Peak (TP):</strong> The absolute peak
+level of the signal, measuring inter-sample peaks to avoid digital
+clipping.</p>
+<h2 id="basic-loudness-analysis-command">Basic Loudness Analysis
+Command</h2>
+<p>To analyze an audio or video file without rendering a new media file,
+use the following FFmpeg command. This processes the audio and outputs
+the statistical data directly to your terminal:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-filter_complex</span> ebur128=peak=true <span class="at">-f</span> null <span class="at">-</span></span></code></pre></div>
+<h3 id="command-breakdown">Command Breakdown:</h3>
+<ul>
+<li><code>-i input.mp4</code>: Specifies your input video or audio
+file.</li>
+<li><code>-filter_complex ebur128=peak=true</code>: Activates the EBU
+R128 filter and enables True Peak level detection.</li>
+<li><code>-f null -</code>: Tells FFmpeg to discard the output
+video/audio stream, as we only need the text analysis printed in the
+console.</li>
+</ul>
+<h2 id="interpreting-the-output">Interpreting the Output</h2>
+<p>When the command finishes running, look at the final block of text in
+your terminal. It will look similar to this:</p>
+<pre class="text"><code>[Parsed_ebur128_0 @ 0x7fa89bc0c100] Summary:
+
+  Integrated loudness:
+    I:         -14.2 LUFS
+    Threshold: -24.2 LUFS
+
+  Loudness range:
+    LRA:         5.4 LU
+    Threshold: -34.4 LUFS
+    LRA low:   -17.5 LUFS
+    LRA high:  -12.1 LUFS
+
+  True peak:
+    Peak:       -1.1 dBTP</code></pre>
+<ul>
+<li><strong>I (Integrated loudness):</strong> Your overall file
+loudness. In this case, it is <code>-14.2 LUFS</code>.</li>
+<li><strong>LRA (Loudness range):</strong> The dynamic variation. A
+value of <code>5.4 LU</code> indicates a relatively consistent
+volume.</li>
+<li><strong>Peak:</strong> The True Peak level in decibels relative to
+full scale (<code>dBTP</code>). Here, it is <code>-1.1 dBTP</code>,
+which is safe from clipping.</li>
+</ul>
+<h2 id="generating-a-visual-loudness-graph">Generating a Visual Loudness
+Graph</h2>
+<p>The <code>ebur128</code> filter can also generate a real-time video
+graph showing how the loudness changes over the duration of the file.
+This is highly useful for spotting sudden volume spikes.</p>
+<p>Run the following command to output a video file containing the
+visual meter:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.wav <span class="at">-filter_complex</span> ebur128=video=1:size=800x480<span class="pp">[</span><span class="ss">v</span><span class="pp">][</span><span class="ss">a</span><span class="pp">]</span> <span class="at">-map</span> <span class="pp">[</span><span class="ss">v</span><span class="pp">]</span> <span class="at">-c:v</span> libx264 <span class="at">-map</span> <span class="pp">[</span><span class="ss">a</span><span class="pp">]</span> <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<h3 id="command-breakdown-1">Command Breakdown:</h3>
+<ul>
+<li><code>video=1</code>: Enables the video graphing feature of the
+filter.</li>
+<li><code>size=800x480</code>: Sets the resolution of the output video
+graph.</li>
+<li><code>[v][a]</code>: Names the resulting video and audio
+streams.</li>
+<li><code>-map [v] -c:v libx264</code>: Encodes the generated graph
+using the H.264 codec.</li>
+<li><code>-map [a] -c:a copy</code>: Copies the original audio into the
+new file without re-encoding it.</li>
+</ul>
+<p>The resulting <code>output.mp4</code> will display a scrolling
+multi-colored graph detailing momentary loudness (green), short-term
+loudness (blue), and integrated loudness (red line), allowing you to
+visually pinpoint where your audio violates target thresholds.</p></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

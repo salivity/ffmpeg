@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Display 3D Color Histogram of Video with FFmpeg - ffmpeg</title>
+    <meta name="description" content="This guide explains how to generate and display a 3D color histogram of a video using FFmpeg’s histogram filter. You will learn the correct command-line syntax, how the color2 mode represents 3D color distribution (chrominance and density), and how to">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/display-3d-color-histogram-of-video-with-ffmpeg">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Display 3D Color Histogram of Video with FFmpeg - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/display-3d-color-histogram-of-video-with-ffmpeg" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This guide explains how to generate and display a 3D color histogram of a video using FFmpeg’s histogram filter. You will learn the correct command-line syntax, how the color2 mode represents 3D color distribution (chrominance and density), and how to" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="display-3d-color-histogram-of-video-with-ffmpeg">Display 3D
+Color Histogram of Video with FFmpeg</h1>
+<p>This guide explains how to generate and display a 3D color histogram
+of a video using FFmpeg’s <code>histogram</code> filter. You will learn
+the correct command-line syntax, how the <code>color2</code> mode
+represents 3D color distribution (chrominance and density), and how to
+view the histogram side-by-side with your original video for real-time
+analysis.</p>
+<h2 id="the-basic-command-for-3d-color-histogram">The Basic Command for
+3D Color Histogram</h2>
+<p>To generate a 3D color representation of a video, you must use the
+<code>color2</code> mode of the FFmpeg <code>histogram</code> filter. In
+this mode, the filter plots the two chrominance components (U and V) on
+the X and Y axes, while the brightness of the pixels (the Z-axis)
+represents the density or frequency of those colors. This effectively
+projects a 3D color space onto a 2D plane.</p>
+<p>Run the following basic command to output only the color
+histogram:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;histogram=mode=color2&quot;</span> output.mp4</span></code></pre></div>
+<h2 id="displaying-video-and-histogram-side-by-side">Displaying Video
+and Histogram Side-by-Side</h2>
+<p>For video analysis and color grading, it is highly useful to view the
+original video and its 3D color histogram side-by-side.</p>
+<p>The command below splits the video input into two streams, applies
+the <code>histogram</code> filter to one stream, scales it to match the
+video height, and merges them horizontally using the <code>hstack</code>
+filter:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-filter_complex</span> <span class="st">&quot;[0:v]split[orig][hist_tmp]; [hist_tmp]histogram=mode=color2,scale=-1:ih[hist_scaled]; [orig][hist_scaled]hstack&quot;</span> output.mp4</span></code></pre></div>
+<h3 id="how-this-command-works">How this command works:</h3>
+<ul>
+<li><code>[0:v]split[orig][hist_tmp]</code>: Duplicates the input video
+into two identical streams named <code>orig</code> and
+<code>hist_tmp</code>.</li>
+<li><code>histogram=mode=color2</code>: Applies the 3D color histogram
+filter to the temporary stream.</li>
+<li><code>scale=-1:ih</code>: Scales the histogram height
+(<code>ih</code>) to match the height of the original video while
+maintaining its aspect ratio.</li>
+<li><code>hstack</code>: Stacks the original video and the scaled
+histogram side-by-side.</li>
+</ul>
+<h2 id="useful-filter-customizations">Useful Filter Customizations</h2>
+<p>You can further customize the output of the <code>histogram</code>
+filter by adjusting its parameters:</p>
+<ul>
+<li><p><strong>Step Value (<code>step</code>)</strong>: Controls the
+intensity step of the histogram. Increasing this value makes faint color
+concentrations more visible.</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;histogram=mode=color2:step=10&quot;</span> output.mp4</span></code></pre></div></li>
+<li><p><strong>Background Opacity (<code>background</code>)</strong>:
+Adjusts the background opacity of the histogram. The default is
+<code>0.5</code> (semi-transparent), but you can set it to
+<code>1</code> for a solid black background or <code>0</code> for
+completely transparent.</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;histogram=mode=color2:background=1&quot;</span> output.mp4</span></code></pre></div></li>
+</ul></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

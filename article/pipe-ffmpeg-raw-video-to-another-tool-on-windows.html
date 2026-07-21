@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pipe FFmpeg Raw Video to Another Tool on Windows - ffmpeg</title>
+    <meta name="description" content="This article explains how to write and execute an FFmpeg command on Windows to output raw, uncompressed video frames and pipe them directly into another command-line tool. You will learn the correct parameters to format the raw video stream, how to redir">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/pipe-ffmpeg-raw-video-to-another-tool-on-windows">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Pipe FFmpeg Raw Video to Another Tool on Windows - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/pipe-ffmpeg-raw-video-to-another-tool-on-windows" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article explains how to write and execute an FFmpeg command on Windows to output raw, uncompressed video frames and pipe them directly into another command-line tool. You will learn the correct parameters to format the raw video stream, how to redir" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="pipe-ffmpeg-raw-video-to-another-tool-on-windows">Pipe FFmpeg
+Raw Video to Another Tool on Windows</h1>
+<p>This article explains how to write and execute an FFmpeg command on
+Windows to output raw, uncompressed video frames and pipe them directly
+into another command-line tool. You will learn the correct parameters to
+format the raw video stream, how to redirect the output to stdout, and
+how to avoid common Windows-specific piping pitfalls.</p>
+<p>To pipe raw video from FFmpeg to another executable on Windows, you
+must configure FFmpeg to output uncompressed pixel data to the standard
+output (<code>stdout</code>) channel using the pipe operator
+(<code>|</code>).</p>
+<h3 id="the-basic-command-structure">The Basic Command Structure</h3>
+<p>The standard command template for piping raw video in Windows is:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode cmd"><code class="sourceCode dosbat"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>ffmpeg <span class="at">-i</span> input.mp4 <span class="at">-f</span> rawvideo <span class="at">-pix_fmt</span> rgb24 - <span class="kw">|</span> target_tool -</span></code></pre></div>
+<h3 id="parameter-breakdown">Parameter Breakdown</h3>
+<ul>
+<li><strong><code>-i input.mp4</code></strong>: Specifies your source
+video file.</li>
+<li><strong><code>-f rawvideo</code></strong>: Forces FFmpeg to use the
+raw video muxer. This strips away container formats (like MP4 or MKV)
+and outputs only the raw, sequence-of-bytes pixel data.</li>
+<li><strong><code>-pix_fmt rgb24</code></strong>: Defines the pixel
+format. Raw video has no headers to tell the receiving tool how the
+pixels are structured, so you must explicitly define the color space.
+Common choices are <code>rgb24</code> (8 bits per red, green, and blue
+channel) or <code>yuv420p</code>.</li>
+<li><strong><code>-</code> (the single dash)</strong>: Instructs FFmpeg
+to send the output to <code>stdout</code> instead of writing to a
+physical file on your hard drive.</li>
+<li><strong><code>|</code> (the pipe operator)</strong>: A Windows
+command-line operator that intercepts the <code>stdout</code> of FFmpeg
+and feeds it directly into the <code>stdin</code> (standard input) of
+the next command.</li>
+<li><strong><code>target_tool -</code></strong>: The executable
+receiving the raw video. The trailing dash <code>-</code> is commonly
+used by command-line utilities to indicate they should read input from
+<code>stdin</code>.</li>
+</ul>
+<h3 id="important-windows-compatibility-notes">Important Windows
+Compatibility Notes</h3>
+<p>When piping raw binary data on Windows, the environment you use to
+run the command matters:</p>
+<ol type="1">
+<li><p><strong>Use Windows Command Prompt
+(<code>cmd.exe</code>)</strong>: CMD handles raw binary pipes natively
+without altering the byte stream.</p></li>
+<li><p><strong>Avoid Windows PowerShell</strong>: By default, PowerShell
+attempts to parse pipeline data as text strings rather than raw bytes.
+This process corrupts the raw video stream. If you must use PowerShell,
+you have to bypass its default behavior by calling cmd directly:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode powershell"><code class="sourceCode powershell"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>cmd <span class="op">/</span>c <span class="st">&quot;ffmpeg -i input.mp4 -f rawvideo -pix_fmt rgb24 - | target_tool -&quot;</span></span></code></pre></div></li>
+</ol>
+<h3 id="practical-verification-example">Practical Verification
+Example</h3>
+<p>You can test your pipe locally by sending raw video from one FFmpeg
+process to FFplay (FFmpeg’s media player). Because raw video has no
+metadata, you must explicitly tell the receiving tool the resolution and
+pixel format of the incoming stream:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode cmd"><code class="sourceCode dosbat"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>ffmpeg <span class="at">-i</span> input.mp4 <span class="at">-f</span> rawvideo <span class="at">-pix_fmt</span> rgb24 - <span class="kw">|</span> ffplay <span class="at">-f</span> rawvideo <span class="at">-pixel_format</span> rgb24 <span class="at">-video_size</span> 1920x1080 <span class="at">-i</span> -</span></code></pre></div>
+<p>In this test, FFmpeg decodes <code>input.mp4</code> to raw RGB24
+bytes, pipes it through CMD, and FFplay reads, reconstructs, and
+displays the raw video stream in real-time.</p></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Use FFmpeg avectorscope Filter - ffmpeg</title>
+    <meta name="description" content="This article provides a quick overview and practical guide on how to use the avectorscope filter in FFmpeg to visualize audio signals. You will learn the basic command structure, key configuration parameters such as visualization modes and window sizes,">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/how-to-use-ffmpeg-avectorscope-filter">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Use FFmpeg avectorscope Filter - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/how-to-use-ffmpeg-avectorscope-filter" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article provides a quick overview and practical guide on how to use the avectorscope filter in FFmpeg to visualize audio signals. You will learn the basic command structure, key configuration parameters such as visualization modes and window sizes," />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="how-to-use-ffmpeg-avectorscope-filter">How to Use FFmpeg
+avectorscope Filter</h1>
+<p>This article provides a quick overview and practical guide on how to
+use the <code>avectorscope</code> filter in FFmpeg to visualize audio
+signals. You will learn the basic command structure, key configuration
+parameters such as visualization modes and window sizes, and
+step-by-step examples to generate Lissajous and polar audio vector
+scopes for your video projects.</p>
+<p>The <code>avectorscope</code> filter in FFmpeg converts stereo audio
+input into a 2D vector scope video, which is highly useful for measuring
+the stereo difference between the left and right audio channels. It
+displays the audio signal as a Lissajous curve, helping you analyze
+phase relationships and stereo balance.</p>
+<h3 id="basic-command-syntax">Basic Command Syntax</h3>
+<p>To generate a simple vectorscope video from an audio file, you can
+map the audio stream through the filter and combine it with the original
+audio in the output file. Use the following basic command:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp3 <span class="at">-filter_complex</span> <span class="st">&quot;[0:a]avectorscope=s=640x640:m=lis[v]&quot;</span> <span class="at">-map</span> <span class="st">&quot;[v]&quot;</span> <span class="at">-map</span> 0:a output.mp4</span></code></pre></div>
+<p>In this command: * <code>-i input.mp3</code> specifies your source
+audio file. * <code>-filter_complex</code> invokes the filter graph. *
+<code>[0:a]avectorscope</code> takes the first input’s audio stream and
+applies the filter. * <code>s=640x640</code> sets the output video
+resolution to 640x640 pixels. * <code>m=lis</code> sets the
+visualization mode to Lissajous. * <code>[v]</code> labels the resulting
+video stream. * <code>-map "[v]"</code> and <code>-map 0:a</code> ensure
+both the newly created video and the original audio are written to the
+output file.</p>
+<h3 id="key-parameters-of-avectorscope">Key Parameters of
+avectorscope</h3>
+<p>You can customize the appearance of the vector scope using several
+parameters:</p>
+<ul>
+<li><strong>mode, m</strong>: Sets the display mode.
+<ul>
+<li><code>lis</code>: Lissajous (default). Rotated 45 degrees.</li>
+<li><code>lissajous_xy</code>: Standard Lissajous. Left channel is
+X-axis, right channel is Y-axis.</li>
+<li><code>polar</code>: Polar coordinate plot.</li>
+</ul></li>
+<li><strong>size, s</strong>: Set the video size. Default is
+<code>400x400</code>.</li>
+<li><strong>rate, r</strong>: Set the output video frame rate. Default
+is <code>25</code> fps.</li>
+<li><strong>draw</strong>: Sets how the vector points are drawn.
+<ul>
+<li><code>dot</code>: Draws single dots (faster).</li>
+<li><code>line</code>: Draws lines between consecutive samples (smoother
+visualization).</li>
+</ul></li>
+<li><strong>scale</strong>: Audio amplitude scale. Options include
+<code>lin</code> (linear), <code>sqrt</code> (square root),
+<code>cbrt</code> (cubic root), and <code>log</code> (logarithmic).</li>
+<li><strong>rc, gc, bc</strong>: Adjust the color intensity of Red,
+Green, and Blue channels (0-255).</li>
+</ul>
+<h3 id="advanced-examples">Advanced Examples</h3>
+<h4 id="creating-a-polar-vector-scope-with-custom-colors">1. Creating a
+Polar Vector Scope with Custom Colors</h4>
+<p>If you prefer a circular polar representation with a green neon
+aesthetic, use the <code>polar</code> mode and adjust the color
+intensity parameters:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.wav <span class="at">-filter_complex</span> <span class="st">&quot;[0:a]avectorscope=m=polar:s=800x800:r=60:rc=0:gc=255:bc=0:draw=line[v]&quot;</span> <span class="at">-map</span> <span class="st">&quot;[v]&quot;</span> <span class="at">-map</span> 0:a output.mp4</span></code></pre></div>
+<p>This command generates a high-smoothness <code>60</code> fps video in
+<code>800x800</code> resolution with bright green lines.</p>
+<h4 id="overlaying-avectorscope-on-a-background-image">2. Overlaying
+avectorscope on a Background Image</h4>
+<p>You can overlay the semi-transparent vector scope on top of a static
+background image using the <code>overlay</code> filter:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-loop</span> 1 <span class="at">-i</span> background.jpg <span class="at">-i</span> input.mp3 <span class="at">-filter_complex</span> <span class="st">&quot;[1:a]avectorscope=s=400x400:m=lis:rc=255:gc=255:bc=255[scope]; [0:v][scope]overlay=x=W-w-10:y=10:shortest=1[v]&quot;</span> <span class="at">-map</span> <span class="st">&quot;[v]&quot;</span> <span class="at">-map</span> 1:a output.mp4</span></code></pre></div>
+<p>This command positions a white Lissajous vector scope in the
+top-right corner of the <code>background.jpg</code> image while playing
+the <code>input.mp3</code> audio.</p></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

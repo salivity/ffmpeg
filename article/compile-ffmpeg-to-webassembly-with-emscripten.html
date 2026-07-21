@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Compile FFmpeg to WebAssembly with Emscripten - ffmpeg</title>
+    <meta name="description" content="This guide provides a straightforward, step-by-step walkthrough on how to compile FFmpeg to WebAssembly (WASM) using the Emscripten toolchain. You will learn how to set up the compilation environment, configure the FFmpeg source code for cross-compilatio">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/compile-ffmpeg-to-webassembly-with-emscripten">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Compile FFmpeg to WebAssembly with Emscripten - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/compile-ffmpeg-to-webassembly-with-emscripten" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This guide provides a straightforward, step-by-step walkthrough on how to compile FFmpeg to WebAssembly (WASM) using the Emscripten toolchain. You will learn how to set up the compilation environment, configure the FFmpeg source code for cross-compilatio" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="compile-ffmpeg-to-webassembly-with-emscripten">Compile FFmpeg to
+WebAssembly with Emscripten</h1>
+<p>This guide provides a straightforward, step-by-step walkthrough on
+how to compile FFmpeg to WebAssembly (WASM) using the Emscripten
+toolchain. You will learn how to set up the compilation environment,
+configure the FFmpeg source code for cross-compilation, build the
+libraries, and link them into WebAssembly and JavaScript files suitable
+for execution directly inside a web browser.</p>
+<h2 id="step-1-install-the-emscripten-sdk-emsdk">Step 1: Install the
+Emscripten SDK (emsdk)</h2>
+<p>To compile C/C++ code to WebAssembly, you must first install and
+activate the Emscripten SDK. Run the following commands in your
+terminal:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Clone the Emscripten repository</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">git</span> clone https://github.com/emscripten-core/emsdk.git</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="bu">cd</span> emsdk</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="co"># Install and activate the latest SDK version</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="ex">./emsdk</span> install latest</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="ex">./emsdk</span> activate latest</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="co"># Source the environment variables</span></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a><span class="bu">source</span> ./emsdk_env.sh</span></code></pre></div>
+<p>Keep this terminal window open, as the environment variables are only
+active in the current session.</p>
+<h2 id="step-2-download-the-ffmpeg-source-code">Step 2: Download the
+FFmpeg Source Code</h2>
+<p>Clone the official FFmpeg repository and checkout a stable release
+branch.</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">git</span> clone https://git.ffmpeg.org/ffmpeg.git ffmpeg</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="bu">cd</span> ffmpeg</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Checkout a stable version (e.g., release 6.0)</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="fu">git</span> checkout n6.0</span></code></pre></div>
+<h2 id="step-3-configure-ffmpeg-for-webassembly">Step 3: Configure
+FFmpeg for WebAssembly</h2>
+<p>Standard FFmpeg features assembly optimizations and OS-specific
+system calls that are incompatible with the browser environment. You
+must disable these optimizations and configure the build to target a
+generic architecture using Emscripten’s tools.</p>
+<p>Run <code>emconfigure</code> with the following configuration
+flags:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">emconfigure</span> ./configure <span class="dt">\</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">--target-os</span><span class="op">=</span>none <span class="dt">\</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">--arch</span><span class="op">=</span>x86_32 <span class="dt">\</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">--enable-cross-compile</span> <span class="dt">\</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">--cc</span><span class="op">=</span>emcc <span class="dt">\</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">--cxx</span><span class="op">=</span>em++ <span class="dt">\</span></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">--ar</span><span class="op">=</span>emar <span class="dt">\</span></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>  <span class="at">--ranlib</span><span class="op">=</span>emranlib <span class="dt">\</span></span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>  <span class="at">--disable-x86asm</span> <span class="dt">\</span></span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>  <span class="at">--disable-inline-asm</span> <span class="dt">\</span></span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>  <span class="at">--disable-stripping</span> <span class="dt">\</span></span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>  <span class="at">--disable-programs</span> <span class="dt">\</span></span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>  <span class="at">--disable-doc</span> <span class="dt">\</span></span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a>  <span class="at">--disable-all</span> <span class="dt">\</span></span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a>  <span class="at">--enable-avcodec</span> <span class="dt">\</span></span>
+<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a>  <span class="at">--enable-avformat</span> <span class="dt">\</span></span>
+<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a>  <span class="at">--enable-avutil</span> <span class="dt">\</span></span>
+<span id="cb3-18"><a href="#cb3-18" aria-hidden="true" tabindex="-1"></a>  <span class="at">--enable-swresample</span> <span class="dt">\</span></span>
+<span id="cb3-19"><a href="#cb3-19" aria-hidden="true" tabindex="-1"></a>  <span class="at">--enable-decoder</span><span class="op">=</span>aac <span class="dt">\</span></span>
+<span id="cb3-20"><a href="#cb3-20" aria-hidden="true" tabindex="-1"></a>  <span class="at">--enable-decoder</span><span class="op">=</span>h264 <span class="dt">\</span></span>
+<span id="cb3-21"><a href="#cb3-21" aria-hidden="true" tabindex="-1"></a>  <span class="at">--enable-parser</span><span class="op">=</span>aac <span class="dt">\</span></span>
+<span id="cb3-22"><a href="#cb3-22" aria-hidden="true" tabindex="-1"></a>  <span class="at">--enable-parser</span><span class="op">=</span>h264</span></code></pre></div>
+<h3 id="key-flag-explanations">Key Flag Explanations:</h3>
+<ul>
+<li><code>--cc=emcc</code> / <code>--cxx=em++</code>: Forces FFmpeg to
+use the Emscripten compiler wrappers.</li>
+<li><code>--disable-x86asm</code>: Disables assembly optimizations that
+cannot compile to WASM.</li>
+<li><code>--disable-programs</code>: Prevents compiling the default
+command-line tools (<code>ffmpeg</code>, <code>ffplay</code>), as you
+will build custom entry points instead.</li>
+<li><code>--disable-all</code> / <code>--enable-avcodec</code> etc.:
+Minimized build footprint by enabling only specific necessary codecs and
+libraries.</li>
+</ul>
+<h2 id="step-4-compile-the-libraries">Step 4: Compile the Libraries</h2>
+<p>Run the compilation process using <code>emmake</code>. This generates
+static library archives (<code>.a</code> files) for the enabled FFmpeg
+modules.</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">emmake</span> make <span class="at">-j</span><span class="va">$(</span><span class="fu">nproc</span><span class="va">)</span></span></code></pre></div>
+<p>Once completed, the compiled static libraries (such as
+<code>libavcodec.a</code>, <code>libavformat.a</code>, and
+<code>libavutil.a</code>) will be located inside their respective
+directories.</p>
+<h2 id="step-5-link-the-static-libraries-to-webassembly">Step 5: Link
+the Static Libraries to WebAssembly</h2>
+<p>To use the compiled libraries in JavaScript, you must write a custom
+C interface file (e.g., <code>wrapper.c</code>) that exposes the desired
+FFmpeg APIs, then compile and link everything together.</p>
+<p>Assuming you have a <code>wrapper.c</code> file that handles your
+media processing logic, compile it using <code>emcc</code>:</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="ex">emcc</span> wrapper.c <span class="dt">\</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>  libavformat/libavformat.a <span class="dt">\</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>  libavcodec/libavcodec.a <span class="dt">\</span></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>  libavutil/libavutil.a <span class="dt">\</span></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>  libswresample/libswresample.a <span class="dt">\</span></span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">-I.</span> <span class="dt">\</span></span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">-O3</span> <span class="dt">\</span></span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>  <span class="at">-s</span> WASM=1 <span class="dt">\</span></span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>  <span class="at">-s</span> EXPORTED_FUNCTIONS=<span class="st">&quot;[&#39;_malloc&#39;, &#39;_free&#39;, &#39;_your_custom_ffmpeg_function&#39;]&quot;</span> <span class="dt">\</span></span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>  <span class="at">-s</span> EXPORTED_RUNTIME_METHODS=<span class="st">&quot;[&#39;ccall&#39;, &#39;cwrap&#39;]&quot;</span> <span class="dt">\</span></span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a>  <span class="at">-o</span> ffmpeg.js</span></code></pre></div>
+<h3 id="key-linking-flags">Key Linking Flags:</h3>
+<ul>
+<li><code>-O3</code>: Optimizes the output code for speed and file
+size.</li>
+<li><code>-s WASM=1</code>: Standard flag to output a WebAssembly
+binary.</li>
+<li><code>-s EXPORTED_FUNCTIONS</code>: Declares which C functions
+should be accessible from your JavaScript application.</li>
+<li><code>-o ffmpeg.js</code>: Generates <code>ffmpeg.js</code> (the
+loader glue code) and <code>ffmpeg.wasm</code> (the compiled binary
+code).</li>
+</ul>
+<p>Once this compilation finishes, import <code>ffmpeg.js</code> into
+your web application to begin utilizing FFmpeg directly within the
+browser ecosystem.</p></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

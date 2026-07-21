@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Parse FFmpeg Progress Output via Socket or File - ffmpeg</title>
+    <meta name="description" content="Monitoring the progress of an FFmpeg command is essential for providing real-time feedback in applications. This article explains how to direct FFmpeg’s progress metrics to a local file or socket using the -progress flag, details the structure of the g">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/parse-ffmpeg-progress-output-via-socket-or-file">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Parse FFmpeg Progress Output via Socket or File - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/parse-ffmpeg-progress-output-via-socket-or-file" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Monitoring the progress of an FFmpeg command is essential for providing real-time feedback in applications. This article explains how to direct FFmpeg’s progress metrics to a local file or socket using the -progress flag, details the structure of the g" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="parse-ffmpeg-progress-output-via-socket-or-file">Parse FFmpeg
+Progress Output via Socket or File</h1>
+<p>Monitoring the progress of an FFmpeg command is essential for
+providing real-time feedback in applications. This article explains how
+to direct FFmpeg’s progress metrics to a local file or socket using the
+<code>-progress</code> flag, details the structure of the generated
+key-value pair output, and demonstrates how to parse this data
+efficiently in your code.</p>
+<h2 id="directing-ffmpeg-progress-output">Directing FFmpeg Progress
+Output</h2>
+<p>FFmpeg provides a built-in <code>-progress</code> option that directs
+real-time status information to a specified destination. You can write
+this data to a local file or stream it over a network protocol like TCP
+or UDP.</p>
+<p>To write progress to a local file:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-progress</span> progress.txt output.mp4</span></code></pre></div>
+<p>To stream progress to a local TCP socket:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-progress</span> tcp://127.0.0.1:5555 output.mp4</span></code></pre></div>
+<p>Using a socket is generally preferred for live applications, as it
+avoids continuous disk I/O and allows your application to read the
+stream in real-time.</p>
+<h2 id="understanding-the-progress-log-format">Understanding the
+Progress Log Format</h2>
+<p>FFmpeg outputs progress information as newline-separated
+<code>key=value</code> pairs. A single update block consists of several
+lines of metrics and always ends with the <code>progress</code> key.</p>
+<p>An example of a single progress block looks like this:</p>
+<pre class="text"><code>frame=143
+fps=29.97
+stream_0_0_q=28.0
+bitrate= 1054.3kbits/s
+total_size=1048576
+out_time_us=4766667
+out_time_ms=4766667
+out_time=00:00:04.766667
+dup_frames=0
+drop_frames=0
+speed=1.02x
+progress=continue</code></pre>
+<h3 id="key-metrics-to-parse">Key Metrics to Parse:</h3>
+<ul>
+<li><strong><code>frame</code></strong>: The total number of frames
+processed so far.</li>
+<li><strong><code>fps</code></strong>: The current processing speed in
+frames per second.</li>
+<li><strong><code>out_time_us</code></strong>: The current playback
+position of the output file in microseconds. Divide this by
+<code>1000000</code> to get seconds.</li>
+<li><strong><code>speed</code></strong>: The encoding speed relative to
+realtime (e.g., <code>2.0x</code> means encoding is happening at twice
+the speed of playback).</li>
+<li><strong><code>progress</code></strong>: Indicates the status of the
+process. This will be <code>continue</code> during encoding and
+<code>end</code> when the process completes.</li>
+</ul>
+<h2 id="how-to-parse-the-output">How to Parse the Output</h2>
+<p>To parse this data, your application needs to read the incoming
+stream line-by-line, split each line by the <code>=</code> character,
+and store the keys and values. When the parser encounters
+<code>progress=continue</code> or <code>progress=end</code>, it
+signifies that a complete frame update block has been received and can
+be processed.</p>
+<p>Here is a practical Python example demonstrating how to start a local
+TCP server, receive progress from FFmpeg, and parse the data:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> socket</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> start_progress_server(host<span class="op">=</span><span class="st">&#39;127.0.0.1&#39;</span>, port<span class="op">=</span><span class="dv">5555</span>):</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Create and bind the TCP socket</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>    server_socket <span class="op">=</span> socket.socket(socket.AF_INET, socket.SOCK_STREAM)</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>    server_socket.bind((host, port))</span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>    server_socket.listen(<span class="dv">1</span>)</span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f&quot;Listening for FFmpeg progress on </span><span class="sc">{</span>host<span class="sc">}</span><span class="ss">:</span><span class="sc">{</span>port<span class="sc">}</span><span class="ss">...&quot;</span>)</span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>    conn, addr <span class="op">=</span> server_socket.accept()</span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f&quot;Connected by </span><span class="sc">{</span>addr<span class="sc">}</span><span class="ss">&quot;</span>)</span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a>    <span class="bu">buffer</span> <span class="op">=</span> <span class="st">&quot;&quot;</span></span>
+<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a>    current_metrics <span class="op">=</span> {}</span>
+<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-16"><a href="#cb4-16" aria-hidden="true" tabindex="-1"></a>    <span class="cf">try</span>:</span>
+<span id="cb4-17"><a href="#cb4-17" aria-hidden="true" tabindex="-1"></a>        <span class="cf">while</span> <span class="va">True</span>:</span>
+<span id="cb4-18"><a href="#cb4-18" aria-hidden="true" tabindex="-1"></a>            data <span class="op">=</span> conn.recv(<span class="dv">1024</span>)</span>
+<span id="cb4-19"><a href="#cb4-19" aria-hidden="true" tabindex="-1"></a>            <span class="cf">if</span> <span class="kw">not</span> data:</span>
+<span id="cb4-20"><a href="#cb4-20" aria-hidden="true" tabindex="-1"></a>                <span class="cf">break</span></span>
+<span id="cb4-21"><a href="#cb4-21" aria-hidden="true" tabindex="-1"></a>            </span>
+<span id="cb4-22"><a href="#cb4-22" aria-hidden="true" tabindex="-1"></a>            <span class="co"># Append received bytes decoded to string to the buffer</span></span>
+<span id="cb4-23"><a href="#cb4-23" aria-hidden="true" tabindex="-1"></a>            <span class="bu">buffer</span> <span class="op">+=</span> data.decode(<span class="st">&#39;utf-8&#39;</span>)</span>
+<span id="cb4-24"><a href="#cb4-24" aria-hidden="true" tabindex="-1"></a>            </span>
+<span id="cb4-25"><a href="#cb4-25" aria-hidden="true" tabindex="-1"></a>            <span class="co"># Process complete lines</span></span>
+<span id="cb4-26"><a href="#cb4-26" aria-hidden="true" tabindex="-1"></a>            <span class="cf">while</span> <span class="st">&quot;</span><span class="ch">\n</span><span class="st">&quot;</span> <span class="kw">in</span> <span class="bu">buffer</span>:</span>
+<span id="cb4-27"><a href="#cb4-27" aria-hidden="true" tabindex="-1"></a>                line, <span class="bu">buffer</span> <span class="op">=</span> <span class="bu">buffer</span>.split(<span class="st">&quot;</span><span class="ch">\n</span><span class="st">&quot;</span>, <span class="dv">1</span>)</span>
+<span id="cb4-28"><a href="#cb4-28" aria-hidden="true" tabindex="-1"></a>                line <span class="op">=</span> line.strip()</span>
+<span id="cb4-29"><a href="#cb4-29" aria-hidden="true" tabindex="-1"></a>                </span>
+<span id="cb4-30"><a href="#cb4-30" aria-hidden="true" tabindex="-1"></a>                <span class="cf">if</span> <span class="kw">not</span> line:</span>
+<span id="cb4-31"><a href="#cb4-31" aria-hidden="true" tabindex="-1"></a>                    <span class="cf">continue</span></span>
+<span id="cb4-32"><a href="#cb4-32" aria-hidden="true" tabindex="-1"></a>                </span>
+<span id="cb4-33"><a href="#cb4-33" aria-hidden="true" tabindex="-1"></a>                <span class="co"># Split key and value</span></span>
+<span id="cb4-34"><a href="#cb4-34" aria-hidden="true" tabindex="-1"></a>                <span class="cf">if</span> <span class="st">&quot;=&quot;</span> <span class="kw">in</span> line:</span>
+<span id="cb4-35"><a href="#cb4-35" aria-hidden="true" tabindex="-1"></a>                    key, value <span class="op">=</span> line.split(<span class="st">&quot;=&quot;</span>, <span class="dv">1</span>)</span>
+<span id="cb4-36"><a href="#cb4-36" aria-hidden="true" tabindex="-1"></a>                    current_metrics[key.strip()] <span class="op">=</span> value.strip()</span>
+<span id="cb4-37"><a href="#cb4-37" aria-hidden="true" tabindex="-1"></a>                    </span>
+<span id="cb4-38"><a href="#cb4-38" aria-hidden="true" tabindex="-1"></a>                    <span class="co"># When &#39;progress&#39; is received, the current block is complete</span></span>
+<span id="cb4-39"><a href="#cb4-39" aria-hidden="true" tabindex="-1"></a>                    <span class="cf">if</span> key.strip() <span class="op">==</span> <span class="st">&quot;progress&quot;</span>:</span>
+<span id="cb4-40"><a href="#cb4-40" aria-hidden="true" tabindex="-1"></a>                        handle_progress_update(current_metrics)</span>
+<span id="cb4-41"><a href="#cb4-41" aria-hidden="true" tabindex="-1"></a>                        <span class="cf">if</span> value.strip() <span class="op">==</span> <span class="st">&quot;end&quot;</span>:</span>
+<span id="cb4-42"><a href="#cb4-42" aria-hidden="true" tabindex="-1"></a>                            <span class="cf">return</span></span>
+<span id="cb4-43"><a href="#cb4-43" aria-hidden="true" tabindex="-1"></a>    <span class="cf">finally</span>:</span>
+<span id="cb4-44"><a href="#cb4-44" aria-hidden="true" tabindex="-1"></a>        conn.close()</span>
+<span id="cb4-45"><a href="#cb4-45" aria-hidden="true" tabindex="-1"></a>        server_socket.close()</span>
+<span id="cb4-46"><a href="#cb4-46" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-47"><a href="#cb4-47" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> handle_progress_update(metrics):</span>
+<span id="cb4-48"><a href="#cb4-48" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Extract specific values for display or calculation</span></span>
+<span id="cb4-49"><a href="#cb4-49" aria-hidden="true" tabindex="-1"></a>    fps <span class="op">=</span> metrics.get(<span class="st">&#39;fps&#39;</span>, <span class="st">&#39;N/A&#39;</span>)</span>
+<span id="cb4-50"><a href="#cb4-50" aria-hidden="true" tabindex="-1"></a>    speed <span class="op">=</span> metrics.get(<span class="st">&#39;speed&#39;</span>, <span class="st">&#39;N/A&#39;</span>)</span>
+<span id="cb4-51"><a href="#cb4-51" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb4-52"><a href="#cb4-52" aria-hidden="true" tabindex="-1"></a>    <span class="co"># out_time_us can be used to calculate percentage if total duration is known</span></span>
+<span id="cb4-53"><a href="#cb4-53" aria-hidden="true" tabindex="-1"></a>    out_time_raw <span class="op">=</span> metrics.get(<span class="st">&#39;out_time_us&#39;</span>, <span class="st">&#39;0&#39;</span>)</span>
+<span id="cb4-54"><a href="#cb4-54" aria-hidden="true" tabindex="-1"></a>    seconds <span class="op">=</span> <span class="bu">int</span>(out_time_raw) <span class="op">/</span> <span class="dv">1000000</span> <span class="cf">if</span> out_time_raw.isdigit() <span class="cf">else</span> <span class="dv">0</span></span>
+<span id="cb4-55"><a href="#cb4-55" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb4-56"><a href="#cb4-56" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f&quot;Progress: Time: </span><span class="sc">{</span>seconds<span class="sc">:.2f}</span><span class="ss">s | FPS: </span><span class="sc">{</span>fps<span class="sc">}</span><span class="ss"> | Speed: </span><span class="sc">{</span>speed<span class="sc">}</span><span class="ss">&quot;</span>)</span>
+<span id="cb4-57"><a href="#cb4-57" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-58"><a href="#cb4-58" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> <span class="va">__name__</span> <span class="op">==</span> <span class="st">&quot;__main__&quot;</span>:</span>
+<span id="cb4-59"><a href="#cb4-59" aria-hidden="true" tabindex="-1"></a>    start_progress_server()</span></code></pre></div>
+<h2 id="calculating-completion-percentage">Calculating Completion
+Percentage</h2>
+<p>The FFmpeg progress stream does not inherently know the total length
+of the input file, so it cannot output a completion percentage directly.
+To calculate percentage progress:</p>
+<ol type="1">
+<li><p><strong>Get the total duration</strong> of the input file
+beforehand using <code>ffprobe</code>:</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffprobe</span> <span class="at">-v</span> error <span class="at">-show_entries</span> format=duration <span class="at">-of</span> default=noprint_wrappers=1:nokey=1 input.mp4</span></code></pre></div></li>
+<li><p><strong>Compute the percentage</strong> in your parser by
+comparing the parsed <code>out_time_us</code> (converted to seconds)
+against the total duration: <span
+class="math display">\[\text{Percentage} = \left( \frac{\text{Current
+Seconds}}{\text{Total Duration}} \right) \times 100\]</span></p></li>
+</ol></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

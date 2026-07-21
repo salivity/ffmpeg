@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Adjust FFmpeg Deshake Search Range - ffmpeg</title>
+    <meta name="description" content="This article explains how to adjust the motion detection search range in the FFmpeg deshake video stabilization filter. You will learn which parameters control the search radius and search methodology, along with practical command-line examples to optimi">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/how-to-adjust-ffmpeg-deshake-search-range">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Adjust FFmpeg Deshake Search Range - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/how-to-adjust-ffmpeg-deshake-search-range" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article explains how to adjust the motion detection search range in the FFmpeg deshake video stabilization filter. You will learn which parameters control the search radius and search methodology, along with practical command-line examples to optimi" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="how-to-adjust-ffmpeg-deshake-search-range">How to Adjust FFmpeg
+Deshake Search Range</h1>
+<p>This article explains how to adjust the motion detection search range
+in the FFmpeg <code>deshake</code> video stabilization filter. You will
+learn which parameters control the search radius and search methodology,
+along with practical command-line examples to optimize your video
+stabilization process.</p>
+<p>The FFmpeg <code>deshake</code> filter works by comparing blocks of
+pixels between frames to estimate camera motion. To adjust how far the
+filter looks to detect this shaking, you need to configure the search
+range parameters: <code>rx</code> and <code>ry</code>.</p>
+<h3 id="key-parameters-for-search-range">Key Parameters for Search
+Range</h3>
+<ul>
+<li><strong><code>rx</code></strong>: Sets the maximum horizontal search
+range in pixels. The value can range from <code>0</code> to
+<code>64</code>, with a default of <code>16</code>.</li>
+<li><strong><code>ry</code></strong>: Sets the maximum vertical search
+range in pixels. The value can range from <code>0</code> to
+<code>64</code>, with a default of <code>16</code>.</li>
+<li><strong><code>search</code></strong>: Determines the search
+strategy. Setting this to <code>0</code> enables an exhaustive search
+(highly accurate but slower), while setting it to <code>1</code> uses a
+less exhaustive, faster search algorithm (large diamond search).</li>
+</ul>
+<h3 id="practical-command-examples">Practical Command Examples</h3>
+<p>To adjust these settings, pass the parameters directly to the
+<code>deshake</code> filter in your FFmpeg command.</p>
+<h4 id="increasing-the-search-range-for-heavy-shaking">1. Increasing the
+Search Range for Heavy Shaking</h4>
+<p>If your video has significant, wide-angle camera shakes, you should
+increase the search range to the maximum value of 64 pixels:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;deshake=rx=64:ry=64&quot;</span> output.mp4</span></code></pre></div>
+<h4 id="decreasing-the-search-range-for-micro-vibrations">2. Decreasing
+the Search Range for Micro-vibrations</h4>
+<p>For high-frequency, small-amplitude vibrations (like drone footage or
+tripod vibrations), decrease the search range to save processing power
+and prevent false motion detection:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;deshake=rx=8:ry=8&quot;</span> output.mp4</span></code></pre></div>
+<h4 id="optimizing-for-accuracy-with-exhaustive-search">3. Optimizing
+for Accuracy with Exhaustive Search</h4>
+<p>To combine a larger search range with the most accurate detection
+method, set the <code>search</code> parameter to <code>0</code>
+(exhaustive search):</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;deshake=rx=32:ry=32:search=0&quot;</span> output.mp4</span></code></pre></div>
+<h3 id="tips-for-best-results">Tips for Best Results</h3>
+<ul>
+<li><strong>Keep aspect ratio in mind:</strong> If your video has mostly
+horizontal shake (panning), you can set a higher <code>rx</code> and a
+lower <code>ry</code> to optimize processing speed.</li>
+<li><strong>Performance trade-off:</strong> Higher values for
+<code>rx</code> and <code>ry</code> require more CPU processing power.
+If processing time is an issue, keep the values as close to the default
+of <code>16</code> as your footage allows.</li>
+</ul></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

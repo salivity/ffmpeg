@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Configure h264_videotoolbox Rate Control in FFmpeg - ffmpeg</title>
+    <meta name="description" content="This article provides a practical guide on configuring rate control and quality settings for the hardware-accelerated h264videotoolbox encoder in FFmpeg on macOS. You will learn how to use target bitrate (VBR), constant quality (CQ), and strict constant">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/configure-h264-videotoolbox-rate-control-in-ffmpeg">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Configure h264_videotoolbox Rate Control in FFmpeg - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/configure-h264-videotoolbox-rate-control-in-ffmpeg" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article provides a practical guide on configuring rate control and quality settings for the hardware-accelerated h264videotoolbox encoder in FFmpeg on macOS. You will learn how to use target bitrate (VBR), constant quality (CQ), and strict constant" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="configure-h264_videotoolbox-rate-control-in-ffmpeg">Configure
+h264_videotoolbox Rate Control in FFmpeg</h1>
+<p>This article provides a practical guide on configuring rate control
+and quality settings for the hardware-accelerated
+<code>h264_videotoolbox</code> encoder in FFmpeg on macOS. You will
+learn how to use target bitrate (VBR), constant quality (CQ), and strict
+constant bitrate (CBR) modes to optimize your video encoding workflow
+for speed, file size, and visual fidelity.</p>
+<h2 id="understanding-h264_videotoolbox-rate-control">Understanding
+h264_videotoolbox Rate Control</h2>
+<p>The <code>h264_videotoolbox</code> encoder utilizes Apple’s
+hardware-accelerated VideoToolbox framework. Unlike software encoders
+like <code>libx264</code> which use Constant Rate Factor (CRF),
+VideoToolbox relies on different flags for managing bitrate and
+quality.</p>
+<p>There are three primary methods to control the rate and quality:
+Variable Bitrate (VBR), Quality-Based VBR, and Constant Bitrate
+(CBR).</p>
+<hr />
+<h2 id="quality-based-variable-bitrate-recommended">1. Quality-Based
+Variable Bitrate (Recommended)</h2>
+<p>If your goal is to maintain a consistent visual quality regardless of
+the video content, use the quality-based method. This is the closest
+equivalent to the <code>crf</code> mode found in
+<code>libx264</code>.</p>
+<p>In <code>h264_videotoolbox</code>, quality is controlled using the
+<code>-q:v</code> option. The scale ranges from <strong>0 to
+100</strong>, where higher numbers represent better quality.</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-c:v</span> h264_videotoolbox <span class="at">-q:v</span> 65 output.mp4</span></code></pre></div>
+<ul>
+<li><strong>q:v 50-60:</strong> Decent quality, highly compressed
+(smaller file size).</li>
+<li><strong>q:v 65-75:</strong> Excellent balance between visual quality
+and file size (recommended for general use).</li>
+<li><strong>q:v 85-100:</strong> Extremely high quality, very large file
+size.</li>
+</ul>
+<hr />
+<h2 id="average-variable-bitrate-bitrate-target">2. Average Variable
+Bitrate (Bitrate Target)</h2>
+<p>If you need your output file to target a specific average file size,
+you should set a target bitrate using the <code>-b:v</code> option. The
+encoder will dynamically adjust the bitrate depending on the complexity
+of the scene, keeping the overall average close to your target.</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-c:v</span> h264_videotoolbox <span class="at">-b:v</span> 5M output.mp4</span></code></pre></div>
+<p>To prevent extreme bitrate spikes that might cause playback issues on
+older hardware, you can cap the maximum bitrate using the
+<code>-maxrate</code> option:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-c:v</span> h264_videotoolbox <span class="at">-b:v</span> 5M <span class="at">-maxrate</span> 7M output.mp4</span></code></pre></div>
+<hr />
+<h2 id="constant-bitrate-cbr">3. Constant Bitrate (CBR)</h2>
+<p>Constant Bitrate is ideal for live streaming where network bandwidth
+is limited and strictly capped. To force <code>h264_videotoolbox</code>
+into CBR mode, you must set the target bitrate (<code>-b:v</code>) and
+the maximum bitrate (<code>-maxrate</code>) to the exact same value,
+while also configuring the buffer size (<code>-bufsize</code>).</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-c:v</span> h264_videotoolbox <span class="at">-b:v</span> 4M <span class="at">-maxrate</span> 4M <span class="at">-bufsize</span> 8M output.mp4</span></code></pre></div>
+<ul>
+<li><strong>-b:v 4M:</strong> Sets the target bitrate to 4 Mbps.</li>
+<li><strong>-maxrate 4M:</strong> Limits the maximum bitrate to 4
+Mbps.</li>
+<li><strong>-bufsize 8M:</strong> Sets the receiver buffer size (usually
+set to 1x or 2x the target bitrate), controlling how often the encoder
+recalculates the bitrate to stay on target.</li>
+</ul>
+<hr />
+<h2 id="summary-of-key-flags">Summary of Key Flags</h2>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th style="text-align: left;">FFmpeg Flag</th>
+<th style="text-align: left;">Description</th>
+<th style="text-align: left;">Values</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><code>-c:v h264_videotoolbox</code></td>
+<td style="text-align: left;">Enables the macOS hardware-accelerated
+H.264 encoder.</td>
+<td style="text-align: left;">N/A</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>-b:v</code></td>
+<td style="text-align: left;">Sets the target or average video
+bitrate.</td>
+<td style="text-align: left;">e.g., <code>4M</code>,
+<code>5000k</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>-q:v</code></td>
+<td style="text-align: left;">Sets the target quality level (Constant
+Quality).</td>
+<td style="text-align: left;"><code>0</code> to <code>100</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>-maxrate</code></td>
+<td style="text-align: left;">Defines the maximum allowable bitrate
+limit.</td>
+<td style="text-align: left;">e.g., <code>6M</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>-bufsize</code></td>
+<td style="text-align: left;">Sets the rate control buffer size.</td>
+<td style="text-align: left;">e.g., <code>8M</code></td>
+</tr>
+</tbody>
+</table></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

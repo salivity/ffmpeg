@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pipe Python RGB Frames into FFmpeg on macOS - ffmpeg</title>
+    <meta name="description" content="This article explains how to efficiently pipe raw RGB video frames generated in a Python script directly into FFmpeg on macOS to create a video file. By using Python's built-in subprocess module, you can stream raw byte data from your script straight to">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/pipe-python-rgb-frames-into-ffmpeg-on-macos">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Pipe Python RGB Frames into FFmpeg on macOS - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/pipe-python-rgb-frames-into-ffmpeg-on-macos" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article explains how to efficiently pipe raw RGB video frames generated in a Python script directly into FFmpeg on macOS to create a video file. By using Python's built-in subprocess module, you can stream raw byte data from your script straight to" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="pipe-python-rgb-frames-into-ffmpeg-on-macos">Pipe Python RGB
+Frames into FFmpeg on macOS</h1>
+<p>This article explains how to efficiently pipe raw RGB video frames
+generated in a Python script directly into FFmpeg on macOS to create a
+video file. By using Python’s built-in <code>subprocess</code> module,
+you can stream raw byte data from your script straight to FFmpeg’s
+standard input, eliminating the need to save temporary image files to
+your disk.</p>
+<h3 id="prerequisites">Prerequisites</h3>
+<p>To get started on macOS, you must have FFmpeg installed. The easiest
+way to install it is via Homebrew. Open your terminal and run:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">brew</span> install ffmpeg</span></code></pre></div>
+<p>You will also need <code>numpy</code> to generate sample frame data.
+You can install it using pip:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">pip</span> install numpy</span></code></pre></div>
+<h3 id="the-python-implementation">The Python Implementation</h3>
+<p>The following Python script generates a sequence of colored frames
+and pipes them directly into FFmpeg to output an MP4 video.</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> subprocess</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Define video properties</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>width <span class="op">=</span> <span class="dv">1920</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>height <span class="op">=</span> <span class="dv">1080</span></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>fps <span class="op">=</span> <span class="dv">30</span></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>duration_seconds <span class="op">=</span> <span class="dv">5</span></span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>total_frames <span class="op">=</span> fps <span class="op">*</span> duration_seconds</span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a><span class="co"># Configure the FFmpeg command</span></span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a><span class="co"># -f rawvideo: Tells FFmpeg the input is raw video data</span></span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a><span class="co"># -pix_fmt rgb24: Specifies that each pixel has 3 bytes (Red, Green, Blue)</span></span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a><span class="co"># -s: Sets the frame resolution</span></span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a><span class="co"># -r: Sets the input frame rate</span></span>
+<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a><span class="co"># -i -: Tells FFmpeg to read the input from stdin (the pipe)</span></span>
+<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a>ffmpeg_cmd <span class="op">=</span> [</span>
+<span id="cb3-18"><a href="#cb3-18" aria-hidden="true" tabindex="-1"></a>    <span class="st">&#39;ffmpeg&#39;</span>,</span>
+<span id="cb3-19"><a href="#cb3-19" aria-hidden="true" tabindex="-1"></a>    <span class="st">&#39;-y&#39;</span>,  <span class="co"># Overwrite output file if it exists</span></span>
+<span id="cb3-20"><a href="#cb3-20" aria-hidden="true" tabindex="-1"></a>    <span class="st">&#39;-f&#39;</span>, <span class="st">&#39;rawvideo&#39;</span>,</span>
+<span id="cb3-21"><a href="#cb3-21" aria-hidden="true" tabindex="-1"></a>    <span class="st">&#39;-pix_fmt&#39;</span>, <span class="st">&#39;rgb24&#39;</span>,</span>
+<span id="cb3-22"><a href="#cb3-22" aria-hidden="true" tabindex="-1"></a>    <span class="st">&#39;-s&#39;</span>, <span class="ss">f&#39;</span><span class="sc">{</span>width<span class="sc">}</span><span class="ss">x</span><span class="sc">{</span>height<span class="sc">}</span><span class="ss">&#39;</span>,</span>
+<span id="cb3-23"><a href="#cb3-23" aria-hidden="true" tabindex="-1"></a>    <span class="st">&#39;-r&#39;</span>, <span class="bu">str</span>(fps),</span>
+<span id="cb3-24"><a href="#cb3-24" aria-hidden="true" tabindex="-1"></a>    <span class="st">&#39;-i&#39;</span>, <span class="st">&#39;-&#39;</span>,  <span class="co"># Read from stdin</span></span>
+<span id="cb3-25"><a href="#cb3-25" aria-hidden="true" tabindex="-1"></a>    <span class="st">&#39;-c:v&#39;</span>, <span class="st">&#39;libx264&#39;</span>,  <span class="co"># Encode using H.264</span></span>
+<span id="cb3-26"><a href="#cb3-26" aria-hidden="true" tabindex="-1"></a>    <span class="st">&#39;-pix_fmt&#39;</span>, <span class="st">&#39;yuv420p&#39;</span>,  <span class="co"># Ensure compatibility with macOS QuickTime Player</span></span>
+<span id="cb3-27"><a href="#cb3-27" aria-hidden="true" tabindex="-1"></a>    <span class="st">&#39;output.mp4&#39;</span></span>
+<span id="cb3-28"><a href="#cb3-28" aria-hidden="true" tabindex="-1"></a>]</span>
+<span id="cb3-29"><a href="#cb3-29" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-30"><a href="#cb3-30" aria-hidden="true" tabindex="-1"></a><span class="co"># Start the FFmpeg process with stdin mapped to a pipe</span></span>
+<span id="cb3-31"><a href="#cb3-31" aria-hidden="true" tabindex="-1"></a>process <span class="op">=</span> subprocess.Popen(ffmpeg_cmd, stdin<span class="op">=</span>subprocess.PIPE)</span>
+<span id="cb3-32"><a href="#cb3-32" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-33"><a href="#cb3-33" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">&quot;Piping frames to FFmpeg...&quot;</span>)</span>
+<span id="cb3-34"><a href="#cb3-34" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-35"><a href="#cb3-35" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> frame_idx <span class="kw">in</span> <span class="bu">range</span>(total_frames):</span>
+<span id="cb3-36"><a href="#cb3-36" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Create a dummy RGB frame (moving color gradient)</span></span>
+<span id="cb3-37"><a href="#cb3-37" aria-hidden="true" tabindex="-1"></a>    blue_val <span class="op">=</span> <span class="bu">int</span>(<span class="dv">255</span> <span class="op">*</span> (frame_idx <span class="op">/</span> total_frames))</span>
+<span id="cb3-38"><a href="#cb3-38" aria-hidden="true" tabindex="-1"></a>    frame <span class="op">=</span> np.zeros((height, width, <span class="dv">3</span>), dtype<span class="op">=</span>np.uint8)</span>
+<span id="cb3-39"><a href="#cb3-39" aria-hidden="true" tabindex="-1"></a>    frame[:, :, <span class="dv">0</span>] <span class="op">=</span> <span class="dv">100</span>  <span class="co"># Red channel</span></span>
+<span id="cb3-40"><a href="#cb3-40" aria-hidden="true" tabindex="-1"></a>    frame[:, :, <span class="dv">1</span>] <span class="op">=</span> <span class="dv">150</span>  <span class="co"># Green channel</span></span>
+<span id="cb3-41"><a href="#cb3-41" aria-hidden="true" tabindex="-1"></a>    frame[:, :, <span class="dv">2</span>] <span class="op">=</span> blue_val  <span class="co"># Animating Blue channel</span></span>
+<span id="cb3-42"><a href="#cb3-42" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-43"><a href="#cb3-43" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Write the raw bytes of the frame directly to FFmpeg&#39;s stdin</span></span>
+<span id="cb3-44"><a href="#cb3-44" aria-hidden="true" tabindex="-1"></a>    process.stdin.write(frame.tobytes())</span>
+<span id="cb3-45"><a href="#cb3-45" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-46"><a href="#cb3-46" aria-hidden="true" tabindex="-1"></a><span class="co"># Close the stdin pipe and wait for FFmpeg to finish encoding</span></span>
+<span id="cb3-47"><a href="#cb3-47" aria-hidden="true" tabindex="-1"></a>process.stdin.close()</span>
+<span id="cb3-48"><a href="#cb3-48" aria-hidden="true" tabindex="-1"></a>process.wait()</span>
+<span id="cb3-49"><a href="#cb3-49" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-50"><a href="#cb3-50" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">&quot;Video encoding complete: output.mp4&quot;</span>)</span></code></pre></div>
+<h3 id="how-it-works">How It Works</h3>
+<ol type="1">
+<li><strong>FFmpeg Configuration:</strong> The <code>-i -</code>
+parameter directs FFmpeg to accept input from standard input (stdin).
+Specifying <code>-f rawvideo</code> and <code>-pix_fmt rgb24</code> is
+crucial because raw byte streams do not contain header information, so
+FFmpeg must be explicitly told how to interpret the incoming bytes.</li>
+<li><strong>Subprocess Pipe:</strong> <code>subprocess.Popen</code>
+launches FFmpeg as a background process and opens a write-only pipe
+(<code>stdin=subprocess.PIPE</code>) linked to it.</li>
+<li><strong>Writing Bytes:</strong> The numpy array
+<code>frame.tobytes()</code> converts the 3D RGB array into a flat
+sequence of bytes. Since the format is <code>rgb24</code>, FFmpeg
+expects exactly <code>width * height * 3</code> bytes per frame.</li>
+<li><strong>Closing the Stream:</strong> Once all frames are written,
+<code>process.stdin.close()</code> signals to FFmpeg that the video
+stream has ended, allowing FFmpeg to finalize and write the container
+file (<code>output.mp4</code>).</li>
+</ol></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

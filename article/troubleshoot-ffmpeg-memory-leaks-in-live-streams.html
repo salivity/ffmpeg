@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Troubleshoot FFmpeg Memory Leaks in Live Streams - ffmpeg</title>
+    <meta name="description" content="This article provides a practical guide to diagnosing and resolving memory leaks in FFmpeg processes used for continuous, 24/7 live streaming. You will learn how to verify if a leak exists, identify the most common culprits within FFmpeg configurations,">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/troubleshoot-ffmpeg-memory-leaks-in-live-streams">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Troubleshoot FFmpeg Memory Leaks in Live Streams - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/troubleshoot-ffmpeg-memory-leaks-in-live-streams" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article provides a practical guide to diagnosing and resolving memory leaks in FFmpeg processes used for continuous, 24/7 live streaming. You will learn how to verify if a leak exists, identify the most common culprits within FFmpeg configurations," />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="troubleshoot-ffmpeg-memory-leaks-in-live-streams">Troubleshoot
+FFmpeg Memory Leaks in Live Streams</h1>
+<p>This article provides a practical guide to diagnosing and resolving
+memory leaks in FFmpeg processes used for continuous, 24/7 live
+streaming. You will learn how to verify if a leak exists, identify the
+most common culprits within FFmpeg configurations, use diagnostic tools
+to pinpoint the root cause, and implement long-term stability fixes to
+keep your streams running indefinitely.</p>
+<h3 id="confirm-the-memory-leak">1. Confirm the Memory Leak</h3>
+<p>Before changing your configuration, verify that FFmpeg is actually
+leaking memory rather than just using expected buffers.</p>
+<ul>
+<li><strong>Monitor Resident Set Size (RSS):</strong> Do not rely on
+virtual memory (VSZ). Track the Resident Set Size (RSS) using tools like
+<code>top</code>, <code>htop</code>, or systemd resource logging. A
+healthy FFmpeg process will see memory usage plateau after a few minutes
+of startup. A leak is present if the RSS continuously climbs linearly
+over several hours or days.</li>
+<li><strong>Isolate the Process:</strong> Ensure the leak is within the
+FFmpeg binary itself and not a wrapper script (like Node.js or Python)
+spawning the process and retaining stdout/stderr buffers in memory.</li>
+</ul>
+<h3 id="check-common-configuration-culprits">2. Check Common
+Configuration Culprits</h3>
+<p>Most “leaks” in live streaming are actually caused by uncontrolled
+queue growth or improper protocol handling rather than a bug in the
+FFmpeg C source code.</p>
+<ul>
+<li><p><strong>Limit Input/Output Thread Queues:</strong> By default,
+FFmpeg allows thread queues to grow if the output cannot keep up with
+the input. Explicitly restrict queue sizes using the
+<code>-thread_queue_size</code> flag on your input and output
+arguments.</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-thread_queue_size</span> 512 <span class="at">-i</span> rtmp://your-input ...</span></code></pre></div></li>
+<li><p><strong>Configure Muxer Buffer Limits:</strong> For protocols
+like RTMP, SRT, or HLS, network congestion can cause packet queues to
+back up in memory. Use muxer-specific options to drop packets if the
+network lags. For example, use <code>-max_delay</code> or SRT’s latency
+parameters to prevent infinite buffering.</p></li>
+<li><p><strong>Review Complex Filtergraphs:</strong> Video filters like
+<code>drawtext</code> (especially when loading external fonts
+dynamically), <code>overlay</code>, or custom hardware acceleration
+filters (CUDA/VAAPI) are notorious for leaking memory if frames are not
+properly freed between processing stages. Simplify your filtergraph to
+see if the leak disappears.</p></li>
+</ul>
+<h3 id="use-diagnostic-tools">3. Use Diagnostic Tools</h3>
+<p>If adjusting configuration flags does not stop the memory growth, you
+must analyze the FFmpeg binary directly.</p>
+<ul>
+<li><p><strong>AddressSanitizer (ASan):</strong> The most effective way
+to find memory leaks in FFmpeg is to compile a debug version with
+AddressSanitizer enabled. Configure and build FFmpeg from source
+using:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">./configure</span> <span class="at">--toolchain</span><span class="op">=</span>hardened <span class="at">--extra-cflags</span><span class="op">=</span><span class="st">&quot;-fsanitize=address&quot;</span> <span class="at">--extra-ldflags</span><span class="op">=</span><span class="st">&quot;-fsanitize=address&quot;</span> <span class="at">--disable-stripping</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="fu">make</span></span></code></pre></div>
+<p>Run your streaming command with this build. When you terminate the
+process, ASan will output a detailed trace of any leaked memory
+blocks.</p></li>
+<li><p><strong>Valgrind Memcheck:</strong> If you cannot recompile
+FFmpeg, run it through Valgrind. Note that Valgrind introduces
+significant CPU overhead and may prevent real-time encoding, but it will
+catch leaks:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="fu">valgrind</span> <span class="at">--toolcheck</span><span class="op">=</span>memcheck <span class="at">--leak-check</span><span class="op">=</span>full ffmpeg <span class="at">-i</span> ...</span></code></pre></div></li>
+</ul>
+<h3 id="implement-resolutions-and-mitigations">4. Implement Resolutions
+and Mitigations</h3>
+<p>Once you identify the source of the issue, apply these best practices
+to ensure continuous uptime:</p>
+<ul>
+<li><strong>Use Static, Up-to-Date Builds:</strong> Memory leaks in core
+codecs and protocols are constantly patched. Ensure you are using the
+latest stable release of FFmpeg, as older distribution-provided packages
+often contain known, fixed leaks.</li>
+<li><strong>Implement a Process Wrapper with Graceful Restarts:</strong>
+For absolute reliability in enterprise environments, treat FFmpeg
+processes as disposable. Use a process manager like Docker, PM2, or
+systemd to monitor memory limits and gracefully restart the FFmpeg
+container or process during low-traffic periods (e.g., once every 24
+hours).</li>
+<li><strong>Enable Hardware Offloading Carefully:</strong> Hardware
+encoders (like NVENC or QuickSync) offload memory to the GPU. Ensure
+your system graphics drivers are updated, as driver-level leaks are
+common in long-running headless Linux servers.</li>
+</ul></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

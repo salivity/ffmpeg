@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FFmpeg Overlay Watermark at Specific Pixel Offset - ffmpeg</title>
+    <meta name="description" content="This article explains how to precisely position an image watermark on a video using the FFmpeg overlay filter. By utilizing built-in mathematical variables for the main video and overlay image dimensions, you can dynamically calculate and apply specific">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/ffmpeg-overlay-watermark-at-specific-pixel-offset">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="FFmpeg Overlay Watermark at Specific Pixel Offset - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/ffmpeg-overlay-watermark-at-specific-pixel-offset" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article explains how to precisely position an image watermark on a video using the FFmpeg overlay filter. By utilizing built-in mathematical variables for the main video and overlay image dimensions, you can dynamically calculate and apply specific" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="ffmpeg-overlay-watermark-at-specific-pixel-offset">FFmpeg
+Overlay Watermark at Specific Pixel Offset</h1>
+<p>This article explains how to precisely position an image watermark on
+a video using the FFmpeg <code>overlay</code> filter. By utilizing
+built-in mathematical variables for the main video and overlay image
+dimensions, you can dynamically calculate and apply specific pixel
+offsets from any corner of the video.</p>
+<h2 id="understanding-the-overlay-variables">Understanding the Overlay
+Variables</h2>
+<p>FFmpeg’s <code>overlay</code> filter uses a coordinate system where
+<code>x</code> represents the horizontal position (from the left edge)
+and <code>y</code> represents the vertical position (from the top edge).
+To calculate custom offsets, FFmpeg provides several built-in
+variables:</p>
+<ul>
+<li><strong><code>main_w</code> or <code>W</code></strong>: The width of
+the main input video.</li>
+<li><strong><code>main_h</code> or <code>H</code></strong>: The height
+of the main input video.</li>
+<li><strong><code>overlay_w</code> or <code>w</code></strong>: The width
+of the overlay (watermark) image.</li>
+<li><strong><code>overlay_h</code> or <code>h</code></strong>: The
+height of the overlay (watermark) image.</li>
+</ul>
+<h2 id="positioning-formulas-with-pixel-offsets">Positioning Formulas
+with Pixel Offsets</h2>
+<p>By combining these variables with basic arithmetic, you can place
+your watermark at an exact pixel offset from any corner of the video
+frame.</p>
+<h3 id="bottom-right-corner-offset">1. Bottom-Right Corner Offset</h3>
+<p>To place a watermark in the bottom-right corner with a 20-pixel
+padding from both the right and bottom edges, use the following
+formulas: * <code>x = main_w - overlay_w - 20</code> *
+<code>y = main_h - overlay_h - 20</code></p>
+<h3 id="bottom-left-corner-offset">2. Bottom-Left Corner Offset</h3>
+<p>To position the watermark in the bottom-left corner with a 15-pixel
+margin from the left and bottom edges: * <code>x = 15</code> *
+<code>y = main_h - overlay_h - 15</code></p>
+<h3 id="top-right-corner-offset">3. Top-Right Corner Offset</h3>
+<p>To place the watermark in the top-right corner with a 10-pixel
+padding from the top and right edges: *
+<code>x = main_w - overlay_w - 10</code> * <code>y = 10</code></p>
+<h3 id="top-left-corner-offset">4. Top-Left Corner Offset</h3>
+<p>To place the watermark in the top-left corner with a simple 25-pixel
+margin: * <code>x = 25</code> * <code>y = 25</code></p>
+<h2 id="example-ffmpeg-command">Example FFmpeg Command</h2>
+<p>Below is a complete command demonstrating how to apply a bottom-right
+watermark offset of 30 pixels horizontally and 20 pixels vertically:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-i</span> watermark.png <span class="at">-filter_complex</span> <span class="st">&quot;[0:v][1:v]overlay=x=main_w-overlay_w-30:y=main_h-overlay_h-20[out]&quot;</span> <span class="at">-map</span> <span class="st">&quot;[out]&quot;</span> <span class="at">-map</span> 0:a<span class="pp">?</span> <span class="at">-c:v</span> libx264 <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<h3 id="command-breakdown">Command Breakdown:</h3>
+<ul>
+<li><code>-i input.mp4</code>: Specifies the main background video.</li>
+<li><code>-i watermark.png</code>: Specifies the watermark image.</li>
+<li><code>-filter_complex</code>: Invokes the filtergraph.</li>
+<li><code>[0:v][1:v]overlay=...</code>: Feeds the video stream
+<code>[0:v]</code> and the image stream <code>[1:v]</code> into the
+overlay filter.</li>
+<li><code>x=main_w-overlay_w-30</code>: Sets the horizontal offset to 30
+pixels from the right edge.</li>
+<li><code>y=main_h-overlay_h-20</code>: Sets the vertical offset to 20
+pixels from the bottom edge.</li>
+<li><code>-map "[out]"</code>: Maps the processed video output to the
+final file.</li>
+<li><code>-map 0:a?</code>: Copies the audio stream from the input video
+if it exists.</li>
+<li><code>-c:v libx264 -c:a copy</code>: Encodes the output video using
+H.264 while copying the audio stream without re-encoding.</li>
+</ul></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

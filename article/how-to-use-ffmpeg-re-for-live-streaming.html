@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Use FFmpeg -re for Live Streaming - ffmpeg</title>
+    <meta name="description" content="This article explains how to use the -re option in FFmpeg to read input files at their native frame rate, a critical technique for simulating live streams. You will learn the exact command-line syntax for implementing this flag, understand the technical">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/how-to-use-ffmpeg-re-for-live-streaming">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Use FFmpeg -re for Live Streaming - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/how-to-use-ffmpeg-re-for-live-streaming" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article explains how to use the -re option in FFmpeg to read input files at their native frame rate, a critical technique for simulating live streams. You will learn the exact command-line syntax for implementing this flag, understand the technical" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="how-to-use-ffmpeg--re-for-live-streaming">How to Use FFmpeg -re
+for Live Streaming</h1>
+<p>This article explains how to use the <code>-re</code> option in
+FFmpeg to read input files at their native frame rate, a critical
+technique for simulating live streams. You will learn the exact
+command-line syntax for implementing this flag, understand the technical
+reasons why it is essential for streaming to platforms like YouTube or
+Twitch, and discover when you should avoid using it.</p>
+<h2 id="what-is-the-ffmpeg--re-option">What is the FFmpeg
+<code>-re</code> Option?</h2>
+<p>By default, FFmpeg processes input files as fast as your system’s CPU
+and GPU will allow. If you are converting a video file, this speed is
+ideal. However, if you are streaming a pre-recorded file to a live
+server, dumping the entire file into the network at maximum speed will
+cause the stream to fail.</p>
+<p>The <code>-re</code> flag (short for “read rate” or “real-time”)
+tells FFmpeg to throttle its reading speed to match the native frame
+rate of the input file. For example, if your video is 30 frames per
+second (fps), FFmpeg will read exactly 30 frames every second, mimicking
+a live camera feed.</p>
+<h2 id="how-to-use--re-in-ffmpeg">How to Use <code>-re</code> in
+FFmpeg</h2>
+<p>To use the <code>-re</code> option correctly, you must place the flag
+<strong>before the input file</strong> (<code>-i</code>) in your command
+line. If placed after the input, it may be ignored or applied
+incorrectly.</p>
+<p>Here is the standard command structure:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-re</span> <span class="at">-i</span> input.mp4 <span class="at">-c:v</span> libx264 <span class="at">-c:a</span> aac <span class="at">-f</span> flv rtmp://your-streaming-url/stream-key</span></code></pre></div>
+<h3 id="command-breakdown">Command Breakdown:</h3>
+<ul>
+<li><code>-re</code>: Forces FFmpeg to read the input file at its native
+frame rate.</li>
+<li><code>-i input.mp4</code>: Specifies the input video file.</li>
+<li><code>-c:v libx264</code>: Encodes the video using the H.264
+codec.</li>
+<li><code>-c:a aac</code>: Encodes the audio using the AAC codec.</li>
+<li><code>-f flv</code>: Formats the output stream as FLV (standard for
+RTMP).</li>
+<li><code>rtmp://...</code>: The destination URL of your streaming
+service.</li>
+</ul>
+<h2 id="why--re-is-crucial-for-live-streaming">Why <code>-re</code> is
+Crucial for Live Streaming</h2>
+<p>Live streaming servers (like RTMP, SRT, or HLS ingest points) expect
+a steady, continuous flow of data that matches real-world time. Using
+<code>-re</code> is critical for three main reasons:</p>
+<ol type="1">
+<li><strong>Prevents Server Overwhelment:</strong> Without
+<code>-re</code>, FFmpeg will attempt to push hours of video to the
+ingestion server in a matter of minutes. The receiving server will
+reject this sudden flood of data, resulting in buffer overflows,
+disconnected streams, or dropped packets.</li>
+<li><strong>Maintains Viewer Synchronization:</strong> Throttling the
+input ensures that video and audio packets are timestamped and sent at a
+pace that players can decode in real-time. This prevents lag, playback
+stuttering, and desynchronization for the viewers.</li>
+<li><strong>Simulates Live Broadcasts from Pre-recorded Files:</strong>
+If you want to run a “24/7 live stream” using pre-recorded files,
+<code>-re</code> allows you to treat a playlist of MP4 files exactly
+like a live camera feed.</li>
+</ol>
+<h2 id="when-you-should-not-use--re">When You Should NOT Use
+<code>-re</code></h2>
+<p>While essential for streaming pre-recorded files, there are scenarios
+where you should never use the <code>-re</code> option:</p>
+<ul>
+<li><strong>Live Hardware Inputs:</strong> If your input is a webcam,
+capture card, or microphone (e.g., <code>-i /dev/video0</code>), the
+hardware is already feeding data in real-time. Adding <code>-re</code>
+is redundant and can cause latency issues or dropped frames.</li>
+<li><strong>Standard Transcoding:</strong> If you are converting a video
+from one file format to another (e.g., MP4 to MKV) and saving it
+locally, do not use <code>-re</code>. You want this process to run as
+fast as possible, and using <code>-re</code> will artificially slow the
+conversion down to the duration of the video.</li>
+</ul></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

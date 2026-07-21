@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Route FFmpeg Tee Outputs to Specific Network Interfaces - ffmpeg</title>
+    <meta name="description" content="When streaming to multiple destinations simultaneously using the FFmpeg tee protocol, you may need to route specific outputs through different network interfaces or physical network adapters. This guide explains how to bind individual target streams with">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/route-ffmpeg-tee-outputs-to-specific-network-interfaces">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Route FFmpeg Tee Outputs to Specific Network Interfaces - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/route-ffmpeg-tee-outputs-to-specific-network-interfaces" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="When streaming to multiple destinations simultaneously using the FFmpeg tee protocol, you may need to route specific outputs through different network interfaces or physical network adapters. This guide explains how to bind individual target streams with" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="route-ffmpeg-tee-outputs-to-specific-network-interfaces">Route
+FFmpeg Tee Outputs to Specific Network Interfaces</h1>
+<p>When streaming to multiple destinations simultaneously using the
+FFmpeg <code>tee</code> protocol, you may need to route specific outputs
+through different network interfaces or physical network adapters. This
+guide explains how to bind individual target streams within the
+<code>tee</code> pseudo-muxer to specific local IP addresses, allowing
+you to control which network interface each stream uses.</p>
+<h2 id="the-core-concept-binding-to-a-local-ip">The Core Concept:
+Binding to a Local IP</h2>
+<p>FFmpeg does not select network interfaces by their system name (like
+<code>eth0</code> or <code>wlan0</code>). Instead, it routes traffic
+through specific network interfaces by binding to the <strong>local IP
+address</strong> assigned to that interface.</p>
+<p>To route different outputs of a <code>tee</code> stream through
+different interfaces, you must pass the appropriate local binding
+options (<code>localaddr</code> or protocol-specific variants) to each
+target stream inside the <code>tee</code> syntax.</p>
+<hr />
+<h2 id="configuring-udp-targets">1. Configuring UDP Targets</h2>
+<p>For UDP streams (often used for MPEG-TS), you can bind to a specific
+network interface by appending the <code>localaddr</code> parameter
+directly to the target URL query string.</p>
+<h3 id="syntax">Syntax:</h3>
+<p><code>udp://[destination_ip]:[port]?localaddr=[local_interface_ip]</code></p>
+<h3 id="example-within-tee">Example within <code>tee</code>:</h3>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-map</span> 0 <span class="at">-c</span> copy <span class="at">-f</span> tee <span class="dt">\</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="st">&quot;[f=mpegts]udp://233.0.0.1:1234?localaddr=192.168.1.50|[f=mpegts]udp://233.0.0.1:1234?localaddr=10.0.0.50&quot;</span></span></code></pre></div>
+<p>In this example: * The first stream is routed through the interface
+with the IP <code>192.168.1.50</code>. * The second stream is routed
+through the interface with the IP <code>10.0.0.50</code>.</p>
+<hr />
+<h2 id="configuring-rtmp-targets">2. Configuring RTMP Targets</h2>
+<p>For RTMP streaming (commonly used for YouTube, Twitch, or Facebook),
+FFmpeg’s RTMP protocol utilizes the <code>rtmp_localaddr</code> option.
+Within the <code>tee</code> muxer, you must pass this as a per-output
+option inside the bracketed prefix.</p>
+<h3 id="syntax-1">Syntax:</h3>
+<p><code>[f=flv:rtmp_localaddr=[local_interface_ip]]rtmp://[destination_url]</code></p>
+<h3 id="example-within-tee-1">Example within <code>tee</code>:</h3>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-c:v</span> libx264 <span class="at">-c:a</span> aac <span class="at">-f</span> tee <span class="dt">\</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="st">&quot;[f=flv:rtmp_localaddr=192.168.1.50]rtmp://a.rtmp.youtube.com/live2/key1|[f=flv:rtmp_localaddr=10.0.0.50]rtmp://live-api-s.facebook.com:80/rtmp/key2&quot;</span></span></code></pre></div>
+<ul>
+<li>The YouTube stream is forced out of the network adapter assigned to
+<code>192.168.1.50</code>.</li>
+<li>The Facebook stream is forced out of the network adapter assigned to
+<code>10.0.0.50</code>.</li>
+</ul>
+<hr />
+<h2 id="configuring-srt-targets">3. Configuring SRT Targets</h2>
+<p>For Secure Reliable Transport (SRT) streams, the parameter to bind to
+a local network adapter is <code>localadapter</code>. This is appended
+as a query parameter to the SRT URL.</p>
+<h3 id="syntax-2">Syntax:</h3>
+<p><code>srt://[destination_ip]:[port]?localadapter=[local_interface_ip]</code></p>
+<h3 id="example-within-tee-2">Example within <code>tee</code>:</h3>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-map</span> 0 <span class="at">-c</span> copy <span class="at">-f</span> tee <span class="dt">\</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="st">&quot;[f=mpegts]srt://destination1.com:9000?localadapter=192.168.1.50|[f=mpegts]srt://destination2.com:9000?localadapter=10.0.0.50&quot;</span></span></code></pre></div>
+<hr />
+<h2 id="troubleshooting-routing-issues">Troubleshooting Routing
+Issues</h2>
+<p>If your streams are still going through the default gateway instead
+of the specified interfaces, verify the following:</p>
+<ol type="1">
+<li><strong>Active IP Addresses:</strong> Ensure the local IP addresses
+specified in your command are currently assigned to active network
+adapters on your system.</li>
+<li><strong>System Routing Tables:</strong> Operating system routing
+tables can sometimes override FFmpeg’s bind requests. Ensure your OS
+metric settings do not completely restrict traffic on the secondary
+interface.</li>
+<li><strong>Escaping Characters:</strong> In complex terminal
+environments (like Bash or Zsh), ensure your <code>tee</code> argument
+is fully enclosed in double quotes to prevent the shell from
+misinterpreting the <code>?</code>, <code>&amp;</code>, and
+<code>|</code> characters.</li>
+</ol></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Preview FFmpeg Filterchains Using FFplay - ffmpeg</title>
+    <meta name="description" content="Testing complex video filterchains in FFmpeg can be a slow, trial-and-error process if you render a new file for every adjustment. By using ffplay, FFmpeg's companion media player, you can preview your video filters in real-time. This guide explains how">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/preview-ffmpeg-filterchains-using-ffplay">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Preview FFmpeg Filterchains Using FFplay - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/preview-ffmpeg-filterchains-using-ffplay" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Testing complex video filterchains in FFmpeg can be a slow, trial-and-error process if you render a new file for every adjustment. By using ffplay, FFmpeg's companion media player, you can preview your video filters in real-time. This guide explains how" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="preview-ffmpeg-filterchains-using-ffplay">Preview FFmpeg
+Filterchains Using FFplay</h1>
+<p>Testing complex video filterchains in FFmpeg can be a slow,
+trial-and-error process if you render a new file for every adjustment.
+By using <code>ffplay</code>, FFmpeg’s companion media player, you can
+preview your video filters in real-time. This guide explains how to
+construct and run filter previews instantly, saving you significant
+rendering time before you commit to a final encode.</p>
+<h3 id="the-basic-syntax">The Basic Syntax</h3>
+<p><code>ffplay</code> uses the exact same filtering engine as
+<code>ffmpeg</code>. To apply a simple video filter chain, use the
+<code>-vf</code> (video filter) flag followed by your filter string
+enclosed in quotes.</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffplay</span> <span class="at">-vf</span> <span class="st">&quot;filter1=parameter1,filter2=parameter2&quot;</span> input.mp4</span></code></pre></div>
+<h3 id="examples-of-previewing-filters">Examples of Previewing
+Filters</h3>
+<p>Here are common scenarios showing how to preview filters using
+<code>ffplay</code>.</p>
+<h4 id="previewing-color-adjustments-and-scaling">1. Previewing Color
+Adjustments and Scaling</h4>
+<p>If you want to resize a video and adjust its brightness and contrast,
+chain the <code>scale</code> and <code>eq</code> filters together:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffplay</span> <span class="at">-vf</span> <span class="st">&quot;scale=1280:720,eq=brightness=0.05:contrast=1.2&quot;</span> input.mp4</span></code></pre></div>
+<h4 id="previewing-cropping-and-deinterlacing">2. Previewing Cropping
+and Deinterlacing</h4>
+<p>To check if your crop coordinates are correct while simultaneously
+applying a deinterlacing filter (<code>yadif</code>):</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffplay</span> <span class="at">-vf</span> <span class="st">&quot;yadif,crop=in_w-100:in_h-100:50:50&quot;</span> input.mp4</span></code></pre></div>
+<h4 id="previewing-complex-filters-picture-in-picture-overlays">3.
+Previewing Complex Filters (Picture-in-Picture / Overlays)</h4>
+<p>For filters that require multiple inputs, <code>ffplay</code> handles
+<code>-filter_complex</code> differently than <code>ffmpeg</code>
+because it typically accepts only one primary input file. To preview an
+overlay, use the <code>movie</code> source filter inside the
+filtergraph:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffplay</span> <span class="at">-f</span> lavfi <span class="at">-i</span> <span class="st">&quot;movie=background.mp4[bg]; movie=overlay.png[logo]; [bg][logo]overlay=W-w-10:10&quot;</span></span></code></pre></div>
+<h3 id="useful-ffplay-controls-during-preview">Useful FFplay Controls
+During Preview</h3>
+<p>While previewing your filterchain, you can interact with the
+<code>ffplay</code> window to analyze the video:</p>
+<ul>
+<li><strong>Spacebar:</strong> Pause and resume playback to inspect
+specific frames.</li>
+<li><strong>S:</strong> Step forward frame-by-frame.</li>
+<li><strong>Left/Right Arrow Keys:</strong> Seek backward/forward by 10
+seconds.</li>
+<li><strong>Up/Down Arrow Keys:</strong> Seek backward/forward by 1
+minute.</li>
+<li><strong>F:</strong> Toggle full-screen mode.</li>
+</ul>
+<h3 id="transitioning-from-ffplay-to-ffmpeg">Transitioning from FFplay
+to FFmpeg</h3>
+<p>Once you are satisfied with the look of your filters in the preview
+window, copy the exact filter string inside the quotes and paste it into
+your <code>ffmpeg</code> command for the final encode.</p>
+<p><strong>Preview command:</strong></p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffplay</span> <span class="at">-vf</span> <span class="st">&quot;scale=640:360,drawgrid=w=100:h=100:t=2:c=red@0.5&quot;</span> input.mp4</span></code></pre></div>
+<p><strong>Encoding command:</strong></p>
+<div class="sourceCode" id="cb6"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;scale=640:360,drawgrid=w=100:h=100:t=2:c=red@0.5&quot;</span> <span class="at">-c:a</span> copy output.mp4</span></code></pre></div></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

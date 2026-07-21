@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Use FFmpeg Floodfill Filter to Color Video Areas - ffmpeg</title>
+    <meta name="description" content="This article provides a straightforward guide on how to use the floodfill filter in FFmpeg to select a specific coordinate in a video and fill its surrounding, matching color region with a solid color. You will learn the exact syntax, the parameters requ">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/use-ffmpeg-floodfill-filter-to-color-video-areas">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Use FFmpeg Floodfill Filter to Color Video Areas - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/use-ffmpeg-floodfill-filter-to-color-video-areas" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article provides a straightforward guide on how to use the floodfill filter in FFmpeg to select a specific coordinate in a video and fill its surrounding, matching color region with a solid color. You will learn the exact syntax, the parameters requ" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="use-ffmpeg-floodfill-filter-to-color-video-areas">Use FFmpeg
+Floodfill Filter to Color Video Areas</h1>
+<p>This article provides a straightforward guide on how to use the
+<code>floodfill</code> filter in FFmpeg to select a specific coordinate
+in a video and fill its surrounding, matching color region with a solid
+color. You will learn the exact syntax, the parameters required, and a
+practical command-line example to execute this effect.</p>
+<h2 id="understanding-the-floodfill-filter">Understanding the Floodfill
+Filter</h2>
+<p>The <code>floodfill</code> filter in FFmpeg works by taking a
+starting pixel coordinate <span class="math inline">\((x, y)\)</span>,
+checking if the color at that coordinate matches a specified target
+color, and then filling that entire connected region of similar pixels
+with a new destination color.</p>
+<p>To ensure predictable results, it is best to convert your video to
+the RGB color space before applying the filter, and then convert it back
+to YUV for standard video compatibility.</p>
+<h3 id="filter-parameters">Filter Parameters</h3>
+<p>The filter uses the following main parameters: *
+<strong><code>x</code></strong>: The horizontal coordinate of the
+starting pixel. * <strong><code>y</code></strong>: The vertical
+coordinate of the starting pixel. * <strong><code>s0</code>,
+<code>s1</code>, <code>s2</code></strong>: The source color values (RGB
+components) to match at the starting point. * <strong><code>d0</code>,
+<code>d1</code>, <code>d2</code></strong>: The destination color values
+(RGB components) to fill the area with.</p>
+<h2 id="practical-command-example">Practical Command Example</h2>
+<p>The following command selects a point at coordinates
+<code>x=100, y=150</code>, targets a black background
+(<code>0, 0, 0</code> in RGB), and fills the connected black area with
+solid red (<code>255, 0, 0</code>):</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;format=rgb24,floodfill=x=100:y=150:s0=0:s1=0:s2=0:d0=255:d1=0:d2=0,format=yuv420p&quot;</span> <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<h3 id="how-the-command-works">How the Command Works</h3>
+<ol type="1">
+<li><strong><code>format=rgb24</code></strong>: Converts the video frame
+pixel format to RGB. This makes defining source
+(<code>s0, s1, s2</code>) and destination (<code>d0, d1, d2</code>)
+colors highly intuitive using standard 0–255 RGB values.</li>
+<li><strong><code>floodfill=x=100:y=150...</code></strong>: Starts at
+pixel (100, 150). It looks for the color defined by <code>s0=0</code>
+(Red), <code>s1=0</code> (Green), and <code>s2=0</code> (Blue). It then
+floods that contiguous area with <code>d0=255</code> (Red),
+<code>d1=0</code> (Green), and <code>d2=0</code> (Blue).</li>
+<li><strong><code>format=yuv420p</code></strong>: Converts the pixel
+format back to YUV420p, which is the standard format required for
+compatibility with most media players.</li>
+<li><strong><code>-c:a copy</code></strong>: Copies the audio stream
+without re-encoding to save processing time.</li>
+</ol></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

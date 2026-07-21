@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create a Time-Lapse Video Using FFmpeg on Linux - ffmpeg</title>
+    <meta name="description" content="This guide provides a straightforward, step-by-step walkthrough for converting a directory of sequential images into a high-quality time-lapse video using FFmpeg on Linux. You will learn how to prepare your image files, run the core command, adjust frame">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/create-a-time-lapse-video-using-ffmpeg-on-linux">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Create a Time-Lapse Video Using FFmpeg on Linux - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/create-a-time-lapse-video-using-ffmpeg-on-linux" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This guide provides a straightforward, step-by-step walkthrough for converting a directory of sequential images into a high-quality time-lapse video using FFmpeg on Linux. You will learn how to prepare your image files, run the core command, adjust frame" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="create-a-time-lapse-video-using-ffmpeg-on-linux">Create a
+Time-Lapse Video Using FFmpeg on Linux</h1>
+<p>This guide provides a straightforward, step-by-step walkthrough for
+converting a directory of sequential images into a high-quality
+time-lapse video using FFmpeg on Linux. You will learn how to prepare
+your image files, run the core command, adjust frame rates, and optimize
+the output video format.</p>
+<h2 id="step-1-prepare-your-image-directory">Step 1: Prepare Your Image
+Directory</h2>
+<p>Before running FFmpeg, your images need to be organized in a single
+directory and follow a consistent, sequential naming pattern. FFmpeg
+uses these patterns to read the files in the correct chronological
+order.</p>
+<ul>
+<li><strong>Sequential Naming:</strong> Ensure your files are named
+using a consistent numbering scheme, such as
+<code>image_0001.jpg</code>, <code>image_0002.jpg</code>, etc.</li>
+<li><strong>Zero-Padding:</strong> Using zero-padded numbers (like
+<code>0001</code> instead of <code>1</code>) is highly recommended to
+prevent files from being read out of order (e.g., <code>10</code> coming
+right after <code>1</code> instead of <code>2</code>).</li>
+</ul>
+<p>If your files are randomly named, you can quickly batch-rename them
+in a Linux terminal using a simple loop:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="va">i</span><span class="op">=</span>1<span class="kw">;</span> <span class="cf">for</span> f <span class="kw">in</span> <span class="pp">*</span>.jpg<span class="kw">;</span> <span class="cf">do</span> <span class="fu">mv</span> <span class="st">&quot;</span><span class="va">$f</span><span class="st">&quot;</span> <span class="st">&quot;</span><span class="va">$(</span><span class="bu">printf</span> <span class="st">&quot;img_%04d.jpg&quot;</span> <span class="va">$i)</span><span class="st">&quot;</span><span class="kw">;</span> <span class="va">i</span><span class="op">=</span><span class="va">$((i</span><span class="op">+</span><span class="dv">1</span><span class="va">))</span><span class="kw">;</span> <span class="cf">done</span></span></code></pre></div>
+<h2 id="step-2-the-core-ffmpeg-command">Step 2: The Core FFmpeg
+Command</h2>
+<p>Once your images are organized, navigate to your directory in the
+terminal and execute the following command to generate your
+time-lapse:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-framerate</span> 24 <span class="at">-pattern_type</span> glob <span class="at">-i</span> <span class="st">&#39;*.jpg&#39;</span> <span class="at">-c:v</span> libx264 <span class="at">-pix_fmt</span> yuv420p output.mp4</span></code></pre></div>
+<h3 id="breakdown-of-the-command-options">Breakdown of the Command
+Options</h3>
+<ul>
+<li><strong><code>-framerate 24</code></strong>: Defines how many images
+are displayed per second. A value of 24 or 30 frames per second (fps)
+provides smooth video playback.</li>
+<li><strong><code>-pattern_type glob -i '*.jpg'</code></strong>: Tells
+FFmpeg to look for all files ending in <code>.jpg</code> and stitch them
+together in alphabetical order.</li>
+<li><strong><code>-c:v libx264</code></strong>: Sets the video codec to
+H.264, which offers excellent compression and universal compatibility
+across devices and web browsers.</li>
+<li><strong><code>-pix_fmt yuv420p</code></strong>: Specifies the pixel
+format. This specific format ensures that the output video plays
+correctly on standard media players, as many default camera pixel
+formats are incompatible with standard video players.</li>
+<li><strong><code>output.mp4</code></strong>: The final name of your
+generated time-lapse video file.</li>
+</ul>
+<h2 id="step-3-advanced-adjustments-optional">Step 3: Advanced
+Adjustments (Optional)</h2>
+<p>You can customize your time-lapse further by tweaking the quality,
+resolution, or handling strict numerical sequences.</p>
+<h3 id="alternative-input-method-strict-sequence">Alternative Input
+Method (Strict Sequence)</h3>
+<p>If you prefer not to use the <code>glob</code> pattern, you can tell
+FFmpeg to look for a specific number of digits using a placeholder:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-framerate</span> 30 <span class="at">-i</span> img_%04d.jpg <span class="at">-c:v</span> libx264 <span class="at">-pix_fmt</span> yuv420p output.mp4</span></code></pre></div>
+<p>In this scenario, <code>%04d</code> tells FFmpeg to look for a
+four-digit, zero-padded integer sequence.</p>
+<h3 id="adjusting-video-quality">Adjusting Video Quality</h3>
+<p>To change the quality of the output video, use the Constant Rate
+Factor (<code>-crf</code>) flag. The scale ranges from 0 (lossless) to
+51 (worst quality). A value between 18 and 23 offers a great balance
+between visual quality and file size.</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-framerate</span> 24 <span class="at">-pattern_type</span> glob <span class="at">-i</span> <span class="st">&#39;*.jpg&#39;</span> <span class="at">-c:v</span> libx264 <span class="at">-crf</span> 20 <span class="at">-pix_fmt</span> yuv420p high_quality.mp4</span></code></pre></div>
+<h3 id="handling-odd-dimension-images">Handling Odd-Dimension
+Images</h3>
+<p>H.264 requires the video width and height to be divisible by 2. If
+your images have odd dimensions, FFmpeg will throw an error. You can fix
+this on the fly by adding a scale filter that forces divisible
+dimensions:</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-framerate</span> 24 <span class="at">-pattern_type</span> glob <span class="at">-i</span> <span class="st">&#39;*.jpg&#39;</span> <span class="at">-c:v</span> libx264 <span class="at">-vf</span> <span class="st">&quot;scale=trunc(iw/2)*2:trunc(ih/2)*2&quot;</span> <span class="at">-pix_fmt</span> yuv420p output.mp4</span></code></pre></div></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

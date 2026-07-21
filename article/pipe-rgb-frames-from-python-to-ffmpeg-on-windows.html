@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pipe RGB Frames from Python to FFmpeg on Windows - ffmpeg</title>
+    <meta name="description" content="This article explains how to efficiently stream raw RGB video frames generated in a Python script directly into FFmpeg on a Windows operating system using subprocesses. By leveraging Python's subprocess module, you can pipe raw image data directly into F">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/pipe-rgb-frames-from-python-to-ffmpeg-on-windows">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Pipe RGB Frames from Python to FFmpeg on Windows - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/pipe-rgb-frames-from-python-to-ffmpeg-on-windows" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article explains how to efficiently stream raw RGB video frames generated in a Python script directly into FFmpeg on a Windows operating system using subprocesses. By leveraging Python's subprocess module, you can pipe raw image data directly into F" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="pipe-rgb-frames-from-python-to-ffmpeg-on-windows">Pipe RGB
+Frames from Python to FFmpeg on Windows</h1>
+<p>This article explains how to efficiently stream raw RGB video frames
+generated in a Python script directly into FFmpeg on a Windows operating
+system using subprocesses. By leveraging Python’s
+<code>subprocess</code> module, you can pipe raw image data directly
+into FFmpeg’s standard input (<code>stdin</code>), avoiding the need to
+write temporary image files to your disk and significantly improving
+video encoding performance.</p>
+<h3 id="prerequisites">Prerequisites</h3>
+<p>To follow this guide, you must have the following installed on your
+Windows machine: 1. <strong>Python 3.x</strong> (with <code>numpy</code>
+installed for frame generation). 2. <strong>FFmpeg</strong> (ensuring
+the <code>ffmpeg</code> executable is added to your Windows System
+PATH).</p>
+<h3 id="the-python-implementation">The Python Implementation</h3>
+<p>To pipe frames to FFmpeg, you need to launch the FFmpeg process from
+Python, configure it to accept raw video from <code>stdin</code>, and
+then write the raw pixel bytes of each frame sequentially into the
+process’s write pipe.</p>
+<p>Here is a complete, ready-to-run script that generates a 5-second
+synthetic video:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> subprocess</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> main():</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Define video properties</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>    width <span class="op">=</span> <span class="dv">1920</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>    height <span class="op">=</span> <span class="dv">1080</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>    fps <span class="op">=</span> <span class="dv">30</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>    duration_seconds <span class="op">=</span> <span class="dv">5</span></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>    total_frames <span class="op">=</span> fps <span class="op">*</span> duration_seconds</span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Define the FFmpeg command</span></span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>    <span class="co"># We use a list of arguments for clean execution on Windows</span></span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>    ffmpeg_cmd <span class="op">=</span> [</span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>        <span class="st">&#39;ffmpeg&#39;</span>,</span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a>        <span class="st">&#39;-y&#39;</span>,                         <span class="co"># Overwrite output file if it exists</span></span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a>        <span class="st">&#39;-f&#39;</span>, <span class="st">&#39;rawvideo&#39;</span>,             <span class="co"># Tell FFmpeg the input is raw video</span></span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a>        <span class="st">&#39;-vcodec&#39;</span>, <span class="st">&#39;rawvideo&#39;</span>,</span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a>        <span class="st">&#39;-pix_fmt&#39;</span>, <span class="st">&#39;rgb24&#39;</span>,          <span class="co"># Pixel format of the raw input</span></span>
+<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a>        <span class="st">&#39;-s&#39;</span>, <span class="ss">f&#39;</span><span class="sc">{</span>width<span class="sc">}</span><span class="ss">x</span><span class="sc">{</span>height<span class="sc">}</span><span class="ss">&#39;</span>,     <span class="co"># Resolution of the input</span></span>
+<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a>        <span class="st">&#39;-r&#39;</span>, <span class="bu">str</span>(fps),               <span class="co"># Framerate of the input</span></span>
+<span id="cb1-22"><a href="#cb1-22" aria-hidden="true" tabindex="-1"></a>        <span class="st">&#39;-i&#39;</span>, <span class="st">&#39;-&#39;</span>,                    <span class="co"># &#39;-&#39; tells FFmpeg to read from stdin</span></span>
+<span id="cb1-23"><a href="#cb1-23" aria-hidden="true" tabindex="-1"></a>        <span class="st">&#39;-c:v&#39;</span>, <span class="st">&#39;libx264&#39;</span>,            <span class="co"># Encode output using H.264</span></span>
+<span id="cb1-24"><a href="#cb1-24" aria-hidden="true" tabindex="-1"></a>        <span class="st">&#39;-pix_fmt&#39;</span>, <span class="st">&#39;yuv420p&#39;</span>,        <span class="co"># Output pixel format for maximum compatibility</span></span>
+<span id="cb1-25"><a href="#cb1-25" aria-hidden="true" tabindex="-1"></a>        <span class="st">&#39;-crf&#39;</span>, <span class="st">&#39;23&#39;</span>,                 <span class="co"># Constant Rate Factor (quality scale)</span></span>
+<span id="cb1-26"><a href="#cb1-26" aria-hidden="true" tabindex="-1"></a>        <span class="st">&#39;output.mp4&#39;</span>                  <span class="co"># Output filename</span></span>
+<span id="cb1-27"><a href="#cb1-27" aria-hidden="true" tabindex="-1"></a>    ]</span>
+<span id="cb1-28"><a href="#cb1-28" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-29"><a href="#cb1-29" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Start the FFmpeg subprocess</span></span>
+<span id="cb1-30"><a href="#cb1-30" aria-hidden="true" tabindex="-1"></a>    <span class="co"># stdin=subprocess.PIPE allows us to write bytes directly to the process</span></span>
+<span id="cb1-31"><a href="#cb1-31" aria-hidden="true" tabindex="-1"></a>    process <span class="op">=</span> subprocess.Popen(ffmpeg_cmd, stdin<span class="op">=</span>subprocess.PIPE)</span>
+<span id="cb1-32"><a href="#cb1-32" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-33"><a href="#cb1-33" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="st">&quot;Streaming frames to FFmpeg...&quot;</span>)</span>
+<span id="cb1-34"><a href="#cb1-34" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-35"><a href="#cb1-35" aria-hidden="true" tabindex="-1"></a>    <span class="cf">try</span>:</span>
+<span id="cb1-36"><a href="#cb1-36" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> frame_idx <span class="kw">in</span> <span class="bu">range</span>(total_frames):</span>
+<span id="cb1-37"><a href="#cb1-37" aria-hidden="true" tabindex="-1"></a>            <span class="co"># Generate a dummy RGB frame (moving color gradient)</span></span>
+<span id="cb1-38"><a href="#cb1-38" aria-hidden="true" tabindex="-1"></a>            <span class="co"># A 3D numpy array of shape (height, width, 3) representing RGB channels</span></span>
+<span id="cb1-39"><a href="#cb1-39" aria-hidden="true" tabindex="-1"></a>            frame <span class="op">=</span> np.zeros((height, width, <span class="dv">3</span>), dtype<span class="op">=</span>np.uint8)</span>
+<span id="cb1-40"><a href="#cb1-40" aria-hidden="true" tabindex="-1"></a>            color_shift <span class="op">=</span> <span class="bu">int</span>((frame_idx <span class="op">/</span> total_frames) <span class="op">*</span> <span class="dv">255</span>)</span>
+<span id="cb1-41"><a href="#cb1-41" aria-hidden="true" tabindex="-1"></a>            </span>
+<span id="cb1-42"><a href="#cb1-42" aria-hidden="true" tabindex="-1"></a>            <span class="co"># Fill channels with some dynamic patterns</span></span>
+<span id="cb1-43"><a href="#cb1-43" aria-hidden="true" tabindex="-1"></a>            frame[:, :, <span class="dv">0</span>] <span class="op">=</span> color_shift                   <span class="co"># Red channel</span></span>
+<span id="cb1-44"><a href="#cb1-44" aria-hidden="true" tabindex="-1"></a>            frame[:, :, <span class="dv">1</span>] <span class="op">=</span> (color_shift <span class="op">+</span> <span class="dv">100</span>) <span class="op">%</span> <span class="dv">256</span>     <span class="co"># Green channel</span></span>
+<span id="cb1-45"><a href="#cb1-45" aria-hidden="true" tabindex="-1"></a>            </span>
+<span id="cb1-46"><a href="#cb1-46" aria-hidden="true" tabindex="-1"></a>            <span class="co"># Convert the numpy array to raw bytes and write to FFmpeg&#39;s stdin</span></span>
+<span id="cb1-47"><a href="#cb1-47" aria-hidden="true" tabindex="-1"></a>            process.stdin.write(frame.tobytes())</span>
+<span id="cb1-48"><a href="#cb1-48" aria-hidden="true" tabindex="-1"></a>            </span>
+<span id="cb1-49"><a href="#cb1-49" aria-hidden="true" tabindex="-1"></a>    <span class="cf">except</span> <span class="pp">IOError</span> <span class="im">as</span> e:</span>
+<span id="cb1-50"><a href="#cb1-50" aria-hidden="true" tabindex="-1"></a>        <span class="bu">print</span>(<span class="ss">f&quot;Pipe broken or FFmpeg closed unexpectedly: </span><span class="sc">{</span>e<span class="sc">}</span><span class="ss">&quot;</span>)</span>
+<span id="cb1-51"><a href="#cb1-51" aria-hidden="true" tabindex="-1"></a>    <span class="cf">finally</span>:</span>
+<span id="cb1-52"><a href="#cb1-52" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Close the stdin pipe to signal End-Of-File (EOF) to FFmpeg</span></span>
+<span id="cb1-53"><a href="#cb1-53" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> process.stdin:</span>
+<span id="cb1-54"><a href="#cb1-54" aria-hidden="true" tabindex="-1"></a>            process.stdin.close()</span>
+<span id="cb1-55"><a href="#cb1-55" aria-hidden="true" tabindex="-1"></a>        </span>
+<span id="cb1-56"><a href="#cb1-56" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Wait for FFmpeg to finish writing the output file</span></span>
+<span id="cb1-57"><a href="#cb1-57" aria-hidden="true" tabindex="-1"></a>        process.wait()</span>
+<span id="cb1-58"><a href="#cb1-58" aria-hidden="true" tabindex="-1"></a>        <span class="bu">print</span>(<span class="st">&quot;Video encoding complete.&quot;</span>)</span>
+<span id="cb1-59"><a href="#cb1-59" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-60"><a href="#cb1-60" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> <span class="va">__name__</span> <span class="op">==</span> <span class="st">&#39;__main__&#39;</span>:</span>
+<span id="cb1-61"><a href="#cb1-61" aria-hidden="true" tabindex="-1"></a>    main()</span></code></pre></div>
+<h3 id="key-parameters-explained">Key Parameters Explained</h3>
+<ul>
+<li><strong><code>-f rawvideo</code> and
+<code>-pix_fmt rgb24</code></strong>: These tell FFmpeg not to look for
+file headers (like PNG or JPEG) and instead expect a continuous stream
+of raw 24-bit RGB bytes (8 bits per channel: Red, Green, Blue).</li>
+<li><strong><code>-s 1920x1080</code></strong>: Because raw video has no
+header metadata, you must explicitly tell FFmpeg the resolution of each
+incoming frame so it knows where to split the byte stream.</li>
+<li><strong><code>-i -</code></strong>: The hyphen tells FFmpeg that the
+input file is coming from standard input (<code>stdin</code>) instead of
+a physical file on the disk.</li>
+<li><strong><code>frame.tobytes()</code></strong>: In Python, you must
+convert your image data (typically a NumPy array) into raw, contiguous
+bytes before writing it to the <code>stdin</code> buffer.</li>
+<li><strong><code>process.stdin.close()</code></strong>: Closing the
+stream is crucial. It tells FFmpeg that no more frames are coming,
+allowing it to finalize the <code>.mp4</code> container and exit
+cleanly.</li>
+</ul></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

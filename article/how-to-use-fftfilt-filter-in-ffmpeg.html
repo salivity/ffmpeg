@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Use fftfilt Filter in FFmpeg - ffmpeg</title>
+    <meta name="description" content="The fftfilt filter in FFmpeg is a powerful video filter that processes video frames in the frequency domain using the 2D Fast Fourier Transform (FFT). This article provides a clear, practical guide on how to use fftfilt to apply custom frequency-domain e">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/how-to-use-fftfilt-filter-in-ffmpeg">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Use fftfilt Filter in FFmpeg - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/how-to-use-fftfilt-filter-in-ffmpeg" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="The fftfilt filter in FFmpeg is a powerful video filter that processes video frames in the frequency domain using the 2D Fast Fourier Transform (FFT). This article provides a clear, practical guide on how to use fftfilt to apply custom frequency-domain e" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="how-to-use-fftfilt-filter-in-ffmpeg">How to Use fftfilt Filter
+in FFmpeg</h1>
+<p>The <code>fftfilt</code> filter in FFmpeg is a powerful video filter
+that processes video frames in the frequency domain using the 2D Fast
+Fourier Transform (FFT). This article provides a clear, practical guide
+on how to use <code>fftfilt</code> to apply custom frequency-domain
+effects, such as blurring, sharpening, and noise reduction, by
+explaining its key parameters and providing copy-pasteable command
+examples.</p>
+<h3 id="understanding-fftfilt-parameters-and-variables">Understanding
+fftfilt Parameters and Variables</h3>
+<p>The <code>fftfilt</code> filter works by transforming a video frame
+from the spatial domain (pixels) into the frequency domain
+(frequencies), applying a mathematical expression to modify those
+frequencies, and then transforming the frame back.</p>
+<p>To control how frequencies are modified, you can use the following
+primary parameters:</p>
+<ul>
+<li><strong><code>dc_func</code></strong>: Specifies the expression for
+the DC (Direct Current) coefficient, which represents the average
+brightness of the image (the 0-frequency component).</li>
+<li><strong><code>weight_func</code></strong>: Specifies the expression
+for the AC (Alternating Current) coefficients, which represent the high
+and low-frequency details of the image.</li>
+</ul>
+<p>Within these expressions, you can use several built-in variables: *
+<strong><code>X</code> and <code>Y</code></strong>: The horizontal and
+vertical coordinates of the current frequency coefficient. *
+<strong><code>W</code> and <code>H</code></strong>: The width and height
+of the frequency plane. * <strong><code>val</code></strong>: The
+original value of the frequency coefficient at the current
+coordinates.</p>
+<hr />
+<h3 id="practical-examples-of-fftfilt">Practical Examples of
+fftfilt</h3>
+<p>Because the lowest frequencies are located near the origin
+<code>(0,0)</code> of the frequency domain, you can use the distance
+formula <code>hypot(X,Y)</code> to target specific frequency ranges.</p>
+<h4 id="low-pass-filter-blurringsmoothing">1. Low-Pass Filter
+(Blurring/Smoothing)</h4>
+<p>A low-pass filter allows low frequencies to pass through while
+blocking high frequencies (which contain sharp details and noise). This
+results in a blurred image.</p>
+<p>To keep only the frequencies within a distance of 30 from the
+origin:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;fftfilt=weight_func=&#39;if(lt(hypot(X,Y),30),val,0)&#39;&quot;</span> output.mp4</span></code></pre></div>
+<ul>
+<li><strong>How it works</strong>: The expression checks if the
+Euclidean distance of the coordinate <code>(X,Y)</code> from the origin
+is less than 30 (<code>lt(hypot(X,Y),30)</code>). If true, it keeps the
+original frequency value (<code>val</code>); otherwise, it sets it to
+<code>0</code>.</li>
+</ul>
+<h4 id="high-pass-filter-edge-detectionsharpening">2. High-Pass Filter
+(Edge Detection/Sharpening)</h4>
+<p>A high-pass filter blocks low frequencies (flat areas) and allows
+high frequencies (edges and fine details) to pass. This is useful for
+edge detection or sharpening.</p>
+<p>To block low frequencies within a radius of 20 and keep everything
+else:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;fftfilt=dc_func=&#39;128&#39;:weight_func=&#39;if(gt(hypot(X,Y),20),val,0)&#39;&quot;</span> output.mp4</span></code></pre></div>
+<ul>
+<li><strong>How it works</strong>: Setting <code>dc_func='128'</code>
+establishes a neutral gray background baseline, while the
+<code>weight_func</code> zeroes out any low-frequency components close
+to the origin, leaving only the sharp edges visible.</li>
+</ul>
+<h4 id="plane-specific-filtering">3. Plane-Specific Filtering</h4>
+<p>By default, the filter applies the same expressions to all color
+planes (Luma and Chroma). You can target specific planes using
+plane-specific parameters like <code>weight_func_u</code> and
+<code>weight_func_v</code> for chroma channels.</p>
+<p>To blur only the color (chrominance) channels while keeping the
+brightness (luminance) channel sharp:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;fftfilt=weight_func_u=&#39;if(lt(hypot(X,Y),15),val,0)&#39;:weight_func_v=&#39;if(lt(hypot(X,Y),15),val,0)&#39;&quot;</span> output.mp4</span></code></pre></div></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

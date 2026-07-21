@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fix PCR Accuracy Errors in FFmpeg Broadcast Streams - ffmpeg</title>
+    <meta name="description" content="Program Clock Reference (PCR) accuracy errors in FFmpeg-generated broadcast streams can cause playback stuttering, audio-video desynchronization, and compliance failures in hardware receivers. This article provides a straightforward guide on how to resol">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/fix-pcr-accuracy-errors-in-ffmpeg-broadcast-streams">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Fix PCR Accuracy Errors in FFmpeg Broadcast Streams - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/fix-pcr-accuracy-errors-in-ffmpeg-broadcast-streams" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Program Clock Reference (PCR) accuracy errors in FFmpeg-generated broadcast streams can cause playback stuttering, audio-video desynchronization, and compliance failures in hardware receivers. This article provides a straightforward guide on how to resol" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="fix-pcr-accuracy-errors-in-ffmpeg-broadcast-streams">Fix PCR
+Accuracy Errors in FFmpeg Broadcast Streams</h1>
+<p>Program Clock Reference (PCR) accuracy errors in FFmpeg-generated
+broadcast streams can cause playback stuttering, audio-video
+desynchronization, and compliance failures in hardware receivers. This
+article provides a straightforward guide on how to resolve these
+synchronization errors by properly configuring FFmpeg’s multiplexing
+(muxing), bitrate, and PCR-specific parameters to produce compliant
+MPEG-TS streams.</p>
+<h2 id="understand-the-cause-of-pcr-accuracy-errors">Understand the
+Cause of PCR Accuracy Errors</h2>
+<p>In MPEG-TS (Transport Stream) containers used for broadcasting, the
+PCR is a high-frequency clock signal embedded in the stream to
+synchronize the receiver’s internal clock with the encoder. PCR accuracy
+errors typically occur when: * The stream is encoded with a Variable
+Bitrate (VBR), causing unpredictable packet delivery. * The multiplexer
+does not output packets at a steady, predictable rate. * The interval
+between PCR injections exceeds the broadcast standard limit (usually
+40ms, though many professional systems require 20ms or less).</p>
+<p>To fix these errors, you must force FFmpeg to generate a strict,
+Constant Bitrate (CBR) stream with precise clock intervals.</p>
+<h2 id="step-1-enforce-constant-bitrate-cbr-encoding">Step 1: Enforce
+Constant Bitrate (CBR) Encoding</h2>
+<p>FFmpeg must be configured to output a strict CBR video stream using
+the Video Buffer Verifier (VBV). This ensures the video data rate
+matches the transport stream container rate.</p>
+<p>To enforce CBR, set the target bitrate (<code>-b:v</code>), the
+maximum bitrate (<code>-maxrate</code>), and the buffer size
+(<code>-bufsize</code>) to the same proportional values.</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">-b:v</span> 4000k <span class="at">-maxrate</span> 4000k <span class="at">-bufsize</span> 2000k</span></code></pre></div>
+<p><em>Note: A good rule of thumb is to set <code>-bufsize</code> to
+between 0.5 to 2 seconds worth of video data (e.g., 2000k to 4000k for a
+4000k stream).</em></p>
+<h2 id="step-2-set-a-constant-muxrate">Step 2: Set a Constant
+Muxrate</h2>
+<p>By default, FFmpeg’s MPEG-TS muxer dynamically adjusts the output
+bandwidth. For broadcast-compliant streams, you must define a fixed,
+total output bitrate for the entire container using the
+<code>-muxrate</code> flag.</p>
+<p>The <code>-muxrate</code> must be higher than the combined bitrates
+of your video, audio, and metadata streams to account for container
+overhead.</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">-f</span> mpegts <span class="at">-muxrate</span> 5000k</span></code></pre></div>
+<p>If your video is 4000k and audio is 192k, setting
+<code>-muxrate 5000k</code> leaves plenty of overhead. FFmpeg will
+automatically insert null packets to pad the stream to exactly 5 Mbps,
+which keeps the transmission timing precise.</p>
+<h2 id="step-3-configure-the-pcr-injection-period">Step 3: Configure the
+PCR Injection Period</h2>
+<p>To satisfy broadcast analyzer requirements, the PCR should be sent
+frequently and at regular intervals. By default, FFmpeg may not write
+PCR packets often enough.</p>
+<p>Use the <code>-pcr_period</code> option to define the maximum
+interval (in milliseconds) between PCR transmissions. For broadcast
+compatibility, set this to <strong>20ms</strong>.</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">-pcr_period</span> 20</span></code></pre></div>
+<h2 id="step-4-align-pcr-to-every-packet-optional">Step 4: Align PCR to
+Every Packet (Optional)</h2>
+<p>If your broadcast equipment is highly sensitive, you can force the
+PCR to be written on every Packetized Elementary Stream (PES) packet.
+This ensures the receiver has a constant stream of timing
+references.</p>
+<p>Add the following flag to your command:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">-mpegts_flags</span> +pcr_every_pes</span></code></pre></div>
+<h2 id="complete-command-example">Complete Command Example</h2>
+<p>Combine these parameters into a single FFmpeg command to generate a
+compliant, PCR-accurate broadcast stream:</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="dt">\</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">-c:v</span> libx264 <span class="at">-b:v</span> 4000k <span class="at">-maxrate</span> 4000k <span class="at">-bufsize</span> 2000k <span class="at">-nal-hrd</span> cbr <span class="dt">\</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">-c:a</span> aac <span class="at">-b:a</span> 192k <span class="dt">\</span></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">-f</span> mpegts <span class="at">-muxrate</span> 5000k <span class="at">-pcr_period</span> 20 <span class="at">-mpegts_flags</span> +pcr_every_pes <span class="dt">\</span></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>  output.ts</span></code></pre></div>
+<h3 id="key-parameter-breakdown">Key Parameter Breakdown:</h3>
+<ul>
+<li><code>-nal-hrd cbr</code>: Instructs the H.264 encoder to output
+compliant CBR NAL HRD parameters.</li>
+<li><code>-muxrate 5000k</code>: Sets the absolute, fixed output speed
+of the transport stream.</li>
+<li><code>-pcr_period 20</code>: Forces FFmpeg to insert a PCR timing
+packet at least every 20 milliseconds.</li>
+<li><code>-mpegts_flags +pcr_every_pes</code>: Ensures tight
+synchronization by tying PCR to every PES packet.</li>
+</ul></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

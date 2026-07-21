@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FFmpeg Speed Up Video and Keep Audio Synced - ffmpeg</title>
+    <meta name="description" content="Changing the speed of a video file using FFmpeg requires adjusting both the video frames and the audio track simultaneously to prevent synchronization issues. This article provides the exact commands and filter configurations needed to accelerate your vi">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/ffmpeg-speed-up-video-and-keep-audio-synced">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="FFmpeg Speed Up Video and Keep Audio Synced - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/ffmpeg-speed-up-video-and-keep-audio-synced" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Changing the speed of a video file using FFmpeg requires adjusting both the video frames and the audio track simultaneously to prevent synchronization issues. This article provides the exact commands and filter configurations needed to accelerate your vi" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="ffmpeg-speed-up-video-and-keep-audio-synced">FFmpeg Speed Up
+Video and Keep Audio Synced</h1>
+<p>Changing the speed of a video file using FFmpeg requires adjusting
+both the video frames and the audio track simultaneously to prevent
+synchronization issues. This article provides the exact commands and
+filter configurations needed to accelerate your video while keeping the
+audio perfectly in sync, whether you are doubling the speed or applying
+a custom speed multiplier.</p>
+<h2 id="the-basic-command-for-2x-speed">The Basic Command for 2x
+Speed</h2>
+<p>To speed up a video, FFmpeg uses the <code>setpts</code> video filter
+to manipulate presentation timestamps and the <code>atempo</code> audio
+filter to adjust the audio speed.</p>
+<p>To double the speed (2x) of a video and keep the audio synced, use
+the following command:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-filter_complex</span> <span class="st">&quot;[0:v]setpts=0.5*PTS[v];[0:a]atempo=2.0[a]&quot;</span> <span class="at">-map</span> <span class="st">&quot;[v]&quot;</span> <span class="at">-map</span> <span class="st">&quot;[a]&quot;</span> output.mp4</span></code></pre></div>
+<h3 id="how-it-works">How It Works:</h3>
+<ul>
+<li><strong><code>-filter_complex</code></strong>: This flag allows you
+to apply multiple filters to the video and audio streams at the same
+time.</li>
+<li><strong><code>[0:v]setpts=0.5*PTS[v]</code></strong>: This scales
+the video presentation timestamps (PTS) by <code>0.5</code>. Reducing
+the timestamps by half makes the frames display twice as fast.</li>
+<li><strong><code>[0:a]atempo=2.0[a]</code></strong>: This speeds up the
+audio to <code>2.0</code> times its original speed without changing the
+pitch.</li>
+<li><strong><code>-map "[v]" -map "[a]"</code></strong>: This tells
+FFmpeg to combine the processed video stream <code>[v]</code> and audio
+stream <code>[a]</code> into the final output file.</li>
+</ul>
+<hr />
+<h2 id="customizing-the-speed-multiplier">Customizing the Speed
+Multiplier</h2>
+<p>If you want to speed up your video by a factor other than 2, you must
+calculate the correct values for both the video and audio filters.</p>
+<p>The formula for the video filter is
+<code>1 / Speed Multiplier</code>. The formula for the audio filter is
+simply the <code>Speed Multiplier</code> itself.</p>
+<h3 id="example-1.5x-speed">Example: 1.5x Speed</h3>
+<ul>
+<li><strong>Video PTS modifier</strong>:
+<code>1 / 1.5 = 0.67</code></li>
+<li><strong>Audio tempo</strong>: <code>1.5</code></li>
+</ul>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-filter_complex</span> <span class="st">&quot;[0:v]setpts=0.67*PTS[v];[0:a]atempo=1.5[a]&quot;</span> <span class="at">-map</span> <span class="st">&quot;[v]&quot;</span> <span class="at">-map</span> <span class="st">&quot;[a]&quot;</span> output.mp4</span></code></pre></div>
+<hr />
+<h2 id="speeding-up-beyond-2x-speed">Speeding Up Beyond 2x Speed</h2>
+<p>The <code>atempo</code> audio filter in FFmpeg has a limitation: it
+only accepts values between <code>0.5</code> and <code>2.0</code>. If
+you want to speed up your video by more than double, you must chain
+multiple <code>atempo</code> filters together.</p>
+<h3 id="example-4x-speed">Example: 4x Speed</h3>
+<ul>
+<li><strong>Video PTS modifier</strong>: <code>1 / 4 = 0.25</code></li>
+<li><strong>Audio tempo</strong>: <code>2.0 * 2.0 = 4.0</code></li>
+</ul>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-filter_complex</span> <span class="st">&quot;[0:v]setpts=0.25*PTS[v];[0:a]atempo=2.0,atempo=2.0[a]&quot;</span> <span class="at">-map</span> <span class="st">&quot;[v]&quot;</span> <span class="at">-map</span> <span class="st">&quot;[a]&quot;</span> output.mp4</span></code></pre></div>
+<h3 id="example-8x-speed">Example: 8x Speed</h3>
+<ul>
+<li><strong>Video PTS modifier</strong>: <code>1 / 8 = 0.125</code></li>
+<li><strong>Audio tempo</strong>:
+<code>2.0 * 2.0 * 2.0 = 8.0</code></li>
+</ul>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-filter_complex</span> <span class="st">&quot;[0:v]setpts=0.125*PTS[v];[0:a]atempo=2.0,atempo=2.0,atempo=2.0[a]&quot;</span> <span class="at">-map</span> <span class="st">&quot;[v]&quot;</span> <span class="at">-map</span> <span class="st">&quot;[a]&quot;</span> output.mp4</span></code></pre></div>
+<hr />
+<h2 id="optimizing-the-process-without-re-encoding-audio">Optimizing the
+Process (Without Re-encoding Audio)</h2>
+<p>If you do not care about keeping the audio track and want a faster
+render process, you can discard the audio entirely. This allows FFmpeg
+to process the video much quicker since it does not have to recalculate
+audio waveforms:</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-an</span> <span class="at">-filter:v</span> <span class="st">&quot;setpts=0.5*PTS&quot;</span> output.mp4</span></code></pre></div>
+<p><em>(The <code>-an</code> flag disables audio entirely).</em></p></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

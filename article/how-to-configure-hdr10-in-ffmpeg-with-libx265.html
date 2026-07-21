@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Configure HDR10 in FFmpeg with libx265 - ffmpeg</title>
+    <meta name="description" content="Encoding High Dynamic Range (HDR) video requires precise metadata signaling to ensure compatible displays render colors and brightness levels correctly. This article provides a straightforward guide on how to configure the HDR10 option using the libx265">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/how-to-configure-hdr10-in-ffmpeg-with-libx265">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Configure HDR10 in FFmpeg with libx265 - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/how-to-configure-hdr10-in-ffmpeg-with-libx265" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Encoding High Dynamic Range (HDR) video requires precise metadata signaling to ensure compatible displays render colors and brightness levels correctly. This article provides a straightforward guide on how to configure the HDR10 option using the libx265" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="how-to-configure-hdr10-in-ffmpeg-with-libx265">How to Configure
+HDR10 in FFmpeg with libx265</h1>
+<p>Encoding High Dynamic Range (HDR) video requires precise metadata
+signaling to ensure compatible displays render colors and brightness
+levels correctly. This article provides a straightforward guide on how
+to configure the HDR10 option using the <code>libx265</code> encoder in
+FFmpeg, covering the necessary color space parameters, 10-bit pixel
+formatting, and mastering display metadata.</p>
+<p>To encode a video in HDR10, you must configure three key components:
+10-bit color depth, VUI (Video Usability Information) color parameters,
+and HDR10-specific metadata (Mastering Display Color Volume and Content
+Light Level) via <code>libx265</code> parameters.</p>
+<h3 id="set-the-pixel-format-to-10-bit">1. Set the Pixel Format to
+10-bit</h3>
+<p>HDR10 requires a 10-bit color depth. In FFmpeg, this is specified
+using the <code>-pix_fmt</code> flag. For standard HDR10 compatibility,
+use:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">-pix_fmt</span> yuv420p10le</span></code></pre></div>
+<h3 id="configure-vui-color-parameters">2. Configure VUI Color
+Parameters</h3>
+<p>You must tell the decoder how to interpret the color space. HDR10
+uses the BT.2020 color primaries and the SMPTE ST 2084 (PQ) transfer
+characteristics. Add the following flags to your FFmpeg command:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">-color_primaries</span> bt2020 <span class="at">-color_trc</span> smpte2084 <span class="at">-colorspace</span> bt2020nc</span></code></pre></div>
+<h3 id="add-hdr10-metadata-via-libx265-params">3. Add HDR10 Metadata via
+libx265-params</h3>
+<p>The <code>libx265</code> encoder requires specific mastering metadata
+to optimize the video for HDR displays. This is passed through the
+<code>-x265-params</code> argument.</p>
+<p>The critical parameters are: * <code>hdr10=1</code>: Enables HDR10
+routing and flags the stream as HDR10. * <code>mastering-display</code>:
+Defines the color primaries, white point, and luminance range of the
+mastering monitor. The values are expressed in increments of 0.00002 for
+coordinates, and 0.0001 cd/m² (nits) for luminance. *
+<code>max-cll</code>: Defines the Maximum Content Light Level (MaxCLL)
+and Maximum Frame-Average Light Level (MaxFALL) in nits.</p>
+<p>Here is an example string for a standard 1000-nit DCI-P3 mastering
+monitor:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">-x265-params</span> <span class="st">&quot;hdr10=1:mastering-display=G(13250,34500)B(7500,3000)R(34000,16000)WP(15635,16450)L(10000000,1):max-cll=1000,400&quot;</span></span></code></pre></div>
+<h3 id="complete-command-example">Complete Command Example</h3>
+<p>Combining all these elements into a single FFmpeg command yields the
+following configuration:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-c:v</span> libx265 <span class="at">-crf</span> 18 <span class="dt">\</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>-pix_fmt yuv420p10le <span class="dt">\</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>-color_primaries bt2020 <span class="dt">\</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>-color_trc smpte2084 <span class="dt">\</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>-colorspace bt2020nc <span class="dt">\</span></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>-x265-params <span class="st">&quot;hdr10=1:mastering-display=G(13250,34500)B(7500,3000)R(34000,16000)WP(15635,16450)L(10000000,1):max-cll=1000,400&quot;</span> <span class="dt">\</span></span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>-c:a copy output.mp4</span></code></pre></div>
+<p>By applying these settings, the output file will contain the correct
+HDR10 flags and metadata, allowing HDR-compatible televisions, monitors,
+and media players to trigger HDR mode automatically.</p></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

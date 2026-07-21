@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Configure VP9 Color Space in FFmpeg with libvpx - ffmpeg</title>
+    <meta name="description" content="This guide explains how to properly configure color description parameters—including color primaries, transfer characteristics, matrix coefficients, and color range—when encoding video using the libvpx or libvpx-vp9 encoder in FFmpeg. Correctly defin">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/configure-vp9-color-space-in-ffmpeg-with-libvpx">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Configure VP9 Color Space in FFmpeg with libvpx - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/configure-vp9-color-space-in-ffmpeg-with-libvpx" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This guide explains how to properly configure color description parameters—including color primaries, transfer characteristics, matrix coefficients, and color range—when encoding video using the libvpx or libvpx-vp9 encoder in FFmpeg. Correctly defin" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="configure-vp9-color-space-in-ffmpeg-with-libvpx">Configure VP9
+Color Space in FFmpeg with libvpx</h1>
+<p>This guide explains how to properly configure color description
+parameters—including color primaries, transfer characteristics, matrix
+coefficients, and color range—when encoding video using the
+<code>libvpx</code> or <code>libvpx-vp9</code> encoder in FFmpeg.
+Correctly defining these parameters ensures that your WebM videos render
+with accurate, consistent colors across different web browsers, devices,
+and media players.</p>
+<p>To configure color descriptions in FFmpeg for <code>libvpx</code>,
+you must pass specific metadata flags during the encoding process.
+Without these flags, players may guess the color space, leading to
+washed-out colors or shifted hues.</p>
+<h3 id="key-color-parameter-flags">Key Color Parameter Flags</h3>
+<p>FFmpeg uses four primary arguments to define color properties. These
+flags work seamlessly with the <code>libvpx-vp9</code> encoder:</p>
+<ul>
+<li><strong><code>-color_primaries</code></strong>: Defines the color
+gamut (the range of colors the video can display). Common values include
+<code>bt709</code> (standard HD), <code>bt2020</code> (UHD/HDR), and
+<code>smpte170m</code> (NTSC/SD).</li>
+<li><strong><code>-color_trc</code></strong>: Defines the transfer
+characteristics, which dictate the gamma curve. Common values include
+<code>bt709</code> (standard HD), <code>smpte2084</code> (HDR10/PQ),
+<code>arib-std-b67</code> (HLG), and <code>iec61966-2-1</code>
+(sRGB).</li>
+<li><strong><code>-colorspace</code></strong>: Defines the matrix
+coefficients used to convert RGB colors to YUV. Common values include
+<code>bt709</code> (HD), <code>bt2020nc</code> (UHD non-constant
+luminance), and <code>smpte170m</code> (SD).</li>
+<li><strong><code>-color_range</code></strong>: Defines the luminance
+range. Use <code>tv</code> (or <code>limited</code>) for standard
+broadcast range (16-235 for 8-bit), or <code>pc</code> (or
+<code>jpeg</code>/<code>full</code>) for full range (0-255).</li>
+</ul>
+<h3 id="command-examples">Command Examples</h3>
+<h4 id="standard-hd-video-bt.709">1. Standard HD Video (BT.709)</h4>
+<p>For standard high-definition web video, you should explicitly tag the
+file as BT.709. This is the most common configuration for SDR (Standard
+Dynamic Range) content.</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-c:v</span> libvpx-vp9 <span class="at">-pix_fmt</span> yuv420p <span class="at">-colorspace</span> bt709 <span class="at">-color_primaries</span> bt709 <span class="at">-color_trc</span> bt709 <span class="at">-color_range</span> tv output.webm</span></code></pre></div>
+<h4 id="high-dynamic-range-video-hdr10-bt.2020">2. High Dynamic Range
+Video (HDR10 / BT.2020)</h4>
+<p>If you are encoding HDR content with the VP9 profile 2 (10-bit), you
+must use BT.2020 color primaries and the PQ (SMPTE 2084) transfer
+function.</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input_hdr.mp4 <span class="at">-c:v</span> libvpx-vp9 <span class="at">-pix_fmt</span> yuv420p10le <span class="at">-colorspace</span> bt2020nc <span class="at">-color_primaries</span> bt2020 <span class="at">-color_trc</span> smpte2084 <span class="at">-color_range</span> tv output_hdr.webm</span></code></pre></div>
+<h3 id="verifying-the-metadata">Verifying the Metadata</h3>
+<p>After encoding, you can verify that the color description parameters
+were written correctly to the container using <code>ffprobe</code>:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffprobe</span> <span class="at">-of</span> default=noprint_wrappers=1 <span class="at">-show_entries</span> stream=color_space,color_primaries,color_transfer,color_range output.webm</span></code></pre></div>
+<p>This command will output the detected color space properties,
+confirming that your <code>libvpx</code> output is correctly configured
+for accurate playback.</p></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

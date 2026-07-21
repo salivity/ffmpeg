@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Compile FFmpeg with AMD AMF Support on Windows - ffmpeg</title>
+    <meta name="description" content="This guide provides a straightforward, step-by-step walkthrough for compiling FFmpeg with AMD Advanced Media Framework (AMF) support on Windows. By enabling AMF, you can utilize your AMD Radeon graphics card for hardware-accelerated video encoding and de">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/compile-ffmpeg-with-amd-amf-support-on-windows">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Compile FFmpeg with AMD AMF Support on Windows - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/compile-ffmpeg-with-amd-amf-support-on-windows" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This guide provides a straightforward, step-by-step walkthrough for compiling FFmpeg with AMD Advanced Media Framework (AMF) support on Windows. By enabling AMF, you can utilize your AMD Radeon graphics card for hardware-accelerated video encoding and de" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="compile-ffmpeg-with-amd-amf-support-on-windows">Compile FFmpeg
+with AMD AMF Support on Windows</h1>
+<p>This guide provides a straightforward, step-by-step walkthrough for
+compiling FFmpeg with AMD Advanced Media Framework (AMF) support on
+Windows. By enabling AMF, you can utilize your AMD Radeon graphics card
+for hardware-accelerated video encoding and decoding, resulting in
+faster processing times and lower CPU usage.</p>
+<h3 id="prerequisites">Prerequisites</h3>
+<p>To compile FFmpeg on Windows, you will use the MSYS2 environment,
+which provides a Unix-like build interface and the necessary
+compilers.</p>
+<ol type="1">
+<li><p><strong>Install MSYS2:</strong> Download and run the installer
+from the official MSYS2 website.</p></li>
+<li><p><strong>Install Required Packages:</strong> Open the
+<strong>MSYS2 MinGW 64-bit</strong> terminal (do not use the MSYS
+terminal) and run the following command to update the package database
+and install the compiler toolchain, Git, and build tools:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">pacman</span> <span class="at">-Syu</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="ex">pacman</span> <span class="at">-S</span> mingw-w64-x86_64-toolchain git make pkg-config diffutils yasm nasm</span></code></pre></div></li>
+</ol>
+<h3 id="step-1-install-amd-amf-headers">Step 1: Install AMD AMF
+Headers</h3>
+<p>FFmpeg requires the AMF SDK headers to compile with AMF support.
+Because AMF is a header-only library, you only need to copy the official
+header files to your MSYS2 include directory.</p>
+<ol type="1">
+<li><p>In the MinGW 64 terminal, clone the AMD AMF repository:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">git</span> clone https://github.com/GPUOpen-LibrariesAndSDKs/AMF.git</span></code></pre></div></li>
+<li><p>Create the target AMF directory in your MSYS2 include folder:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="fu">mkdir</span> <span class="at">-p</span> /mingw64/include/AMF</span></code></pre></div></li>
+<li><p>Copy the header folders (<code>core</code> and
+<code>components</code>) into the new directory:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cp</span> <span class="at">-r</span> AMF/amf/public/include/<span class="pp">*</span> /mingw64/include/AMF/</span></code></pre></div></li>
+</ol>
+<h3 id="step-2-clone-the-ffmpeg-source-code">Step 2: Clone the FFmpeg
+Source Code</h3>
+<p>Clone the official FFmpeg git repository and navigate into the
+directory:</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="fu">git</span> clone https://git.ffmpeg.org/ffmpeg.git ffmpeg</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="bu">cd</span> ffmpeg</span></code></pre></div>
+<h3 id="step-3-configure-the-build">Step 3: Configure the Build</h3>
+<p>Configure the FFmpeg build environment. The crucial flag here is
+<code>--enable-amf</code>. You must also include
+<code>--enable-gpl</code> and <code>--enable-nonfree</code> because AMF
+compilation utilizes non-free components.</p>
+<p>Run the configure script with the following parameters:</p>
+<div class="sourceCode" id="cb6"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="ex">./configure</span> <span class="dt">\</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">--arch</span><span class="op">=</span>x86_64 <span class="dt">\</span></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">--target-os</span><span class="op">=</span>mingw32 <span class="dt">\</span></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">--enable-gpl</span> <span class="dt">\</span></span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">--enable-nonfree</span> <span class="dt">\</span></span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">--enable-amf</span> <span class="dt">\</span></span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">--extra-cflags</span><span class="op">=</span><span class="st">&quot;-I/mingw64/include&quot;</span> <span class="dt">\</span></span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>  <span class="at">--extra-ldflags</span><span class="op">=</span><span class="st">&quot;-L/mingw64/lib&quot;</span></span></code></pre></div>
+<p>Verify the output of the configuration script. Ensure that
+<code>amf</code> is listed under the enabled hardware accelerators /
+external libraries section.</p>
+<h3 id="step-4-compile-and-install">Step 4: Compile and Install</h3>
+<p>Once the configuration completes successfully, compile the source
+code. You can speed up the build process by using multiple CPU threads
+with the <code>-j</code> flag (replace <code>8</code> with the number of
+CPU cores you wish to allocate):</p>
+<div class="sourceCode" id="cb7"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="fu">make</span> <span class="at">-j8</span></span></code></pre></div>
+<p>After the compilation finishes, install the compiled binaries to your
+MSYS2 environment:</p>
+<div class="sourceCode" id="cb8"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="fu">make</span> install</span></code></pre></div>
+<h3 id="step-5-verify-the-installation">Step 5: Verify the
+Installation</h3>
+<p>To ensure that FFmpeg was built correctly and supports AMD AMF, run
+the following command:</p>
+<div class="sourceCode" id="cb9"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-encoders</span> <span class="kw">|</span> <span class="fu">grep</span> amf</span></code></pre></div>
+<p>You should see a list of AMF encoders, such as <code>h264_amf</code>
+and <code>hevc_amf</code>. You can now use these encoders in your FFmpeg
+commands to utilize AMD hardware acceleration.</p></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

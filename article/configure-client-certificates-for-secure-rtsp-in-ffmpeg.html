@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Configure Client Certificates for Secure RTSP in FFmpeg - ffmpeg</title>
+    <meta name="description" content="This article provides a quick guide on how to configure client certificates for secure RTSP (RTSPS) streams using FFmpeg. You will learn the exact command-line arguments required to authenticate your FFmpeg client using TLS certificates, ensuring a secur">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/configure-client-certificates-for-secure-rtsp-in-ffmpeg">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Configure Client Certificates for Secure RTSP in FFmpeg - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/configure-client-certificates-for-secure-rtsp-in-ffmpeg" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article provides a quick guide on how to configure client certificates for secure RTSP (RTSPS) streams using FFmpeg. You will learn the exact command-line arguments required to authenticate your FFmpeg client using TLS certificates, ensuring a secur" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1
+id="configure-client-certificates-for-secure-rtsp-in-ffmpeg">Configure
+Client Certificates for Secure RTSP in FFmpeg</h1>
+<p>This article provides a quick guide on how to configure client
+certificates for secure RTSP (RTSPS) streams using FFmpeg. You will
+learn the exact command-line arguments required to authenticate your
+FFmpeg client using TLS certificates, ensuring a secure, encrypted
+connection to your streaming server.</p>
+<h3 id="understanding-rtsps-and-client-authentication">Understanding
+RTSPS and Client Authentication</h3>
+<p>Secure RTSP (RTSPS) establishes a connection over TLS (Transport
+Layer Security). When a streaming server requires mutual TLS (mTLS) or
+client certificate authentication, the FFmpeg client must present a
+valid certificate and private key to verify its identity before the
+stream can be pulled or pushed.</p>
+<h3 id="prerequisites">Prerequisites</h3>
+<p>To configure secure RTSP, you need the following cryptographic files
+(typically in PEM format):</p>
+<ol type="1">
+<li><strong>Client Certificate (<code>client.crt</code>)</strong>: The
+certificate presented to the server.</li>
+<li><strong>Private Key (<code>client.key</code>)</strong>: The private
+key corresponding to the client certificate.</li>
+<li><strong>CA Certificate (<code>ca.crt</code>)</strong> <em>(Optional
+but recommended)</em>: The certificate authority file used to verify the
+streaming server’s identity.</li>
+</ol>
+<h3 id="ffmpeg-command-configuration">FFmpeg Command Configuration</h3>
+<p>FFmpeg handles TLS connections using underlying libraries like
+GnuTLS, OpenSSL, or SecureTransport. You pass the certificate and key
+files directly as inputs using FFmpeg’s TLS options.</p>
+<p>Here is the standard command structure to read a secure RTSP stream
+using client certificates:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-cert_file</span> client.crt <span class="at">-key_file</span> client.key <span class="at">-ca_file</span> ca.crt <span class="at">-i</span> rtsps://your-server-address:322/stream_path <span class="at">-c</span> copy output.mp4</span></code></pre></div>
+<h3 id="parameter-breakdown">Parameter Breakdown</h3>
+<ul>
+<li><strong><code>-cert_file &lt;path_to_cert&gt;</code></strong>:
+Specifies the path to your client certificate (PEM format).</li>
+<li><strong><code>-key_file &lt;path_to_key&gt;</code></strong>:
+Specifies the path to your client private key (PEM format).</li>
+<li><strong><code>-ca_file &lt;path_to_ca&gt;</code></strong>: Specifies
+the certificate authority file to validate the server’s SSL/TLS
+certificate.</li>
+<li><strong><code>-rtsp_transport tcp</code></strong>: (Optional) Forces
+FFmpeg to use TCP instead of UDP, which is highly recommended for stable
+TLS encapsulation.</li>
+<li><strong><code>rtsps://</code></strong>: Specifies the secure RTSP
+protocol. Note that RTSPS typically uses port 322 or 8554, depending on
+your server configuration.</li>
+</ul>
+<h3
+id="streamingpushing-an-rtsp-stream-with-certificates">Streaming/Pushing
+an RTSP Stream with Certificates</h3>
+<p>If you are publishing a secure stream to an RTSP server that requires
+client authentication, the syntax is similar, but the certificate
+options are applied to the output:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-cert_file</span> client.crt <span class="at">-key_file</span> client.key <span class="at">-ca_file</span> ca.crt <span class="at">-f</span> rtsp <span class="at">-rtsp_transport</span> tcp rtsps://your-server-address:322/live/stream</span></code></pre></div>
+<h3 id="troubleshooting-common-connection-issues">Troubleshooting Common
+Connection Issues</h3>
+<ul>
+<li><strong>File Format</strong>: Ensure both the certificate and the
+key are in PEM format. If you have a <code>.pfx</code> or
+<code>.p12</code> file, you must extract the certificate and key using
+OpenSSL before passing them to FFmpeg.</li>
+<li><strong>Permission Denied</strong>: Ensure the user running the
+FFmpeg command has read permissions for the certificate and key
+files.</li>
+<li><strong>Verification Failures</strong>: If the server uses a
+self-signed certificate and you do not want to verify it, you can bypass
+verification by adding the <code>-verify_peer_certs 0</code> option,
+though this is not recommended for production environments.</li>
+</ul></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

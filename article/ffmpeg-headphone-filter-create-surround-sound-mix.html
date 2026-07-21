@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FFmpeg Headphone Filter: Create Surround Sound Mix - ffmpeg</title>
+    <meta name="description" content="This guide explains how to use the FFmpeg headphone filter to convert multi-channel audio, such as 5.1 or 7.1 surround sound, into a spatialized binaural stereo mix for headphones. You will learn how the filter utilizes Head-Related Impulse Response (HRI">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/ffmpeg-headphone-filter-create-surround-sound-mix">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="FFmpeg Headphone Filter: Create Surround Sound Mix - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/ffmpeg-headphone-filter-create-surround-sound-mix" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This guide explains how to use the FFmpeg headphone filter to convert multi-channel audio, such as 5.1 or 7.1 surround sound, into a spatialized binaural stereo mix for headphones. You will learn how the filter utilizes Head-Related Impulse Response (HRI" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="ffmpeg-headphone-filter-create-surround-sound-mix">FFmpeg
+Headphone Filter: Create Surround Sound Mix</h1>
+<p>This guide explains how to use the FFmpeg <code>headphone</code>
+filter to convert multi-channel audio, such as 5.1 or 7.1 surround
+sound, into a spatialized binaural stereo mix for headphones. You will
+learn how the filter utilizes Head-Related Impulse Response (HRIR) files
+to simulate a 3D speaker environment, along with the exact FFmpeg
+commands required to configure the filter and map your audio
+channels.</p>
+<h2 id="understanding-the-headphone-filter">Understanding the Headphone
+Filter</h2>
+<p>The <code>headphone</code> filter in FFmpeg uses Head-Related
+Transfer Functions (HRTF) to mimic how human ears perceive sound coming
+from different directions in a physical space. To achieve this, the
+filter requires two main components: 1. <strong>The Multi-channel Source
+Audio:</strong> Your 5.1, 7.1, or other multi-channel audio track. 2.
+<strong>HRIR (Head-Related Impulse Response) Files:</strong> Audio files
+(usually in WAV format) that contain the acoustic profile of speakers
+placed at specific angles around a listener’s head.</p>
+<h2 id="step-1-obtain-hrir-files">Step 1: Obtain HRIR Files</h2>
+<p>To use the filter, you need HRIR coefficients. You can find free,
+open-source HRTF datasets online (such as the MIT KEMAR or IRCAM Listen
+databases) packaged for FFmpeg.</p>
+<p>You can use either: * <strong>A single multi-channel HRIR
+file</strong> where each channel represents the impulse response for a
+specific speaker position (FL, FR, FC, LFE, SL, SR, etc.). *
+<strong>Multiple individual mono HRIR files</strong>, one for each
+speaker position.</p>
+<h2 id="step-2-the-ffmpeg-command-syntax">Step 2: The FFmpeg Command
+Syntax</h2>
+<h3 id="method-a-using-a-single-multi-channel-hrir-file">Method A: Using
+a Single Multi-Channel HRIR File</h3>
+<p>If you have a single multi-channel WAV file containing your HRIR
+coefficients (e.g., <code>hrir.wav</code> with 6 channels for a 5.1
+layout), use the following command:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input_51.mp4 <span class="at">-i</span> hrir.wav <span class="at">-filter_complex</span> <span class="st">&quot;[0:a][1:a]headphone=map=FL|FR|FC|LFE|SL|SR[spatial]&quot;</span> <span class="at">-map</span> 0:v <span class="at">-map</span> <span class="st">&quot;[spatial]&quot;</span> output.mp4</span></code></pre></div>
+<h3 id="method-b-using-separate-mono-hrir-files">Method B: Using
+Separate Mono HRIR Files</h3>
+<p>If you have separate mono HRIR files for each speaker position, you
+must pass them as individual inputs to FFmpeg. Order them in the command
+and map them accordingly:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input_51.mp4 <span class="dt">\</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>-i hrir_FL.wav <span class="at">-i</span> hrir_FR.wav <span class="at">-i</span> hrir_FC.wav <span class="at">-i</span> hrir_LFE.wav <span class="at">-i</span> hrir_SL.wav <span class="at">-i</span> hrir_SR.wav <span class="dt">\</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>-filter_complex <span class="st">&quot;[0:a][1:a][2:a][3:a][4:a][5:a][6:a]headphone=map=FL|FR|FC|LFE|SL|SR[spatial]&quot;</span> <span class="dt">\</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>-map 0:v <span class="at">-map</span> <span class="st">&quot;[spatial]&quot;</span> output.mp4</span></code></pre></div>
+<h2 id="parameter-breakdown">Parameter Breakdown</h2>
+<ul>
+<li><strong><code>[0:a]</code></strong>: Represents the multi-channel
+audio stream from your source video/audio file.</li>
+<li><strong><code>[1:a]</code> through <code>[6:a]</code></strong>:
+Represent the HRIR inputs.</li>
+<li><strong><code>headphone=</code></strong>: Activates the filter.</li>
+<li><strong><code>map=</code></strong>: Defines which HRIR input
+corresponds to which virtual speaker. The positions are separated by
+pipe (<code>|</code>) characters. The positions must match the order of
+the HRIR inputs provided. Common position identifiers include:
+<ul>
+<li><code>FL</code>: Front Left</li>
+<li><code>FR</code>: Front Right</li>
+<li><code>FC</code>: Front Center</li>
+<li><code>LFE</code>: Low Frequency Effects (Subwoofer)</li>
+<li><code>SL</code>: Surround Left</li>
+<li><code>SR</code>: Surround Right</li>
+<li><code>BL</code>: Back Left</li>
+<li><code>BR</code>: Back Right</li>
+</ul></li>
+</ul>
+<h2 id="additional-settings">Additional Settings</h2>
+<p>You can fine-tune the filter output using optional parameters inside
+the filter string:</p>
+<ul>
+<li><strong>Gain:</strong> To avoid clipping or to boost quiet
+virtualizations, use the <code>gain</code> parameter (in dB).</li>
+<li><strong>Type:</strong> Choose between time-domain
+(<code>time</code>) or frequency-domain (<code>freq</code>) processing.
+Frequency-domain is faster for long HRIR files.</li>
+</ul>
+<p>Example with extra parameters:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input_51.mp4 <span class="at">-i</span> hrir.wav <span class="at">-filter_complex</span> <span class="st">&quot;[0:a][1:a]headphone=map=FL|FR|FC|LFE|SL|SR:gain=3:type=freq[spatial]&quot;</span> <span class="at">-map</span> 0:v <span class="at">-map</span> <span class="st">&quot;[spatial]&quot;</span> output.mp4</span></code></pre></div></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

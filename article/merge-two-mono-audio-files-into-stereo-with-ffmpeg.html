@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Merge Two Mono Audio Files into Stereo with FFmpeg - ffmpeg</title>
+    <meta name="description" content="Combining two separate mono audio tracks into a single stereo file is a common task in audio post-production. This guide provides a straightforward, step-by-step tutorial on how to use FFmpeg, a powerful command-line tool, to merge left and right mono ch">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/merge-two-mono-audio-files-into-stereo-with-ffmpeg">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Merge Two Mono Audio Files into Stereo with FFmpeg - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/merge-two-mono-audio-files-into-stereo-with-ffmpeg" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Combining two separate mono audio tracks into a single stereo file is a common task in audio post-production. This guide provides a straightforward, step-by-step tutorial on how to use FFmpeg, a powerful command-line tool, to merge left and right mono ch" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="merge-two-mono-audio-files-into-stereo-with-ffmpeg">Merge Two
+Mono Audio Files into Stereo with FFmpeg</h1>
+<p>Combining two separate mono audio tracks into a single stereo file is
+a common task in audio post-production. This guide provides a
+straightforward, step-by-step tutorial on how to use FFmpeg, a powerful
+command-line tool, to merge left and right mono channels into a cohesive
+stereo audio file using the <code>amerge</code> filter.</p>
+<h3 id="the-standard-ffmpeg-command">The Standard FFmpeg Command</h3>
+<p>To merge a left-channel mono file and a right-channel mono file into
+one stereo file, use the following command in your terminal or command
+prompt:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> left.wav <span class="at">-i</span> right.wav <span class="at">-filter_complex</span> amerge=inputs=2 <span class="at">-ac</span> 2 stereo.wav</span></code></pre></div>
+<h3 id="how-the-command-works">How the Command Works</h3>
+<ul>
+<li><strong><code>-i left.wav</code> and
+<code>-i right.wav</code></strong>: These define the two input files.
+The first input file (<code>0</code>) will default to the left channel,
+and the second input file (<code>1</code>) will default to the right
+channel.</li>
+<li><strong><code>-filter_complex amerge=inputs=2</code></strong>: This
+tells FFmpeg to use the complex filter graph to merge two audio inputs
+into a single multi-channel stream.</li>
+<li><strong><code>-ac 2</code></strong>: This explicitly sets the output
+audio channels to 2, ensuring the final output is recognized as a
+standard stereo track.</li>
+<li><strong><code>stereo.wav</code></strong>: This is the name of your
+final output file. You can change this to other formats, such as
+<code>stereo.mp3</code> or <code>stereo.m4a</code>, and FFmpeg will
+automatically handle the conversion.</li>
+</ul>
+<h3 id="alternative-method-using-the-join-filter">Alternative Method:
+Using the Join Filter</h3>
+<p>If you want to explicitly map which input file goes to which specific
+channel (Left or Right), you can use the <code>join</code> filter
+instead:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> left.wav <span class="at">-i</span> right.wav <span class="at">-filter_complex</span> <span class="st">&quot;[0:a][1:a]join=inputs=2:channel_layout=stereo:map=0.0-FL|1.0-FR[a]&quot;</span> <span class="at">-map</span> <span class="st">&quot;[a]&quot;</span> stereo.wav</span></code></pre></div>
+<ul>
+<li><strong><code>map=0.0-FL</code></strong>: Maps the first input file
+(index 0, audio stream 0) to the Front Left (FL) channel.</li>
+<li><strong><code>1.0-FR</code></strong>: Maps the second input file
+(index 1, audio stream 0) to the Front Right (FR) channel.</li>
+</ul>
+<h3 id="handling-different-audio-lengths">Handling Different Audio
+Lengths</h3>
+<p>By default, the <code>amerge</code> filter will stop encoding when
+the shortest input file ends. If your mono files are of different
+lengths and you want the output to keep playing until the longer file
+finishes, add the <code>-shortest</code> option or pad the audio.
+However, for most standard mono-to-stereo conversions where the files
+are identical in length, the standard command above will work
+perfectly.</p></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Automate FFmpeg Cropdetect and Crop Filters - ffmpeg</title>
+    <meta name="description" content="This article explains how to automate video cropping in FFmpeg by chain-linking the cropdetect and crop filters within a script. You will learn how to run a quick analysis pass to extract the optimal black-bar cropping coordinates and automatically apply">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/how-to-automate-ffmpeg-cropdetect-and-crop-filters">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Automate FFmpeg Cropdetect and Crop Filters - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/how-to-automate-ffmpeg-cropdetect-and-crop-filters" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article explains how to automate video cropping in FFmpeg by chain-linking the cropdetect and crop filters within a script. You will learn how to run a quick analysis pass to extract the optimal black-bar cropping coordinates and automatically apply" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="how-to-automate-ffmpeg-cropdetect-and-crop-filters">How to
+Automate FFmpeg Cropdetect and Crop Filters</h1>
+<p>This article explains how to automate video cropping in FFmpeg by
+chain-linking the <code>cropdetect</code> and <code>crop</code> filters
+within a script. You will learn how to run a quick analysis pass to
+extract the optimal black-bar cropping coordinates and automatically
+apply those parameters to encode a cropped output video using Bash.</p>
+<h3 id="the-two-step-automation-process">The Two-Step Automation
+Process</h3>
+<p>FFmpeg cannot dynamically apply the output of <code>cropdetect</code>
+to a <code>crop</code> filter in a single command because
+<code>cropdetect</code> outputs its findings to the console (stderr) as
+the video plays, while the <code>crop</code> filter requires static
+parameters before processing begins.</p>
+<p>To automate this, you must use a two-step scripting approach: 1.
+<strong>Analyze:</strong> Run FFmpeg with <code>cropdetect</code> on a
+small segment of the video to find the correct coordinates. 2.
+<strong>Apply:</strong> Parse those coordinates from the terminal output
+and pass them into a second FFmpeg command using the <code>crop</code>
+filter.</p>
+<hr />
+<h3 id="step-1-extract-crop-parameters">Step 1: Extract Crop
+Parameters</h3>
+<p>To avoid analyzing the entire video (which is slow), seek to a bright
+part of the video and analyze a few frames.</p>
+<p>The following command seeks 1 minute into the video
+(<code>-ss 00:01:00</code>), analyzes 100 frames
+(<code>-vframes 100</code>), runs the <code>cropdetect</code> filter,
+and discards the video output (<code>-f null -</code>) while sending the
+text log to the console:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-ss</span> 00:01:00 <span class="at">-i</span> input.mp4 <span class="at">-vframes</span> 100 <span class="at">-vf</span> cropdetect <span class="at">-f</span> null <span class="at">-</span></span></code></pre></div>
+<p>The output will contain lines like this:
+<code>[parsed_video_filter_0_cropdetect @ 0x...] limit:117 round:16 x1:0 x2:1919 y1:138 y2:941 w:1920 h:800 x:0 y:142 crop=1920:800:0:142</code></p>
+<hr />
+<h3 id="step-2-automate-with-a-bash-script">Step 2: Automate with a Bash
+Script</h3>
+<p>You can automate the extraction and application of the
+<code>crop</code> parameters using a Bash script. This script uses
+<code>grep</code> and <code>tail</code> to isolate the final
+<code>crop=...</code> string and assigns it to a variable.</p>
+<p>Create a script named <code>autocrop.sh</code>:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co">#!/bin/bash</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="va">INPUT_FILE</span><span class="op">=</span><span class="st">&quot;input.mp4&quot;</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="va">OUTPUT_FILE</span><span class="op">=</span><span class="st">&quot;output_cropped.mp4&quot;</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a><span class="bu">echo</span> <span class="st">&quot;Analyzing video for black borders...&quot;</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a><span class="co"># Run cropdetect on 100 frames starting at 1 minute, extract the last &#39;crop=&#39; value</span></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a><span class="va">CROP_VALUES</span><span class="op">=</span><span class="va">$(</span><span class="ex">ffmpeg</span> <span class="at">-ss</span> 00:01:00 <span class="at">-i</span> <span class="st">&quot;</span><span class="va">$INPUT_FILE</span><span class="st">&quot;</span> <span class="at">-vframes</span> 100 <span class="at">-vf</span> cropdetect <span class="at">-f</span> null <span class="at">-</span> <span class="dv">2</span><span class="op">&gt;&amp;</span><span class="dv">1</span> <span class="kw">|</span> <span class="fu">grep</span> <span class="at">-o</span> <span class="st">&quot;crop=[0-9]*:[0-9]*:[0-9]*:[0-9]*&quot;</span> <span class="kw">|</span> <span class="fu">tail</span> <span class="at">-n</span> 1<span class="va">)</span></span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a><span class="co"># Check if we successfully extracted crop values</span></span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> <span class="bu">[</span> <span class="ot">-z</span> <span class="st">&quot;</span><span class="va">$CROP_VALUES</span><span class="st">&quot;</span> <span class="bu">]</span><span class="kw">;</span> <span class="cf">then</span></span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a>    <span class="bu">echo</span> <span class="st">&quot;Error: Could not detect crop parameters.&quot;</span></span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a>    <span class="bu">exit</span> 1</span>
+<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a><span class="cf">fi</span></span>
+<span id="cb2-16"><a href="#cb2-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-17"><a href="#cb2-17" aria-hidden="true" tabindex="-1"></a><span class="bu">echo</span> <span class="st">&quot;Detected crop parameters: </span><span class="va">$CROP_VALUES</span><span class="st">&quot;</span></span>
+<span id="cb2-18"><a href="#cb2-18" aria-hidden="true" tabindex="-1"></a><span class="bu">echo</span> <span class="st">&quot;Cropping and encoding video...&quot;</span></span>
+<span id="cb2-19"><a href="#cb2-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-20"><a href="#cb2-20" aria-hidden="true" tabindex="-1"></a><span class="co"># Apply the detected crop parameters to the entire video</span></span>
+<span id="cb2-21"><a href="#cb2-21" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> <span class="st">&quot;</span><span class="va">$INPUT_FILE</span><span class="st">&quot;</span> <span class="at">-vf</span> <span class="st">&quot;</span><span class="va">$CROP_VALUES</span><span class="st">&quot;</span> <span class="at">-c:a</span> copy <span class="st">&quot;</span><span class="va">$OUTPUT_FILE</span><span class="st">&quot;</span></span>
+<span id="cb2-22"><a href="#cb2-22" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-23"><a href="#cb2-23" aria-hidden="true" tabindex="-1"></a><span class="bu">echo</span> <span class="st">&quot;Cropping complete! Saved to </span><span class="va">$OUTPUT_FILE</span><span class="st">&quot;</span></span></code></pre></div>
+<hr />
+<h3 id="script-explanation">Script Explanation</h3>
+<ol type="1">
+<li><strong><code>2&gt;&amp;1</code></strong>: Redirects the standard
+error (where FFmpeg outputs logs) to standard output so it can be read
+by <code>grep</code>.</li>
+<li><strong><code>grep -o "crop=[0-9]*:[0-9]*:[0-9]*:[0-9]*"</code></strong>:
+Filters the terminal output to only keep text matching the format
+<code>crop=width:height:x:y</code>.</li>
+<li><strong><code>tail -n 1</code></strong>: Grabs the very last crop
+suggestion, which is usually the most accurate after analyzing multiple
+frames.</li>
+<li><strong><code>-vf "$CROP_VALUES"</code></strong>: Passes the
+extracted string (e.g., <code>crop=1920:800:0:142</code>) directly into
+the video filter argument of the second FFmpeg command.</li>
+<li><strong><code>-c:a copy</code></strong>: Copies the audio stream
+without re-encoding to save time and preserve quality.</li>
+</ol></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

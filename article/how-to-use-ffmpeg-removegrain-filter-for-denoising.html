@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Use FFmpeg removegrain Filter for Denoising - ffmpeg</title>
+    <meta name="description" content="This guide explains how to use the removegrain filter in FFmpeg to achieve high-efficiency spatial denoising and image smoothing. You will learn how the filter works, how to configure its various mode options, and see practical command-line examples to c">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/how-to-use-ffmpeg-removegrain-filter-for-denoising">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Use FFmpeg removegrain Filter for Denoising - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/how-to-use-ffmpeg-removegrain-filter-for-denoising" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This guide explains how to use the removegrain filter in FFmpeg to achieve high-efficiency spatial denoising and image smoothing. You will learn how the filter works, how to configure its various mode options, and see practical command-line examples to c" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="how-to-use-ffmpeg-removegrain-filter-for-denoising">How to Use
+FFmpeg removegrain Filter for Denoising</h1>
+<p>This guide explains how to use the <code>removegrain</code> filter in
+FFmpeg to achieve high-efficiency spatial denoising and image smoothing.
+You will learn how the filter works, how to configure its various mode
+options, and see practical command-line examples to clean up noisy video
+streams quickly without sacrificing system performance.</p>
+<h2 id="what-is-the-removegrain-filter">What is the removegrain
+Filter?</h2>
+<p>The <code>removegrain</code> filter is a highly optimized spatial
+denoising filter in FFmpeg. Unlike temporal denoisers that analyze
+multiple video frames over time, <code>removegrain</code> operates
+entirely within each individual frame (spatially). It compares each
+pixel with its surrounding eight neighbors to identify and eliminate
+noise, compression artifacts, and rogue pixels. Because it relies on
+fast, hardware-optimized assembly code, it is one of the fastest
+denoising filters available in FFmpeg, making it ideal for real-time
+encoding and low-power systems.</p>
+<h2 id="understanding-the-syntax-and-modes">Understanding the Syntax and
+Modes</h2>
+<p>The basic syntax for the <code>removegrain</code> filter in FFmpeg
+is:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">-vf</span> removegrain=m0=X:m1=Y:m2=Z:m3=W</span></code></pre></div>
+<p>Alternatively, you can use the shorthand version:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">-vf</span> removegrain=X:Y:Z:W</span></code></pre></div>
+<ul>
+<li><strong>m0 (or the first value):</strong> Mode for the first plane
+(usually Luma / Y).</li>
+<li><strong>m1 (or the second value):</strong> Mode for the second plane
+(Chroma / U).</li>
+<li><strong>m2 (or the third value):</strong> Mode for the third plane
+(Chroma / V).</li>
+<li><strong>m3 (or the fourth value):</strong> Mode for the alpha
+channel.</li>
+</ul>
+<p>If you specify only one mode, it applies to the first plane, and
+subsequent planes will copy the setting of the previous plane.</p>
+<h3 id="recommended-operating-modes">Recommended Operating Modes</h3>
+<p>The filter supports modes from <code>0</code> to <code>24</code>.
+Here are the most useful modes for denoising and smoothing:</p>
+<ul>
+<li><strong>Mode 0:</strong> Pass-through (the plane is left
+untouched).</li>
+<li><strong>Mode 2:</strong> A gentle, edge-preserving denoising filter.
+It is ideal for high-quality sources with light noise.</li>
+<li><strong>Mode 4:</strong> A slightly stronger clipping filter that
+provides moderate denoising.</li>
+<li><strong>Mode 11:</strong> A spatial blur/smoothing filter (using a
+1/4, 1/2, 1/4 kernel). This is highly effective for smoothing out fine
+grain and compression blocking.</li>
+<li><strong>Mode 12:</strong> A stronger spatial blur than Mode 11.</li>
+<li><strong>Mode 20:</strong> A median blur that is highly effective at
+removing “salt and pepper” noise (isolated white or black pixels).</li>
+</ul>
+<h2 id="practical-examples">Practical Examples</h2>
+<h3 id="basic-gentle-denoising">1. Basic Gentle Denoising</h3>
+<p>To apply a light, safe denoiser to all video planes (Luma and Chroma)
+to clean up compression noise while retaining sharp edges, use Mode
+2:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> removegrain=m0=2:m1=2:m2=2 <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<h3 id="high-efficiency-spatial-smoothing">2. High-Efficiency Spatial
+Smoothing</h3>
+<p>If your video has heavy grain or blocky compression artifacts, you
+can use Mode 11 to smooth the image:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> removegrain=m0=11:m1=11:m2=11 <span class="at">-c:v</span> libx264 <span class="at">-crf</span> 18 output.mp4</span></code></pre></div>
+<h3 id="targeted-luma-and-chroma-filtering">3. Targeted Luma and Chroma
+Filtering</h3>
+<p>Because human eyes are more sensitive to details in brightness (Luma)
+than in color (Chroma), you can apply a stronger smoothing filter to the
+Luma plane and a gentler denoiser to the Chroma planes:</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> removegrain=m0=11:m1=2:m2=2 <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<p>In this command: * <code>m0=11</code> applies a spatial blur to the
+Luma plane to smooth out grain. * <code>m1=2</code> and
+<code>m2=2</code> apply a gentle edge-preserving denoiser to the Chroma
+planes to prevent color bleeding.</p></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

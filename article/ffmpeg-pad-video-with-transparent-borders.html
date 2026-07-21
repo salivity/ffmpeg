@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FFmpeg Pad Video with Transparent Borders - ffmpeg</title>
+    <meta name="description" content="This article explains how to use FFmpeg to add transparent borders to a video using the video padding filter. You will learn the exact command syntax, how to configure the padding dimensions, how to define the transparent background color, and which outp">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/ffmpeg-pad-video-with-transparent-borders">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="FFmpeg Pad Video with Transparent Borders - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/ffmpeg-pad-video-with-transparent-borders" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article explains how to use FFmpeg to add transparent borders to a video using the video padding filter. You will learn the exact command syntax, how to configure the padding dimensions, how to define the transparent background color, and which outp" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="ffmpeg-pad-video-with-transparent-borders">FFmpeg Pad Video with
+Transparent Borders</h1>
+<p>This article explains how to use FFmpeg to add transparent borders to
+a video using the video padding filter. You will learn the exact command
+syntax, how to configure the padding dimensions, how to define the
+transparent background color, and which output formats to use to
+properly preserve the alpha channel transparency.</p>
+<p>To pad a video with transparent borders, you must use the
+<code>pad</code> filter, specify a transparent color, and export the
+file using a video codec that supports an alpha channel (transparency).
+Standard formats like H.264 MP4 do not support transparency, so you must
+use formats like WebM (VP9) or QuickTime (MOV).</p>
+<h3 id="the-ffmpeg-command">The FFmpeg Command</h3>
+<p>Here is the standard command to add a transparent border to a video
+and export it as a WebM file:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;pad=iw+100:ih+100:50:50:color=black@0,format=yuva420p&quot;</span> <span class="at">-c:v</span> libvpx-vp9 output.webm</span></code></pre></div>
+<h3 id="command-breakdown">Command Breakdown</h3>
+<ul>
+<li><strong><code>-i input.mp4</code></strong>: Specifies the input
+video file.</li>
+<li><strong><code>-vf</code></strong>: Introduces the video
+filtergraph.</li>
+<li><strong><code>pad=iw+100:ih+100:50:50:color=black@0</code></strong>:
+This is the padding filter:
+<ul>
+<li><strong><code>iw+100</code></strong>: Sets the output width (Input
+Width + 100 pixels).</li>
+<li><strong><code>ih+100</code></strong>: Sets the output height (Input
+Height + 100 pixels).</li>
+<li><strong><code>50</code> (first instance)</strong>: The X-coordinate
+offset where the input video is placed (shifts the video 50 pixels to
+the right).</li>
+<li><strong><code>50</code> (second instance)</strong>: The Y-coordinate
+offset where the input video is placed (shifts the video 50 pixels
+down).</li>
+<li><strong><code>color=black@0</code></strong>: Sets the background
+color. The <code>@0</code> represents the alpha channel value, where
+<code>0</code> is completely transparent and <code>1</code> is
+completely opaque.</li>
+</ul></li>
+<li><strong><code>format=yuva420p</code></strong>: Forces the pixel
+format to include an alpha channel (<code>a</code> in <code>yuva</code>
+represents alpha).</li>
+<li><strong><code>-c:v libvpx-vp9</code></strong>: Uses the VP9 codec,
+which natively supports alpha channel transparency.</li>
+</ul>
+<h3 id="alternative-exporting-to-quicktime-mov-prores">Alternative:
+Exporting to QuickTime MOV (ProRes)</h3>
+<p>If you need a high-quality intermediate file for video editing
+software like Adobe Premiere or DaVinci Resolve, you should output to a
+QuickTime <code>.mov</code> file using the ProRes codec:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;pad=iw+120:ih+120:60:60:color=black@0,format=yuva444p10le&quot;</span> <span class="at">-c:v</span> prores_ks <span class="at">-profile:v</span> 4 output.mov</span></code></pre></div>
+<ul>
+<li><strong><code>-profile:v 4</code></strong>: Selects the ProRes 4444
+profile, which is required to support transparency.</li>
+<li><strong><code>format=yuva444p10le</code></strong>: Ensures the
+high-quality 10-bit pixel format with alpha is preserved.</li>
+</ul>
+<h3 id="centering-the-video-automatically">Centering the Video
+Automatically</h3>
+<p>If you want to pad a video to a specific resolution (for example,
+placing a 1280x720 video inside a 1920x1080 canvas) and keep the video
+perfectly centered, use mathematical expressions for the offset:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;pad=1920:1080:(ow-iw)/2:(oh-ih)/2:color=black@0,format=yuva420p&quot;</span> <span class="at">-c:v</span> libvpx-vp9 output.webm</span></code></pre></div>
+<ul>
+<li><strong><code>ow</code></strong>: Output Width (1920).</li>
+<li><strong><code>iw</code></strong>: Input Width.</li>
+<li><strong><code>(ow-iw)/2</code></strong>: Centers the video
+horizontally.</li>
+<li><strong><code>(oh-ih)/2</code></strong>: Centers the video
+vertically.</li>
+</ul></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

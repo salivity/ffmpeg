@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FFmpeg SAR DAR and Storage Dimensions Explained - ffmpeg</title>
+    <meta name="description" content="This article explains the fundamental relationship between Storage Aspect Ratio (SAR), Display Aspect Ratio (DAR), and storage dimensions (pixel width and height) in digital video. You will learn the mathematical formula that connects these three propert">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/ffmpeg-sar-dar-and-storage-dimensions-explained">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="FFmpeg SAR DAR and Storage Dimensions Explained - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/ffmpeg-sar-dar-and-storage-dimensions-explained" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article explains the fundamental relationship between Storage Aspect Ratio (SAR), Display Aspect Ratio (DAR), and storage dimensions (pixel width and height) in digital video. You will learn the mathematical formula that connects these three propert" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="ffmpeg-sar-dar-and-storage-dimensions-explained">FFmpeg SAR DAR
+and Storage Dimensions Explained</h1>
+<p>This article explains the fundamental relationship between Storage
+Aspect Ratio (SAR), Display Aspect Ratio (DAR), and storage dimensions
+(pixel width and height) in digital video. You will learn the
+mathematical formula that connects these three properties, how they
+affect how a video is displayed, and how to inspect and manipulate them
+using FFmpeg commands.</p>
+<h2 id="the-three-core-components">The Three Core Components</h2>
+<p>To understand how video dimensions work in FFmpeg, you must
+distinguish between the physical pixels stored in the file and how those
+pixels are stretched when rendered on a screen.</p>
+<ul>
+<li><strong>Storage Dimensions (Width × Height):</strong> This is the
+actual resolution of the video container, representing the physical grid
+of pixels (for example, 1920x1080 or 720x480).</li>
+<li><strong>SAR (Sample Aspect Ratio):</strong> Also known as Pixel
+Aspect Ratio (PAR), SAR defines the shape of an individual pixel. While
+computer monitors typically use square pixels (1:1), older television
+standards and broadcast formats use rectangular pixels (e.g., 8:9 or
+32:27).</li>
+<li><strong>DAR (Display Aspect Ratio):</strong> This is the final
+aspect ratio of the video when it is played on a screen (such as 16:9
+widescreen or 4:3 standard).</li>
+</ul>
+<h2 id="the-mathematical-relationship">The Mathematical
+Relationship</h2>
+<p>The relationship between these three variables is governed by a
+simple formula:</p>
+<p><span class="math display">\[\text{DAR} = \left( \frac{\text{Storage
+Width}}{\text{Storage Height}} \right) \times \text{SAR}\]</span></p>
+<p>If you know any two of these values, you can always calculate the
+third.</p>
+<h3 id="example-ntsc-dvd-widescreen">Example: NTSC DVD Widescreen</h3>
+<p>An NTSC DVD has storage dimensions of <strong>720x480</strong>
+pixels. If you display this using square pixels, the aspect ratio is
+<span class="math inline">\(720 / 480 = 1.5\)</span> (or 3:2).</p>
+<p>To display this video in a standard <strong>16:9</strong> (1.777)
+widescreen format, the player must stretch the pixels horizontally. This
+is achieved by setting a non-square Sample Aspect Ratio (SAR):</p>
+<p><span class="math display">\[\text{DAR} = \left( \frac{720}{480}
+\right) \times \left( \frac{32}{27} \right) = 1.5 \times 1.185 = 1.777
+\text{ (which is 16:9)}\]</span></p>
+<p>In this scenario, FFmpeg reads the storage dimensions (720x480) and
+the SAR (32:27), then instructs the video player to render the video at
+a DAR of 16:9.</p>
+<h2 id="inspecting-sar-and-dar-with-ffmpeg">Inspecting SAR and DAR with
+FFmpeg</h2>
+<p>You can view the SAR, DAR, and storage dimensions of a video file
+using <code>ffprobe</code>, which is packaged with FFmpeg. Run the
+following command:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffprobe</span> <span class="at">-v</span> error <span class="at">-select_streams</span> v:0 <span class="at">-show_entries</span> stream=width,height,sample_aspect_ratio,display_aspect_ratio <span class="at">-of</span> default=noprint_wrappers=1 input.mp4</span></code></pre></div>
+<p>This will output the specific dimensions and ratios of your video
+file:</p>
+<pre class="text"><code>width=720
+height=480
+sample_aspect_ratio=32:27
+display_aspect_ratio=16:9</code></pre>
+<h2 id="how-to-modify-sar-and-dar-in-ffmpeg">How to Modify SAR and DAR
+in FFmpeg</h2>
+<p>Sometimes a video file has incorrect metadata, causing it to display
+stretched or squished. You can use FFmpeg video filters to change the
+SAR or DAR without altering the underlying storage dimensions (pixels),
+or scale the video and reset the aspect ratios.</p>
+<h3 id="set-a-specific-display-aspect-ratio-dar">1. Set a Specific
+Display Aspect Ratio (DAR)</h3>
+<p>To force a video to display in 16:9 widescreen format without
+changing the actual pixel dimensions, use the <code>setdar</code>
+filter:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;setdar=16/9&quot;</span> output.mp4</span></code></pre></div>
+<p><em>FFmpeg will automatically recalculate and write the correct SAR
+to the output file’s metadata so that the math balances.</em></p>
+<h3 id="set-a-specific-sample-aspect-ratio-sar">2. Set a Specific Sample
+Aspect Ratio (SAR)</h3>
+<p>To force the pixels to be square (1:1), which is ideal for web
+playback, use the <code>setsar</code> filter:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;setsar=1/1&quot;</span> output.mp4</span></code></pre></div>
+<h3 id="scale-video-and-keep-square-pixels">3. Scale Video and Keep
+Square Pixels</h3>
+<p>If you want to resize a video to a specific resolution (e.g.,
+1280x720) and ensure the pixels are perfectly square (SAR 1:1), combine
+the scale and setsar filters:</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;scale=1280:720,setsar=1/1&quot;</span> output.mp4</span></code></pre></div></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

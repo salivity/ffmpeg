@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stream Local Video to RTMP with FFmpeg on Linux - ffmpeg</title>
+    <meta name="description" content="Streaming a local video file to an RTMP server on Linux is a highly efficient way to broadcast pre-recorded content to platforms like YouTube, Twitch, or a self-hosted server. By utilizing FFmpeg, a powerful command-line tool, you can transcode, scale, a">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/stream-local-video-to-rtmp-with-ffmpeg-on-linux">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Stream Local Video to RTMP with FFmpeg on Linux - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/stream-local-video-to-rtmp-with-ffmpeg-on-linux" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Streaming a local video file to an RTMP server on Linux is a highly efficient way to broadcast pre-recorded content to platforms like YouTube, Twitch, or a self-hosted server. By utilizing FFmpeg, a powerful command-line tool, you can transcode, scale, a" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="stream-local-video-to-rtmp-with-ffmpeg-on-linux">Stream Local
+Video to RTMP with FFmpeg on Linux</h1>
+<p>Streaming a local video file to an RTMP server on Linux is a highly
+efficient way to broadcast pre-recorded content to platforms like
+YouTube, Twitch, or a self-hosted server. By utilizing FFmpeg, a
+powerful command-line tool, you can transcode, scale, and push your
+media smoothly without the overhead of a graphical user interface. This
+guide will walk you through the precise command-line syntax required,
+explain how to optimize your encoding settings for stable streaming, and
+provide troubleshooting steps for common playback issues.</p>
+<h3 id="prerequisite-installing-ffmpeg-on-linux">Prerequisite:
+Installing FFmpeg on Linux</h3>
+<p>Before streaming, ensure you have FFmpeg installed with the necessary
+encoders (<code>libx264</code> for video and <code>aac</code> for
+audio). You can install it via your distribution’s package manager:</p>
+<ul>
+<li><strong>Ubuntu/Debian:</strong>
+<code>sudo apt update &amp;&amp; sudo apt install ffmpeg</code></li>
+<li><strong>Fedora:</strong> <code>sudo dnf install ffmpeg</code></li>
+<li><strong>Arch Linux:</strong> <code>sudo pacman -S ffmpeg</code></li>
+</ul>
+<p>Verify your installation and available encoders by running
+<code>ffmpeg -encoders</code> in your terminal.</p>
+<h3 id="the-basic-rtmp-streaming-command">The Basic RTMP Streaming
+Command</h3>
+<p>To stream a local MP4 file to an RTMP destination without re-encoding
+(which saves CPU power but requires the file to already be in a
+web-compatible format), use the following syntax:</p>
+<p><code>ffmpeg -re -i input.mp4 -c copy -f flv rtmp://your-server-url/live/stream-key</code></p>
+<h3 id="optimizing-and-re-encoding-for-live-streaming">Optimizing and
+Re-encoding for Live Streaming</h3>
+<p>If your source video is not optimized for streaming, or if you have a
+strict upload bandwidth limit, you should re-encode the video on the
+fly. The command below transcodes the video to H.264 and audio to AAC,
+applies a constant bitrate, and sets a strict keyframe interval, which
+is mandatory for most RTMP servers:</p>
+<p><code>ffmpeg -re -i input.mp4 -c:v libx264 -pix_fmt yuv420p -preset veryfast -b:v 3000k -maxrate 3000k -bufsize 6000k -g 60 -c:a aac -b:a 128k -f flv rtmp://your-server-url/live/stream-key</code></p>
+<h3 id="breaking-down-the-command-arguments">Breaking Down the Command
+Arguments</h3>
+<p>Understanding each flag allows you to tweak the command to match your
+network speed and hardware capabilities:</p>
+<ul>
+<li><strong><code>-re</code></strong>: Reads the input file at its
+native frame rate. Without this, FFmpeg will stream the file as fast as
+your CPU can process it, causing the RTMP server to reject the
+stream.</li>
+<li><strong><code>-i input.mp4</code></strong>: Specifies the path to
+your local video file.</li>
+<li><strong><code>-c:v libx264</code></strong>: Uses the H.264 video
+encoder, which is universally accepted by RTMP ingest points.</li>
+<li><strong><code>-pix_fmt yuv420p</code></strong>: Ensures maximum
+compatibility across web players by using the standard YUV 4:2:0 pixel
+format.</li>
+<li><strong><code>-preset veryfast</code></strong>: Balances CPU usage
+and video quality. Faster presets lower CPU load, which is ideal for
+older Linux machines.</li>
+<li><strong><code>-b:v 3000k -maxrate 3000k -bufsize 6000k</code></strong>:
+Enforces a strict 3000 Kbps video bitrate. The buffer size tells the
+encoder how often to check the bitrate conformity.</li>
+<li><strong><code>-g 60</code></strong>: Sets the Group of Pictures
+(GOP) size, or keyframe interval. If your video is 30 frames per second,
+a value of 60 ensures a keyframe is sent every 2 seconds.</li>
+<li><strong><code>-c:a aac -b:a 128k</code></strong>: Encodes the audio
+to AAC format at a standard 128 Kbps bitrate.</li>
+<li><strong><code>-f flv</code></strong>: Forces the output format to
+FLV, which is the container format used by the RTMP protocol.</li>
+</ul></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

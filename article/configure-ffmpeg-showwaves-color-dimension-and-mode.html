@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Configure FFmpeg Showwaves Color Dimension and Mode - ffmpeg</title>
+    <meta name="description" content="This article provides a practical guide on how to customize the visual appearance of the showwaves filter in FFmpeg. You will learn how to adjust the output video dimensions, change the waveform colors, select different drawing modes, and combine these s">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/configure-ffmpeg-showwaves-color-dimension-and-mode">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Configure FFmpeg Showwaves Color Dimension and Mode - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/configure-ffmpeg-showwaves-color-dimension-and-mode" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article provides a practical guide on how to customize the visual appearance of the showwaves filter in FFmpeg. You will learn how to adjust the output video dimensions, change the waveform colors, select different drawing modes, and combine these s" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="configure-ffmpeg-showwaves-color-dimension-and-mode">Configure
+FFmpeg Showwaves Color Dimension and Mode</h1>
+<p>This article provides a practical guide on how to customize the
+visual appearance of the <code>showwaves</code> filter in FFmpeg. You
+will learn how to adjust the output video dimensions, change the
+waveform colors, select different drawing modes, and combine these
+settings into a single command to generate custom audio
+visualizations.</p>
+<p>The <code>showwaves</code> filter converts an input audio stream into
+a video representing the audio waveform. By default, it produces a
+basic, low-resolution visualization. You can customize this output using
+the <code>size</code>, <code>colors</code>, and <code>mode</code>
+parameters.</p>
+<h3 id="setting-the-dimensions-size">Setting the Dimensions (Size)</h3>
+<p>To change the resolution of the generated video, use the
+<code>size</code> (or <code>s</code>) parameter. The format is
+<code>widthxheight</code>.</p>
+<p>For example, to generate a high-definition 1080p visualization, set
+the size to <code>1920x1080</code>:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="va">showwaves</span><span class="op">=</span>size=1920x1080</span></code></pre></div>
+<h3 id="changing-the-waveform-color">Changing the Waveform Color</h3>
+<p>The <code>colors</code> (or <code>c</code>) parameter defines the
+color of the waveform. You can specify colors using standard color names
+(like <code>red</code>, <code>blue</code>, <code>green</code>,
+<code>cyan</code>) or hexadecimal values (like <code>0xFF0055</code> or
+<code>random</code>).</p>
+<p>For multi-channel audio, you can separate colors with a pipe symbol
+(<code>|</code>) to assign different colors to different audio
+channels:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="va">showwaves</span><span class="op">=</span>colors=cyan<span class="kw">|</span><span class="ex">yellow</span></span></code></pre></div>
+<h3 id="choosing-the-drawing-mode">Choosing the Drawing Mode</h3>
+<p>The <code>mode</code> parameter defines how the waveform samples are
+drawn on the screen. There are four available modes:</p>
+<ul>
+<li><strong><code>point</code></strong>: Draws a single point for each
+audio sample.</li>
+<li><strong><code>line</code></strong>: Draws a line connecting
+successive samples (creates a thin outline).</li>
+<li><strong><code>p2p</code></strong>: Draws a line from point to point,
+which fills the waveform to create a solid block appearance.</li>
+<li><strong><code>cline</code></strong>: Draws a centered vertical line
+for each sample (creates a classic vertical bar visualizer look).</li>
+</ul>
+<p>For a solid, modern waveform look, <code>p2p</code> or
+<code>cline</code> are the most common choices:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="va">showwaves</span><span class="op">=</span>mode=cline</span></code></pre></div>
+<h3 id="combined-configuration-example">Combined Configuration
+Example</h3>
+<p>To configure all three settings at once, separate the parameters with
+a colon (<code>:</code>) inside the filter argument.</p>
+<p>The following command takes an audio file (<code>input.mp3</code>),
+applies the <code>showwaves</code> filter with a resolution of
+<code>1280x720</code>, a <code>cyan</code> color, and the
+<code>p2p</code> drawing mode, and outputs it as an MP4 video:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp3 <span class="at">-filter_complex</span> <span class="st">&quot;showwaves=size=1280x720:colors=cyan:mode=p2p&quot;</span> <span class="at">-c:a</span> copy output.mp4</span></code></pre></div></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Use the FFmpeg SOFA Filter - ffmpeg</title>
+    <meta name="description" content="This article provides a straightforward guide on how to use the sofa (Spatially Oriented Format for Acoustics) filter in FFmpeg to create virtual 3D surround sound over stereo headphones. You will learn what the filter does, how to obtain the necessary S">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/how-to-use-the-ffmpeg-sofa-filter">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Use the FFmpeg SOFA Filter - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/how-to-use-the-ffmpeg-sofa-filter" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article provides a straightforward guide on how to use the sofa (Spatially Oriented Format for Acoustics) filter in FFmpeg to create virtual 3D surround sound over stereo headphones. You will learn what the filter does, how to obtain the necessary S" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="how-to-use-the-ffmpeg-sofa-filter">How to Use the FFmpeg SOFA
+Filter</h1>
+<p>This article provides a straightforward guide on how to use the
+<code>sofa</code> (Spatially Oriented Format for Acoustics) filter in
+FFmpeg to create virtual 3D surround sound over stereo headphones. You
+will learn what the filter does, how to obtain the necessary SOFA files,
+and the exact FFmpeg commands required to apply HRTF (Head-Related
+Transfer Function) filtering to your audio files.</p>
+<hr />
+<h3 id="what-is-the-ffmpeg-sofa-filter">What is the FFmpeg SOFA
+Filter?</h3>
+<p>The <code>sofa</code> filter in FFmpeg uses Head-Related Transfer
+Functions (HRTF) to simulate spatial audio. By applying a
+<code>.sofa</code> file (which contains measurements of how human ears
+receive sound from different points in space) to a multi-channel audio
+source (like 5.1 or 7.1 surround sound), the filter downmixes the audio
+into a 3D stereo output designed specifically for headphones.</p>
+<h3 id="prerequisites">Prerequisites</h3>
+<p>To use this filter, you need two things:</p>
+<ol type="1">
+<li><strong>An FFmpeg build compiled with <code>libmysofa</code>
+support.</strong> You can verify this by running
+<code>ffmpeg -filters</code> in your terminal and checking if
+<code>sofa</code> is listed in the output.</li>
+<li><strong>A <code>.sofa</code> database file.</strong> These files
+contain the spatial acoustics data. You can download free, standardized
+SOFA files from the official SOFA spatially oriented format website or
+open-source repositories like the IRCAM Marie database.</li>
+</ol>
+<h3 id="step-by-step-usage">Step-by-Step Usage</h3>
+<h4 id="basic-conversion-multi-channel-to-3d-stereo">1. Basic Conversion
+(Multi-channel to 3D Stereo)</h4>
+<p>To convert a 5.1 channel audio file into a 3D spatial stereo file
+using a downloaded SOFA file, use the following command:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input_51.wav <span class="at">-af</span> <span class="st">&quot;sofa=sofa=/path/to/your/file.sofa&quot;</span> output_spatial.wav</span></code></pre></div>
+<p>In this command: * <code>-i input_51.wav</code> specifies your
+multi-channel input file. * <code>-af</code> applies an audio filter. *
+<code>sofa=sofa=/path/to/your/file.sofa</code> calls the filter and
+points it to the absolute path of your <code>.sofa</code> file.</p>
+<h4 id="adjusting-the-gain">2. Adjusting the Gain</h4>
+<p>Spatialization can sometimes reduce the perceived volume of the
+audio. You can adjust the output gain (in decibels) directly within the
+filter parameters:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input_51.wav <span class="at">-af</span> <span class="st">&quot;sofa=sofa=/path/to/your/file.sofa:gain=-3&quot;</span> output_spatial.wav</span></code></pre></div>
+<h4 id="customizing-the-processing-type">3. Customizing the Processing
+Type</h4>
+<p>The <code>sofa</code> filter allows you to choose between different
+processing types. The default is time-domain processing, but you can
+change it to frequency-domain processing for potential performance
+improvements on longer files:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input_51.wav <span class="at">-af</span> <span class="st">&quot;sofa=sofa=/path/to/your/file.sofa:type=freq&quot;</span> output_spatial.wav</span></code></pre></div>
+<p>The available options for <code>type</code> are: * <code>time</code>:
+Time-domain processing (default, more accurate but CPU intensive). *
+<code>freq</code>: Frequency-domain processing (faster for large impulse
+responses).</p>
+<h4 id="applying-to-video-files">4. Applying to Video Files</h4>
+<p>If you are processing a video file with multi-channel audio and want
+to keep the video stream unchanged while spatializing the audio, use the
+following command:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input_video.mp4 <span class="at">-c:v</span> copy <span class="at">-af</span> <span class="st">&quot;sofa=sofa=/path/to/your/file.sofa&quot;</span> output_video.mp4</span></code></pre></div>
+<p>This copies the video stream (<code>-c:v copy</code>) without
+re-encoding, saving time and preserving video quality, while applying
+the SOFA filter to the audio stream.</p></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

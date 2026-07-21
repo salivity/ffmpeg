@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Split Video into Variable Lengths with FFmpeg - ffmpeg</title>
+    <meta name="description" content="Splitting a video into segments of differing and precise lengths is a common task in video processing. This guide provides a straightforward tutorial on how to use FFmpeg, a powerful command-line tool, to cut a single video file into multiple parts of va">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/split-video-into-variable-lengths-with-ffmpeg">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Split Video into Variable Lengths with FFmpeg - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/split-video-into-variable-lengths-with-ffmpeg" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Splitting a video into segments of differing and precise lengths is a common task in video processing. This guide provides a straightforward tutorial on how to use FFmpeg, a powerful command-line tool, to cut a single video file into multiple parts of va" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="split-video-into-variable-lengths-with-ffmpeg">Split Video into
+Variable Lengths with FFmpeg</h1>
+<p>Splitting a video into segments of differing and precise lengths is a
+common task in video processing. This guide provides a straightforward
+tutorial on how to use FFmpeg, a powerful command-line tool, to cut a
+single video file into multiple parts of variable durations. You will
+learn how to segment your videos using both individual commands for
+precise cuts and the built-in segment muxer for splitting a video at
+multiple timestamps in one go.</p>
+<h3 id="method-1-splitting-using-precise-cut-commands">Method 1:
+Splitting Using Precise Cut Commands</h3>
+<p>The most precise way to extract variable segments is by running
+individual commands for each segment using the start time
+(<code>-ss</code>) and duration (<code>-t</code>) parameters, or end
+time (<code>-to</code>).</p>
+<p>To extract a segment, use the following command structure:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-ss</span> <span class="pp">[</span><span class="ss">start_time</span><span class="pp">]</span> <span class="at">-i</span> input.mp4 <span class="at">-t</span> <span class="pp">[</span><span class="ss">duration</span><span class="pp">]</span> <span class="at">-c</span> copy output.mp4</span></code></pre></div>
+<ul>
+<li><strong><code>-ss</code></strong>: Specifies the start time (e.g.,
+<code>00:01:30</code> or <code>90</code> seconds). Placing this before
+<code>-i</code> enables fast seeking.</li>
+<li><strong><code>-i</code></strong>: Specifies the input video
+file.</li>
+<li><strong><code>-t</code></strong>: Specifies the duration of the
+segment (e.g., <code>00:00:45</code> or <code>45</code> seconds).
+Alternatively, you can use <code>-to</code> to specify an absolute end
+timestamp.</li>
+<li><strong><code>-c copy</code></strong>: Copies the video and audio
+streams without re-encoding. This process is nearly instantaneous but
+requires cutting at the nearest keyframe.</li>
+</ul>
+<p><strong>Example workflow for three custom segments:</strong></p>
+<ol type="1">
+<li><p><strong>Segment 1</strong> (0 to 45 seconds):</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-ss</span> 00:00:00 <span class="at">-i</span> input.mp4 <span class="at">-t</span> 45 <span class="at">-c</span> copy segment1.mp4</span></code></pre></div></li>
+<li><p><strong>Segment 2</strong> (45 seconds to 2 minutes and 15
+seconds - duration of 90 seconds):</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-ss</span> 00:00:45 <span class="at">-i</span> input.mp4 <span class="at">-t</span> 90 <span class="at">-c</span> copy segment2.mp4</span></code></pre></div></li>
+<li><p><strong>Segment 3</strong> (2 minutes and 15 seconds to 5 minutes
+- duration of 165 seconds):</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-ss</span> 00:02:15 <span class="at">-i</span> input.mp4 <span class="at">-t</span> 165 <span class="at">-c</span> copy segment3.mp4</span></code></pre></div></li>
+</ol>
+<h3 id="method-2-splitting-with-the-segment-muxer-single-command">Method
+2: Splitting with the Segment Muxer (Single Command)</h3>
+<p>If you want to split an entire video into multiple variable segments
+in a single command, you can use FFmpeg’s <code>segment</code> muxer.
+This method is highly efficient because it automatically cuts the video
+at a list of comma-separated timestamps.</p>
+<p>The syntax for splitting at specific time markers is:</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-f</span> segment <span class="at">-segment_times</span> 30,120,300 <span class="at">-c</span> copy output_%03d.mp4</span></code></pre></div>
+<ul>
+<li><strong><code>-f segment</code></strong>: Specifies the segment
+muxer.</li>
+<li><strong><code>-segment_times</code></strong>: Defines the split
+points in seconds. In the example above, the video will be split at the
+30-second mark, the 2-minute (120s) mark, and the 5-minute (300s)
+mark.</li>
+<li><strong><code>output_%03d.mp4</code></strong>: Defines the naming
+convention for the output files. This will generate
+<code>output_000.mp4</code>, <code>output_001.mp4</code>,
+<code>output_002.mp4</code>, etc.</li>
+</ul>
+<p>This command results in four segments: * <strong>Segment 0</strong>:
+0 to 30 seconds * <strong>Segment 1</strong>: 30 to 120 seconds *
+<strong>Segment 2</strong>: 120 to 300 seconds * <strong>Segment
+3</strong>: 300 seconds to the end of the video</p>
+<h3 id="keyframe-accuracy-vs.-re-encoding">Keyframe Accuracy
+vs. Re-encoding</h3>
+<p>When using <code>-c copy</code>, FFmpeg can only cut the video at
+keyframes (I-frames). If your split points do not align with a keyframe,
+the player may show a frozen frame or black screen at the start of a
+segment until the next keyframe is reached.</p>
+<p>If absolute frame-perfect accuracy is required for your variable
+cuts, you must re-encode the video. To do this, remove the
+<code>-c copy</code> flag (or specify a video codec like
+<code>-c:v libx264</code>):</p>
+<div class="sourceCode" id="cb6"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-ss</span> 00:00:45 <span class="at">-i</span> input.mp4 <span class="at">-t</span> 90 <span class="at">-c:v</span> libx264 <span class="at">-c:a</span> aac segment2.mp4</span></code></pre></div></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

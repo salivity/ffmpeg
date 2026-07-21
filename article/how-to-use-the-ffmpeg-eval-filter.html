@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Use the FFmpeg Eval Filter - ffmpeg</title>
+    <meta name="description" content="This article provides a practical guide on how to use the evaluation (eval) engine and the eval parameter within FFmpeg filters. You will learn the difference between initialization and per-frame evaluation, how to implement dynamic mathematical expressi">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/how-to-use-the-ffmpeg-eval-filter">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Use the FFmpeg Eval Filter - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/how-to-use-the-ffmpeg-eval-filter" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article provides a practical guide on how to use the evaluation (eval) engine and the eval parameter within FFmpeg filters. You will learn the difference between initialization and per-frame evaluation, how to implement dynamic mathematical expressi" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="how-to-use-the-ffmpeg-eval-filter">How to Use the FFmpeg Eval
+Filter</h1>
+<p>This article provides a practical guide on how to use the evaluation
+(<code>eval</code>) engine and the <code>eval</code> parameter within
+FFmpeg filters. You will learn the difference between initialization and
+per-frame evaluation, how to implement dynamic mathematical expressions,
+and see real-world examples utilizing audio and video filters.</p>
+<hr />
+<p>In FFmpeg, many filters allow you to use mathematical formulas to
+calculate values dynamically. The <code>eval</code> option dictates
+<em>when</em> these formulas are calculated. It typically accepts two
+values: * <strong><code>init</code></strong>: Evaluates the expression
+only once, when the filter is first loaded. This is highly efficient and
+ideal for static values. * <strong><code>frame</code></strong>:
+Re-evaluates the expression for every single video frame or audio
+sample. This is necessary for creating dynamic, time-based animations,
+fades, and transitions.</p>
+<h3 id="dynamic-audio-volume-control">1. Dynamic Audio Volume
+Control</h3>
+<p>The <code>volume</code> audio filter utilizes the <code>eval</code>
+parameter to adjust volume levels dynamically over time. By setting
+<code>eval=frame</code>, FFmpeg recalculates the volume expression for
+every incoming audio frame.</p>
+<p>To modulate volume in a periodic wave (using a sine wave based on
+time <code>t</code>):</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp3 <span class="at">-af</span> <span class="st">&quot;volume=volume=&#39;1+0.5*sin(2*PI*t)&#39;:eval=frame&quot;</span> output.mp3</span></code></pre></div>
+<p>In this command: * <code>t</code> represents the current time in
+seconds. * The volume oscillates between <code>0.5</code> and
+<code>1.5</code> times the original volume. * <code>eval=frame</code>
+ensures the sine wave formula is continuously calculated.</p>
+<h3 id="moving-text-with-the-drawtext-filter">2. Moving Text with the
+Drawtext Filter</h3>
+<p>The <code>drawtext</code> filter is commonly used to overlay text
+onto a video. Setting <code>eval=frame</code> allows you to animate the
+text’s coordinate positions (<code>x</code> and <code>y</code>) frame by
+frame.</p>
+<p>To scroll text horizontally across the screen:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;drawtext=text=&#39;Scrolling Text&#39;:x=&#39;t*100&#39;:y=&#39;h-50&#39;:eval=frame&quot;</span> output.mp4</span></code></pre></div>
+<p>In this command: * <code>x='t*100'</code> moves the text to the right
+by 100 pixels per second. * <code>y='h-50'</code> keeps the text
+statically positioned 50 pixels from the bottom of the video frame. *
+<code>eval=frame</code> tells FFmpeg to recalculate the <code>x</code>
+position on every frame.</p>
+<h3 id="pixel-level-manipulation-with-the-geq-filter">3. Pixel-Level
+Manipulation with the GEQ Filter</h3>
+<p>The Generic Equation (<code>geq</code>) filter evaluates math
+expressions for every individual pixel in a frame. While it does not use
+a literal <code>eval</code> toggle, it inherently operates on a
+per-frame, per-pixel evaluation basis.</p>
+<p>To increase the intensity of the red channel based on the pixel’s
+X-coordinate:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;geq=r=&#39;r(X,Y)*(X/w)&#39;:g=&#39;g(X,Y)&#39;:b=&#39;b(X,Y)&#39;&quot;</span> output.mp4</span></code></pre></div>
+<p>In this command: * <code>X</code> and <code>Y</code> represent the
+coordinates of the current pixel. * <code>w</code> represents the width
+of the frame. * The red channel (<code>r</code>) progressively brightens
+from the left side of the screen to the right.</p></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

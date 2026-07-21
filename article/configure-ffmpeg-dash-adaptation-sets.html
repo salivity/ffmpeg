@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Configure ffmpeg DASH Adaptation Sets - ffmpeg</title>
+    <meta name="description" content="When streaming video using Dynamic Adaptive Streaming over HTTP (DASH), organizing video, audio, and subtitle streams into logical adaptation sets is crucial for client-side playback compatibility. This article provides a direct guide on how to configure">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/configure-ffmpeg-dash-adaptation-sets">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Configure ffmpeg DASH Adaptation Sets - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/configure-ffmpeg-dash-adaptation-sets" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="When streaming video using Dynamic Adaptive Streaming over HTTP (DASH), organizing video, audio, and subtitle streams into logical adaptation sets is crucial for client-side playback compatibility. This article provides a direct guide on how to configure" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="configure-ffmpeg-dash-adaptation-sets">Configure ffmpeg DASH
+Adaptation Sets</h1>
+<p>When streaming video using Dynamic Adaptive Streaming over HTTP
+(DASH), organizing video, audio, and subtitle streams into logical
+adaptation sets is crucial for client-side playback compatibility. This
+article provides a direct guide on how to configure adaptation sets in a
+DASH manifest using FFmpeg, focusing on the
+<code>-adaptation_sets</code> option, its syntax, and practical
+command-line examples for various streaming scenarios.</p>
+<h3 id="the--adaptation_sets-option">The -adaptation_sets Option</h3>
+<p>In FFmpeg, the DASH muxer uses the <code>-adaptation_sets</code>
+option to group different media streams (such as different resolutions
+of a video, different language audio tracks, or subtitles) into distinct
+<code>&lt;AdaptationSet&gt;</code> elements within the Media
+Presentation Description (MPD) manifest.</p>
+<p>The basic syntax for this option is:</p>
+<p><code>-adaptation_sets "id=dataset_id,streams=stream_identifiers id=dataset_id,streams=stream_identifiers ..."</code></p>
+<p>Each adaptation set definition is separated by a space, and the
+entire argument is enclosed in quotes.</p>
+<h3 id="key-parameters">Key Parameters</h3>
+<ul>
+<li><strong>id</strong>: A unique integer identifying the adaptation set
+within the MPD manifest (e.g., <code>id=0</code>).</li>
+<li><strong>streams</strong>: Defines which input or encoded streams
+belong to this adaptation set. Streams can be referenced in two ways:
+<ul>
+<li><strong>By media type</strong>: Using <code>v</code> for all video
+streams, <code>a</code> for all audio streams, and <code>s</code> for
+all subtitle streams.</li>
+<li><strong>By stream index</strong>: Using the zero-based index of the
+output streams (e.g., <code>0,1</code> for the first and second output
+streams).</li>
+</ul></li>
+</ul>
+<h3 id="practical-configuration-examples">Practical Configuration
+Examples</h3>
+<h4 id="automatic-grouping-by-media-type">1. Automatic Grouping by Media
+Type</h4>
+<p>If you have a standard source with one video stream and one audio
+stream, you can automatically group them by their media type:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-map</span> 0:v <span class="at">-map</span> 0:a <span class="at">-f</span> dash <span class="at">-adaptation_sets</span> <span class="st">&quot;id=0,streams=v id=1,streams=a&quot;</span> output.mpd</span></code></pre></div>
+<p>This configuration creates two adaptation sets: one containing all
+video streams (ID 0) and one containing all audio streams (ID 1).</p>
+<h4 id="manual-mapping-for-multi-bitrate-video">2. Manual Mapping for
+Multi-Bitrate Video</h4>
+<p>When encoding a single video source into multiple bitrates (e.g.,
+1080p, 720p, 360p) along with an audio track, you must map the streams
+explicitly. FFmpeg assigns output indices in the order they are
+mapped:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="dt">\</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">-map</span> 0:v <span class="at">-b:v:0</span> 5000k <span class="at">-s:v:0</span> 1920x1080 <span class="dt">\</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">-map</span> 0:v <span class="at">-b:v:1</span> 3000k <span class="at">-s:v:1</span> 1280x720 <span class="dt">\</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">-map</span> 0:v <span class="at">-b:v:2</span> 1000k <span class="at">-s:v:2</span> 640x360 <span class="dt">\</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">-map</span> 0:a <span class="at">-b:a:0</span> 128k <span class="dt">\</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">-f</span> dash <span class="dt">\</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">-adaptation_sets</span> <span class="st">&quot;id=0,streams=0,1,2 id=1,streams=3&quot;</span> <span class="dt">\</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>  output.mpd</span></code></pre></div>
+<p>In this example: * Stream <code>0</code> (1080p), Stream
+<code>1</code> (720p), and Stream <code>2</code> (360p) are grouped into
+adaptation set <code>0</code>. * Stream <code>3</code> (audio) is
+assigned to adaptation set <code>1</code>.</p>
+<h4 id="configuring-multi-language-audio-and-subtitles">3. Configuring
+Multi-Language Audio and Subtitles</h4>
+<p>For complex streams with multiple audio languages and subtitles, you
+can group them to ensure the player displays them as selectable
+options:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mkv <span class="dt">\</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">-map</span> 0:v:0 <span class="dt">\</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">-map</span> 0:a:0 <span class="dt">\</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">-map</span> 0:a:1 <span class="dt">\</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">-map</span> 0:s:0 <span class="dt">\</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">-map</span> 0:s:1 <span class="dt">\</span></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">-f</span> dash <span class="dt">\</span></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>  <span class="at">-adaptation_sets</span> <span class="st">&quot;id=0,streams=0 id=1,streams=1 id=2,streams=2 id=3,streams=3 id=4,streams=4&quot;</span> <span class="dt">\</span></span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>  output.mpd</span></code></pre></div>
+<p>This isolates each video, audio, and subtitle track into its own
+adaptation set, allowing the DASH player to toggle between different
+languages and subtitle options seamlessly.</p></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Parse FFmpeg ebur128 Realtime Output - ffmpeg</title>
+    <meta name="description" content="This article provides a practical guide on how to capture and parse the real-time loudness measurement output of the FFmpeg ebur128 filter. It covers the command-line configurations required to stream EBU R128 data, explains how to handle FFmpeg's consol">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/how-to-parse-ffmpeg-ebur128-realtime-output">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Parse FFmpeg ebur128 Realtime Output - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/how-to-parse-ffmpeg-ebur128-realtime-output" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article provides a practical guide on how to capture and parse the real-time loudness measurement output of the FFmpeg ebur128 filter. It covers the command-line configurations required to stream EBU R128 data, explains how to handle FFmpeg's consol" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="how-to-parse-ffmpeg-ebur128-realtime-output">How to Parse FFmpeg
+ebur128 Realtime Output</h1>
+<p>This article provides a practical guide on how to capture and parse
+the real-time loudness measurement output of the FFmpeg
+<code>ebur128</code> filter. It covers the command-line configurations
+required to stream EBU R128 data, explains how to handle FFmpeg’s
+console output, and provides a Python implementation to extract
+momentary, short-term, and integrated loudness values programmatically
+in real-time.</p>
+<h3 id="method-1-parsing-ffmpeg-stderr-output">Method 1: Parsing FFmpeg
+Stderr Output</h3>
+<p>By default, the <code>ebur128</code> filter writes its real-time
+analysis to the standard error (<code>stderr</code>) stream. To force
+FFmpeg to process the input in real-time, you must use the
+<code>-re</code> flag (for live input emulation) and set the
+<code>realtime=1</code> parameter on the filter.</p>
+<h4 id="the-ffmpeg-command">The FFmpeg Command</h4>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-re</span> <span class="at">-i</span> input.mp3 <span class="at">-filter_complex</span> ebur128=realtime=1 <span class="at">-f</span> null <span class="at">-</span></span></code></pre></div>
+<p>This command outputs lines to <code>stderr</code> at regular
+intervals that look like this:</p>
+<pre class="text"><code>[Parsed_ebur128_0 @ 0x55b27b99e840] t: 0.1       M: -21.4 S: -24.0 I: -22.5 LRA:   0.0
+[Parsed_ebur128_0 @ 0x55b27b99e840] t: 0.2       M: -20.8 S: -24.0 I: -22.5 LRA:   0.0</code></pre>
+<ul>
+<li><strong>t</strong>: Time in seconds.</li>
+<li><strong>M</strong>: Momentary loudness (LUFS).</li>
+<li><strong>S</strong>: Short-term loudness (LUFS).</li>
+<li><strong>I</strong>: Integrated loudness (LUFS).</li>
+<li><strong>LRA</strong>: Loudness range.</li>
+</ul>
+<h4 id="python-script-to-parse-stderr">Python Script to Parse
+Stderr</h4>
+<p>To parse this output programmatically, you can run FFmpeg as a
+subprocess, read <code>stderr</code> line-by-line, and extract the
+values using regular expressions.</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> subprocess</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> re</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>command <span class="op">=</span> [</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>    <span class="st">&#39;ffmpeg&#39;</span>,</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>    <span class="st">&#39;-re&#39;</span>,</span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>    <span class="st">&#39;-i&#39;</span>, <span class="st">&#39;input.mp3&#39;</span>,</span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>    <span class="st">&#39;-filter_complex&#39;</span>, <span class="st">&#39;ebur128=realtime=1&#39;</span>,</span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>    <span class="st">&#39;-f&#39;</span>, <span class="st">&#39;null&#39;</span>,</span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>    <span class="st">&#39;-&#39;</span></span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>]</span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a><span class="co"># Match the output line from ebur128</span></span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a><span class="co"># Example: t: 0.1       M: -21.4 S: -24.0 I: -22.5 LRA:   0.0</span></span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a>pattern <span class="op">=</span> re.<span class="bu">compile</span>(</span>
+<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a>    <span class="vs">r&quot;t:</span><span class="dv">\s</span><span class="op">*</span><span class="kw">(</span><span class="fu">?P&lt;t&gt;</span><span class="pp">[</span><span class="dv">\d</span><span class="ch">\.</span><span class="pp">]</span><span class="op">+</span><span class="kw">)</span><span class="dv">\s</span><span class="op">+</span><span class="vs">M:</span><span class="dv">\s</span><span class="op">*</span><span class="kw">(</span><span class="fu">?P&lt;M&gt;</span><span class="pp">[</span><span class="dv">\d</span><span class="ch">\.</span><span class="pp">-]</span><span class="op">+</span><span class="kw">)</span><span class="dv">\s</span><span class="op">+</span><span class="vs">S:</span><span class="dv">\s</span><span class="op">*</span><span class="kw">(</span><span class="fu">?P&lt;S&gt;</span><span class="pp">[</span><span class="dv">\d</span><span class="ch">\.</span><span class="pp">-]</span><span class="op">+</span><span class="kw">)</span><span class="dv">\s</span><span class="op">+</span><span class="vs">I:</span><span class="dv">\s</span><span class="op">*</span><span class="kw">(</span><span class="fu">?P&lt;I&gt;</span><span class="pp">[</span><span class="dv">\d</span><span class="ch">\.</span><span class="pp">-]</span><span class="op">+</span><span class="kw">)</span><span class="vs">&quot;</span></span>
+<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb3-18"><a href="#cb3-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-19"><a href="#cb3-19" aria-hidden="true" tabindex="-1"></a>process <span class="op">=</span> subprocess.Popen(command, stderr<span class="op">=</span>subprocess.PIPE, stdout<span class="op">=</span>subprocess.DEVNULL, text<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb3-20"><a href="#cb3-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-21"><a href="#cb3-21" aria-hidden="true" tabindex="-1"></a><span class="cf">try</span>:</span>
+<span id="cb3-22"><a href="#cb3-22" aria-hidden="true" tabindex="-1"></a>    <span class="cf">while</span> <span class="va">True</span>:</span>
+<span id="cb3-23"><a href="#cb3-23" aria-hidden="true" tabindex="-1"></a>        line <span class="op">=</span> process.stderr.readline()</span>
+<span id="cb3-24"><a href="#cb3-24" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="kw">not</span> line:</span>
+<span id="cb3-25"><a href="#cb3-25" aria-hidden="true" tabindex="-1"></a>            <span class="cf">break</span></span>
+<span id="cb3-26"><a href="#cb3-26" aria-hidden="true" tabindex="-1"></a>        </span>
+<span id="cb3-27"><a href="#cb3-27" aria-hidden="true" tabindex="-1"></a>        match <span class="op">=</span> pattern.search(line)</span>
+<span id="cb3-28"><a href="#cb3-28" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> match:</span>
+<span id="cb3-29"><a href="#cb3-29" aria-hidden="true" tabindex="-1"></a>            data <span class="op">=</span> match.groupdict()</span>
+<span id="cb3-30"><a href="#cb3-30" aria-hidden="true" tabindex="-1"></a>            time <span class="op">=</span> <span class="bu">float</span>(data[<span class="st">&#39;t&#39;</span>])</span>
+<span id="cb3-31"><a href="#cb3-31" aria-hidden="true" tabindex="-1"></a>            momentary <span class="op">=</span> <span class="bu">float</span>(data[<span class="st">&#39;M&#39;</span>])</span>
+<span id="cb3-32"><a href="#cb3-32" aria-hidden="true" tabindex="-1"></a>            short_term <span class="op">=</span> <span class="bu">float</span>(data[<span class="st">&#39;S&#39;</span>])</span>
+<span id="cb3-33"><a href="#cb3-33" aria-hidden="true" tabindex="-1"></a>            integrated <span class="op">=</span> <span class="bu">float</span>(data[<span class="st">&#39;I&#39;</span>])</span>
+<span id="cb3-34"><a href="#cb3-34" aria-hidden="true" tabindex="-1"></a>            </span>
+<span id="cb3-35"><a href="#cb3-35" aria-hidden="true" tabindex="-1"></a>            <span class="bu">print</span>(<span class="ss">f&quot;Time: </span><span class="sc">{</span>time<span class="sc">:0.1f}</span><span class="ss">s | Momentary: </span><span class="sc">{</span>momentary<span class="sc">}</span><span class="ss"> LUFS | Short-term: </span><span class="sc">{</span>short_term<span class="sc">}</span><span class="ss"> LUFS | Integrated: </span><span class="sc">{</span>integrated<span class="sc">}</span><span class="ss"> LUFS&quot;</span>)</span>
+<span id="cb3-36"><a href="#cb3-36" aria-hidden="true" tabindex="-1"></a><span class="cf">finally</span>:</span>
+<span id="cb3-37"><a href="#cb3-37" aria-hidden="true" tabindex="-1"></a>    process.terminate()</span></code></pre></div>
+<h3 id="method-2-structured-output-using-ffprobe-and-metadata">Method 2:
+Structured Output using FFprobe and Metadata</h3>
+<p>If you want to avoid parsing unstructured text logs, you can use
+<code>ebur128</code> with the <code>metadata=1</code> parameter. This
+injects the loudness values directly into the audio frame metadata. You
+can then use <code>ffprobe</code> to output these values in a structured
+CSV format to standard output (<code>stdout</code>).</p>
+<h4 id="the-ffprobe-command">The FFprobe Command</h4>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffprobe</span> <span class="at">-v</span> error <span class="at">-f</span> lavfi <span class="at">-i</span> amovie=input.mp3,ebur128=metadata=1 <span class="dt">\</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">-show_entries</span> frame=pkt_pts_time:frame_tags=lavfi.r128.M,lavfi.r128.S,lavfi.r128.I <span class="dt">\</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">-of</span> csv=p=0</span></code></pre></div>
+<p>This command outputs a clean, comma-separated stream directly to
+<code>stdout</code>:</p>
+<pre class="text"><code>0.100000,-21.4,-24.0,-22.5
+0.200000,-20.8,-24.0,-22.5</code></pre>
+<p>Each row corresponds to a frame and contains:
+<code>[Timestamp],[Momentary Loudness],[Short-term Loudness],[Integrated Loudness]</code></p>
+<h4 id="python-script-to-parse-ffprobe-csv-output">Python Script to
+Parse FFprobe CSV Output</h4>
+<p>Since the output of this method is standard CSV, parsing it in
+real-time is highly reliable and does not require complex regex.</p>
+<div class="sourceCode" id="cb6"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> subprocess</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> csv</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>command <span class="op">=</span> [</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>    <span class="st">&#39;ffprobe&#39;</span>,</span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>    <span class="st">&#39;-v&#39;</span>, <span class="st">&#39;error&#39;</span>,</span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>    <span class="st">&#39;-f&#39;</span>, <span class="st">&#39;lavfi&#39;</span>,</span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>    <span class="st">&#39;-i&#39;</span>, <span class="st">&#39;amovie=input.mp3,ebur128=metadata=1&#39;</span>,</span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>    <span class="st">&#39;-show_entries&#39;</span>, <span class="st">&#39;frame=pkt_pts_time:frame_tags=lavfi.r128.M,lavfi.r128.S,lavfi.r128.I&#39;</span>,</span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>    <span class="st">&#39;-of&#39;</span>, <span class="st">&#39;csv=p=0&#39;</span></span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a>]</span>
+<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a>process <span class="op">=</span> subprocess.Popen(command, stdout<span class="op">=</span>subprocess.PIPE, stderr<span class="op">=</span>subprocess.DEVNULL, text<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a><span class="cf">try</span>:</span>
+<span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a>    reader <span class="op">=</span> csv.reader(process.stdout)</span>
+<span id="cb6-17"><a href="#cb6-17" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> row <span class="kw">in</span> reader:</span>
+<span id="cb6-18"><a href="#cb6-18" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="bu">len</span>(row) <span class="op">&gt;=</span> <span class="dv">4</span>:</span>
+<span id="cb6-19"><a href="#cb6-19" aria-hidden="true" tabindex="-1"></a>            timestamp <span class="op">=</span> <span class="bu">float</span>(row[<span class="dv">0</span>])</span>
+<span id="cb6-20"><a href="#cb6-20" aria-hidden="true" tabindex="-1"></a>            momentary <span class="op">=</span> <span class="bu">float</span>(row[<span class="dv">1</span>])</span>
+<span id="cb6-21"><a href="#cb6-21" aria-hidden="true" tabindex="-1"></a>            short_term <span class="op">=</span> <span class="bu">float</span>(row[<span class="dv">2</span>])</span>
+<span id="cb6-22"><a href="#cb6-22" aria-hidden="true" tabindex="-1"></a>            integrated <span class="op">=</span> <span class="bu">float</span>(row[<span class="dv">3</span>])</span>
+<span id="cb6-23"><a href="#cb6-23" aria-hidden="true" tabindex="-1"></a>            </span>
+<span id="cb6-24"><a href="#cb6-24" aria-hidden="true" tabindex="-1"></a>            <span class="bu">print</span>(<span class="ss">f&quot;Timestamp: </span><span class="sc">{</span>timestamp<span class="sc">:.2f}</span><span class="ss"> | M: </span><span class="sc">{</span>momentary<span class="sc">}</span><span class="ss"> | S: </span><span class="sc">{</span>short_term<span class="sc">}</span><span class="ss"> | I: </span><span class="sc">{</span>integrated<span class="sc">}</span><span class="ss">&quot;</span>)</span>
+<span id="cb6-25"><a href="#cb6-25" aria-hidden="true" tabindex="-1"></a><span class="cf">finally</span>:</span>
+<span id="cb6-26"><a href="#cb6-26" aria-hidden="true" tabindex="-1"></a>    process.terminate()</span></code></pre></div></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

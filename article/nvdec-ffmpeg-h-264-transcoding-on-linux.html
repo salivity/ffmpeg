@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NVDEC FFmpeg H.264 Transcoding on Linux - ffmpeg</title>
+    <meta name="description" content="This guide demonstrates how to use NVIDIA’s hardware-accelerated decoder (NVDEC) with FFmpeg on Linux to transcode H.264 videos. By offloading the video decoding and encoding processes to an NVIDIA GPU, you can dramatically increase transcoding speeds">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/nvdec-ffmpeg-h-264-transcoding-on-linux">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="NVDEC FFmpeg H.264 Transcoding on Linux - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/nvdec-ffmpeg-h-264-transcoding-on-linux" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This guide demonstrates how to use NVIDIA’s hardware-accelerated decoder (NVDEC) with FFmpeg on Linux to transcode H.264 videos. By offloading the video decoding and encoding processes to an NVIDIA GPU, you can dramatically increase transcoding speeds" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="nvdec-ffmpeg-h.264-transcoding-on-linux">NVDEC FFmpeg H.264
+Transcoding on Linux</h1>
+<p>This guide demonstrates how to use NVIDIA’s hardware-accelerated
+decoder (NVDEC) with FFmpeg on Linux to transcode H.264 videos. By
+offloading the video decoding and encoding processes to an NVIDIA GPU,
+you can dramatically increase transcoding speeds and reduce CPU
+utilization.</p>
+<h2 id="prerequisites">Prerequisites</h2>
+<p>Before proceeding, ensure your Linux system has the following
+installed: * A CUDA-supported NVIDIA Graphics Card. * NVIDIA Proprietary
+Drivers (and CUDA Toolkit). * FFmpeg compiled with NVIDIA hardware
+acceleration support (<code>--enable-cuda-nvcc</code>,
+<code>--enable-libnpp</code>, <code>--enable-ffnvcodec</code>).</p>
+<p>To verify if your FFmpeg installation supports CUDA and NVDEC,
+run:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-hwaccels</span></span></code></pre></div>
+<p>Look for <code>cuda</code> in the output list.</p>
+<h2 id="hardware-accelerated-transcoding-commands">Hardware-Accelerated
+Transcoding Commands</h2>
+<p>For maximum efficiency, you should keep the entire transcoding
+pipeline on the GPU. This means using NVDEC to decode the input video,
+keeping the decoded frames in GPU memory, and using NVENC to encode the
+output video.</p>
+<h3 id="method-1-full-gpu-pipeline-recommended">Method 1: Full GPU
+Pipeline (Recommended)</h3>
+<p>This command decodes an H.264 input using NVDEC, keeps the frames in
+CUDA memory, and encodes the output to H.264 using NVENC.</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-hwaccel</span> cuda <span class="at">-hwaccel_output_format</span> cuda <span class="at">-i</span> input.mp4 <span class="at">-c:v</span> h264_nvenc <span class="at">-preset</span> fast output.mp4</span></code></pre></div>
+<p><strong>Parameter Breakdown:</strong> * <code>-hwaccel cuda</code>:
+Instructs FFmpeg to use CUDA (NVDEC) for hardware decoding. *
+<code>-hwaccel_output_format cuda</code>: Keeps the decoded video frames
+in GPU memory (VRAM) instead of copying them back to system memory
+(RAM). This prevents CPU-GPU bottlenecks. * <code>-i input.mp4</code>:
+The input H.264 video file. * <code>-c:v h264_nvenc</code>: Selects the
+NVIDIA NVENC encoder for H.264 output. * <code>-preset fast</code>: Sets
+the encoding preset for NVENC.</p>
+<h3 id="method-2-gpu-decoding-with-cpu-encoding">Method 2: GPU Decoding
+with CPU Encoding</h3>
+<p>If you want to decode the H.264 video on the GPU but encode the
+output using a CPU-based encoder like <code>libx264</code> (for maximum
+compression efficiency), use the following command:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-hwaccel</span> cuda <span class="at">-i</span> input.mp4 <span class="at">-c:v</span> libx264 <span class="at">-crf</span> 23 output.mp4</span></code></pre></div>
+<p>In this scenario, the decoded frames are automatically copied from
+GPU memory back to system memory so the CPU encoder can process
+them.</p>
+<h3 id="method-3-explicit-cuvid-decoding-alternative">Method 3: Explicit
+CUVID Decoding (Alternative)</h3>
+<p>If <code>-hwaccel cuda</code> does not work with your FFmpeg build,
+you can explicitly call the CUVID H.264 decoder wrapper:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-c:v</span> h264_cuvid <span class="at">-i</span> input.mp4 <span class="at">-c:v</span> h264_nvenc output.mp4</span></code></pre></div>
+<p><em>Note: The <code>-c:v h264_cuvid</code> option must be placed
+<strong>before</strong> the input file <code>-i</code> to instruct
+FFmpeg to use that specific decoder for the input.</em></p>
+<h2 id="verifying-gpu-usage">Verifying GPU Usage</h2>
+<p>To confirm that NVDEC is active during the transcoding process, open
+a second terminal window and run:</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="ex">nvidia-smi</span></span></code></pre></div>
+<p>Look at the <strong>GPU-Util</strong> and the
+<strong>Processes</strong> list at the bottom of the output. You should
+see <code>ffmpeg</code> listed, and your GPU utilization should reflect
+active video decoding and encoding.</p></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

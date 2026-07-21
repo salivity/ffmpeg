@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Center Text at Top of Video with FFmpeg Drawtext - ffmpeg</title>
+    <meta name="description" content="This article explains how to position a text box at the top center of a video using mathematical calculations within the FFmpeg drawtext filter. You will learn the exact formulas required to calculate horizontal centering, apply vertical top-padding, and">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/center-text-at-top-of-video-with-ffmpeg-drawtext">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Center Text at Top of Video with FFmpeg Drawtext - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/center-text-at-top-of-video-with-ffmpeg-drawtext" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article explains how to position a text box at the top center of a video using mathematical calculations within the FFmpeg drawtext filter. You will learn the exact formulas required to calculate horizontal centering, apply vertical top-padding, and" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="center-text-at-top-of-video-with-ffmpeg-drawtext">Center Text at
+Top of Video with FFmpeg Drawtext</h1>
+<p>This article explains how to position a text box at the top center of
+a video using mathematical calculations within the FFmpeg
+<code>drawtext</code> filter. You will learn the exact formulas required
+to calculate horizontal centering, apply vertical top-padding, and style
+the surrounding text box for optimal readability.</p>
+<h2 id="the-mathematical-formulas">The Mathematical Formulas</h2>
+<p>To position text accurately, FFmpeg provides built-in variables
+representing the dimensions of both the video and the rendered text. To
+place the text box at the top center, you must calculate the horizontal
+coordinate (<code>x</code>) and the vertical coordinate (<code>y</code>)
+using these variables:</p>
+<ul>
+<li><strong><code>w</code></strong>: Width of the input video</li>
+<li><strong><code>h</code></strong>: Height of the input video</li>
+<li><strong><code>tw</code></strong>: Estimated width of the rendered
+text</li>
+<li><strong><code>th</code></strong>: Estimated height of the rendered
+text</li>
+</ul>
+<h3 id="horizontal-calculation-centering">Horizontal Calculation
+(Centering)</h3>
+<p>To center the text horizontally, subtract the width of the text from
+the width of the video, and divide the result by two:</p>
+<pre class="text"><code>x=(w-tw)/2</code></pre>
+<h3 id="vertical-calculation-top-alignment">Vertical Calculation (Top
+Alignment)</h3>
+<p>To place the text at the top, you could set <code>y=0</code>.
+However, this places the text box flush against the top edge of the
+video frame. To make it visually appealing, add a small pixel offset
+(padding) from the top, such as 20 or 30 pixels:</p>
+<pre class="text"><code>y=20</code></pre>
+<p>Alternatively, you can use a percentage of the video height for
+dynamic scaling:</p>
+<pre class="text"><code>y=h*0.05</code></pre>
+<h2 id="creating-the-text-box">Creating the Text Box</h2>
+<p>To draw a background box behind the text, you must enable the box
+parameter and define its styling properties inside the
+<code>drawtext</code> filter:</p>
+<ul>
+<li><strong><code>box=1</code></strong>: Enables the background
+box.</li>
+<li><strong><code>boxcolor=black@0.5</code></strong>: Sets the box color
+(e.g., black with 50% opacity).</li>
+<li><strong><code>boxborderw=10</code></strong>: Adds padding (border
+width) around the text inside the box.</li>
+</ul>
+<h2 id="ffmpeg-command-example">FFmpeg Command Example</h2>
+<p>Combine the positioning calculations and the box styling parameters
+into a single <code>drawtext</code> video filter (<code>-vf</code>):</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;drawtext=text=&#39;Top Center Caption&#39;:fontcolor=white:fontsize=24:box=1:boxcolor=black@0.6:boxborderw=15:x=(w-tw)/2:y=30&quot;</span> <span class="at">-codec:a</span> copy output.mp4</span></code></pre></div>
+<h3 id="parameter-breakdown">Parameter Breakdown:</h3>
+<ul>
+<li><code>text='Top Center Caption'</code>: The string of text to
+render.</li>
+<li><code>fontcolor=white</code>: The color of the text.</li>
+<li><code>fontsize=24</code>: The size of the text in pixels.</li>
+<li><code>box=1:boxcolor=black@0.6:boxborderw=15</code>: Configures a
+semi-transparent black background box with 15 pixels of padding around
+the text.</li>
+<li><code>x=(w-tw)/2</code>: Centers the box horizontally.</li>
+<li><code>y=30</code>: Positions the box 30 pixels down from the very
+top of the frame.</li>
+</ul></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

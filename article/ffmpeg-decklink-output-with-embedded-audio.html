@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FFmpeg DeckLink Output with Embedded Audio - ffmpeg</title>
+    <meta name="description" content="This guide explains how to use FFmpeg to receive a live stream (such as RTMP, SRT, or HLS) and output it directly to a Blackmagic Design DeckLink card with embedded audio. You will learn the required FFmpeg commands, hardware prerequisites, device identi">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/ffmpeg-decklink-output-with-embedded-audio">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="FFmpeg DeckLink Output with Embedded Audio - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/ffmpeg-decklink-output-with-embedded-audio" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This guide explains how to use FFmpeg to receive a live stream (such as RTMP, SRT, or HLS) and output it directly to a Blackmagic Design DeckLink card with embedded audio. You will learn the required FFmpeg commands, hardware prerequisites, device identi" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="ffmpeg-decklink-output-with-embedded-audio">FFmpeg DeckLink
+Output with Embedded Audio</h1>
+<p>This guide explains how to use FFmpeg to receive a live stream (such
+as RTMP, SRT, or HLS) and output it directly to a Blackmagic Design
+DeckLink card with embedded audio. You will learn the required FFmpeg
+commands, hardware prerequisites, device identification steps, and
+configuration parameters to ensure a stable, low-latency
+broadcast-quality output.</p>
+<h2 id="prerequisites">Prerequisites</h2>
+<p>Before running the FFmpeg command, ensure your system meets the
+following requirements:</p>
+<ol type="1">
+<li><strong>Blackmagic Desktop Video Drivers:</strong> Install the
+latest Desktop Video SDK and drivers for your operating system from the
+Blackmagic Design website.</li>
+<li><strong>FFmpeg Compilation:</strong> Your FFmpeg binary must be
+compiled with DeckLink support. Verify this by running
+<code>ffmpeg -protocols</code> or <code>ffmpeg -formats</code> and
+ensuring <code>decklink</code> is listed. If compile options are shown,
+look for <code>--enable-decklink</code>.</li>
+</ol>
+<h2 id="step-1-identify-your-decklink-device-name">Step 1: Identify Your
+DeckLink Device Name</h2>
+<p>FFmpeg needs the exact name of your DeckLink hardware interface. Run
+the following command to list all connected Blackmagic capture and
+playback devices:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-f</span> decklink <span class="at">-list_devices</span> 1 <span class="at">-i</span> dummy</span></code></pre></div>
+<p>The output will display the exact string names of your hardware
+channels (e.g., <code>"DeckLink Duo (1)"</code> or
+<code>"DeckLink Studio 4K"</code>). Copy the exact name of the output
+channel you intend to use.</p>
+<h2 id="step-2-identify-supported-format-codes">Step 2: Identify
+Supported Format Codes</h2>
+<p>DeckLink cards require the input video format to precisely match a
+supported broadcast standard (such as 1080p50, 1080i60, or 2160p30). To
+list the supported format codes for your specific card, run:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-f</span> decklink <span class="at">-list_formats</span> 1 <span class="at">-i</span> <span class="st">&quot;Your Device Name&quot;</span></span></code></pre></div>
+<p>Look at the <strong>Format Code</strong> column (e.g.,
+<code>hp50</code> for 1080p50, <code>hi59</code> for 1080i59.94). You
+must pass this code into your playback command.</p>
+<h2 id="step-3-run-the-ffmpeg-output-command">Step 3: Run the FFmpeg
+Output Command</h2>
+<p>Once you have the device name and the format code, use the following
+template to take your live stream input and send it to the DeckLink
+output with embedded audio:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> <span class="st">&quot;rtmp://your-stream-url/live/stream&quot;</span> <span class="dt">\</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>-c:v rawvideo <span class="dt">\</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>-pix_fmt yuv422p <span class="dt">\</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>-c:a pcm_s16le <span class="dt">\</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>-ar 48000 <span class="dt">\</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>-ac 2 <span class="dt">\</span></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>-f decklink <span class="dt">\</span></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>-format_code hp50 <span class="dt">\</span></span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a><span class="st">&quot;DeckLink Duo (1)&quot;</span></span></code></pre></div>
+<h3 id="parameter-breakdown">Parameter Breakdown:</h3>
+<ul>
+<li><strong><code>-i "rtmp://..."</code></strong>: The source of your
+live stream (RTMP, SRT, HLS, or UDP).</li>
+<li><strong><code>-c:v rawvideo</code></strong>: Decodes the incoming
+compressed video stream into uncompressed raw video, which the DeckLink
+card requires.</li>
+<li><strong><code>-pix_fmt yuv422p</code></strong>: Sets the pixel
+format to YUV 4:2:2 (8-bit), the standard pixel format for SDI/HDMI
+transmission.</li>
+<li><strong><code>-c:a pcm_s16le</code></strong>: Decodes the audio to
+uncompressed 16-bit PCM. DeckLink SDI outputs embed uncompressed PCM
+audio. Use <code>pcm_s24le</code> if your workflow requires 24-bit
+audio.</li>
+<li><strong><code>-ar 48000</code></strong>: Sets the audio sample rate
+to 48 kHz, which is the mandatory standard for SDI broadcast audio.</li>
+<li><strong><code>-ac 2</code></strong>: Configures the audio to 2
+channels (stereo). You can increase this to 8 or 16 channels depending
+on your stream source and card capabilities.</li>
+<li><strong><code>-f decklink</code></strong>: Specifies the output
+format muxer as Blackmagic DeckLink.</li>
+<li><strong><code>-format_code hp50</code></strong>: Forces the output
+resolution and framerate to match the specific DeckLink standard (in
+this case, 1080p at 50 fps). Replace this with the code appropriate for
+your broadcast environment.</li>
+<li><strong><code>"DeckLink Duo (1)"</code></strong>: The exact name of
+the output device destination.</li>
+</ul>
+<h2 id="step-4-real-time-stream-tuning">Step 4: Real-Time Stream
+Tuning</h2>
+<p>Because live streaming inputs can experience network jitter, you
+should add low-latency and synchronization flags to prevent video lag or
+audio drift:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-fflags</span> nobuffer <span class="at">-flags</span> low_delay <span class="dt">\</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>-i <span class="st">&quot;rtmp://your-stream-url/live/stream&quot;</span> <span class="dt">\</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>-c:v rawvideo <span class="at">-pix_fmt</span> yuv422p <span class="dt">\</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>-c:a pcm_s16le <span class="at">-ar</span> 48000 <span class="at">-ac</span> 2 <span class="dt">\</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>-f decklink <span class="at">-preroll</span> 0.5 <span class="at">-format_code</span> hp50 <span class="st">&quot;DeckLink Duo (1)&quot;</span></span></code></pre></div>
+<ul>
+<li><strong><code>-fflags nobuffer -flags low_delay</code></strong>:
+Minimizes input buffering on the stream ingestion side.</li>
+<li><strong><code>-preroll 0.5</code></strong>: Instructs the DeckLink
+card to buffer 0.5 seconds of video before beginning playback to prevent
+initial dropped frames or audio stutter.</li>
+</ul></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

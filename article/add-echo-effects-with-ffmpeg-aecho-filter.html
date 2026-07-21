@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add Echo Effects with FFmpeg aecho Filter - ffmpeg</title>
+    <meta name="description" content="This article explains how to use the aecho filter in FFmpeg to apply professional audio echo effects to your media files. You will learn the basic syntax of the filter, understand what each parameter does, and see practical command-line examples for crea">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/add-echo-effects-with-ffmpeg-aecho-filter">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Add Echo Effects with FFmpeg aecho Filter - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/add-echo-effects-with-ffmpeg-aecho-filter" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article explains how to use the aecho filter in FFmpeg to apply professional audio echo effects to your media files. You will learn the basic syntax of the filter, understand what each parameter does, and see practical command-line examples for crea" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="add-echo-effects-with-ffmpeg-aecho-filter">Add Echo Effects with
+FFmpeg aecho Filter</h1>
+<p>This article explains how to use the <code>aecho</code> filter in
+FFmpeg to apply professional audio echo effects to your media files. You
+will learn the basic syntax of the filter, understand what each
+parameter does, and see practical command-line examples for creating
+both simple and multiple echo effects.</p>
+<p>The <code>aecho</code> filter in FFmpeg works by mixing the original
+audio signal with one or more delayed copies of itself. The syntax for
+the filter is structured as follows:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="va">aecho</span><span class="op">=</span>in_gain:out_gain:delays:decays</span></code></pre></div>
+<h3 id="understanding-the-parameters">Understanding the Parameters</h3>
+<p>To customize your echo effect, you need to adjust four key
+parameters:</p>
+<ul>
+<li><strong><code>in_gain</code></strong>: Sets the input volume of the
+original audio. A value of <code>0.8</code> is commonly used to prevent
+clipping (distortion) when the echo is added.</li>
+<li><strong><code>out_gain</code></strong>: Sets the volume of the final
+output signal.</li>
+<li><strong><code>delays</code></strong>: A list of delay times in
+milliseconds (ms), separated by a pipe character (<code>|</code>). For
+example, <code>1000</code> creates a 1-second delay.</li>
+<li><strong><code>decays</code></strong>: A list of decay factors for
+each corresponding delay, separated by a pipe character
+(<code>|</code>). This determines how loud each echo is relative to the
+original sound (e.g., <code>0.5</code> means the echo is half as loud as
+the original).</li>
+</ul>
+<h3 id="example-1-creating-a-simple-single-echo">Example 1: Creating a
+Simple, Single Echo</h3>
+<p>To add a single, clean echo that occurs 1 second (1000 milliseconds)
+after the original sound with half the original volume, use the
+following command:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp3 <span class="at">-af</span> <span class="st">&quot;aecho=0.8:0.8:1000:0.5&quot;</span> output.mp3</span></code></pre></div>
+<p>In this command: * <code>in_gain</code> and <code>out_gain</code> are
+set to <code>0.8</code> to avoid digital clipping. * The delay is set to
+<code>1000</code> ms. * The decay is set to <code>0.5</code>, meaning
+the echo fades out by 50%.</p>
+<h3 id="example-2-creating-multiple-echoes-canyon-effect">Example 2:
+Creating Multiple Echoes (Canyon Effect)</h3>
+<p>You can chain multiple delays to create a richer, “canyon-like” echo
+effect. This is done by adding multiple values to the
+<code>delays</code> and <code>decays</code> parameters, separated by
+pipes (<code>|</code>):</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.wav <span class="at">-af</span> <span class="st">&quot;aecho=0.8:0.9:1000|1800|2500:0.4|0.25|0.1&quot;</span> output.wav</span></code></pre></div>
+<p>In this example: * The first echo occurs at <code>1000</code> ms with
+a decay of <code>0.4</code>. * The second echo occurs at
+<code>1800</code> ms with a decay of <code>0.25</code>. * The third echo
+occurs at <code>2500</code> ms with a decay of <code>0.1</code>.</p>
+<h3 id="tips-for-best-results">Tips for Best Results</h3>
+<ul>
+<li><strong>Avoid Clipping</strong>: If the output audio sounds
+distorted, lower both the <code>in_gain</code> and <code>out_gain</code>
+values (e.g., to <code>0.6</code> or <code>0.5</code>).</li>
+<li><strong>Match Delays and Decays</strong>: Ensure the number of delay
+values matches the number of decay values. If you specify three delays,
+you must specify three decays.</li>
+</ul></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

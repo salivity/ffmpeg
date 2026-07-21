@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Why You Need the -re Option in FFmpeg RTMP Streaming - ffmpeg</title>
+    <meta name="description" content="This article explains the critical role of the -re option in FFmpeg when streaming video files to an RTMP server. It details the technical consequences of omitting this flag—such as server overload, network congestion, and stream termination—and expl">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/why-you-need-the-re-option-in-ffmpeg-rtmp-streaming">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Why You Need the -re Option in FFmpeg RTMP Streaming - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/why-you-need-the-re-option-in-ffmpeg-rtmp-streaming" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article explains the critical role of the -re option in FFmpeg when streaming video files to an RTMP server. It details the technical consequences of omitting this flag—such as server overload, network congestion, and stream termination—and expl" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="https://github.com/salivity" title="Github" aria-label="Go To Github Profile Page"><svg class="svg-icon" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.28.73-.55v-1.84c-3.03.64-3.67-1.46-3.67-1.46-.55-1.29-1.28-1.65-1.28-1.65-.92-.65.1-.65.1-.65 1.1 0 1.73 1.1 1.73 1.1.92 1.65 2.57 1.2 3.21.92a2 2 0 01.64-1.47c-2.47-.27-5.04-1.19-5.04-5.5 0-1.1.46-2.1 1.2-2.84a3.76 3.76 0 010-2.93s.91-.28 3.11 1.1c1.8-.49 3.7-.49 5.5 0 2.1-1.38 3.02-1.1 3.02-1.1a3.76 3.76 0 010 2.93c.83.74 1.2 1.74 1.2 2.94 0 4.21-2.57 5.13-5.04 5.4.45.37.82.92.82 2.02v3.03c0 .27.1.64.73.55A11 11 0 0012 1.27"></path></svg></a></li>
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="why-you-need-the--re-option-in-ffmpeg-rtmp-streaming">Why You
+Need the -re Option in FFmpeg RTMP Streaming</h1>
+<p>This article explains the critical role of the <code>-re</code>
+option in FFmpeg when streaming video files to an RTMP server. It
+details the technical consequences of omitting this flag—such as server
+overload, network congestion, and stream termination—and explains how
+FFmpeg handles input reading speeds by default.</p>
+<h2 id="the-role-of-the--re-option-in-ffmpeg">The Role of the
+<code>-re</code> Option in FFmpeg</h2>
+<p>By default, FFmpeg is designed to process media files as fast as your
+system’s CPU, disk, and network interface will allow. When you convert a
+file locally, this high-speed processing is ideal because you want the
+job finished quickly.</p>
+<p>However, when streaming a pre-recorded file (like an MP4) to a live
+RTMP destination, this default behavior causes issues. The
+<code>-re</code> option forces FFmpeg to read the input file in
+“real-time” according to its native frame rate. If your video is 30
+frames per second (fps), FFmpeg will read and send exactly 30 frames per
+second.</p>
+<h2 id="what-happens-when-you-omit--re">What Happens When You Omit
+<code>-re</code>?</h2>
+<p>If you omit the <code>-re</code> flag when streaming a pre-recorded
+file to an RTMP server, FFmpeg will attempt to upload the entire video
+file at maximum speed. This leads to several immediate problems:</p>
+<h3 id="rtmp-server-ingest-buffer-overflow">1. RTMP Server Ingest Buffer
+Overflow</h3>
+<p>RTMP servers (such as Nginx-RTMP, Wowza, Nimble Streamer, or
+platforms like YouTube Live and Twitch) expect a steady, real-time pace
+of data. When FFmpeg dumps minutes or hours of video data into the RTMP
+stream within seconds, the server’s ingest buffer overflows. Most RTMP
+servers will immediately terminate the connection to protect their
+resources.</p>
+<h3 id="immediate-stream-disconnection-and-failures">2. Immediate Stream
+Disconnection and Failures</h3>
+<p>Because the packet timestamps arrive too quickly and out of sync with
+real-time, the ingestion handshake or the active session will fail. CDNs
+and streaming platforms will often flag the stream as unstable and
+disconnect the broadcast.</p>
+<h3 id="extreme-bandwidth-spikes">3. Extreme Bandwidth Spikes</h3>
+<p>Without throttling, FFmpeg will consume all available upload
+bandwidth to push the packets as fast as possible. This can saturate
+your local network, causing high latency, packet loss, and connection
+drops for other services on the same network.</p>
+<h3 id="playback-buffering-and-stuttering">4. Playback Buffering and
+Stuttering</h3>
+<p>If the RTMP server does manage to accept the rapid influx of data
+without crashing, viewers will experience severe playback issues. Video
+players cannot process timestamps that arrive faster than wall-clock
+time, resulting in frozen frames, infinite buffering loops, or the
+player skipping directly to the end of the video.</p>
+<h2 id="summary-of-best-practices">Summary of Best Practices</h2>
+<ul>
+<li><strong>Use <code>-re</code> when:</strong> You are streaming
+pre-recorded files (like MP4, MKV, or FLV) to a live RTMP server.</li>
+<li><strong>Do not use <code>-re</code> when:</strong> You are streaming
+from a live input source (like a webcam, capture card, or microphone).
+Live capture devices naturally generate data in real-time, so forcing
+the <code>-re</code> option is redundant and can cause latency or sync
+issues.</li>
+</ul></article>
+        <div id=comments-container></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>
