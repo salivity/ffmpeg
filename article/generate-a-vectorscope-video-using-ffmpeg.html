@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generate a Vectorscope Video Using FFmpeg - ffmpeg</title>
+    <meta name="description" content="This article explains how to use FFmpeg's vectorscope video filter to analyze the color components and chrominance values of a video file. You will learn the basic command to create a standalone vectorscope video, how to customize the scope's appearance,">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/generate-a-vectorscope-video-using-ffmpeg">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Generate a Vectorscope Video Using FFmpeg - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/generate-a-vectorscope-video-using-ffmpeg" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article explains how to use FFmpeg's vectorscope video filter to analyze the color components and chrominance values of a video file. You will learn the basic command to create a standalone vectorscope video, how to customize the scope's appearance," />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="generate-a-vectorscope-video-using-ffmpeg">Generate a
+Vectorscope Video Using FFmpeg</h1>
+<p>This article explains how to use FFmpeg's <code>vectorscope</code>
+video filter to analyze the color components and chrominance values of a
+video file. You will learn the basic command to create a standalone
+vectorscope video, how to customize the scope's appearance, and how to
+place the vectorscope side-by-side or as an overlay on the original
+footage for real-time monitoring.</p>
+<h3 id="basic-vectorscope-generation">Basic Vectorscope Generation</h3>
+<p>To convert an input video into a standalone vectorscope video, use
+the <code>-vf</code> (video filter) option and specify
+<code>vectorscope</code>:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;vectorscope&quot;</span> output.mp4</span></code></pre></div>
+<p>This command takes the chroma planes (U and V or Cb and Cr) and plots
+them on a two-dimensional graph, showing the distribution of color
+saturation and hue across your footage.</p>
+<h3 id="customizing-the-vectorscope-display">Customizing the Vectorscope
+Display</h3>
+<p>The <code>vectorscope</code> filter accepts several parameters to
+adjust how the scope is rendered:</p>
+<ul>
+<li><strong><code>m</code> (mode):</strong> Defines how the scope
+displays data. Common options include:
+<ul>
+<li><code>gray</code>: Standard monochrome trace (default).</li>
+<li><code>color</code>: Colorizes the trace points based on their
+coordinates.</li>
+<li><code>color2</code>: A variant that highlights high-density
+areas.</li>
+<li><code>color3</code>: Colors the background graticule.</li>
+</ul></li>
+<li><strong><code>i</code> (intensity):</strong> Adjusts the brightness
+of the plotted samples (value between <code>0.0</code> and
+<code>1.0</code>). Useful for brightening faint signals.</li>
+<li><strong><code>envelope</code> (e):</strong> Shows the boundary
+limits of the signal (<code>none</code>, <code>instant</code>, or
+<code>peak</code>).</li>
+<li><strong><code>graticule</code> (g):</strong> Adds reference marks
+and color targets to the scope (<code>none</code>, <code>green</code>,
+or <code>color</code>).</li>
+</ul>
+<p>Example using custom visual parameters:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;vectorscope=m=color3:i=0.2:g=color&quot;</span> output.mp4</span></code></pre></div>
+<h3 id="viewing-the-original-video-and-vectorscope-side-by-side">Viewing
+the Original Video and Vectorscope Side-by-Side</h3>
+<p>To monitor the footage alongside the scope, split the video stream,
+apply the filter to one branch, and combine them using
+<code>hstack</code>:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-filter_complex</span> <span class="st">&quot;[0:v]split=2[orig][to_scope];[to_scope]vectorscope=m=color3:g=color[scope];[orig][scope]hstack&quot;</span> output.mp4</span></code></pre></div>
+<p>If the original video's height does not match the default vectorscope
+height (256x256 or 512x512 depending on bit depth), scale the scope to
+match the input height:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-filter_complex</span> <span class="st">&quot;[0:v]split=2[orig][to_scope];[to_scope]vectorscope=m=color3:g=color,scale=-1:ih[scope];[orig][scope]hstack&quot;</span> output.mp4</span></code></pre></div>
+<h3 id="overlaying-the-vectorscope-picture-in-picture">Overlaying the
+Vectorscope (Picture-in-Picture)</h3>
+<p>To place a small vectorscope in the corner of your video:</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-filter_complex</span> <span class="st">&quot;[0:v]split=2[base][to_scope];[to_scope]vectorscope=m=color3:g=color,scale=320:320[scope];[base][scope]overlay=W-w-10:10&quot;</span> output.mp4</span></code></pre></div>
+<p>This command scales the vectorscope to a 320x320 box and overlays it
+in the top-right corner, 10 pixels away from the edges.</p></article>
+        <div id="comments-container"></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fix ffprobe Stream Contains No Frames Error - ffmpeg</title>
+    <meta name="description" content="The "Stream contains no frames" error in ffprobe indicates that while a media container defines a specific audio, video, or data track, the analyzer found zero decodable packets or frames within it. This article explains the underlying causes of this err">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/fix-ffprobe-stream-contains-no-frames-error">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Fix ffprobe Stream Contains No Frames Error - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/fix-ffprobe-stream-contains-no-frames-error" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="The "Stream contains no frames" error in ffprobe indicates that while a media container defines a specific audio, video, or data track, the analyzer found zero decodable packets or frames within it. This article explains the underlying causes of this err" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="fix-ffprobe-stream-contains-no-frames-error">Fix ffprobe Stream
+Contains No Frames Error</h1>
+<p>The "Stream contains no frames" error in ffprobe indicates that while
+a media container defines a specific audio, video, or data track, the
+analyzer found zero decodable packets or frames within it. This article
+explains the underlying causes of this error—ranging from truncated
+files and container metadata mismatches to restrictive probe limits—and
+provides direct command-line solutions to analyze, repair, or bypass the
+issue using FFmpeg tools.</p>
+<hr />
+<h3 id="what-causes-the-stream-contains-no-frames-error">What Causes the
+"Stream contains no frames" Error?</h3>
+<p>When ffprobe opens a media file, it reads the container header to
+determine how many streams (video, audio, subtitles) are present. It
+then reads a portion of the actual data to identify codecs, frame rates,
+and resolutions. The "Stream contains no frames" error occurs due to
+three main reasons:</p>
+<ol type="1">
+<li><strong>Ghost Streams:</strong> The container metadata (such as an
+MP4 or MKV header) lists a stream, but the stream contains no actual
+data. This frequently happens when recording software initializes an
+audio or subtitle track that never receives input.</li>
+<li><strong>Insufficient Analysis Buffers:</strong> In files with
+delayed streams or sparse data (like subtitles or chapter markers),
+valid frames exist further down the timeline than ffprobe checks by
+default.</li>
+<li><strong>Truncated or Corrupt Files:</strong> If a recording ends
+abruptly or a download is interrupted, the container may reference frame
+indexes that were never written to disk.</li>
+</ol>
+<hr />
+<h3 id="how-to-fix-the-error">How to Fix the Error</h3>
+<p>Depending on whether the issue is caused by shallow analysis limits,
+empty tracks, or corruption, use the following methods to resolve
+it.</p>
+<h4 id="1-increase-the-probe-size-and-analyze-duration">1. Increase the
+Probe Size and Analyze Duration</h4>
+<p>If the stream is valid but starts late in the file, ffprobe might
+give up before reaching the first frame. Increase the scanning limits
+using <code>-probesize</code> and <code>-analyzeduration</code>:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffprobe</span> <span class="at">-probesize</span> 100M <span class="at">-analyzeduration</span> 100M <span class="at">-i</span> input.mp4</span></code></pre></div>
+<p>You can scale these values higher (e.g., <code>500M</code> or
+<code>1G</code>) for large, high-bitrate video files.</p>
+<h4 id="2-identify-and-drop-the-empty-stream">2. Identify and Drop the
+Empty Stream</h4>
+<p>If the file plays fine but causes automated scripts or transcoding
+pipelines to fail, locate the empty stream index and exclude it using
+FFmpeg.</p>
+<p>First, identify the problematic stream index:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffprobe</span> <span class="at">-v</span> error <span class="at">-show_entries</span> stream=index,codec_type <span class="at">-of</span> default=noprint_wrappers=1 input.mp4</span></code></pre></div>
+<p>If stream <code>0:2</code> is an empty track causing the error,
+re-mux the file to strip it out without re-encoding:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-map</span> 0 <span class="at">-map</span> <span class="at">-0:2</span> <span class="at">-c</span> copy output.mp4</span></code></pre></div>
+<p>Alternatively, map only standard working streams (video and audio) to
+automatically drop corrupt metadata tracks:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-map</span> 0:v:0 <span class="at">-map</span> 0:a:0 <span class="at">-c</span> copy output.mp4</span></code></pre></div>
+<h4 id="3-ignore-errors-in-automated-scripts">3. Ignore Errors in
+Automated Scripts</h4>
+<p>If you are running <code>ffprobe</code> in a script and want to
+ignore empty auxiliary streams to capture data from the working streams,
+restrict log verbosity to only fatal errors:</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffprobe</span> <span class="at">-v</span> fatal <span class="at">-show_streams</span> <span class="at">-select_streams</span> v:0 input.mp4</span></code></pre></div>
+<p>Using <code>-select_streams v:0</code> limits the probe exclusively
+to the primary video stream, preventing errors from empty secondary
+streams from breaking execution.</p>
+<h4 id="4-repair-corrupt-or-truncated-containers">4. Repair Corrupt or
+Truncated Containers</h4>
+<p>If the entire file fails to read because the recording was
+interrupted, attempt to rebuild the container index with FFmpeg:</p>
+<div class="sourceCode" id="cb6"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-err_detect</span> ignore_err <span class="at">-i</span> input.mp4 <span class="at">-c</span> copy fixed_output.mp4</span></code></pre></div>
+<p>For severely damaged MP4 or MOV files where the moov atom is missing
+or unindexed, use specialized recovery tools like <code>untrunc</code>
+to reconstruct the missing frame indexes against a healthy reference
+file created with the same settings.</p></article>
+        <div id="comments-container"></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

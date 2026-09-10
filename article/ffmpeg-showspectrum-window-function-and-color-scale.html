@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FFmpeg showspectrum: Window Function and Color Scale - ffmpeg</title>
+    <meta name="description" content="The FFmpeg showspectrum filter transforms an audio stream into a visual frequency spectrum, rendering audio amplitude and frequencies over time. This guide explains how to customize this filter by setting different window functions to control spectral le">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/ffmpeg-showspectrum-window-function-and-color-scale">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="FFmpeg showspectrum: Window Function and Color Scale - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/ffmpeg-showspectrum-window-function-and-color-scale" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="The FFmpeg showspectrum filter transforms an audio stream into a visual frequency spectrum, rendering audio amplitude and frequencies over time. This guide explains how to customize this filter by setting different window functions to control spectral le" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="ffmpeg-showspectrum-window-function-and-color-scale">FFmpeg
+showspectrum: Window Function and Color Scale</h1>
+<p>The FFmpeg <code>showspectrum</code> filter transforms an audio
+stream into a visual frequency spectrum, rendering audio amplitude and
+frequencies over time. This guide explains how to customize this filter
+by setting different window functions to control spectral leakage and
+resolution, as well as applying custom color scales to optimize visual
+clarity and contrast.</p>
+<h3 id="understanding-the-showspectrum-filter">Understanding the
+<code>showspectrum</code> Filter</h3>
+<p>The <code>showspectrum</code> filter takes an audio input and
+generates a video output representing the audio's frequency
+distribution. The two most critical parameters for visual tuning are
+<code>win_func</code>, which sets the Discrete Fourier Transform (DFT)
+windowing function, and <code>color</code>, which dictates the color
+palette used to represent amplitude intensity.</p>
+<h3 id="configuring-the-window-function-win_func">Configuring the Window
+Function (<code>win_func</code>)</h3>
+<p>A window function mitigates spectral leakage, which occurs when a
+signal's frequency does not align perfectly with discrete FFT bins.
+Different functions offer trade-offs between frequency resolution (main
+lobe sharpness) and amplitude accuracy (side lobe attenuation).</p>
+<p>To configure the window function, pass the <code>win_func</code> (or
+shorthand <code>w</code>) option inside the filter string:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp3 <span class="at">-filter_complex</span> <span class="st">&quot;showspectrum=win_func=blackman&quot;</span> <span class="at">-pix_fmt</span> yuv420p output.mp4</span></code></pre></div>
+<p>Common window options include:</p>
+<ul>
+<li><strong><code>hann</code></strong>: The default window. Provides a
+balanced compromise between resolution and leakage suppression.</li>
+<li><strong><code>hamming</code></strong>: Similar to Hann, offering
+slightly better main-lobe resolution but higher distant sidelobes.</li>
+<li><strong><code>blackman</code></strong>: Strongly suppresses spectral
+leakage, making it ideal for clean, high-contrast visualization at the
+cost of slight peak-width broadening.</li>
+<li><strong><code>rect</code></strong>: A rectangular window (no
+windowing). Provides the sharpest main lobe but severe leakage; best for
+detecting exact frequencies of pure sine waves.</li>
+<li><strong><code>flattop</code></strong>: Minimizes amplitude
+measurement error, useful for measuring exact decibel levels across
+bins.</li>
+<li><strong><code>kaiser</code></strong>: A flexible window that allows
+balancing sidelobes against lobe width.</li>
+</ul>
+<h3 id="configuring-the-color-scale-color">Configuring the Color Scale
+(<code>color</code>)</h3>
+<p>The <code>color</code> (or shorthand <code>c</code>) option defines
+the color palette applied to the spectrum based on the signal intensity.
+Selecting the right color map improves readability depending on whether
+you are viewing subtle background noise or loud transient peaks.</p>
+<p>Specify the palette name with the <code>color</code> parameter:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp3 <span class="at">-filter_complex</span> <span class="st">&quot;showspectrum=color=viridis&quot;</span> <span class="at">-pix_fmt</span> yuv420p output.mp4</span></code></pre></div>
+<p>Supported color maps include:</p>
+<ul>
+<li><strong><code>channel</code></strong>: The default mode. Generates a
+distinct color for each audio channel.</li>
+<li><strong><code>intensity</code></strong>: Single-channel intensity
+gradient (grayscale by default).</li>
+<li><strong><code>rainbow</code></strong>: A classic multi-color
+spectrum ranging across common visible wavelengths.</li>
+<li><strong><code>moreland</code></strong>: A smooth divergent color map
+ranging from blue to red.</li>
+<li><strong><code>nebula</code></strong>: A high-contrast
+purple-blue-white space palette.</li>
+<li><strong><code>fire</code> / <code>fiery</code></strong>: Warm
+palettes starting from black/red to yellow/white.</li>
+<li><strong><code>fruit</code></strong>: A vibrant palette utilizing
+fruit-inspired hues.</li>
+<li><strong><code>cool</code></strong>: A cool blue-to-cyan temperature
+gradient.</li>
+<li><strong><code>magma</code></strong>: A perceptually uniform
+sequential palette running from black through purple and orange to light
+yellow.</li>
+<li><strong><code>viridis</code></strong>: A perceptually uniform
+palette running from dark purple through blue and green to bright
+yellow, recommended for accessibility and accurate gradient
+representation.</li>
+</ul>
+<h3 id="adjusting-intensity-scaling-scale">Adjusting Intensity Scaling
+(<code>scale</code>)</h3>
+<p>To ensure the chosen color palette distributes evenly across quiet
+and loud signals, adjust the <code>scale</code> parameter alongside the
+color configuration:</p>
+<ul>
+<li><code>lin</code>: Linear amplitude scale.</li>
+<li><code>sqrt</code>: Square root scale (default), useful for general
+listening material.</li>
+<li><code>cbrt</code>: Cubic root scale, reveals quieter background
+details.</li>
+<li><code>log</code>: Logarithmic scale, standard for decibel-based
+visual representations.</li>
+<li><code>4thrt</code> / <code>5thrt</code>: Fourth- and fifth-root
+scales for extreme dynamic range visualization.</li>
+</ul>
+<h3 id="complete-working-example">Complete Working Example</h3>
+<p>To render a 1920x1080 spectrum using a <code>blackman</code> window
+function, logarithmic frequency spacing, a <code>magma</code> color map,
+and a logarithmic amplitude scale, use the following command:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.wav <span class="at">-filter_complex</span> <span class="dt">\</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="st">&quot;showspectrum=s=1920x1080:win_func=blackman:color=magma:scale=log:fscale=log&quot;</span> <span class="dt">\</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>-c:v libx264 <span class="at">-pix_fmt</span> yuv420p <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<p>To preview the spectrum in real time instead of saving to a file,
+substitute <code>ffmpeg</code> with <code>ffplay</code>:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffplay</span> <span class="at">-f</span> lavfi <span class="st">&quot;amovie=input.wav,asplit[a][v];[v]showspectrum=s=1280x720:win_func=hann:color=viridis:scale=cbrt[out]&quot;</span></span></code></pre></div></article>
+        <div id="comments-container"></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

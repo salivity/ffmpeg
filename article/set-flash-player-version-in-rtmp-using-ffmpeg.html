@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Set Flash Player Version in RTMP Using FFmpeg - ffmpeg</title>
+    <meta name="description" content="This article explains how to configure the Flash Player version string (flashVer) during the RTMP handshake and connection phase using FFmpeg. Setting this string is often necessary when streaming to restrictive media servers or Content Delivery Networks">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/set-flash-player-version-in-rtmp-using-ffmpeg">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Set Flash Player Version in RTMP Using FFmpeg - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/set-flash-player-version-in-rtmp-using-ffmpeg" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article explains how to configure the Flash Player version string (flashVer) during the RTMP handshake and connection phase using FFmpeg. Setting this string is often necessary when streaming to restrictive media servers or Content Delivery Networks" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="set-flash-player-version-in-rtmp-using-ffmpeg">Set Flash Player
+Version in RTMP Using FFmpeg</h1>
+<p>This article explains how to configure the Flash Player version
+string (<code>flashVer</code>) during the RTMP handshake and connection
+phase using FFmpeg. Setting this string is often necessary when
+streaming to restrictive media servers or Content Delivery Networks
+(CDNs) that validate client versions before accepting an incoming RTMP
+stream.</p>
+<h3 id="using-native-ffmpeg-rtmp">Using Native FFmpeg RTMP</h3>
+<p>When using FFmpeg's native RTMP implementation, set the Flash Player
+version string using the <code>-rtmp_flashver</code> private option.
+This option overrides the default version string sent during the initial
+<code>connect</code> command.</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-re</span> <span class="at">-i</span> input.mp4 <span class="at">-c</span> copy <span class="at">-f</span> flv <span class="at">-rtmp_flashver</span> <span class="st">&quot;LNX 11,2,202,235&quot;</span> rtmp://your-server.com/live/streamkey</span></code></pre></div>
+<p>Place the <code>-rtmp_flashver</code> parameter directly before the
+output URL.</p>
+<h3 id="flash-player-version-format">Flash Player Version Format</h3>
+<p>The version string generally follows a strict platform and version
+convention:</p>
+<ul>
+<li><strong>Format:</strong>
+<code>[PLATFORM] [MAJOR],[MINOR],[BUILD],[REVISION]</code></li>
+<li><strong>Linux:</strong> <code>"LNX 11,2,202,235"</code></li>
+<li><strong>Windows:</strong> <code>"WIN 32,0,0,465"</code></li>
+<li><strong>macOS:</strong> <code>"MAC 32,0,0,465"</code></li>
+</ul>
+<p>If you do not specify this flag, FFmpeg typically sends its default
+string, often identified as <code>LNX 9,0,124,2</code>.</p>
+<h3 id="using-ffmpeg-with-librtmp">Using FFmpeg with Librtmp</h3>
+<p>If your FFmpeg build is compiled with <code>librtmp</code> support
+enabled (<code>--enable-librtmp</code>), the parameter is passed
+directly inside the RTMP URL using key-value query parameters rather
+than a command-line flag.</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-re</span> <span class="at">-i</span> input.mp4 <span class="at">-c</span> copy <span class="at">-f</span> flv <span class="st">&quot;rtmp://your-server.com/live/streamkey flashVer=LNX</span><span class="dt">\\</span><span class="st"> 11,2,202,235&quot;</span></span></code></pre></div>
+<p>Notice the escaped space (<code>\\ </code>) between the platform
+identifier and the version numbers, which is required to prevent the
+shell from breaking the string.</p>
+<h3 id="verifying-the-configuration">Verifying the Configuration</h3>
+<p>To verify that the correct <code>flashVer</code> is being transmitted
+to the RTMP server, run the FFmpeg command with the logging verbosity
+set to trace:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-v</span> trace <span class="at">-re</span> <span class="at">-i</span> input.mp4 <span class="at">-c</span> copy <span class="at">-f</span> flv <span class="at">-rtmp_flashver</span> <span class="st">&quot;WIN 32,0,0,465&quot;</span> rtmp://your-server.com/live/streamkey</span></code></pre></div>
+<p>Inspect the console output for the <code>connect</code> packet dump.
+You will find the <code>flashVer</code> field reflecting the custom
+version string assigned in the command.</p></article>
+        <div id="comments-container"></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

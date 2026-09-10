@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generate Mandelbrot Fractal Video with FFmpeg - ffmpeg</title>
+    <meta name="description" content="FFmpeg includes a built-in mandelbrot video filter that algorithmically generates animated renderings of the Mandelbrot set without requiring external image assets. This guide explains how to call the filter using FFmpeg's lavfi (Libavfilter) virtual inp">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/generate-mandelbrot-fractal-video-with-ffmpeg">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Generate Mandelbrot Fractal Video with FFmpeg - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/generate-mandelbrot-fractal-video-with-ffmpeg" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="FFmpeg includes a built-in mandelbrot video filter that algorithmically generates animated renderings of the Mandelbrot set without requiring external image assets. This guide explains how to call the filter using FFmpeg's lavfi (Libavfilter) virtual inp" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="generate-mandelbrot-fractal-video-with-ffmpeg">Generate
+Mandelbrot Fractal Video with FFmpeg</h1>
+<p>FFmpeg includes a built-in <code>mandelbrot</code> video filter that
+algorithmically generates animated renderings of the Mandelbrot set
+without requiring external image assets. This guide explains how to call
+the filter using FFmpeg's <code>lavfi</code> (Libavfilter) virtual
+input, configure core parameters such as resolution, duration, and frame
+rate, and adjust zoom, coordinates, and iteration depth to produce
+smooth fractal animation videos.</p>
+<h2 id="basic-command-syntax">Basic Command Syntax</h2>
+<p>To generate a simple Mandelbrot video, invoke the filter through the
+<code>lavfi</code> input format and define a duration using the
+<code>-t</code> flag:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-f</span> lavfi <span class="at">-i</span> mandelbrot <span class="at">-t</span> 10 output.mp4</span></code></pre></div>
+<p>This command generates a 10-second video with default settings
+(640x480 resolution, 25 frames per second, and default zoom parameters)
+encoded using standard settings.</p>
+<h2 id="setting-dimensions-frame-rate-and-quality">Setting Dimensions,
+Frame Rate, and Quality</h2>
+<p>For modern displays, you should explicitly set the canvas size, frame
+rate, and pixel format for standard playback compatibility:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-f</span> lavfi <span class="at">-i</span> mandelbrot=size=1920x1080:rate=60 <span class="at">-c:v</span> libx264 <span class="at">-pix_fmt</span> yuv420p <span class="at">-t</span> 10 mandelbrot_1080p.mp4</span></code></pre></div>
+<ul>
+<li><code>size</code> (or <code>s</code>): Defines the output video
+resolution (e.g., <code>1920x1080</code> or <code>1280x720</code>).</li>
+<li><code>rate</code> (or <code>r</code>): Specifies the frame rate
+(e.g., <code>30</code> or <code>60</code>).</li>
+<li><code>-c:v libx264</code>: Encodes the stream to H.264 video.</li>
+<li><code>-pix_fmt yuv420p</code>: Converts the color space to YUV
+4:2:0, ensuring broad compatibility across web browsers and media
+players.</li>
+</ul>
+<h2 id="configuring-zoom-coordinates-and-detail">Configuring Zoom,
+Coordinates, and Detail</h2>
+<p>The <code>mandelbrot</code> filter provides specific parameters to
+customize how the camera navigates the fractal over the course of the
+video:</p>
+<ul>
+<li><code>start_scale</code> / <code>end_scale</code>: Sets the initial
+and final zoom levels. Smaller numbers zoom further in.</li>
+<li><code>start_x</code> / <code>start_y</code>: Sets the starting
+center coordinates on the complex plane.</li>
+<li><code>end_x</code> / <code>end_y</code>: Sets the destination center
+coordinates on the complex plane.</li>
+<li><code>maxiter</code>: Sets the maximum calculation iterations per
+pixel. Higher values yield significantly greater detail around edges at
+deep zoom levels, at the expense of rendering speed.</li>
+</ul>
+<h3 id="example-deep-zoom-animation">Example: Deep Zoom Animation</h3>
+<p>The following command zooms from an overview of the full set into the
+intricate Seahorse Valley feature over 20 seconds:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-f</span> lavfi <span class="at">-i</span> mandelbrot=size=1920x1080:rate=60:maxiter=1000:start_scale=3.0:end_scale=0.005:start_x=-0.75:start_y=0.0:end_x=-0.74364388703:end_y=0.1318259042 <span class="at">-c:v</span> libx264 <span class="at">-pix_fmt</span> yuv420p <span class="at">-t</span> 20 seahorse_zoom.mp4</span></code></pre></div>
+<h2 id="coloring-and-visual-customization">Coloring and Visual
+Customization</h2>
+<p>You can control the algorithmic coloring applied to the interior and
+exterior regions of the set:</p>
+<ul>
+<li><code>outer</code>: Determines the coloring algorithm for points
+outside the set. Options include <code>iteration_count</code> (default),
+<code>normalized_iteration_count</code>, and
+<code>proportional_cycle</code>.</li>
+<li><code>inner</code>: Determines how points inside the set are
+colored. Options include <code>black</code> (default),
+<code>period</code>, and <code>convergence</code>.</li>
+<li><code>bailout</code>: Sets the bailout threshold (default is 10.0),
+altering edge detection geometry.</li>
+</ul>
+<p>For example, to produce smooth color gradients on the exterior rather
+than standard banding:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-f</span> lavfi <span class="at">-i</span> mandelbrot=size=1920x1080:rate=60:maxiter=800:outer=normalized_iteration_count:inner=period <span class="at">-c:v</span> libx264 <span class="at">-pix_fmt</span> yuv420p <span class="at">-t</span> 15 smooth_mandelbrot.mp4</span></code></pre></div></article>
+        <div id="comments-container"></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

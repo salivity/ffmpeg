@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FFmpeg Removelogo: Remove Logos with a Bitmap Mask - ffmpeg</title>
+    <meta name="description" content="This guide explains how to effectively use the removelogo filter in FFmpeg to erase static on-screen watermarks, channel bugs, and logos using a grayscale bitmap mask. You will learn the requirements for creating an accurate mask image, the exact FFmpeg">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/ffmpeg-removelogo-remove-logos-with-a-bitmap-mask">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="FFmpeg Removelogo: Remove Logos with a Bitmap Mask - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/ffmpeg-removelogo-remove-logos-with-a-bitmap-mask" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This guide explains how to effectively use the removelogo filter in FFmpeg to erase static on-screen watermarks, channel bugs, and logos using a grayscale bitmap mask. You will learn the requirements for creating an accurate mask image, the exact FFmpeg" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="ffmpeg-removelogo-remove-logos-with-a-bitmap-mask">FFmpeg
+Removelogo: Remove Logos with a Bitmap Mask</h1>
+<p>This guide explains how to effectively use the
+<code>removelogo</code> filter in FFmpeg to erase static on-screen
+watermarks, channel bugs, and logos using a grayscale bitmap mask. You
+will learn the requirements for creating an accurate mask image, the
+exact FFmpeg command syntax needed to apply the filter, and best
+practices to ensure seamless video output without re-encoding audio
+unnecessarily.</p>
+<h3 id="1-how-the-removelogo-filter-works">1. How the
+<code>removelogo</code> Filter Works</h3>
+<p>The <code>removelogo</code> video filter removes logos by
+interpolating the pixels covered by a mask with the surrounding image
+data. Unlike the <code>delogo</code> filter—which only supports basic
+rectangular coordinates—<code>removelogo</code> accepts an external
+image mask, allowing you to target complex, irregularly shaped
+logos.</p>
+<p>The mask dictates which pixels FFmpeg will replace:</p>
+<ul>
+<li><strong>Pure Black (<code>#000000</code> / RGB 0,0,0):</strong>
+Video pixels that remain untouched.</li>
+<li><strong>Non-Black / White (<code>#FFFFFF</code> / RGB
+255,255,255):</strong> Logo pixels that FFmpeg will suppress and
+interpolate from surrounding pixel data.</li>
+</ul>
+<h3 id="2-creating-the-bitmap-mask">2. Creating the Bitmap Mask</h3>
+<p>To achieve clean results, the mask must meet two strict criteria:</p>
+<ol type="1">
+<li>It must have the exact same resolution (width and height) as the
+source video.</li>
+<li>It should be a standard image format such as BMP, PNG, or PBM.</li>
+</ol>
+<h4 id="step-to-create-the-mask">Step to create the mask:</h4>
+<ol type="1">
+<li>Export a reference frame containing the logo:
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-ss</span> 00:01:00 <span class="at">-i</span> input.mp4 <span class="at">-frames:v</span> 1 reference.png</span></code></pre></div></li>
+<li>Open <code>reference.png</code> in an image editor (such as GIMP or
+Photoshop).</li>
+<li>Fill the entire canvas with pure black.</li>
+<li>Paint over the logo shape using solid white.</li>
+<li>Save the output file as a 24-bit or 8-bit bitmap (e.g.,
+<code>logo_mask.bmp</code>).</li>
+</ol>
+<h3 id="3-applying-the-removelogo-command">3. Applying the
+<code>removelogo</code> Command</h3>
+<p>Once the mask is saved in your working directory, apply the filter
+using the <code>-vf</code> flag:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;removelogo=logo_mask.bmp&quot;</span> <span class="at">-c:v</span> libx264 <span class="at">-crf</span> 18 <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<h4 id="breakdown-of-the-parameters">Breakdown of the Parameters:</h4>
+<ul>
+<li><code>-i input.mp4</code>: Specifies the input video file.</li>
+<li><code>-vf "removelogo=logo_mask.bmp"</code>: Invokes the
+<code>removelogo</code> filter and points to your prepared mask
+file.</li>
+<li><code>-c:v libx264</code>: Sets the video codec to H.264 for
+encoding the modified video stream.</li>
+<li><code>-crf 18</code>: Sets a visually lossless Constant Rate Factor
+to maintain high video quality.</li>
+<li><code>-c:a copy</code>: Copies the audio stream directly without
+re-encoding to save processing time and preserve audio fidelity.</li>
+<li><code>output.mp4</code>: The resulting output file name.</li>
+</ul>
+<h3 id="4-tips-for-best-results">4. Tips for Best Results</h3>
+<ul>
+<li><strong>Mask Precision:</strong> Make the white mask area only as
+large as the logo itself. If the white area extends too far into the
+background, the interpolation effect will produce unnecessary
+blurriness.</li>
+<li><strong>Aspect Ratios:</strong> If your source video has non-square
+pixels (Sample Aspect Ratio is not 1:1), make sure your exported frame
+and mask maintain the exact pixel storage resolution rather than the
+display aspect ratio.</li>
+</ul></article>
+        <div id="comments-container"></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

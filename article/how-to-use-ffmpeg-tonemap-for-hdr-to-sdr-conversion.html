@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Use FFmpeg Tonemap for HDR to SDR Conversion - ffmpeg</title>
+    <meta name="description" content="This article provides a direct guide on converting High Dynamic Range (HDR) video to Standard Dynamic Range (SDR) using FFmpeg's tonemap filter. You will learn the requirements for accurate color translation, how to construct the necessary filter chain t">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/how-to-use-ffmpeg-tonemap-for-hdr-to-sdr-conversion">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Use FFmpeg Tonemap for HDR to SDR Conversion - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/how-to-use-ffmpeg-tonemap-for-hdr-to-sdr-conversion" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article provides a direct guide on converting High Dynamic Range (HDR) video to Standard Dynamic Range (SDR) using FFmpeg's tonemap filter. You will learn the requirements for accurate color translation, how to construct the necessary filter chain t" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="how-to-use-ffmpeg-tonemap-for-hdr-to-sdr-conversion">How to Use
+FFmpeg Tonemap for HDR to SDR Conversion</h1>
+<p>This article provides a direct guide on converting High Dynamic Range
+(HDR) video to Standard Dynamic Range (SDR) using FFmpeg's
+<code>tonemap</code> filter. You will learn the requirements for
+accurate color translation, how to construct the necessary filter chain
+to map dynamic range and color primaries, and how to execute
+production-ready commands using popular tone mapping algorithms like
+Hable and Mobius.</p>
+<hr />
+<h3 id="the-hdr-to-sdr-conversion-process">The HDR to SDR Conversion
+Process</h3>
+<p>HDR video typically uses the BT.2020 color gamut with either the
+SMPTE ST 2084 (PQ) or HLG transfer function. SDR displays, by contrast,
+rely on the BT.709 color space and standard gamma curves.</p>
+<p>Converting HDR to SDR requires four distinct stages:</p>
+<ol type="1">
+<li>Converting the pixel format to linear light.</li>
+<li>Compressing high dynamic range highlights to fit standard range
+using the <code>tonemap</code> filter.</li>
+<li>Converting the color primaries and matrix from BT.2020 to
+BT.709.</li>
+<li>Encoding the output into a standard 8-bit YUV format (like
+<code>yuv420p</code>).</li>
+</ol>
+<p>To handle color space and linear transformations accurately, FFmpeg
+should ideally be compiled with <code>--enable-libzimg</code> to utilize
+the <code>zscale</code> filter alongside <code>tonemap</code>.</p>
+<hr />
+<h3 id="the-core-filter-chain">The Core Filter Chain</h3>
+<p>The standard filter pipeline uses <code>zscale</code> to prepare the
+video for tone mapping, passes it through <code>tonemap</code>, and then
+standardizes the color metadata with a second <code>zscale</code>
+call.</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="va">zscale</span><span class="op">=</span>t=linear:npl=100,tonemap=tonemap=hable:desat=0.5,zscale=p=bt709:t=bt709:m=bt709:r=tv,format=yuv420p</span></code></pre></div>
+<h4 id="breakdown-of-the-chain">Breakdown of the Chain:</h4>
+<ul>
+<li><strong><code>zscale=t=linear:npl=100</code></strong>: Converts the
+transfer characteristics from PQ/HLG to linear light. The
+<code>npl</code> (nominal peak luminance) value sets the target peak
+brightness (default is usually 100 nits for SDR).</li>
+<li><strong><code>tonemap=tonemap=hable:desat=0.5</code></strong>:
+Compresses the dynamic range using the Hable algorithm and desaturates
+extreme highlights to prevent color clipping.</li>
+<li><strong><code>zscale=p=bt709:t=bt709:m=bt709:r=tv</code></strong>:
+Sets the primaries (<code>p</code>), transfer function (<code>t</code>),
+matrix coefficients (<code>m</code>) to BT.709, and range
+(<code>r</code>) to limited/TV range.</li>
+<li><strong><code>format=yuv420p</code></strong>: Converts the internal
+32-bit floating-point representation back to standard 8-bit SDR video
+for universal playback.</li>
+</ul>
+<hr />
+<h3 id="available-tonemap-algorithms">Available <code>tonemap</code>
+Algorithms</h3>
+<p>The <code>tonemap</code> filter provides several algorithms defined
+by the <code>tonemap</code> option:</p>
+<ul>
+<li><strong><code>hable</code></strong>: Film-like tone mapping based on
+the Uncharted 2 curve. It preserves detail in both darks and bright
+highlights and is generally considered the most balanced choice for film
+and television content.</li>
+<li><strong><code>mobius</code></strong>: Smoothly transitions linear
+colors to a logarithmic curve. It preserves high mid-tone contrast while
+rolling off highlights smoothly.</li>
+<li><strong><code>reinhard</code></strong>: A classic simple
+photographic curve that preserves midtones well, though it can result in
+washed-out highlights if not tuned.</li>
+<li><strong><code>clip</code></strong>: Hard clips any value above SDR
+peak. This produces severe highlight blowing and is generally not
+recommended.</li>
+</ul>
+<hr />
+<h3 id="complete-ffmpeg-command-examples">Complete FFmpeg Command
+Examples</h3>
+<h4 id="1-using-the-hable-algorithm-recommended">1. Using the Hable
+Algorithm (Recommended)</h4>
+<p>This command takes an HDR10 input file and outputs an SDR H.264 file
+with Hable tone mapping:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input_hdr.mkv <span class="at">-vf</span> <span class="st">&quot;zscale=t=linear:npl=100,tonemap=tonemap=hable:desat=0.5,zscale=p=bt709:t=bt709:m=bt709:r=tv,format=yuv420p&quot;</span> <span class="at">-c:v</span> libx264 <span class="at">-crf</span> 18 <span class="at">-preset</span> slow <span class="at">-c:a</span> copy output_sdr.mp4</span></code></pre></div>
+<h4 id="2-using-the-mobius-algorithm">2. Using the Mobius Algorithm</h4>
+<p>The <code>mobius</code> operator accepts a <code>param</code>
+argument representing the transition point where compression begins
+(default is roughly 0.3):</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input_hdr.mkv <span class="at">-vf</span> <span class="st">&quot;zscale=t=linear:npl=100,tonemap=tonemap=mobius:param=0.3:desat=0.5,zscale=p=bt709:t=bt709:m=bt709:r=tv,format=yuv420p&quot;</span> <span class="at">-c:v</span> libx264 <span class="at">-crf</span> 18 <span class="at">-preset</span> slow <span class="at">-c:a</span> copy output_sdr.mp4</span></code></pre></div>
+<hr />
+<h3 id="alternative-all-in-one-zscale-tone-mapping">Alternative:
+All-in-One <code>zscale</code> Tone Mapping</h3>
+<p>If you have <code>libzimg</code> enabled, you can also perform tone
+mapping directly inside the <code>zscale</code> filter without calling
+the standalone <code>tonemap</code> filter. This reduces pipeline
+overhead:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input_hdr.mkv <span class="at">-vf</span> <span class="st">&quot;zscale=tin=smpte2084:min=bt2020nc:pin=bt2020:t=bt709:m=bt709:p=bt709:tonemap=hable,format=yuv420p&quot;</span> <span class="at">-c:v</span> libx264 <span class="at">-crf</span> 18 <span class="at">-preset</span> slow <span class="at">-c:a</span> copy output_sdr.mp4</span></code></pre></div>
+<p>This single-filter command explicitly sets the input metadata (PQ
+transfer <code>smpte2084</code>, BT.2020 color) and translates directly
+to standard BT.709 SDR video.</p></article>
+        <div id="comments-container"></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

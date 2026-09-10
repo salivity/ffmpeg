@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Downmix 7.1 to 5.1 Audio with FFmpeg - ffmpeg</title>
+    <meta name="description" content="This article provides a quick guide on how to downmix a 7.1 surround sound audio track to a 5.1 channel layout using FFmpeg. You will learn the exact command-line syntax to perform this conversion efficiently while preserving audio quality and copying th">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/how-to-downmix-7-1-to-5-1-audio-with-ffmpeg">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Downmix 7.1 to 5.1 Audio with FFmpeg - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/how-to-downmix-7-1-to-5-1-audio-with-ffmpeg" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article provides a quick guide on how to downmix a 7.1 surround sound audio track to a 5.1 channel layout using FFmpeg. You will learn the exact command-line syntax to perform this conversion efficiently while preserving audio quality and copying th" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="how-to-downmix-71-to-51-audio-with-ffmpeg">How to Downmix 7.1 to
+5.1 Audio with FFmpeg</h1>
+<p>This article provides a quick guide on how to downmix a 7.1 surround
+sound audio track to a 5.1 channel layout using FFmpeg. You will learn
+the exact command-line syntax to perform this conversion efficiently
+while preserving audio quality and copying the video stream without
+re-encoding.</p>
+<h3 id="the-basic-downmix-command">The Basic Downmix Command</h3>
+<p>The simplest and most common way to downmix audio in FFmpeg is by
+using the <code>-ac</code> (audio channels) option. Setting this to
+<code>6</code> tells FFmpeg to output 5.1 audio (which consists of 6
+channels: Front Left, Front Right, Center, LFE, Surround Left, and
+Surround Right).</p>
+<p>Run the following command in your terminal:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mkv <span class="at">-c:v</span> copy <span class="at">-c:a</span> aac <span class="at">-ac</span> 6 output.mkv</span></code></pre></div>
+<p><strong>Command Breakdown:</strong></p>
+<ul>
+<li><code>-i input.mkv</code>: Specifies your input video file
+containing the 7.1 audio.</li>
+<li><code>-c:v copy</code>: Copies the video stream directly without
+re-encoding it, saving time and preserving original video quality.</li>
+<li><code>-c:a aac</code>: Encodes the output audio to the AAC format
+(you can change this to <code>ac3</code>, <code>eac3</code>, or
+<code>flac</code> depending on your needs).</li>
+<li><code>-ac 6</code>: Downmixes the 8 channels of the 7.1 audio into
+the 6 channels of 5.1 audio.</li>
+<li><code>output.mkv</code>: The name of your output file.</li>
+</ul>
+<hr />
+<h3 id="advanced-downmix-using-the-pan-filter">Advanced Downmix Using
+the Pan Filter</h3>
+<p>If you want precise control over how the 7.1 channels (which include
+side and back speakers) are mapped and mixed into the 5.1 channels, you
+can use FFmpeg's <code>pan</code> audio filter. This prevents volume
+loss and ensures the back channels are correctly merged into the
+surround channels.</p>
+<p>Run the following command:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mkv <span class="at">-c:v</span> copy <span class="at">-af</span> <span class="st">&quot;pan=5.1|FL=FL|FR=FR|FC=FC|LFE=LFE|SL=0.5*SL+0.5*BL|SR=0.5*SR+0.5*BR&quot;</span> <span class="at">-c:a</span> aac output.mkv</span></code></pre></div>
+<p><strong>How the Pan Filter Works here:</strong></p>
+<ul>
+<li><code>FL=FL</code> / <code>FR=FR</code> / <code>FC=FC</code> /
+<code>LFE=LFE</code>: Keeps the Front Left, Front Right, Center, and
+Subwoofer channels exactly as they are.</li>
+<li><code>SL=0.5*SL+0.5*BL</code>: Mixes 50% of the Side Left (SL) and
+50% of the Back Left (BL) channels into the final Surround Left
+channel.</li>
+<li><code>SR=0.5*SR+0.5*BR</code>: Mixes 50% of the Side Right (SR) and
+50% of the Back Right (BR) channels into the final Surround Right
+channel.</li>
+</ul></article>
+        <div id="comments-container"></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

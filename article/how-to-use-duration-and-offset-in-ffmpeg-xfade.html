@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Use Duration and Offset in FFmpeg xfade - ffmpeg</title>
+    <meta name="description" content="The FFmpeg xfade (crossfade) filter allows you to apply smooth transition effects between two video streams. Configuring the duration and offset parameters is essential for controlling how long the transition lasts and the exact timestamp when it starts.">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/how-to-use-duration-and-offset-in-ffmpeg-xfade">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Use Duration and Offset in FFmpeg xfade - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/how-to-use-duration-and-offset-in-ffmpeg-xfade" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="The FFmpeg xfade (crossfade) filter allows you to apply smooth transition effects between two video streams. Configuring the duration and offset parameters is essential for controlling how long the transition lasts and the exact timestamp when it starts." />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="how-to-use-duration-and-offset-in-ffmpeg-xfade">How to Use
+Duration and Offset in FFmpeg xfade</h1>
+<p>The FFmpeg <code>xfade</code> (crossfade) filter allows you to apply
+smooth transition effects between two video streams. Configuring the
+<code>duration</code> and <code>offset</code> parameters is essential
+for controlling how long the transition lasts and the exact timestamp
+when it starts. This guide explains the core formula for calculating the
+offset, details the parameters, and provides ready-to-use command
+examples.</p>
+<h3 id="understanding-duration-and-offset">Understanding
+<code>duration</code> and <code>offset</code></h3>
+<ul>
+<li><strong><code>duration</code></strong>: Sets the length of the
+transition effect in seconds (or fractional seconds, such as
+<code>0.5</code>). The default is <code>1</code> second.</li>
+<li><strong><code>offset</code></strong>: Sets the start time of the
+transition relative to the first video’s timeline. It tells FFmpeg at
+what second on the primary video the crossfade should begin.</li>
+</ul>
+<h3 id="the-offset-calculation-formula">The Offset Calculation
+Formula</h3>
+<p>Because the second video overlaps the end of the first video, the
+transition must start <em>before</em> the first video finishes.
+Calculate the <code>offset</code> using this formula:</p>
+<p><span class="math display">\[\text{offset} = \text{duration of first
+video} - \text{transition duration}\]</span></p>
+<p>For example, if the first video is 10 seconds long and you want a
+2-second transition:</p>
+<p><span class="math display">\[\text{offset} = 10 - 2 = 8\]</span></p>
+<p>If the offset is set greater than or equal to the first video's
+length, the transition will fail because the first video will have
+already ended.</p>
+<h3 id="basic-command-example">Basic Command Example</h3>
+<p>Here is how to join <code>input1.mp4</code> (10 seconds long) and
+<code>input2.mp4</code> with a 2-second <code>fade</code> transition
+starting at second 8:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input1.mp4 <span class="at">-i</span> input2.mp4 <span class="at">-filter_complex</span> <span class="dt">\</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="st">&quot;[0:v][1:v]xfade=transition=fade:duration=2:offset=8[v]&quot;</span> <span class="dt">\</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>-map <span class="st">&quot;[v]&quot;</span> output.mp4</span></code></pre></div>
+<h3 id="chaining-multiple-transitions">Chaining Multiple
+Transitions</h3>
+<p>When chaining three or more videos, each subsequent offset depends on
+the running length of the merged timeline. Each transition shortens the
+total output by the transition duration.</p>
+<p>For three 10-second videos with 1-second transitions:</p>
+<ul>
+<li><strong>First transition offset</strong>: <span
+class="math inline">\(10 - 1 = 9\)</span> seconds.</li>
+<li><strong>Second transition offset</strong>: <span
+class="math inline">\((10 + 10 - 1) - 1 = 18\)</span> seconds.</li>
+</ul>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input1.mp4 <span class="at">-i</span> input2.mp4 <span class="at">-i</span> input3.mp4 <span class="at">-filter_complex</span> <span class="dt">\</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="st">&quot;[0:v][1:v]xfade=transition=wipeleft:duration=1:offset=9[v1]; </span><span class="dt">\</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="st"> [v1][2:v]xfade=transition=wiperight:duration=1:offset=18[v]&quot;</span> <span class="dt">\</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>-map <span class="st">&quot;[v]&quot;</span> output.mp4</span></code></pre></div>
+<h3 id="synchronizing-audio">Synchronizing Audio</h3>
+<p>The <code>xfade</code> filter only processes video streams. To
+prevent audio from desynchronizing, use the <code>acrossfade</code>
+filter with the matching duration:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input1.mp4 <span class="at">-i</span> input2.mp4 <span class="at">-filter_complex</span> <span class="dt">\</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="st">&quot;[0:v][1:v]xfade=transition=fade:duration=2:offset=8[v]; </span><span class="dt">\</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="st"> [0:a][1:a]acrossfade=d=2[a]&quot;</span> <span class="dt">\</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>-map <span class="st">&quot;[v]&quot;</span> <span class="at">-map</span> <span class="st">&quot;[a]&quot;</span> output.mp4</span></code></pre></div></article>
+        <div id="comments-container"></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

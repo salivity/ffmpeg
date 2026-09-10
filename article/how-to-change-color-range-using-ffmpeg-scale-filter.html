@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Change Color Range Using FFmpeg Scale Filter - ffmpeg</title>
+    <meta name="description" content="This guide explains how to convert and configure video color ranges between limited (TV) and full (PC) range in FFmpeg using the range options within the scale filter. You will learn the command syntax for pixel value scaling using inrange and outrange,">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/how-to-change-color-range-using-ffmpeg-scale-filter">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Change Color Range Using FFmpeg Scale Filter - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/how-to-change-color-range-using-ffmpeg-scale-filter" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This guide explains how to convert and configure video color ranges between limited (TV) and full (PC) range in FFmpeg using the range options within the scale filter. You will learn the command syntax for pixel value scaling using inrange and outrange," />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="how-to-change-color-range-using-ffmpeg-scale-filter">How to
+Change Color Range Using FFmpeg Scale Filter</h1>
+<p>This guide explains how to convert and configure video color ranges
+between limited (TV) and full (PC) range in FFmpeg using the range
+options within the <code>scale</code> filter. You will learn the command
+syntax for pixel value scaling using <code>in_range</code> and
+<code>out_range</code>, how to properly tag container metadata to
+prevent washed-out colors, and the difference between scaling pixel
+values versus simply tagging them.</p>
+<hr />
+<h3 id="understanding-color-ranges">Understanding Color Ranges</h3>
+<p>Digital video typically operates in one of two color ranges:</p>
+<ul>
+<li><strong>Limited Range (<code>tv</code> /
+<code>mpeg</code>):</strong> Primarily used in broadcast and standard
+consumer video formats (e.g., standard H.264/H.265). Luminance (Y) spans
+from 16 to 235, and chrominance (U/V) spans from 16 to 240 in 8-bit
+systems.</li>
+<li><strong>Full Range (<code>pc</code> / <code>jpeg</code>):</strong>
+Primarily used in computer graphics, photography, and web standards.
+Values span the entire 0 to 255 spectrum in 8-bit systems.</li>
+</ul>
+<p>If a video is encoded in full range but interpreted as limited range,
+blacks will appear crushed and whites blown out. Conversely, limited
+range content interpreted as full range will appear washed out with gray
+blacks.</p>
+<hr />
+<h3 id="setting-color-range-with-the-scale-filter">Setting Color Range
+with the <code>scale</code> Filter</h3>
+<p>Within FFmpeg's <code>scale</code> video filter, you define and
+convert color ranges using the <code>in_range</code> and
+<code>out_range</code> options.</p>
+<h4 id="parameter-values">Parameter Values</h4>
+<ul>
+<li><code>limited</code>, <code>tv</code>, or <code>mpeg</code> (Limited
+range)</li>
+<li><code>full</code>, <code>pc</code>, or <code>jpeg</code> (Full
+range)</li>
+</ul>
+<h4 id="1-converting-limited-range-to-full-range">1. Converting Limited
+Range to Full Range</h4>
+<p>To expand 16–235 levels to full 0–255 values while keeping the native
+resolution:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;scale=in_range=limited:out_range=full&quot;</span> <span class="at">-c:v</span> libx264 <span class="at">-crf</span> 18 <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<h4 id="2-converting-full-range-to-limited-range">2. Converting Full
+Range to Limited Range</h4>
+<p>To compress 0–255 levels down into standard broadcast 16–235
+values:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;scale=in_range=full:out_range=limited&quot;</span> <span class="at">-c:v</span> libx264 <span class="at">-crf</span> 18 <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<h4 id="3-combining-range-conversion-with-resizing">3. Combining Range
+Conversion with Resizing</h4>
+<p>You can chain resolution scaling with range conversion
+simultaneously:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;scale=1920:1080:in_range=limited:out_range=full&quot;</span> <span class="at">-c:v</span> libx264 <span class="at">-crf</span> 18 <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<hr />
+<h3 id="ensuring-proper-metadata-flagging">Ensuring Proper Metadata
+Flagging</h3>
+<p>Scaling pixel values only modifies the underlying pixel data. Many
+media players rely on bitstream VUI (Video Usability Information)
+metadata to decide how to render the file.</p>
+<p>To ensure the encoder writes the correct metadata tag matching your
+scaled output, combine the <code>scale</code> filter with the
+<code>-color_range</code> flag:</p>
+<ul>
+<li>For full range output: <code>-color_range pc</code> (or
+<code>-color_range 2</code>)</li>
+<li>For limited range output: <code>-color_range tv</code> (or
+<code>-color_range 1</code>)</li>
+</ul>
+<p><strong>Full Range Example:</strong></p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;scale=in_range=tv:out_range=pc&quot;</span> <span class="at">-color_range</span> pc <span class="at">-c:v</span> libx264 <span class="at">-crf</span> 18 <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<p><strong>Limited Range Example:</strong></p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;scale=in_range=pc:out_range=tv&quot;</span> <span class="at">-color_range</span> tv <span class="at">-c:v</span> libx264 <span class="at">-crf</span> 18 <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<hr />
+<h3 id="scale-conversion-vs-setrange-filter"><code>scale</code>
+Conversion vs. <code>setrange</code> Filter</h3>
+<p>It is important not to confuse color range conversion with range
+retagging:</p>
+<ul>
+<li><strong><code>scale=in_range=...:out_range=...</code>:</strong>
+Mathematically rescales the luminance and chrominance values of each
+pixel. Use this when the pixel values need to physically change.</li>
+<li><strong><code>setrange=...</code> filter:</strong> Only changes the
+color range metadata property on frames inside the filter graph without
+recalculating or shifting pixel values. For example, if a video has
+full-range pixel values that were erroneously flagged as limited, you
+correct it using <code>setrange=pc</code> rather than scaling it.</li>
+</ul></article>
+        <div id="comments-container"></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

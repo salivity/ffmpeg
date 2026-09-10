@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Configure FFmpeg Crypto Protocol Key and IV - ffmpeg</title>
+    <meta name="description" content="This article explains how to configure the encryption key and Initialization Vector (IV) using FFmpeg's crypto protocol. You will learn the correct command-line syntax, formatting requirements for the keys, and practical examples for both encrypting and">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/configure-ffmpeg-crypto-protocol-key-and-iv">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Configure FFmpeg Crypto Protocol Key and IV - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/configure-ffmpeg-crypto-protocol-key-and-iv" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article explains how to configure the encryption key and Initialization Vector (IV) using FFmpeg's crypto protocol. You will learn the correct command-line syntax, formatting requirements for the keys, and practical examples for both encrypting and" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="configure-ffmpeg-crypto-protocol-key-and-iv">Configure FFmpeg
+Crypto Protocol Key and IV</h1>
+<p>This article explains how to configure the encryption key and
+Initialization Vector (IV) using FFmpeg's <code>crypto</code> protocol.
+You will learn the correct command-line syntax, formatting requirements
+for the keys, and practical examples for both encrypting and decrypting
+media files.</p>
+<p>The FFmpeg <code>crypto</code> protocol acts as a stream wrapper that
+encrypts or decrypts an underlying stream using AES-128 in CBC mode. To
+configure it, you must pass the key and IV as hexadecimal strings using
+the <code>-key</code> and <code>-iv</code> private options.</p>
+<h3 id="key-and-iv-formatting-requirements">Key and IV Formatting
+Requirements</h3>
+<ul>
+<li><strong>Key:</strong> Must be a 16-byte (128-bit) key, represented
+as a 32-character hexadecimal string.</li>
+<li><strong>Initialization Vector (IV):</strong> Must be a 16-byte
+(128-bit) block, represented as a 32-character hexadecimal string.</li>
+</ul>
+<p>Do not include any prefixes like <code>0x</code> in the hexadecimal
+strings.</p>
+<h3 id="encrypting-a-video-file">Encrypting a Video File</h3>
+<p>To encrypt an output stream, prefix the output file path with
+<code>crypto:</code> and provide the <code>-key</code> and
+<code>-iv</code> parameters before the output URL.</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-key</span> 0123456789abcdef0123456789abcdef <span class="at">-iv</span> fedcba9876543210fedcba9876543210 <span class="at">-codec</span> copy crypto:encrypted.mp4</span></code></pre></div>
+<p>In this command:</p>
+<ul>
+<li><code>-i input.mp4</code> specifies the source video.</li>
+<li><code>-key</code> sets the 32-character hex encryption key.</li>
+<li><code>-iv</code> sets the 32-character hex initialization
+vector.</li>
+<li><code>-codec copy</code> streams the data without re-encoding.</li>
+<li><code>crypto:encrypted.mp4</code> tells FFmpeg to pipe the output
+through the crypto protocol wrapper to generate the encrypted file.</li>
+</ul>
+<h3 id="decrypting-a-video-file">Decrypting a Video File</h3>
+<p>To decrypt an encrypted stream, prefix the input file path with
+<code>crypto:</code> and specify the corresponding <code>-key</code> and
+<code>-iv</code> options before the input.</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-key</span> 0123456789abcdef0123456789abcdef <span class="at">-iv</span> fedcba9876543210fedcba9876543210 <span class="at">-i</span> crypto:encrypted.mp4 <span class="at">-codec</span> copy decrypted.mp4</span></code></pre></div>
+<p>In this command:</p>
+<ul>
+<li>The <code>-key</code> and <code>-iv</code> options are placed
+<em>before</em> the input to apply to the input stream.</li>
+<li><code>crypto:encrypted.mp4</code> tells FFmpeg to decrypt the source
+file on the fly.</li>
+<li><code>decrypted.mp4</code> is the resulting plaintext media
+file.</li>
+</ul></article>
+        <div id="comments-container"></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

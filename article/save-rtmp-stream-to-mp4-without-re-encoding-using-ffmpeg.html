@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Save RTMP Stream to MP4 Without Re-encoding Using FFmpeg - ffmpeg</title>
+    <meta name="description" content="Capturing an RTMP camera stream and saving it directly to an MP4 file without re-encoding is an efficient way to record video while consuming minimal CPU and maintaining original visual quality. By utilizing FFmpeg’s stream copy functionality, you simp">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/save-rtmp-stream-to-mp4-without-re-encoding-using-ffmpeg">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Save RTMP Stream to MP4 Without Re-encoding Using FFmpeg - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/save-rtmp-stream-to-mp4-without-re-encoding-using-ffmpeg" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Capturing an RTMP camera stream and saving it directly to an MP4 file without re-encoding is an efficient way to record video while consuming minimal CPU and maintaining original visual quality. By utilizing FFmpeg’s stream copy functionality, you simp" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="save-rtmp-stream-to-mp4-without-re-encoding-using-ffmpeg">Save
+RTMP Stream to MP4 Without Re-encoding Using FFmpeg</h1>
+<p>Capturing an RTMP camera stream and saving it directly to an MP4 file
+without re-encoding is an efficient way to record video while consuming
+minimal CPU and maintaining original visual quality. By utilizing
+FFmpeg’s stream copy functionality, you simply repackage (remux) the
+incoming H.264 video and AAC audio packets from the RTMP container into
+an MP4 container. This guide provides the exact FFmpeg commands needed
+to capture your stream, handle network drops, and prevent file
+corruption.</p>
+<h3 id="the-basic-command">The Basic Command</h3>
+<p>To capture the live RTMP stream and save it to an MP4 file without
+re-encoding, run:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> <span class="st">&quot;rtmp://camera_ip_address/live/stream_key&quot;</span> <span class="at">-c</span> copy output.mp4</span></code></pre></div>
+<ul>
+<li><code>-i "rtmp://..."</code>: Specifies the source URL of the RTMP
+stream.</li>
+<li><code>-c copy</code>: Instructs FFmpeg to bypass the decoding and
+encoding pipeline entirely, copying the audio and video streams directly
+into the target container.</li>
+<li><code>output.mp4</code>: Defines the name and format of the output
+file.</li>
+</ul>
+<p>To stop the recording gracefully, press <code>q</code> or
+<code>Ctrl + C</code> in your terminal. This ensures FFmpeg writes the
+proper metadata header (the <code>moov</code> atom) so the MP4 file
+remains playable.</p>
+<h3 id="preventing-corrupted-files-on-unexpected-disconnects">Preventing
+Corrupted Files on Unexpected Disconnects</h3>
+<p>Standard MP4 files place the index metadata at the end of the
+recording. If the camera disconnects or FFmpeg is abruptly terminated,
+the file may become unreadable. To make the file resilient against
+crashes, use fragmented MP4 flags:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> <span class="st">&quot;rtmp://camera_ip_address/live/stream_key&quot;</span> <span class="at">-c</span> copy <span class="at">-movflags</span> frag_keyframe+empty_moov output.mp4</span></code></pre></div>
+<p>This ensures the video can be played up to the exact second the
+connection dropped.</p>
+<h3 id="optimizing-for-web-playback">Optimizing for Web Playback</h3>
+<p>If you are stopping recordings normally and want the MP4 to be
+immediately streamable over the web without buffering the entire file
+first, relocate the index to the beginning of the file using
+<code>faststart</code>:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> <span class="st">&quot;rtmp://camera_ip_address/live/stream_key&quot;</span> <span class="at">-c</span> copy <span class="at">-movflags</span> +faststart output.mp4</span></code></pre></div>
+<h3 id="splitting-continuous-streams-into-segments">Splitting Continuous
+Streams into Segments</h3>
+<p>For 24/7 camera monitoring, recording to a single giant file is risky
+and impractical. You can automatically split the recording into timed
+chunks (for example, 15-minute segments) without re-encoding:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> <span class="st">&quot;rtmp://camera_ip_address/live/stream_key&quot;</span> <span class="at">-c</span> copy <span class="at">-f</span> segment <span class="at">-segment_time</span> 900 <span class="at">-reset_timestamps</span> 1 <span class="at">-strftime</span> 1 <span class="st">&quot;capture_%Y-%m-%d_%H-%M-%S.mp4&quot;</span></span></code></pre></div>
+<ul>
+<li><code>-f segment</code>: Enables FFmpeg's segmenter muxer.</li>
+<li><code>-segment_time 900</code>: Sets the segment duration to 900
+seconds (15 minutes).</li>
+<li><code>-reset_timestamps 1</code>: Resets timestamps at the beginning
+of each segment for smooth playback.</li>
+<li><code>-strftime 1</code>: Formats the output filename using standard
+date and time stamps.</li>
+</ul></article>
+        <div id="comments-container"></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

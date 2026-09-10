@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Video from Mixed Resolution Images in FFmpeg - ffmpeg</title>
+    <meta name="description" content="This guide explains how to convert a directory of images with varying dimensions and aspect ratios into a single, standardized video using FFmpeg. When stitching together images of different sizes, FFmpeg requires each frame to be scaled and padded to a">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/create-video-from-mixed-resolution-images-in-ffmpeg">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Create Video from Mixed Resolution Images in FFmpeg - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/create-video-from-mixed-resolution-images-in-ffmpeg" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This guide explains how to convert a directory of images with varying dimensions and aspect ratios into a single, standardized video using FFmpeg. When stitching together images of different sizes, FFmpeg requires each frame to be scaled and padded to a" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="create-video-from-mixed-resolution-images-in-ffmpeg">Create
+Video from Mixed Resolution Images in FFmpeg</h1>
+<p>This guide explains how to convert a directory of images with varying
+dimensions and aspect ratios into a single, standardized video using
+FFmpeg. When stitching together images of different sizes, FFmpeg
+requires each frame to be scaled and padded to a uniform resolution to
+prevent rendering errors. Below are the precise commands and filter
+configurations needed to normalize, scale, and compile your images into
+an MP4 video.</p>
+<h3 id="1-the-scaling-and-padding-strategy">1. The Scaling and Padding
+Strategy</h3>
+<p>To combine images of different dimensions without distorting their
+aspect ratios, you must scale each image to fit within a target canvas
+(such as 1920x1080) and pad the remaining empty space with black bars
+(letterboxing or pillarboxing).</p>
+<p>This is achieved using the <code>scale</code> and <code>pad</code>
+video filters:</p>
+<ul>
+<li><code>scale=1920:1080:force_original_aspect_ratio=decrease</code>:
+Scales the image to fit entirely within the 1920x1080 boundary while
+preserving the original aspect ratio.</li>
+<li><code>pad=1920:1080:(ow-iw)/2:(oh-ih)/2:black</code>: Places the
+scaled image into the center of a black 1920x1080 canvas.</li>
+<li><code>setsar=1</code>: Sets the sample aspect ratio to 1:1 to
+prevent pixel distortion during playback.</li>
+</ul>
+<h3 id="2-method-a-using-glob-pattern-linux-and-macos">2. Method A:
+Using Glob Pattern (Linux and macOS)</h3>
+<p>If your images are randomly named or you are working in a Unix-based
+environment, use the <code>-pattern_type glob</code> input option.</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-framerate</span> 1 <span class="at">-pattern_type</span> glob <span class="at">-i</span> <span class="st">&#39;*.jpg&#39;</span> <span class="dt">\</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">-vf</span> <span class="st">&quot;scale=1920:1080:force_original_aspect_ratio=decrease,pad=1920:1080:(ow-iw)/2:(oh-ih)/2,setsar=1&quot;</span> <span class="dt">\</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">-c:v</span> libx264 <span class="at">-r</span> 30 <span class="at">-pix_fmt</span> yuv420p output.mp4</span></code></pre></div>
+<h3 id="3-method-b-using-a-concat-demuxer-universal--windows">3. Method
+B: Using a Concat Demuxer (Universal / Windows)</h3>
+<p>The glob pattern does not work natively on Windows command prompt.
+The most reliable cross-platform method is using a text file list.</p>
+<ol type="1">
+<li>Generate a text file named <code>input.txt</code> listing each image
+and duration:</li>
+</ol>
+<pre class="text"><code>file &#39;image1.png&#39;
+duration 2
+file &#39;image2.jpg&#39;
+duration 2
+file &#39;image3.jpeg&#39;
+duration 2
+file &#39;image3.jpeg&#39;</code></pre>
+<p><em>(Note: The last file must be repeated without a duration to
+ensure the final frame is rendered properly).</em></p>
+<ol start="2" type="1">
+<li>Run the FFmpeg command:</li>
+</ol>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-f</span> concat <span class="at">-safe</span> 0 <span class="at">-i</span> input.txt <span class="dt">\</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">-vf</span> <span class="st">&quot;scale=1920:1080:force_original_aspect_ratio=decrease,pad=1920:1080:(ow-iw)/2:(oh-ih)/2,setsar=1&quot;</span> <span class="dt">\</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">-c:v</span> libx264 <span class="at">-r</span> 30 <span class="at">-pix_fmt</span> yuv420p output.mp4</span></code></pre></div>
+<h3 id="4-alternative-crop-to-fill-avoid-black-bars">4. Alternative:
+Crop to Fill (Avoid Black Bars)</h3>
+<p>If you prefer the video frame to be completely filled without black
+bars, scale the image up to cover the canvas and crop the excess
+edges:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-framerate</span> 1 <span class="at">-pattern_type</span> glob <span class="at">-i</span> <span class="st">&#39;*.jpg&#39;</span> <span class="dt">\</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">-vf</span> <span class="st">&quot;scale=1920:1080:force_original_aspect_ratio=increase,crop=1920:1080,setsar=1&quot;</span> <span class="dt">\</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">-c:v</span> libx264 <span class="at">-r</span> 30 <span class="at">-pix_fmt</span> yuv420p output.mp4</span></code></pre></div>
+<h3 id="parameter-breakdown">Parameter Breakdown</h3>
+<ul>
+<li><code>-framerate 1</code>: Dictates the input speed (1 frame per
+second, meaning each image shows for 1 second).</li>
+<li><code>-r 30</code>: Sets the output frame rate to 30 fps for smooth
+playback compatibility across media players.</li>
+<li><code>-c:v libx264</code>: Encodes using the H.264 video codec.</li>
+<li><code>-pix_fmt yuv420p</code>: Sets the pixel format to YUV 4:2:0,
+ensuring broad hardware and browser compatibility.</li>
+</ul></article>
+        <div id="comments-container"></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

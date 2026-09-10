@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Configure FFmpeg find_rect Threshold and Scaling - ffmpeg</title>
+    <meta name="description" content="The FFmpeg findrect filter enables template matching by searching for a specific rectangular image within video frames. This guide covers how to adjust the detection threshold to control matching sensitivity and configure scaling options via mipmaps and">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/configure-ffmpeg-find-rect-threshold-and-scaling">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Configure FFmpeg find_rect Threshold and Scaling - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/configure-ffmpeg-find-rect-threshold-and-scaling" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="The FFmpeg findrect filter enables template matching by searching for a specific rectangular image within video frames. This guide covers how to adjust the detection threshold to control matching sensitivity and configure scaling options via mipmaps and" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="configure-ffmpeg-find_rect-threshold-and-scaling">Configure
+FFmpeg find_rect Threshold and Scaling</h1>
+<p>The FFmpeg <code>find_rect</code> filter enables template matching by
+searching for a specific rectangular image within video frames. This
+guide covers how to adjust the detection threshold to control matching
+sensitivity and configure scaling options via mipmaps and input scaling
+filters to ensure accurate detection across varying object sizes.</p>
+<h2 id="the-find_rect-filter-syntax">The <code>find_rect</code> Filter
+Syntax</h2>
+<p>The basic syntax for applying the <code>find_rect</code> filter in an
+FFmpeg command line is:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;find_rect=object=template.png:threshold=0.8:mipmaps=3&quot;</span> output.mp4</span></code></pre></div>
+<ul>
+<li><code>object</code>: The file path to the reference image or
+template being searched for.</li>
+<li><code>threshold</code>: The detection threshold value.</li>
+<li><code>mipmaps</code>: The number of mipmap scaling levels used for
+search.</li>
+</ul>
+<h2 id="configuring-the-search-threshold">Configuring the Search
+Threshold</h2>
+<p>The <code>threshold</code> parameter defines the strictness of the
+template matching algorithm. It accepts a floating-point value,
+typically evaluated between <code>0.0</code> and <code>1.0</code>.</p>
+<ul>
+<li><strong>Higher Threshold (e.g., <code>0.8</code> to
+<code>0.95</code>):</strong> Restricts matches to near-identical pixel
+regions. Use higher values to eliminate false positives in clean,
+high-bitrate video streams.</li>
+<li><strong>Lower Threshold (e.g., <code>0.3</code> to
+<code>0.5</code>):</strong> Loosens match criteria. Use lower values
+when the source video has compression artifacts, slight color shifts, or
+noise.</li>
+<li><strong>Default Value:</strong> If omitted, FFmpeg defaults the
+threshold to <code>0.5</code>.</li>
+</ul>
+<p>Example with a strict threshold:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> video.mp4 <span class="at">-vf</span> <span class="st">&quot;find_rect=object=logo.png:threshold=0.85&quot;</span> <span class="at">-f</span> null <span class="at">-</span></span></code></pre></div>
+<h2 id="configuring-scaling-options">Configuring Scaling Options</h2>
+<p>The <code>find_rect</code> filter handles scale variations using two
+primary methods: internal mipmaps and external stream pre-scaling.</p>
+<h3 id="1-using-mipmaps-for-downscaled-detection">1. Using Mipmaps for
+Downscaled Detection</h3>
+<p>The <code>mipmaps</code> parameter configures multi-scale matching by
+downsampling the search template and video frames into a mipmap pyramid.
+Each mipmap level halves the resolution of the search space.</p>
+<ul>
+<li><strong>Default Value:</strong> <code>3</code> levels (searches at
+100%, 50%, and 25% scale).</li>
+<li><strong>Increasing Mipmaps:</strong> Setting <code>mipmaps=4</code>
+or <code>mipmaps=5</code> expands the search to smaller object sizes
+(down to 12.5% and 6.25%, respectively).</li>
+<li><strong>Disabling Multi-Scale:</strong> Setting
+<code>mipmaps=1</code> forces the filter to search only at the exact 1:1
+pixel scale of the reference image, which significantly improves
+processing speed if the object size is static.</li>
+</ul>
+<p>Example with expanded multi-scale searching:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> video.mp4 <span class="at">-vf</span> <span class="st">&quot;find_rect=object=target.png:threshold=0.7:mipmaps=5&quot;</span> <span class="at">-f</span> null <span class="at">-</span></span></code></pre></div>
+<h3 id="2-pre-scaling-with-the-scale-filter">2. Pre-Scaling with the
+<code>scale</code> Filter</h3>
+<p>The native <code>mipmaps</code> option only scales downward in powers
+of two. If the target object in the video appears at an arbitrary or
+larger scale than the template image, normalize the template or the
+video stream using the <code>scale</code> filter before feeding it into
+<code>find_rect</code>.</p>
+<p>To resize the video prior to running the detection:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> video.mp4 <span class="at">-vf</span> <span class="st">&quot;scale=1280:720,find_rect=object=template.png:threshold=0.75:mipmaps=2&quot;</span> output.mp4</span></code></pre></div>
+<h2 id="optimizing-search-performance">Optimizing Search
+Performance</h2>
+<p>Multi-scale searching with a low threshold is computationally
+intensive. To optimize execution speed:</p>
+<ol type="1">
+<li><strong>Restrict Search Area:</strong> Use <code>xmin</code>,
+<code>ymin</code>, <code>xmax</code>, and <code>ymax</code> to confine
+the search to regions where the object is expected to appear.</li>
+<li><strong>Limit Mipmaps:</strong> Keep <code>mipmaps</code> as low as
+possible if the object dimensions do not change across frames.</li>
+<li><strong>Tune Sequentially:</strong> Begin testing with
+<code>threshold=0.5</code> and <code>mipmaps=1</code>, then adjust the
+threshold to isolate the object before increasing <code>mipmaps</code>
+to account for size variations.</li>
+</ol></article>
+        <div id="comments-container"></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

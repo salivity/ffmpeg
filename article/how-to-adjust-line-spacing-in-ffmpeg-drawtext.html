@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Adjust Line Spacing in FFmpeg drawtext - ffmpeg</title>
+    <meta name="description" content="This guide explains how to control the vertical line spacing of multi-line text rendered with FFmpeg's drawtext video filter. By applying the built-in linespacing parameter, you can increase or decrease the pixel gap between lines to improve readability">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/how-to-adjust-line-spacing-in-ffmpeg-drawtext">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Adjust Line Spacing in FFmpeg drawtext - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/how-to-adjust-line-spacing-in-ffmpeg-drawtext" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This guide explains how to control the vertical line spacing of multi-line text rendered with FFmpeg's drawtext video filter. By applying the built-in linespacing parameter, you can increase or decrease the pixel gap between lines to improve readability" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="how-to-adjust-line-spacing-in-ffmpeg-drawtext">How to Adjust
+Line Spacing in FFmpeg drawtext</h1>
+<p>This guide explains how to control the vertical line spacing of
+multi-line text rendered with FFmpeg's <code>drawtext</code> video
+filter. By applying the built-in <code>line_spacing</code> parameter,
+you can increase or decrease the pixel gap between lines to improve
+readability and match your video's layout requirements.</p>
+<h3 id="the-line_spacing-option">The <code>line_spacing</code>
+Option</h3>
+<p>FFmpeg provides a dedicated option within the <code>drawtext</code>
+filter called <code>line_spacing</code>. It defines the additional
+vertical space in pixels added between consecutive lines of text.</p>
+<ul>
+<li><strong>Positive values</strong> (e.g.,
+<code>line_spacing=20</code>) push lines further apart.</li>
+<li><strong>Negative values</strong> (e.g.,
+<code>line_spacing=-5</code>) pull lines closer together, which is
+useful for fonts with excessively tall default line heights.</li>
+<li>The default value is <code>0</code>, which relies entirely on the
+font engine's standard line metrics.</li>
+</ul>
+<h3 id="basic-command-syntax">Basic Command Syntax</h3>
+<p>To adjust line spacing on multi-line text using an inline string
+containing newline characters (<code>\n</code>), use the following
+syntax:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;drawtext=fontfile=/path/to/font.ttf:text=&#39;First Line\nSecond Line\nThird Line&#39;:fontsize=36:fontcolor=white:line_spacing=25:x=50:y=50&quot;</span> <span class="at">-codec:a</span> copy output.mp4</span></code></pre></div>
+<p>In this command:</p>
+<ul>
+<li><code>line_spacing=25</code> adds 25 pixels of vertical space
+between each line.</li>
+<li><code>\n</code> separates each line of text.</li>
+<li><code>-codec:a copy</code> preserves the original audio stream
+without re-encoding.</li>
+</ul>
+<h3 id="using-an-external-text-file">Using an External Text File</h3>
+<p>When dealing with paragraphs or longer blocks of text, using a text
+file is cleaner and prevents shell escaping issues:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;drawtext=fontfile=/path/to/font.ttf:textfile=subtitles.txt:fontsize=32:fontcolor=yellow:line_spacing=15:x=(w-text_w)/2:y=(h-text_h)/2&quot;</span> <span class="at">-codec:a</span> copy output.mp4</span></code></pre></div>
+<p>Here, <code>subtitles.txt</code> contains the raw multi-line text.
+The <code>drawtext</code> filter automatically respects standard line
+breaks within the file and applies the <code>15</code> pixel spacing
+between every line.</p>
+<h3 id="decreasing-default-line-spacing">Decreasing Default Line
+Spacing</h3>
+<p>Some TrueType and OpenType fonts include large vertical bounding
+boxes that result in unwanted gaps between lines. You can tighten the
+spacing by passing a negative integer:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;drawtext=fontfile=/path/to/font.ttf:text=&#39;Title\nSubtitle&#39;:fontsize=48:fontcolor=white:line_spacing=-10:x=100:y=100&quot;</span> <span class="at">-codec:a</span> copy output.mp4</span></code></pre></div>
+<p>Test different values in increments of 5 to 10 pixels to achieve the
+desired balance for your chosen font and font size.</p></article>
+        <div id="comments-container"></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

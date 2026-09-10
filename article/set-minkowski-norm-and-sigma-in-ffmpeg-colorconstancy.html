@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Set Minkowski Norm and Sigma in FFmpeg Colorconstancy - ffmpeg</title>
+    <meta name="description" content="The FFmpeg colorconstancy filter applies computational color constancy algorithms to automatically detect and correct the color cast (illuminant) in a video. By configuring the Minkowski norm and Gaussian sigma values, you can switch between classic colo">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/set-minkowski-norm-and-sigma-in-ffmpeg-colorconstancy">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Set Minkowski Norm and Sigma in FFmpeg Colorconstancy - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/set-minkowski-norm-and-sigma-in-ffmpeg-colorconstancy" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="The FFmpeg colorconstancy filter applies computational color constancy algorithms to automatically detect and correct the color cast (illuminant) in a video. By configuring the Minkowski norm and Gaussian sigma values, you can switch between classic colo" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="set-minkowski-norm-and-sigma-in-ffmpeg-colorconstancy">Set
+Minkowski Norm and Sigma in FFmpeg Colorconstancy</h1>
+<p>The FFmpeg <code>colorconstancy</code> filter applies computational
+color constancy algorithms to automatically detect and correct the color
+cast (illuminant) in a video. By configuring the Minkowski norm and
+Gaussian sigma values, you can switch between classic color constancy
+frameworks—such as Grey-World, Max-RGB, and higher-order Gray-Edge
+methods—to fine-tune how illumination is estimated.</p>
+<h3 id="understanding-the-parameters">Understanding the Parameters</h3>
+<p>The <code>colorconstancy</code> filter utilizes two primary
+parameters to shape how pixels and color gradients are weighted during
+illuminant estimation:</p>
+<ul>
+<li><strong><code>minkowski</code> (or <code>m</code>)</strong>:
+Specifies the order <span class="math inline">\(p\)</span> of the
+Minkowski norm.
+<ul>
+<li><code>0</code>: Represents the <span
+class="math inline">\(\infty\)</span>-norm (<span
+class="math inline">\(L_\infty\)</span>), which calculates the maximum
+values (equivalent to the Max-RGB algorithm).</li>
+<li><code>1</code>: Represents the standard sum/average (<span
+class="math inline">\(L_1\)</span>), which assumes the average scene
+reflectance is neutral (equivalent to the Grey-World algorithm).</li>
+<li><code>&gt; 1</code> (typically <code>4</code> to <code>11</code>):
+Gives higher weights to stronger pixel values or edge gradients,
+commonly used in Gray-Edge methods.</li>
+</ul></li>
+<li><strong><code>sigma</code> (or <code>s</code>)</strong>: Defines the
+standard deviation of the Gaussian filter applied to the image before
+computing derivatives or color averages. A non-zero value smooths out
+high-frequency noise that could otherwise distort the illuminant
+estimation.</li>
+</ul>
+<p>These parameters are frequently paired with <code>difford</code>
+(derivative order), where <code>0</code> applies to raw pixel colors,
+and <code>1</code> or <code>2</code> applies to spatial derivatives
+(edges).</p>
+<h3 id="configuration-syntax">Configuration Syntax</h3>
+<p>To set the Minkowski norm and sigma, pass them as key-value pairs
+inside the <code>-vf</code> (video filter) option:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;colorconstancy=minkowski=VALUE:sigma=VALUE&quot;</span> output.mp4</span></code></pre></div>
+<p>You can also use the short aliases <code>m</code> and
+<code>s</code>:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;colorconstancy=m=VALUE:s=VALUE&quot;</span> output.mp4</span></code></pre></div>
+<h3 id="practical-examples">Practical Examples</h3>
+<h4 id="1-gray-edge-first-order-derivative">1. Gray-Edge (First-Order
+Derivative)</h4>
+<p>For scenes with mixed lighting or prominent textures, the first-order
+Gray-Edge framework often produces the most natural white balance. It
+typically utilizes a Gaussian smoothing filter (<code>sigma</code>) of 1
+or 2 and a Minkowski norm (<code>minkowski</code>) between 5 and 10:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;colorconstancy=difford=1:minkowski=6:sigma=1.5&quot;</span> <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<h4 id="2-max-rgb-with-noise-suppression">2. Max-RGB with Noise
+Suppression</h4>
+<p>To run a Max-RGB estimation while using a slight Gaussian blur to
+prevent isolated bright noise pixels from skewing the results:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;colorconstancy=difford=0:minkowski=0:sigma=1&quot;</span> <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<h4 id="3-smoothed-grey-world">3. Smoothed Grey-World</h4>
+<p>To run standard Grey-World color constancy with spatial smoothing to
+reduce sensor noise impact:</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;colorconstancy=difford=0:minkowski=1:sigma=2&quot;</span> <span class="at">-c:a</span> copy output.mp4</span></code></pre></div></article>
+        <div id="comments-container"></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

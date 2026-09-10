@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Use strftime with FFmpeg drawtext - ffmpeg</title>
+    <meta name="description" content="This guide explains how to use the strftime option within FFmpeg’s drawtext video filter to overlay dynamically formatted date and time stamps onto a video. You will learn the correct syntax, how to handle necessary character escaping, and see practica">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/how-to-use-strftime-with-ffmpeg-drawtext">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Use strftime with FFmpeg drawtext - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/how-to-use-strftime-with-ffmpeg-drawtext" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This guide explains how to use the strftime option within FFmpeg’s drawtext video filter to overlay dynamically formatted date and time stamps onto a video. You will learn the correct syntax, how to handle necessary character escaping, and see practica" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="how-to-use-strftime-with-ffmpeg-drawtext">How to Use strftime
+with FFmpeg drawtext</h1>
+<p>This guide explains how to use the <code>strftime</code> option
+within FFmpeg’s <code>drawtext</code> video filter to overlay
+dynamically formatted date and time stamps onto a video. You will learn
+the correct syntax, how to handle necessary character escaping, and see
+practical command-line examples for common timestamp formats.</p>
+<h3 id="understanding-the-strftime-option">Understanding the strftime
+Option</h3>
+<p>The <code>drawtext</code> filter in FFmpeg allows you to render text
+onto video frames. By enabling the <code>strftime=1</code> option,
+FFmpeg treats the <code>text</code> parameter as a standard
+<code>strftime</code> format string, allowing you to print the current
+system date and time directly onto your footage.</p>
+<h3 id="basic-syntax-and-character-escaping">Basic Syntax and Character
+Escaping</h3>
+<p>Because FFmpeg uses colons (<code>:</code>) to separate filter
+options, any colon used within your time format string (such as
+<code>%H:%M:%S</code>) must be escaped with a backslash
+(<code>\:</code>).</p>
+<p>Here is the minimal syntax for overlaying the current date and
+time:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;drawtext=text=&#39;%Y-%m-%d %H\:%M\:%S&#39;:strftime=1:x=10:y=10:fontcolor=white:fontsize=24&quot;</span> <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<h3 id="breakdown-of-parameters">Breakdown of Parameters</h3>
+<ul>
+<li><strong><code>text='%Y-%m-%d %H\:%M\:%S'</code></strong>: The time
+template. Standard <code>strftime</code> tokens are expanded to current
+time values. Notice the escaped colons (<code>\:</code>) between hours,
+minutes, and seconds.</li>
+<li><strong><code>strftime=1</code></strong>: Tells FFmpeg to parse the
+<code>text</code> string using the C library's <code>strftime</code>
+function.</li>
+<li><strong><code>x=10:y=10</code></strong>: Sets the horizontal and
+vertical pixel coordinates where the text appears (top-left corner in
+this case).</li>
+<li><strong><code>fontcolor=white</code></strong>: Sets the text
+color.</li>
+<li><strong><code>fontsize=24</code></strong>: Sets the size of the
+rendered text in pixels.</li>
+<li><strong><code>fontfile=/path/to/font.ttf</code></strong>: (Optional)
+Specifies a custom TrueType font file. If omitted, FFmpeg uses a
+fallback system font.</li>
+</ul>
+<h3 id="adding-a-background-box-for-readability">Adding a Background Box
+for Readability</h3>
+<p>To make the timestamp legible over bright or fluctuating backgrounds,
+enable a semi-transparent background box:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;drawtext=text=&#39;%Y-%m-%d %H\:%M\:%S&#39;:strftime=1:x=20:y=20:fontsize=28:fontcolor=white:box=1:boxcolor=black@0.5:boxborderw=5&quot;</span> <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<ul>
+<li><strong><code>box=1</code></strong>: Enables the bounding box.</li>
+<li><strong><code>boxcolor=black@0.5</code></strong>: Creates a black
+box with 50% opacity.</li>
+<li><strong><code>boxborderw=5</code></strong>: Adds 5 pixels of padding
+around the text.</li>
+</ul>
+<h3 id="common-strftime-specifiers">Common strftime Specifiers</h3>
+<p>You can customize the output using standard format specifiers:</p>
+<ul>
+<li><code>%Y</code>: 4-digit year (e.g., 2026)</li>
+<li><code>%m</code>: 2-digit month (01–12)</li>
+<li><code>%d</code>: 2-digit day of the month (01–31)</li>
+<li><code>%H</code>: Hour in 24-hour format (00–23)</li>
+<li><code>%I</code>: Hour in 12-hour format (01–12)</li>
+<li><code>%M</code>: Minute (00–59)</li>
+<li><code>%S</code>: Second (00–59)</li>
+<li><code>%p</code>: AM or PM designation</li>
+<li><code>%B</code>: Full month name (e.g., January)</li>
+<li><code>%A</code>: Full weekday name (e.g., Monday)</li>
+</ul>
+<h3 id="real-time-live-streaming-example">Real-Time Live Streaming
+Example</h3>
+<p>When ingesting a live camera feed (such as via RTSP), the
+<code>strftime</code> filter prints the actual wall-clock time the frame
+is processed:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-rtsp_transport</span> tcp <span class="at">-i</span> rtsp://camera.local/stream <span class="at">-vf</span> <span class="st">&quot;drawtext=text=&#39;%A, %B %d, %Y - %I\:%M\:%S %p&#39;:strftime=1:x=w-tw-20:y=h-th-20:fontsize=20:fontcolor=yellow&quot;</span> <span class="at">-c:v</span> libx264 <span class="at">-preset</span> veryfast <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<p>In this example, <code>x=w-tw-20:y=h-th-20</code> automatically
+positions the timestamp in the bottom-right corner of the video frame
+with a 20-pixel margin.</p></article>
+        <div id="comments-container"></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

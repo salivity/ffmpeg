@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Use VapourSynth Filter in FFmpeg - ffmpeg</title>
+    <meta name="description" content="This guide explains how to use FFmpeg's built-in vapoursynth video filter to process video files with VapourSynth scripts. You will learn the requirements needed for your FFmpeg build, how to handle input frames within a Python script using the native vi">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/how-to-use-vapoursynth-filter-in-ffmpeg">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Use VapourSynth Filter in FFmpeg - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/how-to-use-vapoursynth-filter-in-ffmpeg" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This guide explains how to use FFmpeg's built-in vapoursynth video filter to process video files with VapourSynth scripts. You will learn the requirements needed for your FFmpeg build, how to handle input frames within a Python script using the native vi" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="how-to-use-vapoursynth-filter-in-ffmpeg">How to Use VapourSynth
+Filter in FFmpeg</h1>
+<p>This guide explains how to use FFmpeg's built-in
+<code>vapoursynth</code> video filter to process video files with
+VapourSynth scripts. You will learn the requirements needed for your
+FFmpeg build, how to handle input frames within a Python script using
+the native <code>video_in</code> object, and the exact command-line
+syntax to execute your scripts during encoding.</p>
+<h3 id="prerequisites">Prerequisites</h3>
+<p>To use the filter, your FFmpeg binary must be compiled with
+VapourSynth support. You can verify this by checking your build
+configuration:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-filters</span> <span class="kw">|</span> <span class="fu">grep</span> vapoursynth</span></code></pre></div>
+<p>If the output lists <code>vapoursynth</code>, your installation is
+ready. If not, you must install or compile an FFmpeg build configured
+with the <code>--enable-vapoursynth</code> flag, alongside an installed
+VapourSynth environment and Python.</p>
+<h3 id="1-writing-the-vapoursynth-script">1. Writing the VapourSynth
+Script</h3>
+<p>When using the <code>vapoursynth</code> filter in an FFmpeg pipeline,
+FFmpeg exposes the input video stream to Python as a predefined variable
+named <code>video_in</code>.</p>
+<p>Create a Python script named <code>filter.vpy</code>:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> vapoursynth <span class="im">as</span> vs</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>core <span class="op">=</span> vs.core</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="co"># video_in is automatically injected by FFmpeg&#39;s filter</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>clip <span class="op">=</span> video_in</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Example: Apply a simple blur using the built-in box blur</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>clip <span class="op">=</span> core.std.BoxBlur(clip)</span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a><span class="co"># Set the final output for FFmpeg to retrieve</span></span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>clip.set_output()</span></code></pre></div>
+<p>Do not load a source file using source filters (such as
+<code>ffms2</code> or <code>L-SMASH-Works</code>) inside the script when
+processing an existing FFmpeg input; <code>video_in</code> handles frame
+delivery directly from FFmpeg.</p>
+<h3 id="2-executing-the-script-via-ffmpeg">2. Executing the Script via
+FFmpeg</h3>
+<p>To run the script on an input file, call the <code>vapoursynth</code>
+filter inside your <code>-vf</code> (video filter) argument and specify
+the script path with the <code>file</code> parameter:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;vapoursynth=file=&#39;filter.vpy&#39;&quot;</span> <span class="at">-c:v</span> libx264 <span class="at">-crf</span> 18 <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<h4 id="filter-parameters">Filter Parameters</h4>
+<ul>
+<li><code>file</code>: Specifies the path to the <code>.vpy</code>
+script file.</li>
+<li><code>script</code>: Allows passing raw VapourSynth code directly as
+an inline string instead of referencing an external file:</li>
+</ul>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;vapoursynth=script=&#39;import vapoursynth as vs; core = vs.core; clip = video_in; clip = core.std.Invert(clip); clip.set_output()&#39;&quot;</span> <span class="at">-c:v</span> libx264 output.mp4</span></code></pre></div>
+<h3 id="3-using-vapoursynth-as-the-source-generator">3. Using
+VapourSynth as the Source Generator</h3>
+<p>You can also use the filter without an input video file by calling it
+through the <code>lavfi</code> virtual input device. In this scenario,
+your script generates or imports its own source (e.g., using
+<code>core.std.BlankClip()</code> or standard VapourSynth source
+plugins):</p>
+<p>Create <code>source.vpy</code>:</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> vapoursynth <span class="im">as</span> vs</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>core <span class="op">=</span> vs.core</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Generate a 10-second test pattern</span></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>clip <span class="op">=</span> core.std.BlankClip(<span class="bu">format</span><span class="op">=</span>vs.YUV420P8, width<span class="op">=</span><span class="dv">1920</span>, height<span class="op">=</span><span class="dv">1080</span>, length<span class="op">=</span><span class="dv">240</span>, fpsnum<span class="op">=</span><span class="dv">24</span>, fpsden<span class="op">=</span><span class="dv">1</span>)</span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>clip.set_output()</span></code></pre></div>
+<p>Run FFmpeg with <code>lavfi</code>:</p>
+<div class="sourceCode" id="cb6"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-f</span> lavfi <span class="at">-i</span> <span class="st">&quot;vapoursynth=file=&#39;source.vpy&#39;&quot;</span> <span class="at">-c:v</span> libx264 output.mp4</span></code></pre></div></article>
+        <div id="comments-container"></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

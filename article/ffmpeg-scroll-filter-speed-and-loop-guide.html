@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FFmpeg Scroll Filter: Speed and Loop Guide - ffmpeg</title>
+    <meta name="description" content="This guide demonstrates how to configure the scrolling speed and looping behavior using FFmpeg's built-in scroll video filter. You will learn the exact syntax for setting horizontal and vertical movement rates, understanding directional values, and manag">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/ffmpeg-scroll-filter-speed-and-loop-guide">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="FFmpeg Scroll Filter: Speed and Loop Guide - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/ffmpeg-scroll-filter-speed-and-loop-guide" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This guide demonstrates how to configure the scrolling speed and looping behavior using FFmpeg's built-in scroll video filter. You will learn the exact syntax for setting horizontal and vertical movement rates, understanding directional values, and manag" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="ffmpeg-scroll-filter-speed-and-loop-guide">FFmpeg Scroll Filter:
+Speed and Loop Guide</h1>
+<p>This guide demonstrates how to configure the scrolling speed and
+looping behavior using FFmpeg's built-in <code>scroll</code> video
+filter. You will learn the exact syntax for setting horizontal and
+vertical movement rates, understanding directional values, and managing
+continuous loops for text tickers, credits, or background
+animations.</p>
+<h2 id="understanding-the-ffmpeg-scroll-filter-syntax">Understanding the
+FFmpeg <code>scroll</code> Filter Syntax</h2>
+<p>The <code>scroll</code> filter shifts video frames horizontally,
+vertically, or both simultaneously. The basic syntax is:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;scroll=horizontal=H_SPEED:vertical=V_SPEED&quot;</span> output.mp4</span></code></pre></div>
+<p>You can use either the full parameter names (<code>horizontal</code>,
+<code>vertical</code>) or their short aliases (<code>h</code>,
+<code>v</code>).</p>
+<h2 id="configuring-scroll-speed">Configuring Scroll Speed</h2>
+<p>Speed in the <code>scroll</code> filter is determined in
+<strong>pixels per frame</strong>, not pixels per second. The value can
+be an integer or a floating-point number, and its sign controls the
+direction of the movement.</p>
+<h3 id="horizontal-speed-horizontal-or-h">Horizontal Speed
+(<code>horizontal</code> or <code>h</code>)</h3>
+<ul>
+<li><strong>Positive value (<code>h=2</code>):</strong> Shifts the frame
+to the left, causing the image to appear as though it is scrolling from
+right to left (standard news-ticker style).</li>
+<li><strong>Negative value (<code>h=-2</code>):</strong> Shifts the
+frame to the right, causing it to scroll from left to right.</li>
+<li><strong>Zero (<code>h=0</code>):</strong> No horizontal
+movement.</li>
+</ul>
+<p>Example (scroll right to left at 3 pixels per frame):</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;scroll=horizontal=3&quot;</span> <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<h3 id="vertical-speed-vertical-or-v">Vertical Speed
+(<code>vertical</code> or <code>v</code>)</h3>
+<ul>
+<li><strong>Positive value (<code>v=2</code>):</strong> Shifts the frame
+upward, causing the image to scroll from bottom to top (standard
+end-credits style).</li>
+<li><strong>Negative value (<code>v=-2</code>):</strong> Shifts the
+frame downward, causing it to scroll from top to bottom.</li>
+<li><strong>Zero (<code>v=0</code>):</strong> No vertical movement.</li>
+</ul>
+<p>Example (scroll bottom to top at 1.5 pixels per frame):</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;scroll=vertical=1.5&quot;</span> <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<h3 id="calculating-pixels-per-second">Calculating Pixels per
+Second</h3>
+<p>Because speed is measured per frame, the perceived speed depends on
+your video's frame rate (fps):</p>
+<p><span class="math display">\[\text{Speed (pixels/frame)} =
+\frac{\text{Desired Speed (pixels/second)}}{\text{Video Frame Rate
+(fps)}}\]</span></p>
+<p>For example, to scroll horizontally at 120 pixels per second on a 60
+fps video:</p>
+<p><span class="math display">\[120 / 60 = 2 \text{
+pixels/frame}\]</span></p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;scroll=h=2&quot;</span> output.mp4</span></code></pre></div>
+<h2 id="configuring-loop-options">Configuring Loop Options</h2>
+<p>The <code>scroll</code> filter features built-in, continuous
+edge-wrapping. As pixels move off one boundary of the frame, they
+immediately re-enter from the opposite side.</p>
+<h3 id="native-wrapping">Native Wrapping</h3>
+<p>No extra filter flag is needed for the graphic itself to wrap;
+continuous looping of the visual canvas is enabled by default. If an
+image scrolls to the left, pixels exiting the left boundary seamlessly
+wrap around to the right edge.</p>
+<h3 id="looping-static-images-or-short-video-inputs">Looping Static
+Images or Short Video Inputs</h3>
+<p>If your source file is shorter than the desired output duration, use
+the <code>-stream_loop</code> option prior to the input flag
+(<code>-i</code>):</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-stream_loop</span> <span class="at">-1</span> <span class="at">-i</span> background.png <span class="at">-vf</span> <span class="st">&quot;scroll=h=2&quot;</span> <span class="at">-t</span> 30 <span class="at">-pix_fmt</span> yuv420p output.mp4</span></code></pre></div>
+<ul>
+<li><code>-stream_loop -1</code>: Loops the input file infinitely.</li>
+<li><code>-t 30</code>: Limits the final output duration to 30
+seconds.</li>
+</ul>
+<h3 id="setting-initial-scroll-offsets">Setting Initial Scroll
+Offsets</h3>
+<p>To set a specific starting offset for the loop rather than starting
+at <code>(0,0)</code>, use the <code>hpos</code> (horizontal position)
+and <code>vpos</code> (vertical position) parameters. These accept a
+floating-point value between <code>0.0</code> and <code>1.0</code>
+representing a percentage of the frame dimensions:</p>
+<div class="sourceCode" id="cb6"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;scroll=h=2:hpos=0.5&quot;</span> output.mp4</span></code></pre></div>
+<p>This starts the horizontal scroll halfway across the width of the
+input frame.</p></article>
+        <div id="comments-container"></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

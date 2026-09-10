@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Compile FFmpeg with Native HTTPS Support - ffmpeg</title>
+    <meta name="description" content="This guide outlines the complete process for compiling FFmpeg from source with HTTPS support enabled. By default, FFmpeg requires an external Transport Layer Security (TLS) library or platform-native security APIs to handle encrypted https:// input strea">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/compile-ffmpeg-with-native-https-support">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Compile FFmpeg with Native HTTPS Support - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/compile-ffmpeg-with-native-https-support" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This guide outlines the complete process for compiling FFmpeg from source with HTTPS support enabled. By default, FFmpeg requires an external Transport Layer Security (TLS) library or platform-native security APIs to handle encrypted https:// input strea" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="compile-ffmpeg-with-native-https-support">Compile FFmpeg with
+Native HTTPS Support</h1>
+<p>This guide outlines the complete process for compiling FFmpeg from
+source with HTTPS support enabled. By default, FFmpeg requires an
+external Transport Layer Security (TLS) library or platform-native
+security APIs to handle encrypted <code>https://</code> input streams
+and outputs. Below, you will find instructions on installing the
+necessary build dependencies, choosing between cross-platform libraries
+(OpenSSL, GnuTLS) and operating system-native APIs (Schannel on Windows,
+SecureTransport on macOS), configuring the source tree, and compiling
+the binary.</p>
+<h3 id="1-choose-a-tls-implementation">1. Choose a TLS
+Implementation</h3>
+<p>FFmpeg supports HTTPS through several cryptographic backends:</p>
+<ul>
+<li><strong>OpenSSL:</strong> Widely supported and fast. Requires
+<code>--enable-openssl</code> (and <code>--enable-nonfree</code> if
+using older OpenSSL versions with license conflicts).</li>
+<li><strong>GnuTLS:</strong> Common on Linux distributions. Licensed
+under LGPL/GPL, avoiding non-free licensing restrictions. Requires
+<code>--enable-gnutls</code>.</li>
+<li><strong>Schannel (Windows native):</strong> Built directly into
+Windows. Does not require external third-party libraries. Requires
+<code>--enable-schannel</code>.</li>
+<li><strong>SecureTransport (macOS native):</strong> Built into Apple
+platforms. Requires <code>--enable-securetransport</code>.</li>
+</ul>
+<h3 id="2-install-required-dependencies">2. Install Required
+Dependencies</h3>
+<p>Ensure you have a C compiler, build tools, and the development
+headers for your chosen TLS library.</p>
+<p><strong>On Debian/Ubuntu (using GnuTLS or OpenSSL):</strong></p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> apt update</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> apt install <span class="at">-y</span> build-essential yasm nasm pkg-config git</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="co"># For GnuTLS:</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> apt install <span class="at">-y</span> libgnutls28-dev</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="co"># OR for OpenSSL:</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> apt install <span class="at">-y</span> libssl-dev</span></code></pre></div>
+<p><strong>On macOS (using Homebrew):</strong></p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">brew</span> install yasm nasm pkg-config</span></code></pre></div>
+<h3 id="3-fetch-the-ffmpeg-source-code">3. Fetch the FFmpeg Source
+Code</h3>
+<p>Clone the official FFmpeg repository:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="fu">git</span> clone https://git.ffmpeg.org/ffmpeg.git ffmpeg-source</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="bu">cd</span> ffmpeg-source</span></code></pre></div>
+<h3 id="4-configure-the-build">4. Configure the Build</h3>
+<p>Run the <code>./configure</code> script with the flag that
+corresponds to your chosen TLS library.</p>
+<p><strong>Using GnuTLS (Linux/Unix):</strong></p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">./configure</span> <span class="at">--enable-gnutls</span></span></code></pre></div>
+<p><strong>Using OpenSSL:</strong></p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="ex">./configure</span> <span class="at">--enable-openssl</span> <span class="at">--enable-nonfree</span></span></code></pre></div>
+<p><strong>Using Native Windows TLS (Schannel via
+MinGW/MSYS2):</strong></p>
+<div class="sourceCode" id="cb6"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="ex">./configure</span> <span class="at">--enable-schannel</span></span></code></pre></div>
+<p><strong>Using Native macOS TLS (SecureTransport):</strong></p>
+<div class="sourceCode" id="cb7"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="ex">./configure</span> <span class="at">--enable-securetransport</span></span></code></pre></div>
+<p><em>Note: You can append <code>--prefix=/usr/local</code> or another
+path to customize the installation location.</em></p>
+<h3 id="5-compile-and-install">5. Compile and Install</h3>
+<p>Compile the source tree using all available CPU cores, then install
+the binary.</p>
+<div class="sourceCode" id="cb8"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="fu">make</span> <span class="at">-j</span><span class="va">$(</span><span class="fu">nproc</span> <span class="dv">2</span><span class="op">&gt;</span>/dev/null <span class="kw">||</span> <span class="ex">sysctl</span> <span class="at">-n</span> hw.ncpu<span class="va">)</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> make install</span></code></pre></div>
+<h3 id="6-verify-https-support">6. Verify HTTPS Support</h3>
+<p>Once installed, check that the <code>https</code> protocol is listed
+in the compiled binary:</p>
+<div class="sourceCode" id="cb9"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-protocols</span> <span class="kw">|</span> <span class="fu">grep</span> https</span></code></pre></div>
+<p>If the compilation was successful, the output will display
+<code>https</code> in the supported Input and Output protocols list. You
+can test it directly by opening an encrypted network stream:</p>
+<div class="sourceCode" id="cb10"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> https://example.com/stream.m3u8 <span class="at">-c</span> copy output.mp4</span></code></pre></div></article>
+        <div id="comments-container"></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

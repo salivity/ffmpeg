@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dump Live RTMP Stream to FLV Using FFmpeg - ffmpeg</title>
+    <meta name="description" content="Saving a live Real-Time Messaging Protocol (RTMP) stream directly into a Flash Video (FLV) container is straightforward with FFmpeg. Because RTMP natively encapsulates video and audio in the FLV format, you can stream-copy the media without re-encoding,">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/dump-live-rtmp-stream-to-flv-using-ffmpeg">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Dump Live RTMP Stream to FLV Using FFmpeg - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/dump-live-rtmp-stream-to-flv-using-ffmpeg" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Saving a live Real-Time Messaging Protocol (RTMP) stream directly into a Flash Video (FLV) container is straightforward with FFmpeg. Because RTMP natively encapsulates video and audio in the FLV format, you can stream-copy the media without re-encoding," />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="dump-live-rtmp-stream-to-flv-using-ffmpeg">Dump Live RTMP Stream
+to FLV Using FFmpeg</h1>
+<p>Saving a live Real-Time Messaging Protocol (RTMP) stream directly
+into a Flash Video (FLV) container is straightforward with FFmpeg.
+Because RTMP natively encapsulates video and audio in the FLV format,
+you can stream-copy the media without re-encoding, preserving the
+original quality while utilizing minimal CPU resources. This guide
+covers the exact FFmpeg commands needed to capture, dump, and handle
+real-world connection issues when saving RTMP streams to disk.</p>
+<h3 id="the-basic-command">The Basic Command</h3>
+<p>To dump a live RTMP stream directly to an FLV file, run:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> <span class="st">&quot;rtmp://example.com/live/stream_key&quot;</span> <span class="at">-c</span> copy output.flv</span></code></pre></div>
+<h3 id="command-breakdown">Command Breakdown</h3>
+<ul>
+<li><strong><code>-i "rtmp://..."</code></strong>: Specifies the live
+RTMP source URL. Always wrap the URL in quotes to prevent special
+characters or tokens from breaking the terminal shell command.</li>
+<li><strong><code>-c copy</code></strong>: Tells FFmpeg to perform a
+direct stream copy of both audio and video without re-encoding. This
+guarantees no loss in fidelity and near-zero CPU overhead.</li>
+<li><strong><code>output.flv</code></strong>: The destination file.
+FFmpeg automatically infers the FLV container format from the
+<code>.flv</code> extension. If needed, you can explicitly enforce the
+container format by appending <code>-f flv output.flv</code>.</li>
+</ul>
+<h3 id="handling-connection-drops">Handling Connection Drops</h3>
+<p>Live streams often suffer from packet drops or network interruptions.
+To ensure FFmpeg attempts to reconnect without terminating the recording
+prematurely, use the <code>-reconnect</code> options:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-reconnect</span> 1 <span class="at">-reconnect_at_eof</span> 1 <span class="at">-reconnect_streamed</span> 1 <span class="at">-reconnect_delay_max</span> 5 <span class="at">-i</span> <span class="st">&quot;rtmp://example.com/live/stream_key&quot;</span> <span class="at">-c</span> copy output.flv</span></code></pre></div>
+<ul>
+<li><strong><code>-reconnect 1</code></strong>: Enables automatic
+reconnection if the connection drops unexpectedly.</li>
+<li><strong><code>-reconnect_at_eof 1</code></strong>: Reconnects even
+if an unexpected end-of-file marker is received.</li>
+<li><strong><code>-reconnect_streamed 1</code></strong>: Instructs
+FFmpeg that the input is a live stream.</li>
+<li><strong><code>-reconnect_delay_max 5</code></strong>: Limits the
+maximum wait time before attempting a reconnect to 5 seconds.</li>
+</ul>
+<h3 id="listening-to-an-incoming-rtmp-stream">Listening to an Incoming
+RTMP Stream</h3>
+<p>If an external encoder (such as OBS Studio) is pushing an RTMP stream
+directly to your local machine, configure FFmpeg to act as an RTMP
+listener:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-listen</span> 1 <span class="at">-i</span> <span class="st">&quot;rtmp://0.0.0.0:1935/live/stream_key&quot;</span> <span class="at">-c</span> copy output.flv</span></code></pre></div>
+<ul>
+<li><strong><code>-listen 1</code></strong>: Opens a listening socket on
+the specified port (typically <code>1935</code>) to accept the incoming
+RTMP push, immediately dumping the received payloads into the FLV
+container.</li>
+</ul>
+<h3 id="stopping-the-capture">Stopping the Capture</h3>
+<p>To cleanly close the output file and write all container metadata,
+press <strong><code>q</code></strong> or
+<strong><code>Ctrl + C</code></strong> in your terminal window. This
+ensures the output FLV file is closed properly and remains playable.</p></article>
+        <div id="comments-container"></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

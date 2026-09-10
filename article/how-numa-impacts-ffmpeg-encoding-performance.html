@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How NUMA Impacts FFmpeg Encoding Performance - ffmpeg</title>
+    <meta name="description" content="Non-Uniform Memory Access (NUMA) architecture significantly influences FFmpeg multi-threaded video encoding by dictating how CPU cores access local and remote system memory. When an FFmpeg encoding job spans multiple NUMA nodes—common in multi-socket s">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/how-numa-impacts-ffmpeg-encoding-performance">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How NUMA Impacts FFmpeg Encoding Performance - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/how-numa-impacts-ffmpeg-encoding-performance" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Non-Uniform Memory Access (NUMA) architecture significantly influences FFmpeg multi-threaded video encoding by dictating how CPU cores access local and remote system memory. When an FFmpeg encoding job spans multiple NUMA nodes—common in multi-socket s" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="how-numa-impacts-ffmpeg-encoding-performance">How NUMA Impacts
+FFmpeg Encoding Performance</h1>
+<p>Non-Uniform Memory Access (NUMA) architecture significantly
+influences FFmpeg multi-threaded video encoding by dictating how CPU
+cores access local and remote system memory. When an FFmpeg encoding job
+spans multiple NUMA nodes—common in multi-socket servers and
+high-core-count processors—memory latency increases and interconnect
+bandwidth becomes saturated. This article explains the technical
+mechanics of NUMA, how it creates bottlenecks during multi-threaded
+video encoding, and the practical configurations required to maximize
+FFmpeg throughput on NUMA systems.</p>
+<h3 id="understanding-numa-in-modern-cpus">Understanding NUMA in Modern
+CPUs</h3>
+<p>In a Uniform Memory Access (UMA) design, all CPU cores share equal
+access time to system RAM through a centralized memory bus. In contrast,
+NUMA partitions physical cores and memory into separate "nodes." Cores
+access their local memory bank with low latency and high bandwidth.
+However, when a core needs data residing in another node's memory bank,
+it must travel across an interconnect (such as Intel Ultra Path
+Interconnect or AMD Infinity Fabric). This remote access introduces
+higher latency and consumes finite interconnect bandwidth.</p>
+<h3 id="why-video-encoding-is-sensitive-to-memory-architecture">Why
+Video Encoding Is Sensitive to Memory Architecture</h3>
+<p>Modern video codecs like H.264 (libx264), HEVC (libx265), and AV1
+(libsvtav1) are memory-bandwidth-intensive. Encoders perform complex
+operations—such as motion estimation, macroblock analysis, and
+inter-frame reference lookups—requiring frequent reads and writes to
+large frame buffers stored in RAM.</p>
+<p>When multi-threading is enabled in FFmpeg, threads actively share
+data:</p>
+<ul>
+<li><strong>Reference Frames:</strong> Threads analyzing future frames
+must reference decoded past frames held in memory.</li>
+<li><strong>Lookahead Threads:</strong> Slicing and rate-control threads
+read ahead to determine frame complexity.</li>
+<li><strong>Filtergraphs:</strong> FFmpeg pixel format conversions,
+scalers, and filters transfer raw, uncompressed frames through
+memory.</li>
+</ul>
+<h3 id="the-impact-of-numa-on-multi-threaded-ffmpeg">The Impact of NUMA
+on Multi-Threaded FFmpeg</h3>
+<h4 id="1-remote-memory-latency-and-interconnect-saturation">1. Remote
+Memory Latency and Interconnect Saturation</h4>
+<p>If a single FFmpeg process is configured to use all available threads
+on a multi-node system, the operating system's scheduler distributes
+threads across all physical nodes. When a thread on Node 1 references a
+frame buffer allocated in Node 0's memory, every read traverses the
+inter-socket interconnect. This results in:</p>
+<ul>
+<li>Increased CPU wait states (pipeline stalls while waiting for
+RAM).</li>
+<li>Interconnect saturation, which slows down every process on the
+machine.</li>
+<li>Sharply degraded encoding speed (frames per second) compared to
+theoretical core scaling.</li>
+</ul>
+<h4 id="2-cache-invalidation-and-coherency-overhead">2. Cache
+Invalidation and Coherency Overhead</h4>
+<p>Multi-threaded video encoders rely on CPU cache coherency protocols
+to ensure that all cores see the latest modifications to shared frame
+data. Across NUMA boundaries, maintaining cache coherency requires
+cross-node signaling. As the thread count increases across nodes, cache
+lines are frequently invalidated, causing threads to reload identical
+data from remote memory repeatedly.</p>
+<h4 id="3-diminishing-returns-and-negative-scaling">3. Diminishing
+Returns and Negative Scaling</h4>
+<p>Video encoding exhibits diminishing returns with high thread counts
+due to synchronization overhead. Combining this software limit with NUMA
+latency often produces negative scaling: allocating 64 threads across
+two NUMA nodes can run noticeably slower than running 32 threads
+strictly confined to a single node.</p>
+<h3 id="codec-specific-numa-behaviors">Codec-Specific NUMA
+Behaviors</h3>
+<ul>
+<li><strong>libx264:</strong> Uses a frame-based and slice-based
+multi-threading model. It scales well up to roughly 16–24 threads.
+Beyond this, scaling flattens. Spanning across NUMA nodes typically
+leads to CPU core starvation and stalls.</li>
+<li><strong>libx265:</strong> Features a native NUMA awareness system.
+By default, x265 attempts to detect NUMA nodes and allocate thread pools
+accordingly using the <code>--pools</code> parameter. If not explicitly
+tuned, cross-socket synchronization between frame analysis and wavefront
+processing (WPP) can still throttle throughput.</li>
+<li><strong>libsvtav1:</strong> Designed with modern high-core
+architectures in mind, SVT-AV1 scales better than older encoders but
+still suffers from latency penalties when frame buffers cross socket
+interconnects.</li>
+</ul>
+<h3 id="optimizing-ffmpeg-on-numa-systems">Optimizing FFmpeg on NUMA
+Systems</h3>
+<p>To achieve optimal performance on multi-socket or multi-node systems,
+avoid running a single FFmpeg process across the entire machine.
+Instead, apply node-pinning and process isolation strategies.</p>
+<h4 id="1-pinning-with-numactl">1. Pinning with
+<code>numactl</code></h4>
+<p>Use the Linux utility <code>numactl</code> to pin FFmpeg to a
+specific node's CPU cores and its local memory.</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Run FFmpeg strictly on NUMA Node 0</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="ex">numactl</span> <span class="at">--cpunodebind</span><span class="op">=</span>0 <span class="at">--membind</span><span class="op">=</span>0 ffmpeg <span class="at">-i</span> input.mp4 <span class="at">-c:v</span> libx264 <span class="at">-crf</span> 20 output0.mp4</span></code></pre></div>
+<p>This ensures that the encoder never makes remote memory calls,
+keeping cache access times predictable and low.</p>
+<h4 id="2-parallel-multi-instance-transcoding">2. Parallel
+Multi-Instance Transcoding</h4>
+<p>Instead of encoding one file using all nodes (e.g., 64 threads on 2
+sockets), split workloads to run concurrent encoding instances pinned to
+distinct nodes:</p>
+<ul>
+<li><strong>Instance 1:</strong>
+<code>numactl --cpunodebind=0 --membind=0 ffmpeg -i file1.mkv ...</code></li>
+<li><strong>Instance 2:</strong>
+<code>numactl --cpunodebind=1 --membind=1 ffmpeg -i file2.mkv ...</code></li>
+</ul>
+<p>This approach leverages 100% of the hardware while entirely bypassing
+the cross-node latency penalty, yielding the highest aggregate
+throughput (total frames encoded per second across all jobs).</p>
+<h4 id="3-encoder-specific-thread-pool-isolation">3. Encoder-Specific
+Thread Pool Isolation</h4>
+<p>For encoders that support internal pool partitioning, explicitly
+configure thread pools to prevent node hopping. For x265 via FFmpeg:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-c:v</span> libx265 <span class="at">-x265-params</span> pools=16,16 output.mp4</span></code></pre></div>
+<p>This instructs the encoder to split work into discrete pools
+corresponding to the hardware topology rather than allowing threads to
+float freely across all sockets.</p></article>
+        <div id="comments-container"></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

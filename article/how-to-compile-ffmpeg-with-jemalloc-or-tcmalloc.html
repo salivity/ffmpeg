@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Compile FFmpeg with Jemalloc or TCMalloc - ffmpeg</title>
+    <meta name="description" content="This guide explains how to compile FFmpeg using high-performance memory allocators such as jemalloc or tcmalloc instead of the standard GNU C Library (glibc) allocator. By default, FFmpeg relies on system memory allocation, which can lead to heap fragmen">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/how-to-compile-ffmpeg-with-jemalloc-or-tcmalloc">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Compile FFmpeg with Jemalloc or TCMalloc - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/how-to-compile-ffmpeg-with-jemalloc-or-tcmalloc" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This guide explains how to compile FFmpeg using high-performance memory allocators such as jemalloc or tcmalloc instead of the standard GNU C Library (glibc) allocator. By default, FFmpeg relies on system memory allocation, which can lead to heap fragmen" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="how-to-compile-ffmpeg-with-jemalloc-or-tcmalloc">How to Compile
+FFmpeg with Jemalloc or TCMalloc</h1>
+<p>This guide explains how to compile FFmpeg using high-performance
+memory allocators such as jemalloc or tcmalloc instead of the standard
+GNU C Library (glibc) allocator. By default, FFmpeg relies on system
+memory allocation, which can lead to heap fragmentation and suboptimal
+multi-threading performance under heavy transcoding workloads. Replacing
+the default allocator with jemalloc or tcmalloc reduces lock contention,
+optimizes heap allocation across multiple threads, and lowers overall
+memory consumption. The steps below detail how to install dependencies,
+configure FFmpeg build flags, and verify the resulting binary.</p>
+<h2 id="prerequisites">Prerequisites</h2>
+<p>Before building FFmpeg, install the necessary compilation toolchain
+and the development libraries for your chosen allocator on a Debian or
+Ubuntu system.</p>
+<p>For <strong>jemalloc</strong>:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> apt update</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> apt install <span class="at">-y</span> build-essential yasm nasm pkg-config git <span class="dt">\</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>    libjemalloc-dev</span></code></pre></div>
+<p>For <strong>tcmalloc</strong> (part of Google Performance Tools):</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> apt update</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> apt install <span class="at">-y</span> build-essential yasm nasm pkg-config git <span class="dt">\</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>    libgoogle-perftools-dev</span></code></pre></div>
+<p>Clone the official FFmpeg repository:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="fu">git</span> clone https://git.ffmpeg.org/ffmpeg.git ffmpeg</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="bu">cd</span> ffmpeg</span></code></pre></div>
+<hr />
+<h2 id="method-1-building-ffmpeg-with-jemalloc">Method 1: Building
+FFmpeg with jemalloc</h2>
+<p>Jemalloc emphasizes fragmentation avoidance and scalable concurrency.
+To link FFmpeg against jemalloc, pass <code>-ljemalloc</code> through
+the <code>--extra-libs</code> configure option.</p>
+<ol type="1">
+<li><p><strong>Configure the build:</strong></p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">./configure</span> <span class="dt">\</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>    <span class="at">--prefix</span><span class="op">=</span>/usr/local <span class="dt">\</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>    <span class="at">--enable-gpl</span> <span class="dt">\</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">--enable-nonfree</span> <span class="dt">\</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">--extra-libs</span><span class="op">=</span><span class="st">&quot;-ljemalloc&quot;</span></span></code></pre></div>
+<p><em>(Note: You can add additional library flags such as
+<code>--enable-libx264</code> or <code>--enable-libx265</code> depending
+on your codec requirements.)</em></p></li>
+<li><p><strong>Compile and install:</strong></p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="fu">make</span> <span class="at">-j</span><span class="va">$(</span><span class="fu">nproc</span><span class="va">)</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> make install</span></code></pre></div></li>
+</ol>
+<hr />
+<h2 id="method-2-building-ffmpeg-with-tcmalloc">Method 2: Building
+FFmpeg with tcmalloc</h2>
+<p>TCMalloc (Thread-Caching Malloc) provides thread-local caches for
+small objects to speed up allocations in highly threaded applications.
+You can link either the full <code>tcmalloc</code> library or the
+lightweight <code>tcmalloc_minimal</code> library (which omits heap
+checking and profiling features).</p>
+<ol type="1">
+<li><p><strong>Configure the build:</strong></p>
+<div class="sourceCode" id="cb6"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="ex">./configure</span> <span class="dt">\</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>    <span class="at">--prefix</span><span class="op">=</span>/usr/local <span class="dt">\</span></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>    <span class="at">--enable-gpl</span> <span class="dt">\</span></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">--enable-nonfree</span> <span class="dt">\</span></span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">--extra-libs</span><span class="op">=</span><span class="st">&quot;-ltcmalloc_minimal&quot;</span></span></code></pre></div></li>
+<li><p><strong>Compile and install:</strong></p>
+<div class="sourceCode" id="cb7"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="fu">make</span> <span class="at">-j</span><span class="va">$(</span><span class="fu">nproc</span><span class="va">)</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> make install</span></code></pre></div></li>
+</ol>
+<hr />
+<h2 id="verifying-the-allocator-linkage">Verifying the Allocator
+Linkage</h2>
+<p>To ensure that FFmpeg is properly linked to your custom allocator,
+inspect the dynamic library dependencies using <code>ldd</code>:</p>
+<p>For jemalloc:</p>
+<div class="sourceCode" id="cb8"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ldd</span> /usr/local/bin/ffmpeg <span class="kw">|</span> <span class="fu">grep</span> jemalloc</span></code></pre></div>
+<p><em>Expected output contains:</em>
+<code>libjemalloc.so =&gt; /lib/x86_64-linux-gnu/libjemalloc.so.2</code></p>
+<p>For tcmalloc:</p>
+<div class="sourceCode" id="cb9"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ldd</span> /usr/local/bin/ffmpeg <span class="kw">|</span> <span class="fu">grep</span> tcmalloc</span></code></pre></div>
+<p><em>Expected output contains:</em>
+<code>libtcmalloc_minimal.so =&gt; /lib/x86_64-linux-gnu/libtcmalloc_minimal.so.4</code></p>
+<hr />
+<h2 id="alternative-runtime-injection-via-ld_preload">Alternative:
+Runtime Injection via LD_PRELOAD</h2>
+<p>If recompiling FFmpeg is not feasible, you can force existing FFmpeg
+binaries to use an alternate allocator at runtime using the
+<code>LD_PRELOAD</code> environment variable:</p>
+<div class="sourceCode" id="cb10"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Using jemalloc</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="va">LD_PRELOAD</span><span class="op">=</span>/usr/lib/x86_64-linux-gnu/libjemalloc.so <span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 output.mkv</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Using tcmalloc</span></span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a><span class="va">LD_PRELOAD</span><span class="op">=</span>/usr/lib/x86_64-linux-gnu/libtcmalloc_minimal.so <span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 output.mkv</span></code></pre></div>
+<p>While runtime preloading works without recompilation, compiling
+FFmpeg with <code>--extra-libs</code> ensures the allocator is
+consistently loaded across production environments, system services, and
+automated encoding pipelines.</p></article>
+        <div id="comments-container"></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

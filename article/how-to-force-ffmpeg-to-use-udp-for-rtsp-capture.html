@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Force FFmpeg to Use UDP for RTSP Capture - ffmpeg</title>
+    <meta name="description" content="This guide explains how to configure FFmpeg to ingest Real-Time Streaming Protocol (RTSP) video streams using UDP instead of TCP. By default, FFmpeg often negotiates TCP to minimize packet loss, but switching to UDP reduces latency and network overhead f">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/how-to-force-ffmpeg-to-use-udp-for-rtsp-capture">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Force FFmpeg to Use UDP for RTSP Capture - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/how-to-force-ffmpeg-to-use-udp-for-rtsp-capture" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This guide explains how to configure FFmpeg to ingest Real-Time Streaming Protocol (RTSP) video streams using UDP instead of TCP. By default, FFmpeg often negotiates TCP to minimize packet loss, but switching to UDP reduces latency and network overhead f" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="how-to-force-ffmpeg-to-use-udp-for-rtsp-capture">How to Force
+FFmpeg to Use UDP for RTSP Capture</h1>
+<p>This guide explains how to configure FFmpeg to ingest Real-Time
+Streaming Protocol (RTSP) video streams using UDP instead of TCP. By
+default, FFmpeg often negotiates TCP to minimize packet loss, but
+switching to UDP reduces latency and network overhead for real-time
+applications. Below, you will find the exact command-line options,
+syntax placement, and troubleshooting steps required to enforce UDP
+transport.</p>
+<h3 id="the--rtsp_transport-flag">The <code>-rtsp_transport</code>
+Flag</h3>
+<p>To force FFmpeg to capture an RTSP stream over UDP, use the demuxer
+option <code>-rtsp_transport udp</code>.</p>
+<p>Because this is an input option, it must be placed
+<strong>before</strong> the <code>-i</code> input flag in your
+command:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-rtsp_transport</span> udp <span class="at">-i</span> rtsp://username:password@camera_ip:554/stream <span class="at">-c</span> copy output.mp4</span></code></pre></div>
+<h3 id="command-breakdown">Command Breakdown</h3>
+<ul>
+<li><strong><code>-rtsp_transport udp</code></strong>: Instructs the
+RTSP demuxer to request UDP data packets for the RTP audio and video
+channels from the streaming server.</li>
+<li><strong><code>-i rtsp://...</code></strong>: Specifies the input
+RTSP URL.</li>
+<li><strong><code>-c copy</code></strong>: Copies the video and audio
+streams directly without re-encoding, preserving quality and keeping CPU
+usage minimal.</li>
+<li><strong><code>output.mp4</code></strong>: Defines the destination
+file (or output stream URL).</li>
+</ul>
+<h3 id="live-playback-or-transcoding-example">Live Playback or
+Transcoding Example</h3>
+<p>If you are using FFmpeg (or <code>ffplay</code>) for live monitoring
+with minimal latency:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffplay</span> <span class="at">-rtsp_transport</span> udp rtsp://username:password@camera_ip:554/stream</span></code></pre></div>
+<p>To transcode the incoming UDP stream to a local H.264 file:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-rtsp_transport</span> udp <span class="at">-i</span> rtsp://username:password@camera_ip:554/stream <span class="at">-c:v</span> libx264 <span class="at">-preset</span> ultrafast <span class="at">-c:a</span> aac output.mkv</span></code></pre></div>
+<h3 id="udp-multicast-streams">UDP Multicast Streams</h3>
+<p>If your RTSP server broadcasts via UDP multicast rather than unicast,
+specify <code>udp_multicast</code> instead:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-rtsp_transport</span> udp_multicast <span class="at">-i</span> rtsp://camera_ip:554/stream <span class="at">-c</span> copy output.mp4</span></code></pre></div>
+<h3 id="important-considerations-for-udp-transport">Important
+Considerations for UDP Transport</h3>
+<ul>
+<li><strong>Packet Loss</strong>: UDP does not perform retransmission
+handshakes like TCP. If network bandwidth is unstable, you may
+experience artifacts, smearing, or dropped frames.</li>
+<li><strong>Firewalls and NAT</strong>: RTSP over UDP uses dynamic port
+ranges for RTP (media) and RTCP (control) packets. Ensure your local
+firewall allows inbound UDP traffic on the negotiated ports, otherwise
+the stream will connect but no media will be received.</li>
+<li><strong>Fallback Behavior</strong>: Unlike using <code>tcp</code>,
+setting the flag explicitly to <code>udp</code> prevents FFmpeg from
+silently falling back to alternative protocols if the UDP stream
+fails.</li>
+</ul></article>
+        <div id="comments-container"></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

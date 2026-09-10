@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Use AVBufferRef in FFmpeg C API - ffmpeg</title>
+    <meta name="description" content="FFmpeg utilizes AVBufferRef as the core of its reference-counting mechanism to manage heap memory safely and efficiently across audio and video processing pipelines. This article explains how AVBufferRef works, detailing how to allocate reference-counted">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/how-to-use-avbufferref-in-ffmpeg-c-api">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Use AVBufferRef in FFmpeg C API - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/how-to-use-avbufferref-in-ffmpeg-c-api" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="FFmpeg utilizes AVBufferRef as the core of its reference-counting mechanism to manage heap memory safely and efficiently across audio and video processing pipelines. This article explains how AVBufferRef works, detailing how to allocate reference-counted" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="how-to-use-avbufferref-in-ffmpeg-c-api">How to Use AVBufferRef
+in FFmpeg C API</h1>
+<p>FFmpeg utilizes <code>AVBufferRef</code> as the core of its
+reference-counting mechanism to manage heap memory safely and
+efficiently across audio and video processing pipelines. This article
+explains how <code>AVBufferRef</code> works, detailing how to allocate
+reference-counted buffers, duplicate references without copying data,
+handle copy-on-write semantics, and properly release references to
+prevent memory leaks.</p>
+<h2 id="understanding-avbuffer-and-avbufferref">Understanding AVBuffer
+and AVBufferRef</h2>
+<p>Memory management in FFmpeg distinguishes between the underlying data
+and the reference pointing to it:</p>
+<ul>
+<li><strong><code>AVBuffer</code></strong>: An opaque structure holding
+the actual allocated memory, its size, the current reference count, and
+a free callback. You generally do not interact with
+<code>AVBuffer</code> directly.</li>
+<li><strong><code>AVBufferRef</code></strong>: A lightweight wrapper
+structure that references an <code>AVBuffer</code>. It exposes a pointer
+to the memory (<code>data</code>) and the buffer <code>size</code>.
+Multiple <code>AVBufferRef</code> instances can point to the same
+underlying <code>AVBuffer</code>.</li>
+</ul>
+<p>When an <code>AVBuffer</code>'s reference count drops to zero, FFmpeg
+executes the associated cleanup function and frees the memory
+automatically.</p>
+<h2 id="allocating-a-reference-counted-buffer">Allocating a
+Reference-Counted Buffer</h2>
+<p>To allocate a new buffer, use <code>av_buffer_alloc()</code>. This
+creates the underlying <code>AVBuffer</code> and returns a pointer to an
+<code>AVBufferRef</code> with an initial reference count of 1.</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode c"><code class="sourceCode c"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;libavutil/buffer.h&gt;</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="dt">size_t</span> size <span class="op">=</span> <span class="dv">1024</span><span class="op">;</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>AVBufferRef <span class="op">*</span>buf <span class="op">=</span> av_buffer_alloc<span class="op">(</span>size<span class="op">);</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> <span class="op">(!</span>buf<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>    <span class="co">// Handle allocation failure</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="co">// Access data and size</span></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>memset<span class="op">(</span>buf<span class="op">-&gt;</span>data<span class="op">,</span> <span class="dv">0</span><span class="op">,</span> buf<span class="op">-&gt;</span>size<span class="op">);</span></span></code></pre></div>
+<p>If you need to manage custom memory or bind external buffers, use
+<code>av_buffer_create()</code> to supply a custom deallocator
+callback:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode c"><code class="sourceCode c"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> custom_free<span class="op">(</span><span class="dt">void</span> <span class="op">*</span>opaque<span class="op">,</span> <span class="dt">uint8_t</span> <span class="op">*</span>data<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>    free<span class="op">(</span>data<span class="op">);</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="dt">uint8_t</span> <span class="op">*</span>external_memory <span class="op">=</span> malloc<span class="op">(</span>size<span class="op">);</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>AVBufferRef <span class="op">*</span>buf <span class="op">=</span> av_buffer_create<span class="op">(</span>external_memory<span class="op">,</span> size<span class="op">,</span> custom_free<span class="op">,</span> NULL<span class="op">,</span> <span class="dv">0</span><span class="op">);</span></span></code></pre></div>
+<h2 id="duplicating-references">Duplicating References</h2>
+<p>To share memory between different structures (such as
+<code>AVFrame</code> or <code>AVPacket</code>) without duplicating the
+payload, create a new reference using <code>av_buffer_ref()</code>.</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode c"><code class="sourceCode c"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>AVBufferRef <span class="op">*</span>buf_copy <span class="op">=</span> av_buffer_ref<span class="op">(</span>buf<span class="op">);</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> <span class="op">(!</span>buf_copy<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>    <span class="co">// Handle error (allocation of descriptor failed)</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="co">// Both `buf` and `buf_copy` point to the same data.</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a><span class="co">// The internal reference count is now 2.</span></span></code></pre></div>
+<h2 id="releasing-references">Releasing References</h2>
+<p>To drop a reference, use <code>av_buffer_unref()</code>. This
+function decrements the internal reference count and sets the target
+pointer to <code>NULL</code>. When the reference count reaches zero, the
+underlying memory is freed.</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode c"><code class="sourceCode c"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>av_buffer_unref<span class="op">(&amp;</span>buf<span class="op">);</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="co">// `buf` is now NULL. The underlying data remains allocated because `buf_copy` still exists.</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>av_buffer_unref<span class="op">(&amp;</span>buf_copy<span class="op">);</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a><span class="co">// `buf_copy` is now NULL. The reference count hits 0; the data is freed.</span></span></code></pre></div>
+<p>Always pass the address of the <code>AVBufferRef</code> pointer
+(<code>&amp;buf</code>) to ensure dangling pointers are cleared.</p>
+<h2 id="modifying-shared-buffers-copy-on-write">Modifying Shared Buffers
+(Copy-on-Write)</h2>
+<p>If multiple references point to the same buffer, modifying the
+contents directly can lead to unintended side effects. FFmpeg provides
+copy-on-write functionality through <code>av_buffer_is_writable()</code>
+and <code>av_buffer_make_writable()</code>.</p>
+<ul>
+<li><code>av_buffer_is_writable(buf)</code> returns <code>1</code> if
+the reference count is strictly <code>1</code>, meaning the buffer is
+safe to modify without affecting other references.</li>
+<li><code>av_buffer_make_writable(&amp;buf)</code> checks if the buffer
+is writable. If the reference count is greater than 1, it allocates a
+new buffer, copies the data over, decrements the reference on the
+original buffer, and replaces your pointer with the new, exclusive
+copy.</li>
+</ul>
+<div class="sourceCode" id="cb5"><pre class="sourceCode c"><code class="sourceCode c"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="co">// Ensure buf can be safely written to</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="dt">int</span> ret <span class="op">=</span> av_buffer_make_writable<span class="op">(&amp;</span>buf<span class="op">);</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> <span class="op">(</span>ret <span class="op">&lt;</span> <span class="dv">0</span><span class="op">)</span> <span class="op">{</span></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>    <span class="co">// Allocation failure during copy</span></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a><span class="co">// Safe to modify buf-&gt;data</span></span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>buf<span class="op">-&gt;</span>data<span class="op">[</span><span class="dv">0</span><span class="op">]</span> <span class="op">=</span> <span class="bn">0xFF</span><span class="op">;</span></span></code></pre></div>
+<h2 id="integration-with-avframe-and-avpacket">Integration with AVFrame
+and AVPacket</h2>
+<p>Higher-level structures like <code>AVFrame</code> and
+<code>AVPacket</code> rely on <code>AVBufferRef</code>:</p>
+<ul>
+<li><code>AVPacket</code> stores its compressed data reference in
+<code>packet-&gt;buf</code>.</li>
+<li><code>AVFrame</code> stores uncompressed plane references in an
+array: <code>frame-&gt;buf[0]</code>, <code>frame-&gt;buf[1]</code>,
+etc.</li>
+</ul>
+<p>When cloning frames or packets via functions like
+<code>av_frame_ref()</code> or <code>av_packet_ref()</code>, FFmpeg
+internally calls <code>av_buffer_ref()</code> on these pointers,
+avoiding expensive memory copies. Calling <code>av_frame_unref()</code>
+or <code>av_packet_unref()</code> releases the respective references
+automatically.</p></article>
+        <div id="comments-container"></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

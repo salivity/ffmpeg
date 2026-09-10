@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Smooth Skin in FFmpeg Using Smartblur - ffmpeg</title>
+    <meta name="description" content="This guide explains how to use FFmpeg's built-in smartblur filter to soften skin tones in video footage while maintaining crisp edge details such as eyes, lips, and hair. You will learn how the filter's core parameters work, the optimal settings for natu">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/how-to-smooth-skin-in-ffmpeg-using-smartblur">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Smooth Skin in FFmpeg Using Smartblur - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/how-to-smooth-skin-in-ffmpeg-using-smartblur" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This guide explains how to use FFmpeg's built-in smartblur filter to soften skin tones in video footage while maintaining crisp edge details such as eyes, lips, and hair. You will learn how the filter's core parameters work, the optimal settings for natu" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="how-to-smooth-skin-in-ffmpeg-using-smartblur">How to Smooth Skin
+in FFmpeg Using Smartblur</h1>
+<p>This guide explains how to use FFmpeg's built-in
+<code>smartblur</code> filter to soften skin tones in video footage
+while maintaining crisp edge details such as eyes, lips, and hair. You
+will learn how the filter's core parameters work, the optimal settings
+for natural-looking cosmetic retouching, and how to execute the
+command.</p>
+<hr />
+<h3 id="understanding-the-smartblur-parameters">Understanding the
+<code>smartblur</code> Parameters</h3>
+<p>The <code>smartblur</code> filter works by selectively applying a
+blur to low-contrast areas (like skin texture) while skipping
+high-contrast boundaries (like eyelashes or facial contours). It accepts
+several arguments, but the three primary ones are:</p>
+<ul>
+<li><strong><code>luma_radius</code> (<code>lr</code>)</strong>:
+Controls the size of the blur footprint. Accepts a float between
+<code>0.1</code> and <code>5.0</code>. A radius of <code>1.0</code> to
+<code>2.5</code> works best for facial features.</li>
+<li><strong><code>luma_strength</code> (<code>ls</code>)</strong>:
+Controls blur intensity. Accepts a float between <code>-1.0</code> and
+<code>1.0</code>. Positive values blur the target areas, while negative
+values sharpen them. Values between <code>0.5</code> and
+<code>0.9</code> provide visible smoothing.</li>
+<li><strong><code>luma_threshold</code> (<code>lt</code>)</strong>: The
+edge-preservation gate. Accepts an integer from <code>-30</code> to
+<code>30</code>. A value above <code>0</code> preserves high-contrast
+edges and only blurs flat regions below the threshold. Values between
+<code>5</code> and <code>15</code> are typical for skin.</li>
+</ul>
+<p>Similar arguments exist for chroma channels:
+<code>chroma_radius</code> (<code>cr</code>),
+<code>chroma_strength</code> (<code>cs</code>), and
+<code>chroma_threshold</code> (<code>ct</code>). Leaving chroma
+parameters unset defaults them to their respective luma values.</p>
+<hr />
+<h3 id="basic-command-syntax">Basic Command Syntax</h3>
+<p>To apply skin smoothing while preserving facial details, run the
+following command:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;smartblur=luma_radius=1.5:luma_strength=0.8:luma_threshold=8&quot;</span> <span class="at">-c:v</span> libx264 <span class="at">-crf</span> 18 <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<p>Using the shorthand parameter syntax:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;smartblur=lr=1.5:ls=0.8:lt=8&quot;</span> <span class="at">-c:v</span> libx264 <span class="at">-crf</span> 18 <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<hr />
+<h3 id="recommended-presets">Recommended Presets</h3>
+<p>Adjust the parameters depending on the camera resolution and desired
+strength:</p>
+<h4 id="1-subtle-natural-blemish-reduction-1080p">1. Subtle, Natural
+Blemish Reduction (1080p)</h4>
+<p>Ideal for standard talking-head videos where texture should be
+retained without looking artificially filtered:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;smartblur=lr=1.2:ls=0.5:lt=10&quot;</span> <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<h4 id="2-medium-smoothing-1080p--4k">2. Medium Smoothing (1080p /
+4K)</h4>
+<p>Softens pores and minor wrinkles while keeping eyes and mouth
+sharp:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;smartblur=lr=2.0:ls=0.8:lt=8:cr=1.5:cs=0.5:ct=10&quot;</span> <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<h4 id="3-heavy-smoothing-airbrushed-look">3. Heavy Smoothing
+(Airbrushed Look)</h4>
+<p>Creates a stronger beauty-filter effect for close-ups:</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;smartblur=lr=3.0:ls=1.0:lt=5&quot;</span> <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<hr />
+<h3 id="tips-for-better-results">Tips for Better Results</h3>
+<ul>
+<li><strong>Calibrate <code>lt</code> first</strong>: If high-contrast
+details like eyelashes look blurry, increase <code>luma_threshold</code>
+(e.g., from <code>8</code> to <code>12</code>). If blemishes are not
+smoothing out, decrease <code>luma_threshold</code> (e.g., from
+<code>8</code> to <code>5</code>).</li>
+<li><strong>Scale with resolution</strong>: A 4K video requires a higher
+<code>lr</code> (around <code>2.5</code> to <code>3.5</code>) to achieve
+the same visual softness that a <code>1.5</code> radius produces at
+1080p.</li>
+<li><strong>Combine with unsharp masking</strong>: To restore clarity
+after smoothing, chain <code>smartblur</code> with an
+<code>unsharp</code> filter:</li>
+</ul>
+<div class="sourceCode" id="cb6"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;smartblur=lr=1.8:ls=0.7:lt=8,unsharp=5:5:0.5:5:5:0.0&quot;</span> <span class="at">-c:a</span> copy output.mp4</span></code></pre></div></article>
+        <div id="comments-container"></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

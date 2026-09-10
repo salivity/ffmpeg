@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Override SRT Styles Using FFmpeg force_style - ffmpeg</title>
+    <meta name="description" content="This guide explains how to use the forcestyle option within FFmpeg's subtitles filter to override the default appearance of SubRip (.srt) subtitle files. By leveraging Advanced SubStation Alpha (ASS) style attributes inside the filter, you can easily cus">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/override-srt-styles-using-ffmpeg-force-style">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Override SRT Styles Using FFmpeg force_style - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/override-srt-styles-using-ffmpeg-force-style" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This guide explains how to use the forcestyle option within FFmpeg's subtitles filter to override the default appearance of SubRip (.srt) subtitle files. By leveraging Advanced SubStation Alpha (ASS) style attributes inside the filter, you can easily cus" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="override-srt-styles-using-ffmpeg-force_style">Override SRT
+Styles Using FFmpeg force_style</h1>
+<p>This guide explains how to use the <code>force_style</code> option
+within FFmpeg's <code>subtitles</code> filter to override the default
+appearance of SubRip (.srt) subtitle files. By leveraging Advanced
+SubStation Alpha (ASS) style attributes inside the filter, you can
+easily customize fonts, sizes, colors, outlines, and positioning when
+hardcoding subtitles into video files.</p>
+<hr />
+<h3 id="basic-command-syntax">Basic Command Syntax</h3>
+<p>The <code>subtitles</code> filter burns subtitles directly into the
+video stream. To alter the rendering style of an SRT file, append the
+<code>force_style</code> option to the filter argument:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;subtitles=subs.srt:force_style=&#39;Fontname=Arial,Fontsize=24&#39;&quot;</span> <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<p>Multiple style properties are separated by commas inside the
+<code>force_style</code> string.</p>
+<hr />
+<h3 id="common-force_style-properties">Common <code>force_style</code>
+Properties</h3>
+<p>The <code>force_style</code> option accepts standard ASS style
+definitions:</p>
+<ul>
+<li><strong>Fontname</strong>: Sets the font family (e.g.,
+<code>Fontname=Roboto</code>, <code>Fontname=Arial</code>).</li>
+<li><strong>Fontsize</strong>: Sets the font height in points (e.g.,
+<code>Fontsize=20</code>).</li>
+<li><strong>PrimaryColour</strong>: Sets the main text fill color.</li>
+<li><strong>OutlineColour</strong>: Sets the color of the border around
+text.</li>
+<li><strong>BackColour</strong>: Sets the shadow or bounding box
+color.</li>
+<li><strong>Bold</strong>: Enables bold text (<code>Bold=1</code> for
+on, <code>Bold=0</code> for off).</li>
+<li><strong>Italic</strong>: Enables italic text (<code>Italic=1</code>
+for on, <code>Italic=0</code> for off).</li>
+<li><strong>Outline</strong>: Thickness of the text outline in pixels
+(e.g., <code>Outline=2</code>).</li>
+<li><strong>Shadow</strong>: Depth of the drop shadow in pixels (e.g.,
+<code>Shadow=1</code>).</li>
+<li><strong>Alignment</strong>: Determines screen placement using the
+numeric keypad layout (e.g., <code>Alignment=2</code> is bottom-center;
+<code>Alignment=6</code> is middle-right).</li>
+<li><strong>MarginV</strong>: Vertical distance from the screen edge in
+pixels (e.g., <code>MarginV=30</code>).</li>
+<li><strong>BorderStyle</strong>: Determines border type (<code>1</code>
+for standard outline, <code>3</code> for an opaque bounding box).</li>
+</ul>
+<hr />
+<h3 id="color-format-specification">Color Format Specification</h3>
+<p>Colors in ASS styles are formatted in hexadecimal as
+<code>&amp;HAABBGGRR&amp;</code> (or <code>&amp;HBBGGRR&amp;</code>),
+where:</p>
+<ul>
+<li><strong>AA</strong>: Alpha/transparency channel (<code>00</code> is
+fully opaque, <code>FF</code> is fully transparent).</li>
+<li><strong>BB</strong>: Blue component (<code>00</code> to
+<code>FF</code>).</li>
+<li><strong>GG</strong>: Green component (<code>00</code> to
+<code>FF</code>).</li>
+<li><strong>RR</strong>: Red component (<code>00</code> to
+<code>FF</code>).</li>
+</ul>
+<p><em>Note: The order is BGR, not standard RGB.</em></p>
+<ul>
+<li><strong>White (Opaque)</strong>:
+<code>&amp;H00FFFFFF&amp;</code></li>
+<li><strong>Yellow (Opaque)</strong>:
+<code>&amp;H0000FFFF&amp;</code></li>
+<li><strong>Black (Opaque)</strong>:
+<code>&amp;H00000000&amp;</code></li>
+<li><strong>Semi-transparent Black</strong>:
+<code>&amp;H80000000&amp;</code></li>
+</ul>
+<hr />
+<h3 id="practical-examples">Practical Examples</h3>
+<h4 id="1-yellow-text-with-a-black-outline">1. Yellow Text with a Black
+Outline</h4>
+<p>A common broadcast-style look that enhances readability across varied
+backgrounds:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;subtitles=subs.srt:force_style=&#39;Fontname=Helvetica,Fontsize=18,PrimaryColour=&amp;H0000FFFF&amp;,OutlineColour=&amp;H00000000&amp;,Outline=1.5,Shadow=0&#39;&quot;</span> <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<h4 id="2-subtitles-on-an-opaque-box">2. Subtitles on an Opaque Box</h4>
+<p>To place subtitles inside a solid background banner instead of an
+outline, set <code>BorderStyle=3</code>:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;subtitles=subs.srt:force_style=&#39;Fontname=Arial,Fontsize=16,PrimaryColour=&amp;H00FFFFFF&amp;,BackColour=&amp;H80000000&amp;,BorderStyle=3,Outline=2&#39;&quot;</span> <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<h4 id="3-top-centered-positioning">3. Top-Centered Positioning</h4>
+<p>To move subtitles to the top of the video with adjusted vertical
+spacing:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;subtitles=subs.srt:force_style=&#39;Fontsize=22,Alignment=8,MarginV=40&#39;&quot;</span> <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<hr />
+<h3 id="escaping-special-characters">Escaping Special Characters</h3>
+<p>When using paths containing colons (such as Windows drive letters
+like <code>C:\path\to\subs.srt</code>) or commas, you must escape them
+with backslashes so FFmpeg does not misinterpret them as filter
+separators:</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;subtitles=&#39;C\:/subtitles/subs.srt&#39;:force_style=&#39;Fontsize=20&#39;&quot;</span> <span class="at">-c:a</span> copy output.mp4</span></code></pre></div></article>
+        <div id="comments-container"></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

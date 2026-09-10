@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Set RTMP Stream Key and Publishing Mode in FFmpeg - ffmpeg</title>
+    <meta name="description" content="This article provides a straightforward guide on how to configure the stream key and publishing mode when sending an RTMP stream using FFmpeg. By understanding the composition of the RTMP destination URL and utilizing FFmpeg’s dedicated RTMP flags, you">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/set-rtmp-stream-key-and-publishing-mode-in-ffmpeg">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Set RTMP Stream Key and Publishing Mode in FFmpeg - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/set-rtmp-stream-key-and-publishing-mode-in-ffmpeg" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article provides a straightforward guide on how to configure the stream key and publishing mode when sending an RTMP stream using FFmpeg. By understanding the composition of the RTMP destination URL and utilizing FFmpeg’s dedicated RTMP flags, you" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="set-rtmp-stream-key-and-publishing-mode-in-ffmpeg">Set RTMP
+Stream Key and Publishing Mode in FFmpeg</h1>
+<p>This article provides a straightforward guide on how to configure the
+stream key and publishing mode when sending an RTMP stream using FFmpeg.
+By understanding the composition of the RTMP destination URL and
+utilizing FFmpeg’s dedicated RTMP flags, you can control stream
+authentication, stream targeting, and determine whether the remote
+server treats the broadcast as a real-time live event or records it
+directly to disk.</p>
+<h3 id="rtmp-url-structure">RTMP URL Structure</h3>
+<p>An RTMP URL is generally structured into three components: the server
+address, the application name, and the stream key:</p>
+<pre class="text"><code>rtmp://[server-address]:[port]/[application]/[stream-key]</code></pre>
+<ul>
+<li><strong>Server Address</strong>: The hostname or IP address of the
+ingestion server (e.g., <code>live.example.com</code>).</li>
+<li><strong>Application</strong>: The RTMP application defined on the
+server (e.g., <code>live</code>, <code>app</code>).</li>
+<li><strong>Stream Key</strong>: The unique identifier for your stream,
+which acts as both the stream's name and its access token.</li>
+</ul>
+<h3 id="1-setting-the-stream-key">1. Setting the Stream Key</h3>
+<p>The stream key is placed directly after the application name in the
+RTMP path.</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-c:v</span> libx264 <span class="at">-c:a</span> aac <span class="at">-f</span> flv rtmp://live.example.com/app/mySecretStreamKey</span></code></pre></div>
+<p>If your streaming provider separates the RTMP URL and the Stream Key
+(common with platforms like YouTube, Twitch, or Facebook), concatenate
+them with a slash:</p>
+<ul>
+<li><strong>RTMP URL</strong>:
+<code>rtmp://a.rtmp.youtube.com/live2</code></li>
+<li><strong>Stream Key</strong>: <code>xxxx-xxxx-xxxx-xxxx</code></li>
+<li><strong>FFmpeg Target</strong>:
+<code>rtmp://a.rtmp.youtube.com/live2/xxxx-xxxx-xxxx-xxxx</code></li>
+</ul>
+<p>If the stream key requires query parameters (e.g., for tokens or
+authentication), append them using standard URL query syntax:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">rtmp://live.example.com/app/mySecretStreamKey?token=abc123xyz</span></span></code></pre></div>
+<h3 id="2-setting-the-publishing-mode">2. Setting the Publishing
+Mode</h3>
+<p>RTMP publishing modes instruct the receiving server how to handle the
+stream. The three primary modes defined in the RTMP specification
+are:</p>
+<ul>
+<li><strong><code>live</code></strong>: Broadcasts content in real-time
+without writing it to server storage (default).</li>
+<li><strong><code>record</code></strong>: Writes the incoming stream to
+a file on the server, overwriting existing files with the same
+name.</li>
+<li><strong><code>append</code></strong>: Appends the incoming stream
+data to an existing recorded file.</li>
+</ul>
+<h4 id="method-a-using-ffmpegs-native--rtmp_live-option">Method A: Using
+FFmpeg’s Native <code>-rtmp_live</code> Option</h4>
+<p>FFmpeg’s built-in RTMP protocol handler allows you to specify whether
+the stream should be treated as live or playable via the
+<code>-rtmp_live</code> option:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-c:v</span> libx264 <span class="at">-c:a</span> aac <span class="at">-rtmp_live</span> live <span class="at">-f</span> flv rtmp://live.example.com/app/streamKey</span></code></pre></div>
+<p>Values for <code>-rtmp_live</code>:</p>
+<ul>
+<li><code>live</code>: Default behavior; specifies real-time
+transmission.</li>
+<li><code>recorded</code>: Informs the server that the source is
+pre-recorded.</li>
+</ul>
+<h4 id="method-b-specifying-mode-in-the-rtmp-url">Method B: Specifying
+Mode in the RTMP URL</h4>
+<p>Many media servers (such as NGINX-RTMP, Wowza, and Red5) allow or
+require the publishing mode to be declared as an inline parameter
+directly in the stream key path:</p>
+<ul>
+<li><p><strong>Record Mode:</strong></p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-c</span> copy <span class="at">-f</span> flv <span class="st">&quot;rtmp://live.example.com/app/streamKey?publish_type=record&quot;</span></span></code></pre></div>
+<p><em>(Some servers use <code>?mode=record</code> or append the mode
+directly to the stream name, such as
+<code>streamKey?record</code>)</em></p></li>
+<li><p><strong>Append Mode:</strong></p>
+<div class="sourceCode" id="cb6"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-c</span> copy <span class="at">-f</span> flv <span class="st">&quot;rtmp://live.example.com/app/streamKey?publish_type=append&quot;</span></span></code></pre></div></li>
+</ul>
+<h4 id="method-c-using-librtmp-syntax">Method C: Using
+<code>librtmp</code> Syntax</h4>
+<p>If FFmpeg was compiled with <code>librtmp</code> support
+(<code>--enable-librtmp</code>), connection parameters, including the
+publishing mode, can be passed as space-delimited options in the URL
+string:</p>
+<div class="sourceCode" id="cb7"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-c</span> copy <span class="at">-f</span> flv <span class="st">&quot;rtmp://live.example.com/app/streamKey live=1&quot;</span></span></code></pre></div>
+<ul>
+<li>For recording:
+<div class="sourceCode" id="cb8"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-c</span> copy <span class="at">-f</span> flv <span class="st">&quot;rtmp://live.example.com/app/streamKey record=1&quot;</span></span></code></pre></div></li>
+</ul>
+<h3 id="complete-command-example">Complete Command Example</h3>
+<p>To capture a video file, encode it to standard H.264/AAC, assign the
+stream key <code>live_user_123</code>, and enforce live broadcast
+mode:</p>
+<div class="sourceCode" id="cb9"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-re</span> <span class="at">-i</span> source.mp4 <span class="dt">\</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">-c:v</span> libx264 <span class="at">-preset</span> veryfast <span class="at">-b:v</span> 3000k <span class="at">-maxrate</span> 3000k <span class="at">-bufsize</span> 6000k <span class="dt">\</span></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">-c:a</span> aac <span class="at">-b:a</span> 128k <span class="at">-ar</span> 44100 <span class="dt">\</span></span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">-rtmp_live</span> live <span class="dt">\</span></span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">-f</span> flv <span class="st">&quot;rtmp://live.example.com/live/live_user_123&quot;</span></span></code></pre></div></article>
+        <div id="comments-container"></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

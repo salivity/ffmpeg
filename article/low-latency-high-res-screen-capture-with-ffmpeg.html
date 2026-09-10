@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Low-Latency High-Res Screen Capture with FFmpeg - ffmpeg</title>
+    <meta name="description" content="Capturing high-resolution desktop video in real time using FFmpeg can easily lead to high latency, dropped frames, and system slowdowns if the pipeline is not properly tuned. This article outlines the essential configurations needed to achieve minimal la">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/low-latency-high-res-screen-capture-with-ffmpeg">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Low-Latency High-Res Screen Capture with FFmpeg - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/low-latency-high-res-screen-capture-with-ffmpeg" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Capturing high-resolution desktop video in real time using FFmpeg can easily lead to high latency, dropped frames, and system slowdowns if the pipeline is not properly tuned. This article outlines the essential configurations needed to achieve minimal la" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="low-latency-high-res-screen-capture-with-ffmpeg">Low-Latency
+High-Res Screen Capture with FFmpeg</h1>
+<p>Capturing high-resolution desktop video in real time using FFmpeg can
+easily lead to high latency, dropped frames, and system slowdowns if the
+pipeline is not properly tuned. This article outlines the essential
+configurations needed to achieve minimal latency, focusing on selecting
+the most efficient screen capture backends, offloading the encoding
+workload to dedicated hardware, adjusting internal buffer queues, and
+configuring encoder flags to eliminate frame buffering.</p>
+<h3 id="1-use-direct-desktop-duplication-backends">1. Use Direct Desktop
+Duplication Backends</h3>
+<p>The default desktop capture devices (like GDI on Windows or standard
+X11 capture on Linux) copy frames through the CPU, creating a severe
+bottleneck at 1440p or 4K resolutions. You must use modern, GPU-native
+capture APIs.</p>
+<ul>
+<li><strong>Windows (DirectX Desktop Duplication API):</strong> Use
+<code>ddagrab</code> instead of <code>gdigrab</code>. It captures frames
+directly from the GPU memory.</li>
+<li><strong>Linux:</strong> Use <code>kmsgrab</code> for direct capture
+from the kernel mode setting, or use an optimized PipeWire/Wayland
+screencast bridge.</li>
+<li><strong>macOS:</strong> Use <code>avfoundation</code> with capture
+options optimized for screen capture.</li>
+</ul>
+<h3 id="2-offload-encoding-to-hardware-gpu">2. Offload Encoding to
+Hardware (GPU)</h3>
+<p>Software encoding (such as <code>libx264</code>) at high resolutions
+consumes heavy CPU cycles and introduces encoding delay. Use
+hardware-accelerated encoders:</p>
+<ul>
+<li><strong>NVIDIA:</strong> <code>h264_nvenc</code> or
+<code>hevc_nvenc</code></li>
+<li><strong>Intel:</strong> <code>h264_qsv</code> or
+<code>hevc_qsv</code></li>
+<li><strong>AMD:</strong> <code>h264_amf</code> or
+<code>hevc_amf</code></li>
+</ul>
+<p>Pair the hardware encoder with a low-latency preset to bypass
+lookahead buffers. For example, with NVENC, use <code>-preset p1</code>
+(fastest performance) or <code>-tune zerolatency</code>.</p>
+<h3 id="3-eliminate-ffmpeg-pipeline-buffers">3. Eliminate FFmpeg
+Pipeline Buffers</h3>
+<p>FFmpeg by default analyzes incoming streams to determine parameters,
+which introduces capture delay. Disable this analysis and strip out
+frame buffering:</p>
+<ul>
+<li><strong>Reduce Analysis Time:</strong> Set
+<code>-probesize 32</code> and <code>-analyzeduration 0</code> before
+the input flag.</li>
+<li><strong>Prevent Frame Queue Dropping:</strong> Allocate a larger
+thread queue size to the input using
+<code>-thread_queue_size 1024</code> or higher so processing spikes do
+not cause frame drop warnings.</li>
+<li><strong>Remove B-Frames:</strong> B-frames require the encoder to
+wait for future frames before finishing the current frame. Force zero
+B-frames with <code>-bf 0</code>.</li>
+<li><strong>Zero Latency Tuning:</strong> Pass
+<code>-tune zerolatency</code> to tell the encoder to output frames
+immediately upon arrival.</li>
+</ul>
+<h3 id="4-optimize-container-and-storage-io">4. Optimize Container and
+Storage I/O</h3>
+<p>Writing uncompressed or poorly buffered data directly to a slow disk
+creates backpressure on the capture pipeline.</p>
+<ul>
+<li>Record to a fast NVMe drive or a RAM disk (<code>/dev/shm</code> on
+Linux).</li>
+<li>Use lightweight container formats like Matroska (<code>.mkv</code>)
+or fragmented MP4 (<code>-movflags frag_keyframe+empty_moov</code>),
+which do not require keeping a complete index in memory while
+recording.</li>
+</ul>
+<h3 id="production-example-commands">Production Example Commands</h3>
+<p><strong>Windows (DirectX Desktop Duplication + NVIDIA
+NVENC):</strong></p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-probesize</span> 32 <span class="at">-analyzeduration</span> 0 <span class="at">-thread_queue_size</span> 1024 <span class="dt">\</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">-f</span> ddagrab <span class="at">-framerate</span> 60 <span class="at">-i</span> desktop <span class="dt">\</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">-c:v</span> h264_nvenc <span class="at">-preset</span> p1 <span class="at">-tune</span> zerolatency <span class="at">-bf</span> 0 <span class="at">-rc</span> cbr <span class="at">-b:v</span> 20M <span class="dt">\</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">-maxrate</span> 20M <span class="at">-bufsize</span> 5M <span class="at">-an</span> output.mkv</span></code></pre></div>
+<p><strong>Linux (X11 Desktop + NVIDIA NVENC):</strong></p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-probesize</span> 32 <span class="at">-analyzeduration</span> 0 <span class="at">-thread_queue_size</span> 1024 <span class="dt">\</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">-f</span> x11grab <span class="at">-framerate</span> 60 <span class="at">-video_size</span> 2560x1440 <span class="at">-i</span> :0.0 <span class="dt">\</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">-c:v</span> h264_nvenc <span class="at">-preset</span> p1 <span class="at">-tune</span> zerolatency <span class="at">-bf</span> 0 <span class="at">-rc</span> cbr <span class="at">-b:v</span> 20M <span class="dt">\</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">-maxrate</span> 20M <span class="at">-bufsize</span> 5M <span class="at">-an</span> output.mkv</span></code></pre></div>
+<p>By pairing a direct GPU-level capture backend with hardware encoding
+and zero-latency stream flags, the total latency between pixel display
+and encoded disk output is kept down to a fraction of a single
+frame.</p></article>
+        <div id="comments-container"></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

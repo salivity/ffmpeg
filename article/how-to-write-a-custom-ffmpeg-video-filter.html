@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Write a Custom FFmpeg Video Filter - ffmpeg</title>
+    <meta name="description" content="This guide walks you through developing and integrating a custom video filter into FFmpeg’s libavfilter library. You will learn the structural requirements of an AVFilter, how to implement core callbacks for configuration and pixel processing, and the">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/how-to-write-a-custom-ffmpeg-video-filter">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Write a Custom FFmpeg Video Filter - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/how-to-write-a-custom-ffmpeg-video-filter" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This guide walks you through developing and integrating a custom video filter into FFmpeg’s libavfilter library. You will learn the structural requirements of an AVFilter, how to implement core callbacks for configuration and pixel processing, and the" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="how-to-write-a-custom-ffmpeg-video-filter">How to Write a Custom
+FFmpeg Video Filter</h1>
+<p>This guide walks you through developing and integrating a custom
+video filter into FFmpeg’s <code>libavfilter</code> library. You will
+learn the structural requirements of an <code>AVFilter</code>, how to
+implement core callbacks for configuration and pixel processing, and the
+exact files you must modify within the FFmpeg source tree to register,
+compile, and run your new filter.</p>
+<h3 id="1-set-up-the-source-code">1. Set Up the Source Code</h3>
+<p>Custom internal filters must be compiled alongside FFmpeg. Clone the
+source repository to begin:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">git</span> clone https://git.ffmpeg.org/ffmpeg.git ffmpeg</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="bu">cd</span> ffmpeg</span></code></pre></div>
+<h3 id="2-create-the-filter-implementation">2. Create the Filter
+Implementation</h3>
+<p>Create a new C source file in the <code>libavfilter/</code>
+directory, for example,
+<code>libavfilter/vf_invert_brightness.c</code>.</p>
+<p>A functional video filter requires:</p>
+<ul>
+<li>A private context struct to store filter options and internal
+state.</li>
+<li><code>AVOption</code> definitions for user-configurable
+parameters.</li>
+<li>Callback functions for negotiating formats, configuring links, and
+processing video frames.</li>
+<li>Input and output pad definitions (<code>AVFilterPad</code>).</li>
+<li>The main <code>AVFilter</code> structure definition.</li>
+</ul>
+<p>Below is a complete, minimal implementation of a custom filter that
+modifies pixel luma:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode c"><code class="sourceCode c"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&quot;libavutil/opt.h&quot;</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&quot;libavutil/imgutils.h&quot;</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&quot;avfilter.h&quot;</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&quot;internal.h&quot;</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&quot;video.h&quot;</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a><span class="kw">typedef</span> <span class="kw">struct</span> CustomContext <span class="op">{</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>    <span class="dt">const</span> AVClass <span class="op">*</span>class<span class="op">;</span></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>    <span class="dt">int</span> invert<span class="op">;</span></span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a><span class="op">}</span> CustomContext<span class="op">;</span></span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a><span class="pp">#define OFFSET</span><span class="op">(</span><span class="pp">x</span><span class="op">)</span><span class="pp"> offsetof</span><span class="op">(</span><span class="pp">CustomContext</span><span class="op">,</span><span class="pp"> x</span><span class="op">)</span></span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a><span class="pp">#define FLAGS AV_OPT_FLAG_VIDEO_PARAM</span><span class="op">|</span><span class="pp">AV_OPT_FLAG_FILTERING_PARAM</span></span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a><span class="dt">static</span> <span class="dt">const</span> AVOption custom_options<span class="op">[]</span> <span class="op">=</span> <span class="op">{</span></span>
+<span id="cb2-16"><a href="#cb2-16" aria-hidden="true" tabindex="-1"></a>    <span class="op">{</span> <span class="st">&quot;invert&quot;</span><span class="op">,</span> <span class="st">&quot;Invert luma values&quot;</span><span class="op">,</span> OFFSET<span class="op">(</span>invert<span class="op">),</span> AV_OPT_TYPE_BOOL<span class="op">,</span> <span class="op">{</span> <span class="op">.</span>i64 <span class="op">=</span> <span class="dv">1</span> <span class="op">},</span> <span class="dv">0</span><span class="op">,</span> <span class="dv">1</span><span class="op">,</span> FLAGS <span class="op">},</span></span>
+<span id="cb2-17"><a href="#cb2-17" aria-hidden="true" tabindex="-1"></a>    <span class="op">{</span> NULL <span class="op">}</span></span>
+<span id="cb2-18"><a href="#cb2-18" aria-hidden="true" tabindex="-1"></a><span class="op">};</span></span>
+<span id="cb2-19"><a href="#cb2-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-20"><a href="#cb2-20" aria-hidden="true" tabindex="-1"></a>AVFILTER_DEFINE_CLASS<span class="op">(</span>custom<span class="op">);</span></span>
+<span id="cb2-21"><a href="#cb2-21" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-22"><a href="#cb2-22" aria-hidden="true" tabindex="-1"></a><span class="dt">static</span> <span class="dt">int</span> filter_frame<span class="op">(</span>AVFilterLink <span class="op">*</span>inlink<span class="op">,</span> AVFrame <span class="op">*</span>in<span class="op">)</span></span>
+<span id="cb2-23"><a href="#cb2-23" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
+<span id="cb2-24"><a href="#cb2-24" aria-hidden="true" tabindex="-1"></a>    AVFilterContext <span class="op">*</span>ctx <span class="op">=</span> inlink<span class="op">-&gt;</span>dst<span class="op">;</span></span>
+<span id="cb2-25"><a href="#cb2-25" aria-hidden="true" tabindex="-1"></a>    CustomContext <span class="op">*</span>s <span class="op">=</span> ctx<span class="op">-&gt;</span>priv<span class="op">;</span></span>
+<span id="cb2-26"><a href="#cb2-26" aria-hidden="true" tabindex="-1"></a>    AVFilterLink <span class="op">*</span>outlink <span class="op">=</span> ctx<span class="op">-&gt;</span>outputs<span class="op">[</span><span class="dv">0</span><span class="op">];</span></span>
+<span id="cb2-27"><a href="#cb2-27" aria-hidden="true" tabindex="-1"></a>    AVFrame <span class="op">*</span>out<span class="op">;</span></span>
+<span id="cb2-28"><a href="#cb2-28" aria-hidden="true" tabindex="-1"></a>    <span class="dt">int</span> x<span class="op">,</span> y<span class="op">;</span></span>
+<span id="cb2-29"><a href="#cb2-29" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-30"><a href="#cb2-30" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="op">(</span>av_frame_is_writable<span class="op">(</span>in<span class="op">))</span> <span class="op">{</span></span>
+<span id="cb2-31"><a href="#cb2-31" aria-hidden="true" tabindex="-1"></a>        out <span class="op">=</span> in<span class="op">;</span></span>
+<span id="cb2-32"><a href="#cb2-32" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></span>
+<span id="cb2-33"><a href="#cb2-33" aria-hidden="true" tabindex="-1"></a>        out <span class="op">=</span> ff_get_video_buffer<span class="op">(</span>outlink<span class="op">,</span> outlink<span class="op">-&gt;</span>w<span class="op">,</span> outlink<span class="op">-&gt;</span>h<span class="op">);</span></span>
+<span id="cb2-34"><a href="#cb2-34" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="op">(!</span>out<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb2-35"><a href="#cb2-35" aria-hidden="true" tabindex="-1"></a>            av_frame_free<span class="op">(&amp;</span>in<span class="op">);</span></span>
+<span id="cb2-36"><a href="#cb2-36" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span> AVERROR<span class="op">(</span>ENOMEM<span class="op">);</span></span>
+<span id="cb2-37"><a href="#cb2-37" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
+<span id="cb2-38"><a href="#cb2-38" aria-hidden="true" tabindex="-1"></a>        av_frame_copy_props<span class="op">(</span>out<span class="op">,</span> in<span class="op">);</span></span>
+<span id="cb2-39"><a href="#cb2-39" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb2-40"><a href="#cb2-40" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-41"><a href="#cb2-41" aria-hidden="true" tabindex="-1"></a>    <span class="co">/* Process the Y (luma) plane for planar formats like YUV420P */</span></span>
+<span id="cb2-42"><a href="#cb2-42" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> <span class="op">(</span>y <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> y <span class="op">&lt;</span> in<span class="op">-&gt;</span>height<span class="op">;</span> y<span class="op">++)</span> <span class="op">{</span></span>
+<span id="cb2-43"><a href="#cb2-43" aria-hidden="true" tabindex="-1"></a>        <span class="dt">uint8_t</span> <span class="op">*</span>src <span class="op">=</span> in<span class="op">-&gt;</span>data<span class="op">[</span><span class="dv">0</span><span class="op">]</span> <span class="op">+</span> y <span class="op">*</span> in<span class="op">-&gt;</span>linesize<span class="op">[</span><span class="dv">0</span><span class="op">];</span></span>
+<span id="cb2-44"><a href="#cb2-44" aria-hidden="true" tabindex="-1"></a>        <span class="dt">uint8_t</span> <span class="op">*</span>dst <span class="op">=</span> out<span class="op">-&gt;</span>data<span class="op">[</span><span class="dv">0</span><span class="op">]</span> <span class="op">+</span> y <span class="op">*</span> out<span class="op">-&gt;</span>linesize<span class="op">[</span><span class="dv">0</span><span class="op">];</span></span>
+<span id="cb2-45"><a href="#cb2-45" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-46"><a href="#cb2-46" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> <span class="op">(</span>x <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> x <span class="op">&lt;</span> in<span class="op">-&gt;</span>width<span class="op">;</span> x<span class="op">++)</span> <span class="op">{</span></span>
+<span id="cb2-47"><a href="#cb2-47" aria-hidden="true" tabindex="-1"></a>            dst<span class="op">[</span>x<span class="op">]</span> <span class="op">=</span> s<span class="op">-&gt;</span>invert <span class="op">?</span> <span class="op">(</span><span class="dv">255</span> <span class="op">-</span> src<span class="op">[</span>x<span class="op">])</span> <span class="op">:</span> src<span class="op">[</span>x<span class="op">];</span></span>
+<span id="cb2-48"><a href="#cb2-48" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
+<span id="cb2-49"><a href="#cb2-49" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb2-50"><a href="#cb2-50" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-51"><a href="#cb2-51" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="op">(</span>in <span class="op">!=</span> out<span class="op">)</span></span>
+<span id="cb2-52"><a href="#cb2-52" aria-hidden="true" tabindex="-1"></a>        av_frame_free<span class="op">(&amp;</span>in<span class="op">);</span></span>
+<span id="cb2-53"><a href="#cb2-53" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-54"><a href="#cb2-54" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> ff_filter_frame<span class="op">(</span>outlink<span class="op">,</span> out<span class="op">);</span></span>
+<span id="cb2-55"><a href="#cb2-55" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb2-56"><a href="#cb2-56" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-57"><a href="#cb2-57" aria-hidden="true" tabindex="-1"></a><span class="dt">static</span> <span class="dt">const</span> AVFilterPad custom_inputs<span class="op">[]</span> <span class="op">=</span> <span class="op">{</span></span>
+<span id="cb2-58"><a href="#cb2-58" aria-hidden="true" tabindex="-1"></a>    <span class="op">{</span></span>
+<span id="cb2-59"><a href="#cb2-59" aria-hidden="true" tabindex="-1"></a>        <span class="op">.</span>name         <span class="op">=</span> <span class="st">&quot;default&quot;</span><span class="op">,</span></span>
+<span id="cb2-60"><a href="#cb2-60" aria-hidden="true" tabindex="-1"></a>        <span class="op">.</span>type         <span class="op">=</span> AVMEDIA_TYPE_VIDEO<span class="op">,</span></span>
+<span id="cb2-61"><a href="#cb2-61" aria-hidden="true" tabindex="-1"></a>        <span class="op">.</span>filter_frame <span class="op">=</span> filter_frame<span class="op">,</span></span>
+<span id="cb2-62"><a href="#cb2-62" aria-hidden="true" tabindex="-1"></a>    <span class="op">},</span></span>
+<span id="cb2-63"><a href="#cb2-63" aria-hidden="true" tabindex="-1"></a><span class="op">};</span></span>
+<span id="cb2-64"><a href="#cb2-64" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-65"><a href="#cb2-65" aria-hidden="true" tabindex="-1"></a><span class="dt">static</span> <span class="dt">const</span> AVFilterPad custom_outputs<span class="op">[]</span> <span class="op">=</span> <span class="op">{</span></span>
+<span id="cb2-66"><a href="#cb2-66" aria-hidden="true" tabindex="-1"></a>    <span class="op">{</span></span>
+<span id="cb2-67"><a href="#cb2-67" aria-hidden="true" tabindex="-1"></a>        <span class="op">.</span>name <span class="op">=</span> <span class="st">&quot;default&quot;</span><span class="op">,</span></span>
+<span id="cb2-68"><a href="#cb2-68" aria-hidden="true" tabindex="-1"></a>        <span class="op">.</span>type <span class="op">=</span> AVMEDIA_TYPE_VIDEO<span class="op">,</span></span>
+<span id="cb2-69"><a href="#cb2-69" aria-hidden="true" tabindex="-1"></a>    <span class="op">},</span></span>
+<span id="cb2-70"><a href="#cb2-70" aria-hidden="true" tabindex="-1"></a><span class="op">};</span></span>
+<span id="cb2-71"><a href="#cb2-71" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-72"><a href="#cb2-72" aria-hidden="true" tabindex="-1"></a><span class="dt">const</span> AVFilter ff_vf_custom <span class="op">=</span> <span class="op">{</span></span>
+<span id="cb2-73"><a href="#cb2-73" aria-hidden="true" tabindex="-1"></a>    <span class="op">.</span>name          <span class="op">=</span> <span class="st">&quot;custom&quot;</span><span class="op">,</span></span>
+<span id="cb2-74"><a href="#cb2-74" aria-hidden="true" tabindex="-1"></a>    <span class="op">.</span>description   <span class="op">=</span> NULL_IF_CONFIG_SMALL<span class="op">(</span><span class="st">&quot;Applies custom luma inversion.&quot;</span><span class="op">),</span></span>
+<span id="cb2-75"><a href="#cb2-75" aria-hidden="true" tabindex="-1"></a>    <span class="op">.</span>priv_size     <span class="op">=</span> <span class="kw">sizeof</span><span class="op">(</span>CustomContext<span class="op">),</span></span>
+<span id="cb2-76"><a href="#cb2-76" aria-hidden="true" tabindex="-1"></a>    <span class="op">.</span>priv_class    <span class="op">=</span> <span class="op">&amp;</span>custom_class<span class="op">,</span></span>
+<span id="cb2-77"><a href="#cb2-77" aria-hidden="true" tabindex="-1"></a>    FILTER_INPUTS<span class="op">(</span>custom_inputs<span class="op">),</span></span>
+<span id="cb2-78"><a href="#cb2-78" aria-hidden="true" tabindex="-1"></a>    FILTER_OUTPUTS<span class="op">(</span>custom_outputs<span class="op">),</span></span>
+<span id="cb2-79"><a href="#cb2-79" aria-hidden="true" tabindex="-1"></a>    FILTER_PIXFMTS<span class="op">(</span>AV_PIX_FMT_YUV420P<span class="op">,</span> AV_PIX_FMT_YUV444P<span class="op">,</span> AV_PIX_FMT_GRAY8<span class="op">),</span></span>
+<span id="cb2-80"><a href="#cb2-80" aria-hidden="true" tabindex="-1"></a>    <span class="op">.</span>flags         <span class="op">=</span> AVFILTER_FLAG_SUPPORT_TIMELINE_GENERIC<span class="op">,</span></span>
+<span id="cb2-81"><a href="#cb2-81" aria-hidden="true" tabindex="-1"></a><span class="op">};</span></span></code></pre></div>
+<h3 id="3-register-the-filter-in-the-build-system">3. Register the
+Filter in the Build System</h3>
+<p>FFmpeg discovers and builds filters based on static declarations and
+make rules. You must edit two files inside
+<code>libavfilter/</code>:</p>
+<h4 id="a-edit-libavfilterallfiltersc">A. Edit
+<code>libavfilter/allfilters.c</code></h4>
+<p>Declare your filter instance so the registration system recognizes
+it. Add the external declaration alphabetically among the video
+filters:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode c"><code class="sourceCode c"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">extern</span> <span class="dt">const</span> AVFilter ff_vf_custom<span class="op">;</span></span></code></pre></div>
+<h4 id="b-edit-libavfiltermakefile">B. Edit
+<code>libavfilter/Makefile</code></h4>
+<p>Add the object file mapping so <code>make</code> compiles your code
+when the filter is enabled:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode makefile"><code class="sourceCode makefile"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="dt">OBJS-$(CONFIG_CUSTOM_FILTER)</span> <span class="ch">+=</span><span class="st"> vf_custom.o</span></span></code></pre></div>
+<h3 id="4-compile-and-validate">4. Compile and Validate</h3>
+<p>Run the configuration script and build the project. The build system
+will detect your filter and generate
+<code>CONFIG_CUSTOM_FILTER=yes</code> in <code>config.mak</code>.</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="ex">./configure</span> <span class="at">--disable-shared</span> <span class="at">--enable-pthreads</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="fu">make</span> <span class="at">-j</span><span class="va">$(</span><span class="fu">nproc</span><span class="va">)</span></span></code></pre></div>
+<p>Verify that the filter is properly registered with
+<code>libavfilter</code>:</p>
+<div class="sourceCode" id="cb6"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="ex">./ffmpeg</span> <span class="at">-filters</span> <span class="kw">|</span> <span class="fu">grep</span> custom</span></code></pre></div>
+<p>You should see output similar to:</p>
+<pre class="text"><code> ... custom            V-&gt;V       Applies custom luma inversion.</code></pre>
+<h3 id="5-test-the-filter">5. Test the Filter</h3>
+<p>Run your custom filter on a test video to verify that frames are
+processed without errors or memory leaks:</p>
+<div class="sourceCode" id="cb8"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="ex">./ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;custom=invert=1&quot;</span> <span class="at">-c:a</span> copy output.mp4</span></code></pre></div></article>
+        <div id="comments-container"></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

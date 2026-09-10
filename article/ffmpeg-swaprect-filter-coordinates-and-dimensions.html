@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FFmpeg swaprect Filter Coordinates and Dimensions - ffmpeg</title>
+    <meta name="description" content="The FFmpeg swaprect filter enables you to swap two rectangular regions of identical size within a video stream. This guide provides a straightforward breakdown of how to define the width, height, and positional coordinates for both target rectangles usin">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/ffmpeg-swaprect-filter-coordinates-and-dimensions">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="FFmpeg swaprect Filter Coordinates and Dimensions - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/ffmpeg-swaprect-filter-coordinates-and-dimensions" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="The FFmpeg swaprect filter enables you to swap two rectangular regions of identical size within a video stream. This guide provides a straightforward breakdown of how to define the width, height, and positional coordinates for both target rectangles usin" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="ffmpeg-swaprect-filter-coordinates-and-dimensions">FFmpeg
+swaprect Filter Coordinates and Dimensions</h1>
+<p>The FFmpeg <code>swaprect</code> filter enables you to swap two
+rectangular regions of identical size within a video stream. This guide
+provides a straightforward breakdown of how to define the width, height,
+and positional coordinates for both target rectangles using both
+positional and named parameters.</p>
+<h3 id="syntax-and-parameters">Syntax and Parameters</h3>
+<p>The <code>swaprect</code> filter requires dimensions and positional
+coordinates for two regions. Both regions must have the exact same width
+and height.</p>
+<p>The basic syntax is:</p>
+<pre class="text"><code>swaprect=w=WIDTH:h=HEIGHT:x1=X1:y1=Y1:x2=X2:y2=Y2</code></pre>
+<p>You can also use positional arguments without names:</p>
+<pre class="text"><code>swaprect=WIDTH:HEIGHT:X1:Y1:X2:Y2</code></pre>
+<p>Here is what each parameter controls:</p>
+<ul>
+<li><strong><code>w</code></strong>: The width of the swapped
+rectangles. The default value is <code>w/2</code> (half the frame's
+width).</li>
+<li><strong><code>h</code></strong>: The height of the swapped
+rectangles. The default value is <code>h/2</code> (half the frame's
+height).</li>
+<li><strong><code>x1</code></strong>: The horizontal (X) coordinate of
+the top-left corner of the first rectangle. The default is
+<code>0</code>.</li>
+<li><strong><code>y1</code></strong>: The vertical (Y) coordinate of the
+top-left corner of the first rectangle. The default is
+<code>0</code>.</li>
+<li><strong><code>x2</code></strong>: The horizontal (X) coordinate of
+the top-left corner of the second rectangle. The default is
+<code>w/2</code>.</li>
+<li><strong><code>y2</code></strong>: The vertical (Y) coordinate of the
+top-left corner of the second rectangle. The default is
+<code>h/2</code>.</li>
+</ul>
+<p>All coordinate systems in FFmpeg measure <code>(0, 0)</code> from the
+top-left corner of the video frame, with values extending downward and
+to the right.</p>
+<h3 id="basic-examples">Basic Examples</h3>
+<h4 id="swapping-fixed-size-regions">Swapping Fixed-Size Regions</h4>
+<p>To swap a 200×200 pixel area located at <code>(50, 50)</code> with a
+200×200 pixel area located at <code>(400, 300)</code>:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;swaprect=w=200:h=200:x1=50:y1=50:x2=400:y2=300&quot;</span> <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<p>Using shorthand positional arguments, the equivalent command is:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;swaprect=200:200:50:50:400:300&quot;</span> <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<h3 id="using-dynamic-expressions">Using Dynamic Expressions</h3>
+<p>The <code>swaprect</code> filter allows arithmetic expressions and
+internal video variables rather than static numbers:</p>
+<ul>
+<li><strong><code>w</code> / <code>W</code></strong>: Input frame
+width.</li>
+<li><strong><code>h</code> / <code>H</code></strong>: Input frame
+height.</li>
+<li><strong><code>a</code></strong>: Video aspect ratio
+(<code>w / h</code>).</li>
+<li><strong><code>sar</code></strong>: Sample aspect ratio.</li>
+<li><strong><code>dar</code></strong>: Display aspect ratio.</li>
+</ul>
+<h4 id="swapping-the-left-and-right-halves-of-a-video">Swapping the Left
+and Right Halves of a Video</h4>
+<p>To divide a video directly down the center and swap the left and
+right halves:</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;swaprect=w=iw/2:h=ih:x1=0:y1=0:x2=iw/2:y2=0&quot;</span> <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<h4 id="swapping-top-and-bottom-halves">Swapping Top and Bottom
+Halves</h4>
+<p>To split a frame horizontally and swap the upper and lower
+halves:</p>
+<div class="sourceCode" id="cb6"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;swaprect=w=iw:h=ih/2:x1=0:y1=0:x2=0:y2=ih/2&quot;</span> <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<h4 id="swapping-diagonally-opposite-corners">Swapping Diagonally
+Opposite Corners</h4>
+<p>To swap a 100×100 box in the top-left corner with a 100×100 box in
+the bottom-right corner dynamically:</p>
+<div class="sourceCode" id="cb7"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;swaprect=w=100:h=100:x1=0:y1=0:x2=w-100:y2=h-100&quot;</span> <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<p>Ensure that your calculated areas do not exceed the boundary
+dimensions of the source video frame to avoid filter initialization
+errors.</p></article>
+        <div id="comments-container"></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Optimizing FFmpeg for AMD EPYC Processors - ffmpeg</title>
+    <meta name="description" content="High-core-count server processors like AMD EPYC require specific tuning to maximize FFmpeg throughput, as standard single-command execution often suffers from diminishing returns beyond 16 to 32 threads. This guide covers the essential techniques for opt">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/optimizing-ffmpeg-for-amd-epyc-processors">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Optimizing FFmpeg for AMD EPYC Processors - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/optimizing-ffmpeg-for-amd-epyc-processors" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="High-core-count server processors like AMD EPYC require specific tuning to maximize FFmpeg throughput, as standard single-command execution often suffers from diminishing returns beyond 16 to 32 threads. This guide covers the essential techniques for opt" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="optimizing-ffmpeg-for-amd-epyc-processors">Optimizing FFmpeg for
+AMD EPYC Processors</h1>
+<p>High-core-count server processors like AMD EPYC require specific
+tuning to maximize FFmpeg throughput, as standard single-command
+execution often suffers from diminishing returns beyond 16 to 32
+threads. This guide covers the essential techniques for optimizing
+FFmpeg on EPYC systems, including mitigating NUMA node latency,
+overcoming video encoder threading limitations through horizontal
+scaling and video chunking, and configuring encoder-specific thread
+parameters.</p>
+<h3 id="1-account-for-numa-architecture">1. Account for NUMA
+Architecture</h3>
+<p>AMD EPYC processors use a chiplet design comprised of multiple Core
+Complex Dies (CCDs) grouped into Non-Uniform Memory Access (NUMA)
+domains. If an FFmpeg process running on one CCD constantly accesses
+memory attached to another, memory bandwidth drops and latency
+increases.</p>
+<p>To resolve this, pin your FFmpeg processes to specific NUMA nodes or
+CPU core sets using <code>numactl</code> or <code>taskset</code>:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Run FFmpeg strictly on NUMA node 0 and its local memory</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="ex">numactl</span> <span class="at">--cpunodebind</span><span class="op">=</span>0 <span class="at">--membind</span><span class="op">=</span>0 ffmpeg <span class="at">-i</span> input.mp4 <span class="at">-c:v</span> libx264 <span class="at">-preset</span> slow output.mp4</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Alternatively, pin to specific physical cores (e.g., cores 0-15)</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="ex">taskset</span> <span class="at">-c</span> 0-15 ffmpeg <span class="at">-i</span> input.mp4 <span class="at">-c:v</span> libx264 output.mp4</span></code></pre></div>
+<p>In multi-socket EPYC systems, ensure you run distinct FFmpeg
+workloads per socket to avoid interconnect bottlenecks across the AMD
+Infinity Fabric.</p>
+<h3 id="2-shift-from-vertical-to-horizontal-scaling">2. Shift from
+Vertical to Horizontal Scaling</h3>
+<p>Most video encoders (such as <code>libx264</code>,
+<code>libx265</code>, and <code>libsvtav1</code>) hit a parallelization
+ceiling:</p>
+<ul>
+<li><strong>libx264:</strong> Scalability drops significantly past 16
+threads.</li>
+<li><strong>libx265:</strong> Struggles to efficiently utilize more than
+32 threads per stream and experiences severe quality/efficiency
+trade-offs when thread counts are too high.</li>
+<li><strong>libsvtav1:</strong> Performs best between 8 and 16 cores per
+instance.</li>
+</ul>
+<p>Instead of assigning an entire 64-core or 128-core processor to a
+single FFmpeg task, maximize total system throughput by running multiple
+concurrent FFmpeg jobs.</p>
+<p>Use task spoolers, GNU Parallel, or custom queue workers to divide
+jobs across the core complexes:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Encode 8 files simultaneously across an EPYC server using GNU Parallel</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="ex">parallel</span> <span class="at">-j</span> 8 numactl <span class="at">--cpunodebind</span><span class="op">=</span>{%} <span class="at">--membind</span><span class="op">=</span>{%} <span class="dt">\</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>ffmpeg <span class="at">-i</span> {} <span class="at">-c:v</span> libx265 <span class="at">-crf</span> 23 <span class="at">-threads</span> 8 {.}.mp4 ::: <span class="pp">*</span>.mkv</span></code></pre></div>
+<h3 id="3-chunk-based-encoding-for-single-large-files">3. Chunk-Based
+Encoding for Single Large Files</h3>
+<p>If you must transcode a single large file as fast as possible, do not
+rely on global FFmpeg threading. Split the video into smaller
+keyframe-aligned segments, transcode the segments in parallel across the
+available CPU cores, and concatenate the results.</p>
+<p>Tools like <strong>Av1an</strong> or custom shell scripts can segment
+the source video into scenes, transcode each scene concurrently across
+specific NUMA nodes, and stitch them back together without quality loss
+or frame desynchronization.</p>
+<h3 id="4-fine-tune-encoder-specific-thread-parameters">4. Fine-Tune
+Encoder-Specific Thread Parameters</h3>
+<p>By default, FFmpeg attempts to auto-detect thread counts, which often
+leads to allocating more threads than an encoder can efficiently handle.
+Restrict threads manually:</p>
+<h4 id="for-x264-libx264">For x264 (<code>libx264</code>)</h4>
+<p>Explicitly limit the thread pool and frame slicing:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-c:v</span> libx264 <span class="at">-threads</span> 16 <span class="at">-x264-params</span> sliced-threads=0 output.mp4</span></code></pre></div>
+<h4 id="for-x265-libx265">For x265 (<code>libx265</code>)</h4>
+<p>Use the <code>pools</code> parameter to specify how many threads
+libx265 can use per NUMA node:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Limit x265 to 16 threads mapped to the current node</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-c:v</span> libx265 <span class="at">-x265-params</span> pools=16:frame-threads=4 output.mp4</span></code></pre></div>
+<h4 id="for-svt-av1-libsvtav1">For SVT-AV1 (<code>libsvtav1</code>)</h4>
+<p>SVT-AV1 handles modern multi-core architecture better than older
+encoders. You can set the thread pool with the <code>lp</code> (logical
+processor) setting:</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-c:v</span> libsvtav1 <span class="at">-svtav1-params</span> lp=16 output.mp4</span></code></pre></div>
+<h3 id="5-prevent-io-bottlenecks">5. Prevent I/O Bottlenecks</h3>
+<p>High-throughput processing across dozens of cores can saturate
+standard storage pipelines, leaving the CPU cores waiting for data.</p>
+<ul>
+<li><strong>RAM Disks (<code>tmpfs</code>):</strong> For segment-based
+encoding or high-speed pipelines, write intermediate chunks to memory
+rather than NVMe or network storage.</li>
+<li><strong>Fast Decoders:</strong> Decoding high-bitrate files can
+bottleneck the encoder. Use <code>-threads</code> on the input side
+(<code>ffmpeg -threads 8 -i input.mp4 ...</code>) or
+hardware-accelerated decode pipelines where applicable to feed raw
+frames to the CPU rapidly.</li>
+</ul></article>
+        <div id="comments-container"></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

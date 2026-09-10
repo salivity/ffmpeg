@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Configure RTMP Retry Intervals in FFmpeg - ffmpeg</title>
+    <meta name="description" content="This guide explains how to manage connection drops and configure retry intervals when streaming RTMP with FFmpeg. While FFmpeg does not offer a native, automatic retry mechanism for RTMP publishing outputs, you can combine socket-level timeout parameters">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/configure-rtmp-retry-intervals-in-ffmpeg">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Configure RTMP Retry Intervals in FFmpeg - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/configure-rtmp-retry-intervals-in-ffmpeg" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This guide explains how to manage connection drops and configure retry intervals when streaming RTMP with FFmpeg. While FFmpeg does not offer a native, automatic retry mechanism for RTMP publishing outputs, you can combine socket-level timeout parameters" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="configure-rtmp-retry-intervals-in-ffmpeg">Configure RTMP Retry
+Intervals in FFmpeg</h1>
+<p>This guide explains how to manage connection drops and configure
+retry intervals when streaming RTMP with FFmpeg. While FFmpeg does not
+offer a native, automatic retry mechanism for RTMP publishing outputs,
+you can combine socket-level timeout parameters with external shell
+loops to achieve reliable reconnection intervals. This article covers
+the essential timeout flags, how to structure a robust retry loop, and
+alternative protocol configurations.</p>
+<h2 id="understanding-ffmpeg-rtmp-connection-limits">Understanding
+FFmpeg RTMP Connection Limits</h2>
+<p>When publishing an RTMP stream, FFmpeg acts as a client pushing data
+to a server. If the connection drops, FFmpeg terminates the process with
+an error by default. Unlike its HTTP input protocols—which feature
+native flags like <code>-reconnect</code> and
+<code>-reconnect_delay_max</code>—the native RTMP muxer lacks a built-in
+auto-reconnect switch for output streaming.</p>
+<p>To create a resilient streaming pipeline, you must handle socket
+detection inside FFmpeg and manage reconnection intervals via a process
+supervisor or script.</p>
+<h2 id="step-1-configure-socket-detection-timeouts">Step 1: Configure
+Socket Detection Timeouts</h2>
+<p>Before setting a retry interval, ensure FFmpeg detects a broken
+connection quickly instead of hanging indefinitely. You can pass timeout
+options directly to the underlying TCP layer of the RTMP URL.</p>
+<ul>
+<li><strong><code>-rw_timeout</code></strong>: Sets the read/write
+timeout in microseconds. If no data is transferred within this window,
+FFmpeg exits immediately, triggering your retry mechanism.</li>
+</ul>
+<p>Example syntax:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-re</span> <span class="at">-i</span> input.mp4 <span class="at">-c:v</span> libx264 <span class="at">-c:a</span> aac <span class="at">-f</span> flv <span class="at">-rw_timeout</span> 5000000 <span class="st">&quot;rtmp://live.example.com/app/stream_key&quot;</span></span></code></pre></div>
+<p>In this example, <code>-rw_timeout 5000000</code> sets the timeout to
+5 seconds (5,000,000 microseconds). If the RTMP socket stops
+acknowledging writes for 5 seconds, FFmpeg exits.</p>
+<h2 id="step-2-configure-the-reconnection-loop-and-interval">Step 2:
+Configure the Reconnection Loop and Interval</h2>
+<p>To enforce a specific retry interval, wrap the FFmpeg command in a
+continuous loop. If the process crashes or disconnects, the loop waits
+for a designated interval before attempting to reconnect.</p>
+<h3 id="linux--macos-bash-script">Linux / macOS (Bash Script)</h3>
+<p>The following script continuously attempts to push a live source
+(such as a capture card or virtual device) and waits 5 seconds between
+reconnection attempts:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co">#!/bin/bash</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="va">RTMP_URL</span><span class="op">=</span><span class="st">&quot;rtmp://live.example.com/app/stream_key&quot;</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="va">RETRY_INTERVAL</span><span class="op">=</span>5</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a><span class="cf">while</span> <span class="fu">true</span><span class="kw">;</span> <span class="cf">do</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>    <span class="bu">echo</span> <span class="st">&quot;[</span><span class="va">$(</span><span class="fu">date</span><span class="va">)</span><span class="st">] Starting FFmpeg RTMP stream...&quot;</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>    <span class="ex">ffmpeg</span> <span class="at">-re</span> <span class="at">-i</span> input.mp4 <span class="dt">\</span></span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>        <span class="at">-c:v</span> libx264 <span class="at">-preset</span> veryfast <span class="at">-b:v</span> 3000k <span class="at">-maxrate</span> 3000k <span class="at">-bufsize</span> 6000k <span class="dt">\</span></span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>        <span class="at">-c:a</span> aac <span class="at">-b:a</span> 128k <span class="dt">\</span></span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a>        <span class="at">-f</span> flv <span class="at">-rw_timeout</span> 5000000 <span class="st">&quot;</span><span class="va">$RTMP_URL</span><span class="st">&quot;</span></span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a>    <span class="bu">echo</span> <span class="st">&quot;[</span><span class="va">$(</span><span class="fu">date</span><span class="va">)</span><span class="st">] Stream disconnected. Retrying in </span><span class="va">$RETRY_INTERVAL</span><span class="st"> seconds...&quot;</span></span>
+<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a>    <span class="fu">sleep</span> <span class="va">$RETRY_INTERVAL</span></span>
+<span id="cb2-16"><a href="#cb2-16" aria-hidden="true" tabindex="-1"></a><span class="cf">done</span></span></code></pre></div>
+<h3 id="windows-batch-script">Windows (Batch Script)</h3>
+<p>On Windows, use <code>timeout</code> to define the reconnection
+interval:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode cmd"><code class="sourceCode dosbat"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">@</span><span class="bu">echo off</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="bu">set</span> <span class="va">RTMP_URL</span>=rtmp://live.example.com/app/stream_key</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="bu">set</span> <span class="va">RETRY_INTERVAL</span>=5</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="ot">:loop</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a><span class="bu">echo</span> [<span class="pp">%</span><span class="va">date</span><span class="pp">%</span> <span class="pp">%</span><span class="va">time</span><span class="pp">%</span>] Starting FFmpeg RTMP stream...</span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>ffmpeg <span class="at">-re</span> <span class="at">-i</span> input.mp4 ^</span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>    -c:v libx264 <span class="at">-preset</span> veryfast <span class="at">-b:</span>v 3000k <span class="at">-maxrate</span> 3000k <span class="at">-bufsize</span> 6000k ^</span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>    -c:a aac <span class="at">-b:</span>a 128k ^</span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>    -f flv <span class="at">-rw_timeout</span> 5000000 <span class="st">&quot;</span><span class="pp">%</span><span class="va">RTMP_URL</span><span class="pp">%</span><span class="st">&quot;</span></span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a><span class="bu">echo</span> [<span class="pp">%</span><span class="va">date</span><span class="pp">%</span> <span class="pp">%</span><span class="va">time</span><span class="pp">%</span>] Stream disconnected. Retrying in <span class="pp">%</span><span class="va">RETRY_INTERVAL</span><span class="pp">%</span> seconds...</span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a>timeout <span class="at">/t</span> <span class="pp">%</span><span class="va">RETRY_INTERVAL</span><span class="pp">%</span> <span class="at">/nobreak</span> <span class="kw">&gt;</span>nul</span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a><span class="cf">goto</span> <span class="ot">loop</span></span></code></pre></div>
+<h2 id="handling-input-rtmp-pull-reconnection">Handling Input RTMP Pull
+Reconnection</h2>
+<p>If you are consuming an RTMP stream as an input rather than
+publishing it, you can handle timeouts similarly using
+<code>-rw_timeout</code> before the input flag:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-rw_timeout</span> 5000000 <span class="at">-i</span> <span class="st">&quot;rtmp://live.example.com/app/source_stream&quot;</span> <span class="at">-c</span> copy output.mp4</span></code></pre></div>
+<p>For HTTP-based live sources (such as HTTP-FLV or HLS), FFmpeg does
+provide internal retry options:</p>
+<ul>
+<li><code>-reconnect 1</code>: Reconnects automatically if the TCP
+connection drops.</li>
+<li><code>-reconnect_at_eof 1</code>: Reconnects if the stream
+unexpectedly reaches end-of-file.</li>
+<li><code>-reconnect_streamed 1</code>: Reconnects even for non-seekable
+live streams.</li>
+<li><code>-reconnect_delay_max &lt;seconds&gt;</code>: Defines the
+maximum backoff interval between attempts.</li>
+</ul>
+<p>Example for HTTP-wrapped live inputs:</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-reconnect</span> 1 <span class="at">-reconnect_at_eof</span> 1 <span class="at">-reconnect_streamed</span> 1 <span class="at">-reconnect_delay_max</span> 5 <span class="at">-i</span> <span class="st">&quot;http://live.example.com/live/stream.flv&quot;</span> <span class="at">-c</span> copy output.mp4</span></code></pre></div></article>
+        <div id="comments-container"></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

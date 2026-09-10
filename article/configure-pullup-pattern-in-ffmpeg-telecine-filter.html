@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Configure Pullup Pattern in FFmpeg Telecine Filter - ffmpeg</title>
+    <meta name="description" content="This guide explains how to configure the pullup cadence and field order using FFmpeg’s telecine video filter. You will learn the mechanics behind the pattern parameter, how it maps progressive input frames to interlaced output fields, and how to constr">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/configure-pullup-pattern-in-ffmpeg-telecine-filter">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Configure Pullup Pattern in FFmpeg Telecine Filter - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/configure-pullup-pattern-in-ffmpeg-telecine-filter" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This guide explains how to configure the pullup cadence and field order using FFmpeg’s telecine video filter. You will learn the mechanics behind the pattern parameter, how it maps progressive input frames to interlaced output fields, and how to constr" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="configure-pullup-pattern-in-ffmpeg-telecine-filter">Configure
+Pullup Pattern in FFmpeg Telecine Filter</h1>
+<p>This guide explains how to configure the pullup cadence and field
+order using FFmpeg’s <code>telecine</code> video filter. You will learn
+the mechanics behind the <code>pattern</code> parameter, how it maps
+progressive input frames to interlaced output fields, and how to
+construct specific telecine cadences—such as classic 3:2, 2:3:3:2, and
+European telecine—for standard-definition and high-definition broadcast
+workflows.</p>
+<h3 id="telecine-filter-syntax">Telecine Filter Syntax</h3>
+<p>The basic syntax for the <code>telecine</code> filter in FFmpeg
+is:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">-vf</span> <span class="st">&quot;telecine=first_field=FIELD:pattern=PATTERN&quot;</span></span></code></pre></div>
+<p>The filter accepts two primary parameters:</p>
+<ul>
+<li><code>first_field</code>: Dictates which field is output first.
+Accepts <code>top</code> (or <code>t</code>) for top-field-first (TFF),
+and <code>bottom</code> (or <code>b</code>) for bottom-field-first
+(BFF). The default is <code>top</code>.</li>
+<li><code>pattern</code>: A sequence of digits defining how many fields
+each sequential progressive input frame contributes to the interlaced
+output stream. The default is <code>23</code>.</li>
+</ul>
+<h3 id="understanding-the-pattern-parameter">Understanding the
+<code>pattern</code> Parameter</h3>
+<p>The <code>pattern</code> string defines the cadence of the telecine
+conversion. Each digit in the string corresponds to an input frame in
+sequential order and represents the number of fields generated from that
+frame.</p>
+<p>Because an interlaced video frame consists of 2 fields, the sum of
+all digits in a complete pattern cycle divided by 2 gives the number of
+interlaced frames generated.</p>
+<p>For example, to convert 24 fps to 29.97 fps (or 30 fps), every 4
+progressive input frames must be expanded into 10 fields (5 interlaced
+frames):</p>
+<ul>
+<li>Frame 1 contributes 2 fields.</li>
+<li>Frame 2 contributes 3 fields.</li>
+<li>Frame 3 contributes 2 fields.</li>
+<li>Frame 4 contributes 3 fields.</li>
+</ul>
+<p>This sequence produces the standard <code>23</code> pattern
+(representing alternating 2-field and 3-field frames).</p>
+<h3 id="common-pulldown-patterns-and-configurations">Common Pulldown
+Patterns and Configurations</h3>
+<h4 id="1-standard-32-pulldown-ntsc-24p-to-60i">1. Standard 3:2 Pulldown
+(NTSC 24p to 60i)</h4>
+<p>The most common conversion for film-to-video transfers. Frame A
+outputs 2 fields, Frame B outputs 3 fields (the third field is repeated
+from the first field of that frame), and the cycle repeats.</p>
+<ul>
+<li><strong>Filter String:</strong> <code>pattern=23</code> (or
+<code>pattern=32</code>)</li>
+<li><strong>Command Example:</strong></li>
+</ul>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input_24p.mp4 <span class="at">-vf</span> <span class="st">&quot;telecine=first_field=top:pattern=23&quot;</span> <span class="at">-r</span> 30000/1001 <span class="at">-c:v</span> libx264 <span class="at">-flags</span> +ilme+ildct output_60i.mp4</span></code></pre></div>
+<h4 id="2-advanced-2332-pulldown">2. Advanced 2:3:3:2 Pulldown</h4>
+<p>Commonly used in digital acquisition formats like Panasonic DVX100
+(24p Advanced). In this pattern, only the middle frame shares fields
+across frames, making inverse telecine (reconstruction back to 24p)
+cleaner since only one interlaced frame contains mixed temporal
+data.</p>
+<ul>
+<li><strong>Filter String:</strong> <code>pattern=2332</code></li>
+<li><strong>Command Example:</strong></li>
+</ul>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input_24p.mp4 <span class="at">-vf</span> <span class="st">&quot;telecine=first_field=top:pattern=2332&quot;</span> <span class="at">-r</span> 30000/1001 <span class="at">-c:v</span> libx264 <span class="at">-flags</span> +ilme+ildct output_advanced.mp4</span></code></pre></div>
+<h4 id="3-euro-telecine-24p-to-50i--25-fps-interlaced">3. Euro-Telecine
+(24p to 50i / 25 fps Interlaced)</h4>
+<p>When converting 24 fps progressive film to 50i European PAL broadcast
+without pitch-shifting or speeding up the audio to 25 fps, 2 fields must
+be inserted every second (48 fields become 50 fields). This requires a
+24-frame repeating cycle where 22 frames generate 2 fields each and 2
+frames generate 3 fields each.</p>
+<ul>
+<li><strong>Filter String:</strong>
+<code>pattern=222222222223222222222223</code></li>
+<li><strong>Command Example:</strong></li>
+</ul>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input_24p.mp4 <span class="at">-vf</span> <span class="st">&quot;telecine=first_field=top:pattern=222222222223222222222223&quot;</span> <span class="at">-r</span> 25 <span class="at">-c:v</span> libx264 <span class="at">-flags</span> +ilme+ildct output_50i.mp4</span></code></pre></div>
+<h4 id="4-progressive-interlaced-22-pulldown">4. Progressive Interlaced
+(2:2 Pulldown)</h4>
+<p>If the input is 25p or 30p and needs to be marked and formatted as
+50i or 60i without altering frame pacing, each progressive frame simply
+splits into 2 fields.</p>
+<ul>
+<li><strong>Filter String:</strong> <code>pattern=2</code></li>
+<li><strong>Command Example:</strong></li>
+</ul>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input_25p.mp4 <span class="at">-vf</span> <span class="st">&quot;telecine=first_field=top:pattern=2&quot;</span> <span class="at">-r</span> 25 <span class="at">-c:v</span> libx264 <span class="at">-flags</span> +ilme+ildct output_50i.mp4</span></code></pre></div>
+<h3 id="encoding-flags-for-interlaced-compatibility">Encoding Flags for
+Interlaced Compatibility</h3>
+<p>When using the <code>telecine</code> filter with H.264
+(<code>libx264</code>), pass standard interlacing flags to ensure
+container and codec-level headers match the field structure generated by
+the filter:</p>
+<ul>
+<li><code>-flags +ilme+ildct</code>: Enables interlaced motion
+estimation and discrete cosine transform.</li>
+<li><code>-top 1</code>: Sets the top-field-first flag in the bitstream
+(use <code>-top 0</code> for bottom-field-first).</li>
+<li><code>-r [rate]</code>: Explicitly sets the container output frame
+rate (e.g., <code>30000/1001</code> for NTSC 29.97 fps, <code>25</code>
+for PAL).</li>
+</ul></article>
+        <div id="comments-container"></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Concatenate WAV Files in FFmpeg Using Copy - ffmpeg</title>
+    <meta name="description" content="Concatenating WAV audio files without re-encoding allows you to merge multiple tracks quickly while preserving 100% of the original audio quality. By leveraging FFmpeg's stream copy functionality (-c copy), the program bypasses decoding and re-encoding,">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/how-to-concatenate-wav-files-in-ffmpeg-using-copy">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Concatenate WAV Files in FFmpeg Using Copy - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/how-to-concatenate-wav-files-in-ffmpeg-using-copy" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Concatenating WAV audio files without re-encoding allows you to merge multiple tracks quickly while preserving 100% of the original audio quality. By leveraging FFmpeg's stream copy functionality (-c copy), the program bypasses decoding and re-encoding," />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="how-to-concatenate-wav-files-in-ffmpeg-using-copy">How to
+Concatenate WAV Files in FFmpeg Using Copy</h1>
+<p>Concatenating WAV audio files without re-encoding allows you to merge
+multiple tracks quickly while preserving 100% of the original audio
+quality. By leveraging FFmpeg's stream copy functionality
+(<code>-c copy</code>), the program bypasses decoding and re-encoding,
+stitching the audio streams directly into a single output file. This
+guide explains the exact command-line steps required to merge your WAV
+files using this method.</p>
+<h3 id="prerequisites">Prerequisites</h3>
+<p>For stream copying to work properly, all source WAV files must share
+identical stream parameters:</p>
+<ul>
+<li>Same sample rate (e.g., 44.1 kHz, 48 kHz)</li>
+<li>Same number of channels (e.g., mono, stereo)</li>
+<li>Same bit depth (e.g., 16-bit, 24-bit PCM)</li>
+</ul>
+<h3 id="step-1-create-a-file-list">Step 1: Create a File List</h3>
+<p>The most reliable way to concatenate container formats like WAV
+without re-encoding is using FFmpeg's <strong>concat
+demuxer</strong>.</p>
+<p>Create a text file named <code>filelist.txt</code> in the same
+directory as your audio files. List each file you want to merge in
+sequential order:</p>
+<pre class="text"><code>file &#39;input1.wav&#39;
+file &#39;input2.wav&#39;
+file &#39;input3.wav&#39;</code></pre>
+<h3 id="step-2-run-the-ffmpeg-command">Step 2: Run the FFmpeg
+Command</h3>
+<p>Execute the following command in your terminal or command prompt:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-f</span> concat <span class="at">-safe</span> 0 <span class="at">-i</span> filelist.txt <span class="at">-c</span> copy output.wav</span></code></pre></div>
+<h4 id="breakdown-of-the-parameters">Breakdown of the Parameters:</h4>
+<ul>
+<li><code>-f concat</code>: Specifies the concat demuxer format.</li>
+<li><code>-safe 0</code>: Allows the use of absolute file paths or
+relative paths with special characters.</li>
+<li><code>-i filelist.txt</code>: Sets the text file as the input
+source.</li>
+<li><code>-c copy</code>: Instructs FFmpeg to copy the audio stream
+directly without re-encoding.</li>
+<li><code>output.wav</code>: The final concatenated file name.</li>
+</ul>
+<h3
+id="command-line-shortcuts-generating-the-list-automatically">Command-Line
+Shortcuts (Generating the List Automatically)</h3>
+<p>You can generate the list and run FFmpeg in a single step depending
+on your operating system.</p>
+<p><strong>On Linux or macOS (Bash/Zsh):</strong></p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-f</span> concat <span class="at">-safe</span> 0 <span class="at">-i</span> <span class="op">&lt;(</span><span class="bu">printf</span> <span class="st">&quot;file &#39;%s&#39;\n&quot;</span> input1.wav input2.wav<span class="op">)</span> <span class="at">-c</span> copy output.wav</span></code></pre></div>
+<p><strong>On Windows (PowerShell):</strong></p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode powershell"><code class="sourceCode powershell"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="fu">Get-ChildItem</span> <span class="op">-</span>Filter <span class="op">*.</span><span class="fu">wav</span> <span class="op">|</span> <span class="fu">ForEach-Object</span> <span class="op">{</span> <span class="st">&quot;file &#39;</span><span class="op">$(</span><span class="va">$_</span><span class="op">.</span><span class="fu">Name</span><span class="op">)</span><span class="st">&#39;&quot;</span> <span class="op">}</span> <span class="op">|</span> <span class="fu">Out-File</span> <span class="op">-</span>Encoding ascii filelist<span class="op">.</span><span class="fu">txt</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>ffmpeg <span class="op">-</span>f concat <span class="op">-</span>safe <span class="dv">0</span> <span class="op">-</span>i filelist<span class="op">.</span><span class="fu">txt</span> <span class="op">-</span>c <span class="fu">copy</span> output<span class="op">.</span><span class="fu">wav</span></span></code></pre></div>
+<h3 id="why-avoid-the-concat-protocol-for-wav-files">Why Avoid the
+<code>concat:</code> Protocol for WAV Files</h3>
+<p>While FFmpeg includes a raw protocol
+(<code>-i "concat:input1.wav|input2.wav"</code>), it performs a binary
+append. Because WAV files contain RIFF header blocks, using the raw
+concat protocol embeds internal headers inside the audio stream, causing
+player errors or playback interruptions. Using the
+<code>-f concat</code> demuxer combined with <code>-c copy</code>
+ensures that the headers are properly reconstructed for a clean, valid
+WAV file.</p></article>
+        <div id="comments-container"></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

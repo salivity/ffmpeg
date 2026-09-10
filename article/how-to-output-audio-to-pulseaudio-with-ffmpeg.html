@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Output Audio to PulseAudio with FFmpeg - ffmpeg</title>
+    <meta name="description" content="This article provides a straightforward guide on how to route audio playback from FFmpeg directly to a PulseAudio sound server. You will learn the essential command-line syntax, how to stream audio in real-time, and how to target specific PulseAudio play">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/how-to-output-audio-to-pulseaudio-with-ffmpeg">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Output Audio to PulseAudio with FFmpeg - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/how-to-output-audio-to-pulseaudio-with-ffmpeg" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article provides a straightforward guide on how to route audio playback from FFmpeg directly to a PulseAudio sound server. You will learn the essential command-line syntax, how to stream audio in real-time, and how to target specific PulseAudio play" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="how-to-output-audio-to-pulseaudio-with-ffmpeg">How to Output
+Audio to PulseAudio with FFmpeg</h1>
+<p>This article provides a straightforward guide on how to route audio
+playback from FFmpeg directly to a PulseAudio sound server. You will
+learn the essential command-line syntax, how to stream audio in
+real-time, and how to target specific PulseAudio playback devices
+(sinks) on your system.</p>
+<h2 id="basic-command-syntax">Basic Command Syntax</h2>
+<p>To output audio to PulseAudio, you must use FFmpeg's
+<code>pulse</code> muxer by specifying the <code>-f pulse</code> format
+option. The simplest command to play an audio file through your default
+PulseAudio device is:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp3 <span class="at">-f</span> pulse <span class="st">&quot;Playback Stream Name&quot;</span></span></code></pre></div>
+<p>In this command:</p>
+<ul>
+<li><code>-i input.mp3</code> specifies your input audio file.</li>
+<li><code>-f pulse</code> forces FFmpeg to use the PulseAudio output
+driver.</li>
+<li><code>"Playback Stream Name"</code> is an arbitrary label that will
+appear in your PulseAudio volume control (e.g.,
+<code>pavucontrol</code>) to identify the stream.</li>
+</ul>
+<h2 id="playing-audio-in-real-time">Playing Audio in Real-Time</h2>
+<p>By default, FFmpeg processes files as fast as possible. If you are
+playing an audio file to your speakers, you must force FFmpeg to read
+the input at its native frame rate. To do this, use the <code>-re</code>
+(real-time) input flag:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-re</span> <span class="at">-i</span> input.mp3 <span class="at">-f</span> pulse <span class="st">&quot;My Live Stream&quot;</span></span></code></pre></div>
+<p>Failing to use the <code>-re</code> option may result in stuttering,
+buffer underruns, or the audio playing back too quickly.</p>
+<h2 id="outputting-to-a-specific-pulseaudio-device">Outputting to a
+Specific PulseAudio Device</h2>
+<p>If you have multiple sound cards, USB headsets, or Bluetooth
+speakers, you can direct the FFmpeg stream to a specific PulseAudio
+"sink."</p>
+<p>First, list your available PulseAudio sinks by running this command
+in your terminal:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">pactl</span> list short sinks</span></code></pre></div>
+<p>Identify the name of the device you want to use (for example,
+<code>alsa_output.pci-0000_00_1f.3.analog-stereo</code>).</p>
+<p>Next, use the <code>-device</code> option in FFmpeg to target that
+specific device:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-re</span> <span class="at">-i</span> input.mp3 <span class="at">-f</span> pulse <span class="at">-device</span> <span class="st">&quot;alsa_output.pci-0000_00_1f.3.analog-stereo&quot;</span> <span class="st">&quot;Direct Stream&quot;</span></span></code></pre></div>
+<h2 id="mixing-audio-and-video">Mixing Audio and Video</h2>
+<p>If you are playing a video file but only want to send the audio track
+to PulseAudio (while ignoring or discarding the video), you can disable
+the video output using the <code>-vn</code> flag:</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-re</span> <span class="at">-i</span> video.mp4 <span class="at">-vn</span> <span class="at">-f</span> pulse <span class="st">&quot;Video Audio&quot;</span></span></code></pre></div></article>
+        <div id="comments-container"></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

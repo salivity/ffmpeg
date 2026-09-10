@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Configure FFmpeg SR Filter Scale Factor and Backend - ffmpeg</title>
+    <meta name="description" content="This guide explains how to configure the scaling factor and execution backend—native versus TensorFlow—in FFmpeg's sr (Super-Resolution) video filter. The sr filter applies deep learning models to upscale video frames, requiring you to define the com">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/configure-ffmpeg-sr-filter-scale-factor-and-backend">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Configure FFmpeg SR Filter Scale Factor and Backend - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/configure-ffmpeg-sr-filter-scale-factor-and-backend" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This guide explains how to configure the scaling factor and execution backend—native versus TensorFlow—in FFmpeg's sr (Super-Resolution) video filter. The sr filter applies deep learning models to upscale video frames, requiring you to define the com" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="configure-ffmpeg-sr-filter-scale-factor-and-backend">Configure
+FFmpeg SR Filter Scale Factor and Backend</h1>
+<p>This guide explains how to configure the scaling factor and execution
+backend—native versus TensorFlow—in FFmpeg's <code>sr</code>
+(Super-Resolution) video filter. The <code>sr</code> filter applies deep
+learning models to upscale video frames, requiring you to define the
+computational engine via the backend option and align the scaling factor
+to match the specific model file being loaded.</p>
+<h3 id="understanding-the-parameters">Understanding the Parameters</h3>
+<p>The <code>sr</code> filter relies on three primary parameters to
+control scaling and processing:</p>
+<ul>
+<li><strong><code>dnn_backend</code></strong>: Defines the inference
+engine. Accepted values are <code>native</code> and
+<code>tensorflow</code>.</li>
+<li><strong><code>scale_factor</code></strong>: Sets the resolution
+multiplier (e.g., <code>2</code>, <code>3</code>, or <code>4</code>).
+This value must match the scale factor the selected model was trained to
+output.</li>
+<li><strong><code>model</code></strong>: Specifies the path to the
+trained model file.</li>
+</ul>
+<hr />
+<h3 id="backend-comparison-native-vs-tensorflow">Backend Comparison:
+Native vs. TensorFlow</h3>
+<ul>
+<li><strong><code>native</code></strong>: FFmpeg's built-in deep neural
+network (DNN) engine. It requires no external dependencies and runs
+models converted to FFmpeg's native <code>.model</code> format. It is
+lightweight and works out of the box in most builds.</li>
+<li><strong><code>tensorflow</code></strong>: Uses the external
+TensorFlow C API (<code>libtensorflow</code>). It runs standard
+TensorFlow frozen graph (<code>.pb</code>) files. To use this backend,
+FFmpeg must be compiled with the <code>--enable-libtensorflow</code>
+configuration flag.</li>
+</ul>
+<hr />
+<h3 id="configuring-the-native-backend">Configuring the Native
+Backend</h3>
+<p>To use the native backend, supply a native format model file and set
+<code>dnn_backend=native</code>.</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;sr=dnn_backend=native:scale_factor=2:model=espcn_x2.model&quot;</span> <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<p>In this command:</p>
+<ul>
+<li><code>dnn_backend=native</code> engages the internal engine.</li>
+<li><code>scale_factor=2</code> doubles the width and height of the
+video.</li>
+<li><code>espcn_x2.model</code> is the path to the model trained
+specifically for a 2x upscale.</li>
+</ul>
+<hr />
+<h3 id="configuring-the-tensorflow-backend">Configuring the TensorFlow
+Backend</h3>
+<p>To use the TensorFlow backend, supply a frozen TensorFlow graph
+(<code>.pb</code>) and set <code>dnn_backend=tensorflow</code>.</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;sr=dnn_backend=tensorflow:scale_factor=4:model=espcn_x4.pb&quot;</span> <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<p>In this command:</p>
+<ul>
+<li><code>dnn_backend=tensorflow</code> routes execution through the
+TensorFlow C library.</li>
+<li><code>scale_factor=4</code> quadruples the width and height of the
+input frames.</li>
+<li><code>espcn_x4.pb</code> is the corresponding 4x model file.</li>
+</ul>
+<hr />
+<h3 id="key-requirements-and-constraints">Key Requirements and
+Constraints</h3>
+<ol type="1">
+<li><strong>Scale Matching</strong>: The <code>scale_factor</code>
+argument does not dynamically resize the model's output layer; it
+informs FFmpeg what output dimensions to expect from the model. Passing
+a scale factor that conflicts with the model architecture will cause the
+filter to fail.</li>
+<li><strong>Color Space</strong>: The <code>sr</code> filter typically
+processes the luma (Y) channel. Ensure your pipeline converts pixel
+formats (such as <code>yuv420p</code>) appropriately if your model
+requires a specific input format.</li>
+</ol></article>
+        <div id="comments-container"></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

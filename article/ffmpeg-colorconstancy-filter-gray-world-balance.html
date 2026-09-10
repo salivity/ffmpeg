@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FFmpeg Colorconstancy Filter: Gray-World Balance - ffmpeg</title>
+    <meta name="description" content="This article explains how to remove unwanted color casts from video using the colorconstancy filter in FFmpeg. By implementing the Gray-World assumption algorithm, FFmpeg can automatically estimate the scene's illuminant and shift colors back toward neut">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/ffmpeg-colorconstancy-filter-gray-world-balance">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="FFmpeg Colorconstancy Filter: Gray-World Balance - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/ffmpeg-colorconstancy-filter-gray-world-balance" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article explains how to remove unwanted color casts from video using the colorconstancy filter in FFmpeg. By implementing the Gray-World assumption algorithm, FFmpeg can automatically estimate the scene's illuminant and shift colors back toward neut" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="ffmpeg-colorconstancy-filter-gray-world-balance">FFmpeg
+Colorconstancy Filter: Gray-World Balance</h1>
+<p>This article explains how to remove unwanted color casts from video
+using the <code>colorconstancy</code> filter in FFmpeg. By implementing
+the Gray-World assumption algorithm, FFmpeg can automatically estimate
+the scene's illuminant and shift colors back toward neutrality. Below,
+you will find the fundamental principles behind the algorithm, the
+required parameter settings, and practical command-line examples for
+processing your media.</p>
+<h3 id="understanding-gray-world-in-ffmpeg">Understanding Gray-World in
+FFmpeg</h3>
+<p>The Gray-World algorithm assumes that the average surface reflectance
+in a typical scene is neutral gray. If the overall average color of the
+frame deviates from gray, the algorithm attributes this shift to the
+light source (illuminant) and applies a correction to neutralize the
+cast.</p>
+<p>In FFmpeg, the <code>colorconstancy</code> filter implements the
+framework developed by J. van de Weijer et al., which unifies algorithms
+like Gray-World, White-Patch, and Shades-of-Gray using two primary
+mathematical variables:</p>
+<ul>
+<li><strong><code>difford</code> (Differentiation Order):</strong>
+Determines the order of spatial derivatives used. For classic
+intensity-based Gray-World, this must be set to <code>0</code>.</li>
+<li><strong><code>minknorm</code> (Minkowski Norm):</strong> Determines
+how pixel intensities are pooled. Classic Gray-World averages pixel
+values using an <span class="math inline">\(L_1\)</span> norm, meaning
+this must be set to <code>1</code>.</li>
+</ul>
+<h3 id="basic-gray-world-command">Basic Gray-World Command</h3>
+<p>To apply the standard Gray-World color balance to a video, use the
+filter graph <code>-vf</code> with <code>difford=0</code> and
+<code>minknorm=1</code>:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;colorconstancy=difford=0:minknorm=1&quot;</span> <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<h3 id="key-parameters-and-fine-tuning">Key Parameters and
+Fine-Tuning</h3>
+<p>While the default Gray-World settings work well on balanced scenes,
+noisy or uneven footage may require parameter adjustments:</p>
+<ul>
+<li><strong><code>sigma</code>:</strong> Sets the Gaussian smoothing
+scale (standard deviation). A small amount of smoothing (such as
+<code>sigma=1</code> to <code>sigma=3</code>) prevents sensor noise or
+high-frequency artifacts from skewing the color estimate.</li>
+<li><strong><code>minknorm</code>:</strong> While <code>1</code> gives
+strict Gray-World balance, values between <code>4</code> and
+<code>6</code> shift the algorithm toward the "Shades-of-Gray" method,
+which often produces more natural skin tones by giving higher weights to
+brighter pixels.</li>
+</ul>
+<h4 id="example-with-gaussian-smoothing">Example with Gaussian
+Smoothing</h4>
+<p>To eliminate color casts while smoothing out video noise:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;colorconstancy=difford=0:minknorm=1:sigma=1.5&quot;</span> <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<h4 id="example-using-shades-of-gray-variation">Example using
+Shades-of-Gray Variation</h4>
+<p>If strict Gray-World overcompensates in scenes dominated by a single
+saturated color (such as green grass or blue skies), increase the
+Minkowski norm:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;colorconstancy=difford=0:minknorm=6:sigma=1&quot;</span> <span class="at">-c:a</span> copy output.mp4</span></code></pre></div></article>
+        <div id="comments-container"></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

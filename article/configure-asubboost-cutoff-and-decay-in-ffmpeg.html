@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Configure asubboost Cutoff and Decay in FFmpeg - ffmpeg</title>
+    <meta name="description" content="The asubboost audio filter in FFmpeg is designed to generate and boost sub-bass frequencies from an existing audio track. This article explains how to specifically configure the cutoff frequency and decay parameters within the asubboost filter, detailing">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/configure-asubboost-cutoff-and-decay-in-ffmpeg">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Configure asubboost Cutoff and Decay in FFmpeg - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/configure-asubboost-cutoff-and-decay-in-ffmpeg" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="The asubboost audio filter in FFmpeg is designed to generate and boost sub-bass frequencies from an existing audio track. This article explains how to specifically configure the cutoff frequency and decay parameters within the asubboost filter, detailing" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="configure-asubboost-cutoff-and-decay-in-ffmpeg">Configure
+asubboost Cutoff and Decay in FFmpeg</h1>
+<p>The <code>asubboost</code> audio filter in FFmpeg is designed to
+generate and boost sub-bass frequencies from an existing audio track.
+This article explains how to specifically configure the
+<code>cutoff</code> frequency and <code>decay</code> parameters within
+the <code>asubboost</code> filter, detailing their functions, valid
+ranges, and practical command-line examples to help you shape your
+audio's low-end response.</p>
+<h3 id="understanding-cutoff-and-decay">Understanding Cutoff and
+Decay</h3>
+<p>The <code>asubboost</code> filter shapes low-end sound using several
+key settings, with <code>cutoff</code> and <code>decay</code> being
+essential for defining the filter's range and duration:</p>
+<ul>
+<li><strong><code>cutoff</code> (or <code>c</code>)</strong>: Specifies
+the cutoff frequency in Hertz (Hz). Only frequencies below this
+threshold are detected and used to generate the boosted sub-bass
+content.
+<ul>
+<li><strong>Range</strong>: Typically 20 to 300 Hz.</li>
+<li><strong>Default</strong>: 100 Hz.</li>
+</ul></li>
+<li><strong><code>decay</code> (or <code>d</code>)</strong>: Controls
+the decay rate of the generated sub-bass energy. Higher values prolong
+the sub-bass rumble, while lower values keep the bass tighter and more
+immediate.
+<ul>
+<li><strong>Range</strong>: 0.0 to 1.0.</li>
+<li><strong>Default</strong>: 0.0.</li>
+</ul></li>
+</ul>
+<h3 id="filter-syntax">Filter Syntax</h3>
+<p>In FFmpeg, filters are applied using the <code>-af</code> (audio
+filter) flag. The parameters can be passed as <code>key=value</code>
+pairs separated by colons:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">-af</span> <span class="st">&quot;asubboost=cutoff=&lt;value&gt;:decay=&lt;value&gt;&quot;</span></span></code></pre></div>
+<p>Alternatively, you can use the short aliases:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">-af</span> <span class="st">&quot;asubboost=c=&lt;value&gt;:d=&lt;value&gt;&quot;</span></span></code></pre></div>
+<h3 id="practical-examples">Practical Examples</h3>
+<h4 id="1-tight-sub-bass-boost-low-cutoff-low-decay">1. Tight Sub-Bass
+Boost (Low Cutoff, Low Decay)</h4>
+<p>For acoustic, rock, or dynamic tracks where you want a clean sub-bass
+layer without muddiness or lingering sustain, set a lower cutoff and
+minimal decay:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp3 <span class="at">-af</span> <span class="st">&quot;asubboost=cutoff=80:decay=0.1&quot;</span> <span class="at">-c:a</span> libmp3lame <span class="at">-q:a</span> 2 output.mp3</span></code></pre></div>
+<ul>
+<li><code>cutoff=80</code>: Only processes audio below 80 Hz.</li>
+<li><code>decay=0.1</code>: Quickly cuts off the generated low
+frequencies to prevent booming.</li>
+</ul>
+<h4 id="2-deep-sustained-sub-bass-higher-decay">2. Deep, Sustained
+Sub-Bass (Higher Decay)</h4>
+<p>For electronic music, hip-hop, or cinematic sound effects where you
+want sustained, resonant 808-style low-end:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.wav <span class="at">-af</span> <span class="st">&quot;asubboost=cutoff=100:decay=0.6&quot;</span> output.wav</span></code></pre></div>
+<ul>
+<li><code>cutoff=100</code>: Captures bass content up to 100 Hz.</li>
+<li><code>decay=0.6</code>: Lengthens the resonance of the generated
+sub-frequencies, creating a sustained tail.</li>
+</ul>
+<h4 id="3-combining-with-wet-and-dry-mix">3. Combining with Wet and Dry
+Mix</h4>
+<p>To balance the boosted sub-bass with the original signal, pair
+<code>cutoff</code> and <code>decay</code> with <code>wet</code> and
+<code>dry</code> gain controls:</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.wav <span class="at">-af</span> <span class="st">&quot;asubboost=cutoff=90:decay=0.3:dry=0.8:wet=0.5&quot;</span> output.wav</span></code></pre></div>
+<ul>
+<li><code>dry=0.8</code>: Reduces the original audio level slightly to
+prevent clipping.</li>
+<li><code>wet=0.5</code>: Adds the boosted sub-bass signal at half its
+generated volume.</li>
+</ul></article>
+        <div id="comments-container"></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

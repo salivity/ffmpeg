@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cut and Merge Video Segments with FFmpeg Select - ffmpeg</title>
+    <meta name="description" content="This guide explains how to extract multiple disjoint segments from an input video and seamlessly combine them into a single output file using FFmpeg. By leveraging the select video filter and the aselect audio filter alongside timestamp recalculation, yo">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/cut-and-merge-video-segments-with-ffmpeg-select">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Cut and Merge Video Segments with FFmpeg Select - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/cut-and-merge-video-segments-with-ffmpeg-select" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This guide explains how to extract multiple disjoint segments from an input video and seamlessly combine them into a single output file using FFmpeg. By leveraging the select video filter and the aselect audio filter alongside timestamp recalculation, yo" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="cut-and-merge-video-segments-with-ffmpeg-select">Cut and Merge
+Video Segments with FFmpeg Select</h1>
+<p>This guide explains how to extract multiple disjoint segments from an
+input video and seamlessly combine them into a single output file using
+FFmpeg. By leveraging the <code>select</code> video filter and the
+<code>aselect</code> audio filter alongside timestamp recalculation, you
+can cut and concatenate various parts of your media in a single command
+without creating temporary files.</p>
+<h3 id="the-basic-syntax">The Basic Syntax</h3>
+<p>To cut and join multiple segments, define time intervals using the
+<code>between(t, start, end)</code> function within both the video and
+audio filtergraphs, joined by the addition operator (<code>+</code>),
+which acts as a logical OR.</p>
+<p>Here is the standard command structure:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;select=&#39;between(t,10,20)+between(t,45,60)&#39;,setpts=N/FRAME_RATE/TB&quot;</span> <span class="at">-af</span> <span class="st">&quot;aselect=&#39;between(t,10,20)+between(t,45,60)&#39;,asetpts=N/SR/TB&quot;</span> output.mp4</span></code></pre></div>
+<p>In this example, FFmpeg extracts the segment between 10 and 20
+seconds, and the segment between 45 and 60 seconds, merging them into
+<code>output.mp4</code>.</p>
+<hr />
+<h3 id="how-the-filters-work">How the Filters Work</h3>
+<ol type="1">
+<li><p><strong><code>select</code> and
+<code>aselect</code></strong>:</p>
+<ul>
+<li>The <code>between(t, start_seconds, end_seconds)</code> expression
+returns <code>1</code> (true) if the current timestamp <code>t</code>
+falls within the range, and <code>0</code> (false) otherwise.</li>
+<li>Adding multiple <code>between()</code> expressions with
+<code>+</code> allows the filter to retain frames from any specified
+range while dropping frames that fall outside them.</li>
+</ul></li>
+<li><p><strong><code>setpts=N/FRAME_RATE/TB</code></strong>:</p>
+<ul>
+<li>Dropping frames creates gaps in Presentation Time Stamps (PTS).</li>
+<li>Recalculating the PTS using the frame count (<code>N</code>), input
+frame rate (<code>FRAME_RATE</code>), and time base (<code>TB</code>)
+generates continuous timestamps, preventing video freezing or playback
+stutter.</li>
+</ul></li>
+<li><p><strong><code>asetpts=N/SR/TB</code></strong>:</p>
+<ul>
+<li>Functions identically to the video timestamp filter, but for
+audio.</li>
+<li>It reconstructs continuous audio timestamps based on the audio
+sample count (<code>N</code>), sample rate (<code>SR</code>), and time
+base (<code>TB</code>) to maintain audio-video synchronization.</li>
+</ul></li>
+</ol>
+<hr />
+<h3 id="selecting-more-than-two-segments">Selecting More Than Two
+Segments</h3>
+<p>To add more segments, simply chain additional <code>between()</code>
+expressions within the single quotes:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;select=&#39;between(t,5,15)+between(t,30,40)+between(t,75,90)&#39;,setpts=N/FRAME_RATE/TB&quot;</span> <span class="at">-af</span> <span class="st">&quot;aselect=&#39;between(t,5,15)+between(t,30,40)+between(t,75,90)&#39;,asetpts=N/SR/TB&quot;</span> output.mp4</span></code></pre></div>
+<hr />
+<h3 id="selecting-segments-by-frame-numbers">Selecting Segments by Frame
+Numbers</h3>
+<p>If exact time offsets are difficult to calculate or frame accuracy is
+critical, you can replace the time parameter <code>t</code> with the
+frame index <code>n</code> (for video only):</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;select=&#39;between(n,100,250)+between(n,500,750)&#39;,setpts=N/FRAME_RATE/TB&quot;</span> <span class="at">-af</span> <span class="st">&quot;aselect=&#39;between(t,4.17,10.42)+between(t,20.85,31.28)&#39;,asetpts=N/SR/TB&quot;</span> output.mp4</span></code></pre></div>
+<p><em>Note: The audio filter <code>aselect</code> does not support
+video frame numbers (<code>n</code>), so audio ranges must still be
+specified in seconds or sample counts.</em></p></article>
+        <div id="comments-container"></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

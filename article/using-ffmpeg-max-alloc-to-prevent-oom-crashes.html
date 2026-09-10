@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Using FFmpeg max_alloc to Prevent OOM Crashes - ffmpeg</title>
+    <meta name="description" content="Running FFmpeg on low-resource Virtual Private Servers (VPS) frequently leads to unexpected process termination by the Linux Out-Of-Memory (OOM) killer. This guide explains how to use the -maxalloc global option to restrict the maximum size of single mem">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/using-ffmpeg-max-alloc-to-prevent-oom-crashes">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Using FFmpeg max_alloc to Prevent OOM Crashes - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/using-ffmpeg-max-alloc-to-prevent-oom-crashes" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Running FFmpeg on low-resource Virtual Private Servers (VPS) frequently leads to unexpected process termination by the Linux Out-Of-Memory (OOM) killer. This guide explains how to use the -maxalloc global option to restrict the maximum size of single mem" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="using-ffmpeg-max_alloc-to-prevent-oom-crashes">Using FFmpeg
+max_alloc to Prevent OOM Crashes</h1>
+<p>Running FFmpeg on low-resource Virtual Private Servers (VPS)
+frequently leads to unexpected process termination by the Linux
+Out-Of-Memory (OOM) killer. This guide explains how to use the
+<code>-max_alloc</code> global option to restrict the maximum size of
+single memory block allocations. By capping these allocation requests,
+you can prevent runaway memory spikes from malformed files or
+unexpectedly large frames and maintain server stability.</p>
+<h3 id="what-is--max_alloc">What is -max_alloc?</h3>
+<p>FFmpeg uses an internal memory management wrapper
+(<code>av_malloc</code>) to allocate memory buffers. By default, FFmpeg
+allows single memory allocations up to its default limit, which is often
+around 1GB or higher depending on the platform and version. If a corrupt
+file or massive uncompressed frame requests a memory chunk that exceeds
+available system RAM, the operating system forcibly terminates the
+FFmpeg process to preserve the system.</p>
+<p>The <code>-max_alloc</code> option defines the maximum size (in
+bytes) that FFmpeg can allocate for a single memory block. If a single
+memory request exceeds this threshold, FFmpeg aborts the operation
+gracefully with an error code rather than triggering an OS-level OOM
+crash.</p>
+<h3 id="syntax-and-placement">Syntax and Placement</h3>
+<p>The <code>-max_alloc</code> parameter is a global option and must be
+placed before the input options (<code>-i</code>) in your command
+line:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-max_alloc</span> <span class="op">&lt;</span>bytes<span class="op">&gt;</span> -i input.mp4 output.mp4</span></code></pre></div>
+<p>Because FFmpeg expects the value strictly in bytes, you must
+calculate the limit based on the target megabytes:</p>
+<ul>
+<li><strong>128 MB:</strong> <code>134217728</code></li>
+<li><strong>256 MB:</strong> <code>268435456</code></li>
+<li><strong>512 MB:</strong> <code>536870912</code></li>
+<li><strong>1 GB:</strong> <code>1073741824</code></li>
+</ul>
+<h3 id="example-implementation">Example Implementation</h3>
+<p>If you are running a server with 1GB of total RAM and want to ensure
+no single buffer allocation exceeds 256MB, run:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-max_alloc</span> 268435456 <span class="at">-i</span> input.mov <span class="at">-c:v</span> libx264 <span class="at">-crf</span> 23 <span class="at">-c:a</span> aac output.mp4</span></code></pre></div>
+<p>If an incoming frame or container header requests a buffer larger
+than 256MB, FFmpeg will halt immediately and log an error similar
+to:</p>
+<pre class="text"><code>[fatal] Cannot allocate memory</code></pre>
+<p>This prevents your server from freezing or dropping critical services
+like web servers and databases that share the same memory space.</p>
+<h3 id="important-considerations-and-limitations">Important
+Considerations and Limitations</h3>
+<ol type="1">
+<li><strong>Single Allocation vs. Total Memory:</strong> The
+<code>-max_alloc</code> option only limits the size of an
+<em>individual</em> memory allocation block. It does not cap the
+<em>total cumulative</em> memory used across all running threads and
+operational buffers. If multiple smaller buffers collectively exceed
+server RAM, an OOM crash can still occur.</li>
+<li><strong>Setting the Value Too Low:</strong> Setting this parameter
+too low will cause legitimate encoding jobs to fail, especially when
+processing 4K video, complex filtergraphs, or codecs that require large
+decoding reference frames.</li>
+<li><strong>Layering with OS Limits:</strong> For full protection on
+production systems, combine <code>-max_alloc</code> with OS-level
+restrictions. Use Docker memory flags (<code>--memory=512m</code>),
+systemd resource controls (<code>MemoryMax=512M</code>), or shell limits
+(<code>ulimit -v 524288</code>) to constrain total process footprint
+while using <code>-max_alloc</code> to catch rogue allocation calls
+inside FFmpeg.</li>
+</ol></article>
+        <div id="comments-container"></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

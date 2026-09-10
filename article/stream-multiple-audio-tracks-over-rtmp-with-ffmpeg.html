@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stream Multiple Audio Tracks Over RTMP with FFmpeg - ffmpeg</title>
+    <meta name="description" content="Streaming multiple audio tracks over RTMP using FFmpeg requires either packing multiple audio streams into an enhanced RTMP connection or merging separate audio feeds into distinct channels of a single multichannel track. Because legacy RTMP and standard">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/stream-multiple-audio-tracks-over-rtmp-with-ffmpeg">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Stream Multiple Audio Tracks Over RTMP with FFmpeg - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/stream-multiple-audio-tracks-over-rtmp-with-ffmpeg" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Streaming multiple audio tracks over RTMP using FFmpeg requires either packing multiple audio streams into an enhanced RTMP connection or merging separate audio feeds into distinct channels of a single multichannel track. Because legacy RTMP and standard" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="stream-multiple-audio-tracks-over-rtmp-with-ffmpeg">Stream
+Multiple Audio Tracks Over RTMP with FFmpeg</h1>
+<p>Streaming multiple audio tracks over RTMP using FFmpeg requires
+either packing multiple audio streams into an enhanced RTMP connection
+or merging separate audio feeds into distinct channels of a single
+multichannel track. Because legacy RTMP and standard FLV containers were
+originally designed to hold only a single audio stream, standard
+implementations reject secondary audio tracks. This guide details how to
+configure FFmpeg to send multiple audio tracks using both standard
+multi-channel multiplexing and modern multi-track stream mapping.</p>
+<h3 id="understanding-the-rtmp-limitation">Understanding the RTMP
+Limitation</h3>
+<p>The original Adobe RTMP specification uses the FLV container format,
+which restricts the media stream to one video track and one audio track.
+To bypass this restriction, you must use one of two methods:</p>
+<ol type="1">
+<li><strong>Multi-Track Mapping (Enhanced RTMP):</strong> Sending
+multiple distinct audio streams (<code>0:a:0</code>, <code>0:a:1</code>,
+etc.). This requires an ingest server that supports Enhanced RTMP or
+multi-track FLV extensions.</li>
+<li><strong>Channel Merging (Channel Packing):</strong> Combining
+separate audio sources into a single multi-channel track (e.g.,
+4-channel quadraphonic or 5.1 surround sound). This works on all
+standard RTMP servers, allowing the receiving end to demux or split the
+channels.</li>
+</ol>
+<hr />
+<h3 id="method-1-mapping-multiple-discrete-audio-streams">Method 1:
+Mapping Multiple Discrete Audio Streams</h3>
+<p>If your RTMP ingest server supports multi-track audio (such as
+Enhanced RTMP v2 or custom media servers like SRS, Red5, or NGINX-RTMP
+configured for multi-track payloads), you can use FFmpeg's
+<code>-map</code> option to assign separate audio inputs.</p>
+<h4 id="command-example">Command Example:</h4>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-re</span> <span class="at">-i</span> video_source.mp4 <span class="at">-i</span> english.wav <span class="at">-i</span> spanish.wav <span class="dt">\</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">-map</span> 0:v:0 <span class="dt">\</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">-map</span> 1:a:0 <span class="dt">\</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">-map</span> 2:a:0 <span class="dt">\</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">-c:v</span> libx264 <span class="at">-preset</span> veryfast <span class="at">-b:v</span> 4500k <span class="dt">\</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">-c:a:0</span> aac <span class="at">-b:a:0</span> 160k <span class="dt">\</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">-c:a:1</span> aac <span class="at">-b:a:1</span> 160k <span class="dt">\</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>  <span class="at">-f</span> flv rtmp://your-server.com/live/streamkey</span></code></pre></div>
+<h4 id="command-breakdown">Command Breakdown:</h4>
+<ul>
+<li><strong><code>-re</code></strong>: Reads the input at the native
+frame rate (essential for live streaming).</li>
+<li><strong><code>-map 0:v:0</code></strong>: Maps the video stream from
+the first input.</li>
+<li><strong><code>-map 1:a:0</code></strong>: Maps the audio stream from
+the second input as the primary audio track.</li>
+<li><strong><code>-map 2:a:0</code></strong>: Maps the audio stream from
+the third input as the secondary audio track.</li>
+<li><strong><code>-c:a:0</code> and <code>-c:a:1</code></strong>:
+Explicitly defines the codec and bitrate for each individual audio
+stream.</li>
+<li><strong><code>-f flv</code></strong>: Encapsulates the output in the
+FLV container required by RTMP.</li>
+</ul>
+<hr />
+<h3
+id="method-2-merging-tracks-into-a-single-multichannel-stream">Method 2:
+Merging Tracks into a Single Multichannel Stream</h3>
+<p>If your destination server does not support Enhanced RTMP and drops
+secondary audio streams, merge the separate stereo or mono tracks into
+one multi-channel track. For example, you can merge two stereo inputs
+into a single 4-channel audio stream.</p>
+<h4 id="command-example-1">Command Example:</h4>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-re</span> <span class="at">-i</span> video_source.mp4 <span class="at">-i</span> track1.wav <span class="at">-i</span> track2.wav <span class="dt">\</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">-filter_complex</span> <span class="st">&quot;[1:a][2:a]amerge=inputs=2[aout]&quot;</span> <span class="dt">\</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">-map</span> 0:v:0 <span class="dt">\</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">-map</span> <span class="st">&quot;[aout]&quot;</span> <span class="dt">\</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">-c:v</span> libx264 <span class="at">-preset</span> veryfast <span class="at">-b:v</span> 4500k <span class="dt">\</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">-c:a</span> aac <span class="at">-ac</span> 4 <span class="at">-b:a</span> 320k <span class="dt">\</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">-f</span> flv rtmp://your-server.com/live/streamkey</span></code></pre></div>
+<h4 id="command-breakdown-1">Command Breakdown:</h4>
+<ul>
+<li><strong><code>-filter_complex "[1:a][2:a]amerge=inputs=2[aout]"</code></strong>:
+Combines the audio streams from input 1 and input 2 into a single
+multi-channel output stream named <code>[aout]</code>.</li>
+<li><strong><code>-map "[aout]"</code></strong>: Selects the merged
+audio stream for the final output.</li>
+<li><strong><code>-ac 4</code></strong>: Sets the audio channel count to
+4 (Channels 1 and 2 represent the first input, while Channels 3 and 4
+represent the second).</li>
+</ul>
+<hr />
+<h3
+id="method-3-streaming-multi-track-from-a-single-multi-audio-file">Method
+3: Streaming Multi-Track from a Single Multi-Audio File</h3>
+<p>If your source file already contains multiple audio tracks, inspect
+the stream order first using <code>ffprobe</code>:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffprobe</span> <span class="at">-i</span> input.mp4</span></code></pre></div>
+<p>Identify the stream indexes (e.g., Stream #0:0 is video, Stream #0:1
+is Track 1, Stream #0:2 is Track 2). Stream both tracks over RTMP
+using:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-re</span> <span class="at">-i</span> input.mp4 <span class="dt">\</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">-map</span> 0:v:0 <span class="dt">\</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">-map</span> 0:a:0 <span class="dt">\</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">-map</span> 0:a:1 <span class="dt">\</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">-c:v</span> copy <span class="dt">\</span></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">-c:a</span> aac <span class="at">-b:a</span> 160k <span class="dt">\</span></span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">-f</span> flv rtmp://your-server.com/live/streamkey</span></code></pre></div>
+<h3 id="best-practices">Best Practices</h3>
+<ul>
+<li><strong>Codec Support:</strong> AAC is the universally accepted
+standard for audio over RTMP. Avoid using MP3 or Opus unless your target
+server explicitly supports non-standard FLV codecs.</li>
+<li><strong>Synchronization:</strong> Ensure all audio inputs have
+identical sample rates (such as <code>-ar 48000</code>) to prevent audio
+drift during the live stream.</li>
+<li><strong>Server Verification:</strong> If the receiving platform only
+plays one track, verify server-side logs to confirm whether secondary
+streams are discarded upon ingestion.</li>
+</ul></article>
+        <div id="comments-container"></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

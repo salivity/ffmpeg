@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scale Video on Demand with FFmpeg in Docker - ffmpeg</title>
+    <meta name="description" content="This guide explains how to use FFmpeg within Docker containers to transcode and scale video on demand (VOD) dynamically. It covers pulling the appropriate Docker image, executing video scaling commands through volume mounts, generating multi-bitrate outp">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/scale-video-on-demand-with-ffmpeg-in-docker">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Scale Video on Demand with FFmpeg in Docker - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/scale-video-on-demand-with-ffmpeg-in-docker" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This guide explains how to use FFmpeg within Docker containers to transcode and scale video on demand (VOD) dynamically. It covers pulling the appropriate Docker image, executing video scaling commands through volume mounts, generating multi-bitrate outp" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="scale-video-on-demand-with-ffmpeg-in-docker">Scale Video on
+Demand with FFmpeg in Docker</h1>
+<p>This guide explains how to use FFmpeg within Docker containers to
+transcode and scale video on demand (VOD) dynamically. It covers pulling
+the appropriate Docker image, executing video scaling commands through
+volume mounts, generating multi-bitrate outputs for adaptive streaming,
+and architecting an automated, scalable processing pipeline using
+containerized workers.</p>
+<hr />
+<h3 id="why-run-ffmpeg-in-docker-for-vod">Why Run FFmpeg in Docker for
+VOD?</h3>
+<p>Using Docker to containerize FFmpeg eliminates dependency conflicts
+and hardware library mismatches across host environments. For Video on
+Demand workflows, containerization allows you to spin up independent
+encoding tasks in parallel, automatically scaling compute resources up
+or down based on queue volume via orchestrators like Kubernetes, Docker
+Swarm, or AWS ECS.</p>
+<hr />
+<h3 id="step-1-select-or-build-an-ffmpeg-docker-image">Step 1: Select or
+Build an FFmpeg Docker Image</h3>
+<p>You can use pre-built, production-ready images such as
+<code>jrottenberg/ffmpeg</code> or <code>linuxserver/ffmpeg</code>.</p>
+<p>To pull a lightweight, production-ready image:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">docker</span> pull jrottenberg/ffmpeg:latest</span></code></pre></div>
+<p>If custom codecs or specific hardware acceleration runtimes (such as
+NVIDIA NVENC) are required, define a custom <code>Dockerfile</code>:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode dockerfile"><code class="sourceCode dockerfile"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">FROM</span> ubuntu:22.04</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="kw">RUN</span> <span class="ex">apt-get</span> update <span class="kw">&amp;&amp;</span> <span class="dt">\</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>    <span class="ex">apt-get</span> install <span class="at">-y</span> ffmpeg <span class="kw">&amp;&amp;</span> <span class="dt">\</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>    <span class="fu">rm</span> <span class="at">-rf</span> /var/lib/apt/lists/<span class="pp">*</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a><span class="kw">ENTRYPOINT</span> [<span class="st">&quot;ffmpeg&quot;</span>]</span></code></pre></div>
+<hr />
+<h3 id="step-2-scale-a-video-resolution-using-docker">Step 2: Scale a
+Video Resolution Using Docker</h3>
+<p>To process videos stored on your host machine, mount your local
+directory to a container volume using <code>-v</code>.</p>
+<p>Run the following command to scale an input video to 720p
+(1280x720):</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">docker</span> run <span class="at">--rm</span> <span class="at">-v</span> <span class="va">$(</span><span class="bu">pwd</span><span class="va">)</span>:/workspace <span class="at">-w</span> /workspace jrottenberg/ffmpeg:latest <span class="dt">\</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">-i</span> input.mp4 <span class="dt">\</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">-vf</span> <span class="st">&quot;scale=1280:720:force_original_aspect_ratio=decrease,pad=1280:720:(ow-iw)/2:(oh-ih)/2&quot;</span> <span class="dt">\</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">-c:v</span> libx264 <span class="at">-crf</span> 23 <span class="at">-preset</span> fast <span class="dt">\</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">-c:a</span> aac <span class="at">-b:a</span> 128k <span class="dt">\</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>  output_720p.mp4</span></code></pre></div>
+<p><strong>Flag Explanations:</strong></p>
+<ul>
+<li><code>--rm</code>: Automatically removes the container instance
+after processing finishes.</li>
+<li><code>-v $(pwd):/workspace</code>: Mounts the current working
+directory to <code>/workspace</code> inside the container.</li>
+<li><code>-w /workspace</code>: Sets the container working directory to
+<code>/workspace</code>.</li>
+<li><code>-vf "scale=..."</code>: Scales the video while maintaining the
+original aspect ratio and padding the edges with black bars if
+necessary.</li>
+<li><code>-c:v libx264</code>: Uses the H.264 video codec for broad
+compatibility.</li>
+<li><code>-crf 23</code>: Sets the Constant Rate Factor to balance
+quality and file size.</li>
+</ul>
+<hr />
+<h3 id="step-3-generate-multi-bitrate-outputs-for-hlsvod">Step 3:
+Generate Multi-Bitrate Outputs for HLS/VOD</h3>
+<p>A standard VOD architecture requires multiple renditions (e.g.,
+1080p, 720p, 480p) packaged as HTTP Live Streaming (HLS) or
+MPEG-DASH.</p>
+<p>The following command generates an HLS playlist with a scaled 720p
+stream inside the container:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">docker</span> run <span class="at">--rm</span> <span class="at">-v</span> <span class="va">$(</span><span class="bu">pwd</span><span class="va">)</span>:/workspace <span class="at">-w</span> /workspace jrottenberg/ffmpeg:latest <span class="dt">\</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">-i</span> input.mp4 <span class="dt">\</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">-filter_complex</span> <span class="st">&quot;[0:v]scale=w=1280:h=720[v720]&quot;</span> <span class="dt">\</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">-map</span> <span class="st">&quot;[v720]&quot;</span> <span class="at">-c:v:0</span> libx264 <span class="at">-b:v:0</span> 2800k <span class="dt">\</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">-map</span> 0:a <span class="at">-c:a</span> aac <span class="at">-b:a</span> 128k <span class="dt">\</span></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">-f</span> hls <span class="dt">\</span></span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">-hls_time</span> 6 <span class="dt">\</span></span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>  <span class="at">-hls_playlist_type</span> vod <span class="dt">\</span></span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>  <span class="at">-hls_segment_filename</span> <span class="st">&quot;segment_720p_%03d.ts&quot;</span> <span class="dt">\</span></span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>  playlist_720p.m3u8</span></code></pre></div>
+<hr />
+<h3 id="step-4-scale-the-pipeline-on-demand">Step 4: Scale the Pipeline
+on Demand</h3>
+<p>To handle unpredictable processing loads, integrate the Dockerized
+FFmpeg workflow into an automated architecture:</p>
+<ol type="1">
+<li><strong>Job Queue:</strong> Push transcoding jobs (metadata, source
+file URI, target resolutions) to a message queue such as RabbitMQ,
+Redis, or AWS SQS.</li>
+<li><strong>Worker Pool:</strong> Create background worker services
+(written in Python, Node.js, or Go) that listen to the queue.</li>
+<li><strong>Container Invocation:</strong> When a worker receives a job,
+it invokes the FFmpeg Docker container via the Docker Engine API or a
+system call, pulling the raw file from cloud storage (e.g., Amazon S3,
+Google Cloud Storage), processing the renditions, and pushing the output
+back.</li>
+<li><strong>Autoscaling:</strong> Use Kubernetes with KEDA (Kubernetes
+Event-driven Autoscaling) to automatically increase the number of worker
+pods when the message queue grows, and scale down to zero when
+idle.</li>
+</ol>
+<hr />
+<h3 id="step-5-enable-hardware-acceleration-optional">Step 5: Enable
+Hardware Acceleration (Optional)</h3>
+<p>Software encoding with <code>libx264</code> is CPU-intensive. If your
+host machine has an NVIDIA GPU, pass the GPU directly to the container
+to speed up scaling and encoding tasks:</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="ex">docker</span> run <span class="at">--rm</span> <span class="at">--gpus</span> all <span class="at">-v</span> <span class="va">$(</span><span class="bu">pwd</span><span class="va">)</span>:/workspace <span class="at">-w</span> /workspace jrottenberg/ffmpeg:latest <span class="dt">\</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">-hwaccel</span> cuda <span class="dt">\</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">-i</span> input.mp4 <span class="dt">\</span></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">-vf</span> <span class="st">&quot;scale_cuda=1280:720&quot;</span> <span class="dt">\</span></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">-c:v</span> h264_nvenc <span class="at">-preset</span> p4 <span class="dt">\</span></span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>  output_720p.mp4</span></code></pre></div>
+<p>This reduces CPU utilization and significantly shortens processing
+time for on-demand pipelines.</p></article>
+        <div id="comments-container"></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

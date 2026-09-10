@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Create Ken Burns Effect in FFmpeg with Zoompan - ffmpeg</title>
+    <meta name="description" content="This guide demonstrates how to apply the Ken Burns effect to a static image using FFmpeg's built-in zoompan video filter. You will learn the core syntax of the filter, understand how to manipulate zoom and pan coordinates over time, and see ready-to-use">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/how-to-create-ken-burns-effect-in-ffmpeg-with-zoompan">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Create Ken Burns Effect in FFmpeg with Zoompan - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/how-to-create-ken-burns-effect-in-ffmpeg-with-zoompan" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This guide demonstrates how to apply the Ken Burns effect to a static image using FFmpeg's built-in zoompan video filter. You will learn the core syntax of the filter, understand how to manipulate zoom and pan coordinates over time, and see ready-to-use" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="how-to-create-ken-burns-effect-in-ffmpeg-with-zoompan">How to
+Create Ken Burns Effect in FFmpeg with Zoompan</h1>
+<p>This guide demonstrates how to apply the Ken Burns effect to a static
+image using FFmpeg's built-in <code>zoompan</code> video filter. You
+will learn the core syntax of the filter, understand how to manipulate
+zoom and pan coordinates over time, and see ready-to-use command
+examples for zooming in, zooming out, and panning across an image
+without jitter.</p>
+<hr />
+<h3 id="understanding-the-zoompan-filter-syntax">Understanding the
+<code>zoompan</code> Filter Syntax</h3>
+<p>The <code>zoompan</code> filter works by cropping a moving window
+over an input image and scaling it to an output resolution
+frame-by-frame.</p>
+<p>The most common parameters include:</p>
+<ul>
+<li><strong><code>z</code></strong>: The zoom factor expression for each
+frame. Default is <code>1</code>.</li>
+<li><strong><code>x</code></strong>: The horizontal position of the crop
+window top-left corner.</li>
+<li><strong><code>y</code></strong>: The vertical position of the crop
+window top-left corner.</li>
+<li><strong><code>d</code></strong>: The duration of the effect
+expressed in frames.</li>
+<li><strong><code>s</code></strong>: The output video resolution (e.g.,
+<code>1920x1080</code>).</li>
+<li><strong><code>fps</code></strong>: The output frame rate (default is
+25).</li>
+</ul>
+<p>Useful internal variables used inside expressions:</p>
+<ul>
+<li><code>in_w</code> or <code>iw</code>: Input image width.</li>
+<li><code>in_h</code> or <code>ih</code>: Input image height.</li>
+<li><code>zoom</code> or <code>z</code>: Current zoom level.</li>
+<li><code>on</code>: Output frame number (starts at 0).</li>
+</ul>
+<hr />
+<h3 id="1-zoom-in-to-the-center">1. Zoom In to the Center</h3>
+<p>To zoom into the center of an image over 5 seconds at 25 frames per
+second (125 frames total):</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-loop</span> 1 <span class="at">-i</span> input.jpg <span class="at">-vf</span> <span class="st">&quot;zoompan=z=&#39;min(zoom+0.0015,1.5)&#39;:x=&#39;iw/2-(iw/zoom/2)&#39;:y=&#39;ih/2-(ih/zoom/2)&#39;:d=125:s=1920x1080:fps=25&quot;</span> <span class="at">-c:v</span> libx264 <span class="at">-t</span> 5 <span class="at">-pix_fmt</span> yuv420p output_zoomin.mp4</span></code></pre></div>
+<ul>
+<li><code>z='min(zoom+0.0015,1.5)'</code>: Increases zoom by
+<code>0.0015</code> each frame until it reaches a maximum scale of
+<code>1.5x</code>.</li>
+<li><code>x='iw/2-(iw/zoom/2)'</code> and
+<code>y='ih/2-(ih/zoom/2)'</code>: Centers the crop window horizontally
+and vertically as the zoom level changes.</li>
+<li><code>-t 5</code>: Limits the output duration to 5 seconds to match
+<code>d=125</code> at <code>fps=25</code>.</li>
+</ul>
+<hr />
+<h3 id="2-zoom-out-from-the-center">2. Zoom Out from the Center</h3>
+<p>To start zoomed in at <code>1.5x</code> and smoothly zoom out to
+normal scale:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-loop</span> 1 <span class="at">-i</span> input.jpg <span class="at">-vf</span> <span class="st">&quot;zoompan=z=&#39;if(lte(on,1),1.5,max(1.0,zoom-0.0015))&#39;:x=&#39;iw/2-(iw/zoom/2)&#39;:y=&#39;ih/2-(ih/zoom/2)&#39;:d=125:s=1920x1080:fps=25&quot;</span> <span class="at">-c:v</span> libx264 <span class="at">-t</span> 5 <span class="at">-pix_fmt</span> yuv420p output_zoomout.mp4</span></code></pre></div>
+<ul>
+<li><code>z='if(lte(on,1),1.5,...)'</code>: Sets the initial zoom on the
+first frame to <code>1.5</code>.</li>
+<li><code>max(1.0,zoom-0.0015)</code>: Decreases the zoom factor per
+frame until it returns to <code>1.0</code>.</li>
+</ul>
+<hr />
+<h3 id="3-pan-across-an-image-left-to-right">3. Pan Across an Image
+(Left to Right)</h3>
+<p>To pan horizontally across an image while holding a steady zoom:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-loop</span> 1 <span class="at">-i</span> input.jpg <span class="at">-vf</span> <span class="st">&quot;zoompan=z=1.3:x=&#39;if(lte(on,1),0,x+((iw-iw/zoom)/125))&#39;:y=&#39;ih/2-(ih/zoom/2)&#39;:d=125:s=1920x1080:fps=25&quot;</span> <span class="at">-c:v</span> libx264 <span class="at">-t</span> 5 <span class="at">-pix_fmt</span> yuv420p output_pan.mp4</span></code></pre></div>
+<ul>
+<li><code>z=1.3</code>: Keeps a constant zoom of <code>1.3x</code> to
+provide headroom for panning.</li>
+<li><code>x='if(lte(on,1),0,x+((iw-iw/zoom)/125))'</code>: Starts at
+coordinate <code>0</code> and moves the crop window rightward by an
+equal increment across 125 frames.</li>
+</ul>
+<hr />
+<h3 id="avoiding-jitter-and-choppiness">Avoiding Jitter and
+Choppiness</h3>
+<p>The <code>zoompan</code> filter internally calculates crop bounds
+using integer pixels, which can cause micro-stuttering or jitter during
+slow movements. To ensure completely smooth animation:</p>
+<ol type="1">
+<li><strong>Upscale before applying <code>zoompan</code></strong>: Scale
+the input image to a higher resolution (e.g., 4K or 8K) prior to
+zooming, then downscale to your target resolution.</li>
+</ol>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-loop</span> 1 <span class="at">-i</span> input.jpg <span class="at">-vf</span> <span class="st">&quot;scale=8000:-1,zoompan=z=&#39;min(zoom+0.0015,1.5)&#39;:x=&#39;iw/2-(iw/zoom/2)&#39;:y=&#39;ih/2-(ih/zoom/2)&#39;:d=125:s=1920x1080:fps=25&quot;</span> <span class="at">-c:v</span> libx264 <span class="at">-t</span> 5 <span class="at">-pix_fmt</span> yuv420p smooth_output.mp4</span></code></pre></div>
+<ol start="2" type="1">
+<li><strong>Pixel Format</strong>: Always specify
+<code>-pix_fmt yuv420p</code> at the end of the command to ensure the
+final MP4 file is compatible with web browsers and standard media
+players.</li>
+</ol></article>
+        <div id="comments-container"></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

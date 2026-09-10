@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Handling AVERROR(EAGAIN) and AVERROR_EOF in FFmpeg - ffmpeg</title>
+    <meta name="description" content="In the FFmpeg C API, processing audio and video relies on an asynchronous send/receive model where AVERROR(EAGAIN) and AVERROREOF are operational flow-control signals rather than critical errors. This guide explains the exact meaning of these return code">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/handling-averror-eagain-and-averror-eof-in-ffmpeg">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Handling AVERROR(EAGAIN) and AVERROR_EOF in FFmpeg - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/handling-averror-eagain-and-averror-eof-in-ffmpeg" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="In the FFmpeg C API, processing audio and video relies on an asynchronous send/receive model where AVERROR(EAGAIN) and AVERROREOF are operational flow-control signals rather than critical errors. This guide explains the exact meaning of these return code" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="handling-averroreagain-and-averror_eof-in-ffmpeg">Handling
+AVERROR(EAGAIN) and AVERROR_EOF in FFmpeg</h1>
+<p>In the FFmpeg C API, processing audio and video relies on an
+asynchronous send/receive model where <code>AVERROR(EAGAIN)</code> and
+<code>AVERROR_EOF</code> are operational flow-control signals rather
+than critical errors. This guide explains the exact meaning of these
+return codes within the <code>avcodec_send_*</code> and
+<code>avcodec_receive_*</code> functions, detailing how to properly
+structure your encoding or decoding loops to prevent deadlocks, data
+loss, and segmentation faults.</p>
+<h3 id="the-sendreceive-api-paradigm">The Send/Receive API Paradigm</h3>
+<p>FFmpeg decouples input and output using two primary function
+pairs:</p>
+<ul>
+<li><strong>Decoding:</strong> <code>avcodec_send_packet()</code>
+supplies compressed data, and <code>avcodec_receive_frame()</code>
+extracts uncompressed frames.</li>
+<li><strong>Encoding:</strong> <code>avcodec_send_frame()</code>
+supplies raw frames, and <code>avcodec_receive_packet()</code> extracts
+compressed packets.</li>
+</ul>
+<p>Because a single input packet can generate zero, one, or multiple
+frames (and vice versa for encoding), the API relies on
+<code>AVERROR(EAGAIN)</code> and <code>AVERROR_EOF</code> to manage
+internal buffers.</p>
+<hr />
+<h3 id="what-averroreagain-means">What <code>AVERROR(EAGAIN)</code>
+Means</h3>
+<p><code>AVERROR(EAGAIN)</code> indicates that the internal state cannot
+proceed with the requested operation until you perform the complementary
+action.</p>
+<ol type="1">
+<li><p><strong>When returned by <code>avcodec_receive_frame()</code> or
+<code>avcodec_receive_packet()</code>:</strong></p>
+<ul>
+<li><strong>Meaning:</strong> The internal buffer is empty. The codec
+requires more input before it can emit new output.</li>
+<li><strong>Action:</strong> Stop calling the <code>receive</code>
+function. Read the next packet or frame from your demuxer/source and
+provide it via the corresponding <code>send</code> function.</li>
+</ul></li>
+<li><p><strong>When returned by <code>avcodec_send_packet()</code> or
+<code>avcodec_send_frame()</code>:</strong></p>
+<ul>
+<li><strong>Meaning:</strong> The internal buffer is full. The codec
+cannot accept new input until the existing output is consumed.</li>
+<li><strong>Action:</strong> Stop sending data. Repeatedly call the
+<code>receive</code> function until it returns
+<code>AVERROR(EAGAIN)</code>, draining the internal buffer, then retry
+sending the original input.</li>
+</ul></li>
+</ol>
+<hr />
+<h3 id="what-averror_eof-means">What <code>AVERROR_EOF</code> Means</h3>
+<p><code>AVERROR_EOF</code> indicates that the stream has ended and the
+codec has been completely flushed.</p>
+<ol type="1">
+<li><p><strong>Flushing the Codec:</strong></p>
+<ul>
+<li>To signal the end of a stream, send a <code>NULL</code> pointer to
+<code>avcodec_send_packet()</code> or
+<code>avcodec_send_frame()</code>.</li>
+<li>Once the flush packet/frame is sent, calling the <code>send</code>
+function again will return <code>AVERROR_EOF</code>.</li>
+</ul></li>
+<li><p><strong>Draining Remaining Data:</strong></p>
+<ul>
+<li>After flushing, existing buffered frames or packets remain inside
+the codec.</li>
+<li>Continue calling <code>avcodec_receive_frame()</code> or
+<code>avcodec_receive_packet()</code> in a loop. It will return valid
+data until the codec is entirely empty.</li>
+<li>Once all buffered data is output, the <code>receive</code> function
+returns <code>AVERROR_EOF</code>. At this point, no further output will
+be produced, and the processing loop should terminate.</li>
+</ul></li>
+</ol>
+<hr />
+<h3 id="canonical-decoding-loop-example">Canonical Decoding Loop
+Example</h3>
+<p>The following pattern demonstrates how to handle both return codes
+correctly during decoding:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode c"><code class="sourceCode c"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="dt">int</span> ret <span class="op">=</span> <span class="dv">0</span><span class="op">;</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>AVPacket <span class="op">*</span>pkt <span class="op">=</span> av_packet_alloc<span class="op">();</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>AVFrame <span class="op">*</span>frame <span class="op">=</span> av_frame_alloc<span class="op">();</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="cf">while</span> <span class="op">(</span>av_read_frame<span class="op">(</span>fmt_ctx<span class="op">,</span> pkt<span class="op">)</span> <span class="op">&gt;=</span> <span class="dv">0</span><span class="op">)</span> <span class="op">{</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="op">(</span>pkt<span class="op">-&gt;</span>stream_index <span class="op">==</span> video_stream_idx<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>        <span class="co">// Send packet to decoder</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>        ret <span class="op">=</span> avcodec_send_packet<span class="op">(</span>codec_ctx<span class="op">,</span> pkt<span class="op">);</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="op">(</span>ret <span class="op">&lt;</span> <span class="dv">0</span><span class="op">)</span> <span class="op">{</span></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>            <span class="co">// AVERROR(EAGAIN) here means you must drain frames first,</span></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>            <span class="co">// though standard usage typically drains after every send.</span></span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>            fprintf<span class="op">(</span>stderr<span class="op">,</span> <span class="st">&quot;Error sending packet: </span><span class="sc">%d\n</span><span class="st">&quot;</span><span class="op">,</span> ret<span class="op">);</span></span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>            <span class="cf">break</span><span class="op">;</span></span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a>        <span class="co">// Receive all available frames</span></span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a>        <span class="cf">while</span> <span class="op">(</span>ret <span class="op">&gt;=</span> <span class="dv">0</span><span class="op">)</span> <span class="op">{</span></span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a>            ret <span class="op">=</span> avcodec_receive_frame<span class="op">(</span>codec_ctx<span class="op">,</span> frame<span class="op">);</span></span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a>            <span class="cf">if</span> <span class="op">(</span>ret <span class="op">==</span> AVERROR<span class="op">(</span>EAGAIN<span class="op">)</span> <span class="op">||</span> ret <span class="op">==</span> AVERROR_EOF<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a>                <span class="co">// EAGAIN: Need more packets to output another frame.</span></span>
+<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a>                <span class="co">// EOF: End of stream reached (if flushed).</span></span>
+<span id="cb1-22"><a href="#cb1-22" aria-hidden="true" tabindex="-1"></a>                <span class="cf">break</span><span class="op">;</span></span>
+<span id="cb1-23"><a href="#cb1-23" aria-hidden="true" tabindex="-1"></a>            <span class="op">}</span> <span class="cf">else</span> <span class="cf">if</span> <span class="op">(</span>ret <span class="op">&lt;</span> <span class="dv">0</span><span class="op">)</span> <span class="op">{</span></span>
+<span id="cb1-24"><a href="#cb1-24" aria-hidden="true" tabindex="-1"></a>                <span class="co">// Actual fatal error</span></span>
+<span id="cb1-25"><a href="#cb1-25" aria-hidden="true" tabindex="-1"></a>                fprintf<span class="op">(</span>stderr<span class="op">,</span> <span class="st">&quot;Error receiving frame: </span><span class="sc">%d\n</span><span class="st">&quot;</span><span class="op">,</span> ret<span class="op">);</span></span>
+<span id="cb1-26"><a href="#cb1-26" aria-hidden="true" tabindex="-1"></a>                <span class="cf">goto</span> end<span class="op">;</span></span>
+<span id="cb1-27"><a href="#cb1-27" aria-hidden="true" tabindex="-1"></a>            <span class="op">}</span></span>
+<span id="cb1-28"><a href="#cb1-28" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-29"><a href="#cb1-29" aria-hidden="true" tabindex="-1"></a>            <span class="co">// Successfully decoded a frame</span></span>
+<span id="cb1-30"><a href="#cb1-30" aria-hidden="true" tabindex="-1"></a>            process_frame<span class="op">(</span>frame<span class="op">);</span></span>
+<span id="cb1-31"><a href="#cb1-31" aria-hidden="true" tabindex="-1"></a>            av_frame_unref<span class="op">(</span>frame<span class="op">);</span></span>
+<span id="cb1-32"><a href="#cb1-32" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
+<span id="cb1-33"><a href="#cb1-33" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb1-34"><a href="#cb1-34" aria-hidden="true" tabindex="-1"></a>    av_packet_unref<span class="op">(</span>pkt<span class="op">);</span></span>
+<span id="cb1-35"><a href="#cb1-35" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb1-36"><a href="#cb1-36" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-37"><a href="#cb1-37" aria-hidden="true" tabindex="-1"></a><span class="co">// Flush decoder: send NULL to signal EOF</span></span>
+<span id="cb1-38"><a href="#cb1-38" aria-hidden="true" tabindex="-1"></a>ret <span class="op">=</span> avcodec_send_packet<span class="op">(</span>codec_ctx<span class="op">,</span> NULL<span class="op">);</span></span>
+<span id="cb1-39"><a href="#cb1-39" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-40"><a href="#cb1-40" aria-hidden="true" tabindex="-1"></a><span class="co">// Drain remaining cached frames</span></span>
+<span id="cb1-41"><a href="#cb1-41" aria-hidden="true" tabindex="-1"></a><span class="cf">while</span> <span class="op">(</span>ret <span class="op">&gt;=</span> <span class="dv">0</span><span class="op">)</span> <span class="op">{</span></span>
+<span id="cb1-42"><a href="#cb1-42" aria-hidden="true" tabindex="-1"></a>    ret <span class="op">=</span> avcodec_receive_frame<span class="op">(</span>codec_ctx<span class="op">,</span> frame<span class="op">);</span></span>
+<span id="cb1-43"><a href="#cb1-43" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="op">(</span>ret <span class="op">==</span> AVERROR_EOF<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb1-44"><a href="#cb1-44" aria-hidden="true" tabindex="-1"></a>        <span class="co">// Codec fully drained</span></span>
+<span id="cb1-45"><a href="#cb1-45" aria-hidden="true" tabindex="-1"></a>        <span class="cf">break</span><span class="op">;</span></span>
+<span id="cb1-46"><a href="#cb1-46" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span> <span class="cf">else</span> <span class="cf">if</span> <span class="op">(</span>ret <span class="op">==</span> AVERROR<span class="op">(</span>EAGAIN<span class="op">))</span> <span class="op">{</span></span>
+<span id="cb1-47"><a href="#cb1-47" aria-hidden="true" tabindex="-1"></a>        <span class="co">// Should not occur after a flush, but break if it does</span></span>
+<span id="cb1-48"><a href="#cb1-48" aria-hidden="true" tabindex="-1"></a>        <span class="cf">break</span><span class="op">;</span></span>
+<span id="cb1-49"><a href="#cb1-49" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span> <span class="cf">else</span> <span class="cf">if</span> <span class="op">(</span>ret <span class="op">&lt;</span> <span class="dv">0</span><span class="op">)</span> <span class="op">{</span></span>
+<span id="cb1-50"><a href="#cb1-50" aria-hidden="true" tabindex="-1"></a>        fprintf<span class="op">(</span>stderr<span class="op">,</span> <span class="st">&quot;Error draining frame: </span><span class="sc">%d\n</span><span class="st">&quot;</span><span class="op">,</span> ret<span class="op">);</span></span>
+<span id="cb1-51"><a href="#cb1-51" aria-hidden="true" tabindex="-1"></a>        <span class="cf">break</span><span class="op">;</span></span>
+<span id="cb1-52"><a href="#cb1-52" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb1-53"><a href="#cb1-53" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-54"><a href="#cb1-54" aria-hidden="true" tabindex="-1"></a>    process_frame<span class="op">(</span>frame<span class="op">);</span></span>
+<span id="cb1-55"><a href="#cb1-55" aria-hidden="true" tabindex="-1"></a>    av_frame_unref<span class="op">(</span>frame<span class="op">);</span></span>
+<span id="cb1-56"><a href="#cb1-56" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb1-57"><a href="#cb1-57" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-58"><a href="#cb1-58" aria-hidden="true" tabindex="-1"></a>end<span class="op">:</span></span>
+<span id="cb1-59"><a href="#cb1-59" aria-hidden="true" tabindex="-1"></a>av_packet_free<span class="op">(&amp;</span>pkt<span class="op">);</span></span>
+<span id="cb1-60"><a href="#cb1-60" aria-hidden="true" tabindex="-1"></a>av_frame_free<span class="op">(&amp;</span>frame<span class="op">);</span></span></code></pre></div>
+<h3 id="key-rules-to-remember">Key Rules to Remember</h3>
+<ul>
+<li><strong>Never treat <code>AVERROR(EAGAIN)</code> as fatal:</strong>
+Treat it as a prompt to switch between reading and writing.</li>
+<li><strong>Do not discard unconsumed inputs:</strong> If
+<code>avcodec_send_*</code> returns <code>AVERROR(EAGAIN)</code>, retain
+the current packet or frame, drain the output with
+<code>avcodec_receive_*</code>, and resubmit the same input.</li>
+<li><strong>Always drain after sending <code>NULL</code>:</strong>
+Codecs often hold several delayed frames for B-frame reordering;
+skipping the final <code>AVERROR_EOF</code> drain loop will truncate the
+end of the media stream.</li>
+</ul></article>
+        <div id="comments-container"></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

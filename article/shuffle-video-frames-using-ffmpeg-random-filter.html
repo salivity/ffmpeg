@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shuffle Video Frames Using FFmpeg Random Filter - ffmpeg</title>
+    <meta name="description" content="This guide explains how to use FFmpeg's built-in random filter to shuffle the order of video frames. You will learn the core filter syntax, how the internal frame buffer dictates the randomness of the output, and practical command-line examples to create">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/shuffle-video-frames-using-ffmpeg-random-filter">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Shuffle Video Frames Using FFmpeg Random Filter - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/shuffle-video-frames-using-ffmpeg-random-filter" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This guide explains how to use FFmpeg's built-in random filter to shuffle the order of video frames. You will learn the core filter syntax, how the internal frame buffer dictates the randomness of the output, and practical command-line examples to create" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="shuffle-video-frames-using-ffmpeg-random-filter">Shuffle Video
+Frames Using FFmpeg Random Filter</h1>
+<p>This guide explains how to use FFmpeg's built-in <code>random</code>
+filter to shuffle the order of video frames. You will learn the core
+filter syntax, how the internal frame buffer dictates the randomness of
+the output, and practical command-line examples to create stutter,
+glitch, or randomized video effects.</p>
+<h2 id="understanding-the-random-filter">Understanding the
+<code>random</code> Filter</h2>
+<p>The <code>random</code> filter in FFmpeg stores incoming video frames
+in an internal buffer and flushes them out in a pseudorandom sequence.
+Because it relies on a local buffer rather than loading the entire file
+into memory, it rearranges frames within a localized window rather than
+globally shuffling the entire video from start to finish.</p>
+<h2 id="filter-parameters">Filter Parameters</h2>
+<p>The <code>random</code> filter accepts two primary parameters:</p>
+<ul>
+<li><strong><code>frames</code> (or <code>f</code>)</strong>: Specifies
+the size of the internal frame cache. The default value is 30. A larger
+value creates a wider window of time from which frames can be shuffled,
+resulting in more extreme displacement.</li>
+<li><strong><code>seed</code> (or <code>s</code>)</strong>: Sets the
+random seed for the generator. Setting a specific integer produces
+deterministic, reproducible results. If set to <code>-1</code> (the
+default), FFmpeg generates a random seed automatically.</li>
+</ul>
+<h2 id="basic-command-syntax">Basic Command Syntax</h2>
+<p>To shuffle frames using the default settings (a 30-frame window),
+apply the filter using the <code>-vf</code> (video filter) flag:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;random&quot;</span> <span class="at">-an</span> output.mp4</span></code></pre></div>
+<p><em>Note: The <code>-an</code> flag removes the audio stream. The
+<code>random</code> filter only alters video frames, meaning the
+original audio will quickly fall completely out of sync with the
+randomized visuals.</em></p>
+<h2 id="customizing-buffer-size-and-seed">Customizing Buffer Size and
+Seed</h2>
+<p>To create a more pronounced jitter effect, increase the
+<code>frames</code> buffer size.</p>
+<h3 id="example-shuffling-over-a-100-frame-window">Example: Shuffling
+Over a 100-Frame Window</h3>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;random=frames=100&quot;</span> <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<p>In this command:</p>
+<ul>
+<li><code>frames=100</code> expands the internal cache to 100 frames.
+FFmpeg will pull frames randomly from this 100-frame window before
+accepting new ones.</li>
+</ul>
+<h3 id="example-setting-a-fixed-seed-for-reproducibility">Example:
+Setting a Fixed Seed for Reproducibility</h3>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;random=frames=60:seed=12345&quot;</span> <span class="at">-an</span> output.mp4</span></code></pre></div>
+<p>Using <code>seed=12345</code> ensures that running the command
+multiple times produces the exact same frame sequence.</p>
+<h2 id="memory-and-performance-considerations">Memory and Performance
+Considerations</h2>
+<ul>
+<li><strong>RAM Usage:</strong> Setting the <code>frames</code>
+parameter to very high values consumes substantial system memory because
+FFmpeg must store every uncompressed frame of the buffer in RAM. For
+high-resolution files (such as 4K), keep the buffer value moderate to
+avoid out-of-memory errors.</li>
+<li><strong>Audio Handling:</strong> Because there is no native
+<code>arandom</code> filter to mirror frame-level video shuffling for
+audio, you must choose whether to drop the audio (<code>-an</code>),
+preserve the original timing (<code>-c:a copy</code>), or replace the
+soundtrack during post-processing.</li>
+</ul></article>
+        <div id="comments-container"></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

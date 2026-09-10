@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FFmpeg fspp Filter: Reduce Compression Blockiness - ffmpeg</title>
+    <meta name="description" content="This article provides a direct guide on how to eliminate macroblocking, banding, and ringing artifacts in low-bitrate videos using the fspp (Fast Simple Post Processing) filter in FFmpeg. You will learn the filter's core syntax, key parameter configurati">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/ffmpeg-fspp-filter-reduce-compression-blockiness">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="FFmpeg fspp Filter: Reduce Compression Blockiness - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/ffmpeg-fspp-filter-reduce-compression-blockiness" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article provides a direct guide on how to eliminate macroblocking, banding, and ringing artifacts in low-bitrate videos using the fspp (Fast Simple Post Processing) filter in FFmpeg. You will learn the filter's core syntax, key parameter configurati" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="ffmpeg-fspp-filter-reduce-compression-blockiness">FFmpeg fspp
+Filter: Reduce Compression Blockiness</h1>
+<p>This article provides a direct guide on how to eliminate
+macroblocking, banding, and ringing artifacts in low-bitrate videos
+using the <code>fspp</code> (Fast Simple Post Processing) filter in
+FFmpeg. You will learn the filter's core syntax, key parameter
+configurations, and practical command-line examples to clean up
+compressed footage efficiently.</p>
+<hr />
+<h3 id="what-is-the-fspp-filter">What is the <code>fspp</code>
+Filter?</h3>
+<p>The <code>fspp</code> filter is a faster variant of the
+<code>spp</code> (Simple Post Processing) filter, originally ported from
+MPlayer. It works by applying an 8x8 Discrete Cosine Transform (DCT)
+across shifting blocks, adjusting frequency coefficients to smooth out
+blocking boundaries while retaining genuine edge details. It is
+particularly effective for legacy MPEG-4, H.264, or heavily compressed
+web video.</p>
+<h3 id="core-parameters">Core Parameters</h3>
+<p>The filter accepts several options to control processing depth and
+strength:</p>
+<ul>
+<li><strong><code>quality</code></strong> (default: <code>4</code>):
+Sets the quality level. Accepted values are <code>4</code> or
+<code>5</code>. Level <code>4</code> processes fewer block shifts for
+faster execution, while level <code>5</code> samples more positions for
+superior artifact suppression at a slight performance cost.</li>
+<li><strong><code>qp</code></strong> (default: <code>0</code>): The
+quantization parameter. By default (<code>0</code>), <code>fspp</code>
+attempts to read the QP directly from the input video bitstream. If your
+source video has no accessible QP data (common with modern MP4/MKV
+containers), you must manually set a value between <code>1</code> and
+<code>63</code>. Higher values produce stronger smoothing.</li>
+<li><strong><code>strength</code></strong> (default: <code>0</code>):
+Fine-tunes the deblocking intensity. Accepted range is <code>-15</code>
+to <code>32</code>. Positive values increase blurriness to wipe out
+strong blocks; negative values retain more sharpness.</li>
+<li><strong><code>use_bframe</code></strong> (default: <code>0</code>):
+Set to <code>1</code> to force the filter to use the QP of the previous
+non-B-frame for B-frames, preventing over-smoothing on highly compressed
+frames.</li>
+</ul>
+<hr />
+<h3 id="practical-usage-examples">Practical Usage Examples</h3>
+<h4 id="1-basic-automatic-deblocking">1. Basic Automatic Deblocking</h4>
+<p>If your video format preserves original macroblock QP information
+(such as raw MPEG-2 or certain AVI files), run the filter with default
+settings:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;fspp&quot;</span> <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<h4 id="2-manual-strength-for-stripped-metadata">2. Manual Strength for
+Stripped Metadata</h4>
+<p>Most modern H.264/H.265 files do not pass QP tables to the filter
+graph. To force deblocking on these files, specify the <code>qp</code>
+manually. A value between <code>12</code> and <code>20</code> typically
+removes compression blocks without destroying fine textures:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;fspp=quality=5:qp=16&quot;</span> <span class="at">-c:v</span> libx264 <span class="at">-crf</span> 18 <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<h4 id="3-aggressive-filtering-for-severe-compression">3. Aggressive
+Filtering for Severe Compression</h4>
+<p>For very low-bitrate video exhibiting heavy pixelation, increase both
+<code>qp</code> and <code>strength</code>:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;fspp=quality=5:qp=24:strength=8&quot;</span> <span class="at">-c:v</span> libx264 <span class="at">-crf</span> 18 <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<h4 id="4-combining-with-sharpening">4. Combining with Sharpening</h4>
+<p>Because strong deblocking can soften the entire image, pair
+<code>fspp</code> with an <code>unsharp</code> filter to recover edge
+definition:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;fspp=quality=5:qp=15,unsharp=5:5:0.8:5:5:0.0&quot;</span> <span class="at">-c:v</span> libx264 <span class="at">-crf</span> 18 <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<h3 id="recommendation">Recommendation</h3>
+<p>Begin testing with <code>quality=5:qp=12</code> on a short segment of
+your video (using <code>-ss</code> and <code>-t</code>). Gradually
+increase the <code>qp</code> value in increments of 2 or 3 until block
+edges disappear without creating an overly smoothed, plastic look.</p></article>
+        <div id="comments-container"></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

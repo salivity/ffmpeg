@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Record ALSA Audio with FFmpeg on Raspberry Pi - ffmpeg</title>
+    <meta name="description" content="This guide explains how to capture audio from an ALSA (Advanced Linux Sound Architecture) input device on a Raspberry Pi using FFmpeg. You will learn how to identify your connected audio hardware, construct the proper FFmpeg command using ALSA input flag">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/record-alsa-audio-with-ffmpeg-on-raspberry-pi">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Record ALSA Audio with FFmpeg on Raspberry Pi - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/record-alsa-audio-with-ffmpeg-on-raspberry-pi" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This guide explains how to capture audio from an ALSA (Advanced Linux Sound Architecture) input device on a Raspberry Pi using FFmpeg. You will learn how to identify your connected audio hardware, construct the proper FFmpeg command using ALSA input flag" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="record-alsa-audio-with-ffmpeg-on-raspberry-pi">Record ALSA Audio
+with FFmpeg on Raspberry Pi</h1>
+<p>This guide explains how to capture audio from an ALSA (Advanced Linux
+Sound Architecture) input device on a Raspberry Pi using FFmpeg. You
+will learn how to identify your connected audio hardware, construct the
+proper FFmpeg command using ALSA input flags, and configure parameters
+such as sample rate, channel count, and output formats.</p>
+<h3 id="1-identify-your-alsa-audio-device">1. Identify Your ALSA Audio
+Device</h3>
+<p>Before capturing audio, you must find the card and device number
+assigned to your microphone or sound card by ALSA. Connect your audio
+interface to the Raspberry Pi and run:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">arecord</span> <span class="at">-l</span></span></code></pre></div>
+<p>Look for your device in the output list. It will appear similar to
+this:</p>
+<pre class="text"><code>card 1: Device [USB Audio Device], device 0: USB Audio [USB Audio]</code></pre>
+<p>Note the <strong>card</strong> and <strong>device</strong> numbers.
+In this example, the card is <code>1</code> and the device is
+<code>0</code>. ALSA references this hardware endpoint as
+<code>hw:1,0</code> or <code>plughw:1,0</code>. Using
+<code>plughw</code> is recommended because it automatically handles
+sample rate and format conversions if the hardware does not natively
+support your requested settings.</p>
+<h3 id="2-basic-audio-recording-command">2. Basic Audio Recording
+Command</h3>
+<p>To capture raw audio using default settings to a <code>.wav</code>
+file, specify the <code>-f alsa</code> format flag and your device
+string with the <code>-i</code> flag:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-f</span> alsa <span class="at">-i</span> plughw:1,0 output.wav</span></code></pre></div>
+<p>Press <code>Ctrl + C</code> to stop recording.</p>
+<h3 id="3-configure-channels-sample-rate-and-codecs">3. Configure
+Channels, Sample Rate, and Codecs</h3>
+<p>Most recording scenarios require specific audio properties such as
+mono/stereo channels, standard sample rates, or compressed formats like
+MP3.</p>
+<ul>
+<li><strong>Channels (<code>-ac</code>):</strong> Set to <code>1</code>
+for mono or <code>2</code> for stereo.</li>
+<li><strong>Sample Rate (<code>-ar</code>):</strong> Common values are
+<code>44100</code> (CD quality) or <code>48000</code> (standard digital
+audio).</li>
+<li><strong>Audio Codec (<code>-c:a</code>):</strong> Specify an encoder
+such as <code>libmp3lame</code> or <code>aac</code>.</li>
+</ul>
+<p>To record a 44.1 kHz mono stream encoded directly to an MP3 file,
+use:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-f</span> alsa <span class="at">-ac</span> 1 <span class="at">-ar</span> 44100 <span class="at">-i</span> plughw:1,0 <span class="at">-c:a</span> libmp3lame <span class="at">-b:a</span> 128k output.mp3</span></code></pre></div>
+<h3 id="4-limit-recording-duration">4. Limit Recording Duration</h3>
+<p>To automatically stop recording after a designated amount of time
+instead of stopping it manually, include the <code>-t</code> parameter
+followed by the duration in seconds (or <code>HH:MM:SS</code>
+format).</p>
+<p>To record for 30 seconds:</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-f</span> alsa <span class="at">-i</span> plughw:1,0 <span class="at">-t</span> 30 output.wav</span></code></pre></div>
+<h3 id="5-adjusting-input-volume">5. Adjusting Input Volume</h3>
+<p>If the recording is too quiet or clipping, adjust the hardware gain
+using the ALSA mixer utility:</p>
+<div class="sourceCode" id="cb6"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="ex">alsamixer</span></span></code></pre></div>
+<p>Press <code>F6</code> to select your sound card, use <code>F4</code>
+to navigate to the capture controls, and adjust the input levels with
+the arrow keys before running your FFmpeg command.</p></article>
+        <div id="comments-container"></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

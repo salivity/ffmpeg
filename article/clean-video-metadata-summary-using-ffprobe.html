@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clean Video Metadata Summary Using FFprobe - ffmpeg</title>
+    <meta name="description" content="This article explains how to extract a clean, concise summary of video metadata using FFprobe without sifting through overwhelming console output. By utilizing targeted flags to suppress debug logs, filter specific stream properties, and format the outpu">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/clean-video-metadata-summary-using-ffprobe">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Clean Video Metadata Summary Using FFprobe - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/clean-video-metadata-summary-using-ffprobe" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article explains how to extract a clean, concise summary of video metadata using FFprobe without sifting through overwhelming console output. By utilizing targeted flags to suppress debug logs, filter specific stream properties, and format the outpu" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="clean-video-metadata-summary-using-ffprobe">Clean Video Metadata
+Summary Using FFprobe</h1>
+<p>This article explains how to extract a clean, concise summary of
+video metadata using FFprobe without sifting through overwhelming
+console output. By utilizing targeted flags to suppress debug logs,
+filter specific stream properties, and format the output into structured
+data like JSON or flat text, you can quickly retrieve essential video
+details such as codecs, resolution, frame rate, and duration for
+personal inspection or automated workflows.</p>
+<h2 id="the-default-ffprobe-problem">The Default FFprobe Problem</h2>
+<p>Running standard commands like <code>ffprobe input.mp4</code> prints
+a wall of diagnostic text, library build configurations, and
+unstructured metadata. To clean this up, you must instruct FFprobe to
+hide logging information and display only the specific metadata
+containers you need.</p>
+<h2 id="the-foundation-hiding-unnecessary-output">The Foundation: Hiding
+Unnecessary Output</h2>
+<p>The primary flag to silence FFprobe's default banner and logging is
+<code>-v error</code>. Combining this with <code>-hide_banner</code>
+produces a silent command that prints only the data you explicitly
+request.</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffprobe</span> <span class="at">-v</span> error <span class="at">-hide_banner</span> input.mp4</span></code></pre></div>
+<h2 id="extracting-a-clean-summary-of-streams-and-format">Extracting a
+Clean Summary of Streams and Format</h2>
+<p>To get a structured overview of both the container format and the
+audio/video streams, use <code>-show_format</code> and
+<code>-show_streams</code>.</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffprobe</span> <span class="at">-v</span> error <span class="at">-show_format</span> <span class="at">-show_streams</span> input.mp4</span></code></pre></div>
+<p>This returns all properties categorized into blocks. While cleaner,
+it often contains dozens of lines of obscure stream tags.</p>
+<h2 id="selecting-specific-metadata-fields">Selecting Specific Metadata
+Fields</h2>
+<p>To create a truly minimal summary containing only key details (such
+as codec name, dimensions, frame rate, and duration), use the
+<code>-show_entries</code> flag:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffprobe</span> <span class="at">-v</span> error <span class="at">-select_streams</span> v:0 <span class="dt">\</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">-show_entries</span> stream=codec_name,width,height,r_frame_rate,duration,bit_rate <span class="dt">\</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">-of</span> default=noprint_wrappers=1 input.mp4</span></code></pre></div>
+<h3 id="explanation-of-arguments">Explanation of Arguments:</h3>
+<ul>
+<li><strong><code>-select_streams v:0</code></strong>: Targets only the
+first video stream, ignoring audio tracks, subtitle tracks, and
+attachments.</li>
+<li><strong><code>-show_entries stream=...</code></strong>: Whitelists
+only the specified keys.</li>
+<li><strong><code>-of default=noprint_wrappers=1</code></strong>: Uses
+the default output format but removes the opening <code>[STREAM]</code>
+and closing <code>[/STREAM]</code> labels.</li>
+</ul>
+<h2 id="choosing-the-best-output-format">Choosing the Best Output
+Format</h2>
+<p>FFprobe's <code>-of</code> (or <code>-print_format</code>) flag
+allows you to format the output to fit your needs:</p>
+<h3 id="1-key-value-pairs-human-readable">1. Key-Value Pairs
+(Human-Readable)</h3>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffprobe</span> <span class="at">-v</span> error <span class="at">-select_streams</span> v:0 <span class="dt">\</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">-show_entries</span> stream=codec_name,width,height,duration <span class="dt">\</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">-of</span> default=noprint_wrappers=1:nokey=0 input.mp4</span></code></pre></div>
+<p><strong>Output:</strong></p>
+<pre class="text"><code>codec_name=h264
+width=1920
+height=1080
+duration=120.040000</code></pre>
+<h3 id="2-json-ideal-for-scripts-and-automation">2. JSON (Ideal for
+Scripts and Automation)</h3>
+<div class="sourceCode" id="cb6"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffprobe</span> <span class="at">-v</span> error <span class="at">-select_streams</span> v:0 <span class="dt">\</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">-show_entries</span> stream=codec_name,width,height,duration <span class="dt">\</span></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">-of</span> json input.mp4</span></code></pre></div>
+<p><strong>Output:</strong></p>
+<div class="sourceCode" id="cb7"><pre
+class="sourceCode json"><code class="sourceCode json"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="fu">{</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&quot;programs&quot;</span><span class="fu">:</span> <span class="ot">[</span></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>    <span class="ot">]</span><span class="fu">,</span></span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&quot;streams&quot;</span><span class="fu">:</span> <span class="ot">[</span></span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>        <span class="fu">{</span></span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>            <span class="dt">&quot;codec_name&quot;</span><span class="fu">:</span> <span class="st">&quot;h264&quot;</span><span class="fu">,</span></span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>            <span class="dt">&quot;width&quot;</span><span class="fu">:</span> <span class="dv">1920</span><span class="fu">,</span></span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>            <span class="dt">&quot;height&quot;</span><span class="fu">:</span> <span class="dv">1080</span><span class="fu">,</span></span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a>            <span class="dt">&quot;duration&quot;</span><span class="fu">:</span> <span class="st">&quot;120.040000&quot;</span></span>
+<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a>        <span class="fu">}</span></span>
+<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a>    <span class="ot">]</span></span>
+<span id="cb7-13"><a href="#cb7-13" aria-hidden="true" tabindex="-1"></a><span class="fu">}</span></span></code></pre></div>
+<h3 id="3-flat-format-easy-parsing-in-bash">3. Flat Format (Easy Parsing
+in Bash)</h3>
+<div class="sourceCode" id="cb8"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffprobe</span> <span class="at">-v</span> error <span class="at">-select_streams</span> v:0 <span class="dt">\</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">-show_entries</span> stream=codec_name,width,height <span class="dt">\</span></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">-of</span> flat input.mp4</span></code></pre></div>
+<p><strong>Output:</strong></p>
+<pre class="text"><code>streams.stream.0.codec_name=&quot;h264&quot;
+streams.stream.0.width=1920
+streams.stream.0.height=1080</code></pre>
+<h3 id="4-csv--compact-format">4. CSV / Compact Format</h3>
+<div class="sourceCode" id="cb10"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffprobe</span> <span class="at">-v</span> error <span class="at">-select_streams</span> v:0 <span class="dt">\</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">-show_entries</span> stream=codec_name,width,height <span class="dt">\</span></span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">-of</span> csv=p=0 input.mp4</span></code></pre></div>
+<p><strong>Output:</strong></p>
+<pre class="text"><code>h264,1920,1080</code></pre>
+<h2 id="a-complete-production-one-liner">A Complete Production
+One-Liner</h2>
+<p>To retrieve an all-in-one summary of both video and audio streams
+along with container duration, use:</p>
+<div class="sourceCode" id="cb12"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffprobe</span> <span class="at">-v</span> error <span class="dt">\</span></span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">-show_entries</span> format=duration,size,bit_rate <span class="dt">\</span></span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">-show_entries</span> stream=codec_type,codec_name,width,height,r_frame_rate <span class="dt">\</span></span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">-of</span> json input.mp4</span></code></pre></div>
+<p>This command strips all extraneous debugging noise and produces a
+lightweight, parseable JSON payload containing every vital property of
+the media file.</p></article>
+        <div id="comments-container"></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

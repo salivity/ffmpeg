@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Export ffprobe Results to CSV - ffmpeg</title>
+    <meta name="description" content="Extracting multimedia metadata into a spreadsheet-friendly format is a common task when analyzing video and audio files in bulk. This guide demonstrates how to use ffprobe—the multimedia stream analyzer included with FFmpeg—to output stream, format,">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/how-to-export-ffprobe-results-to-csv">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Export ffprobe Results to CSV - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/how-to-export-ffprobe-results-to-csv" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Extracting multimedia metadata into a spreadsheet-friendly format is a common task when analyzing video and audio files in bulk. This guide demonstrates how to use ffprobe—the multimedia stream analyzer included with FFmpeg—to output stream, format," />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="how-to-export-ffprobe-results-to-csv">How to Export ffprobe
+Results to CSV</h1>
+<p>Extracting multimedia metadata into a spreadsheet-friendly format is
+a common task when analyzing video and audio files in bulk. This guide
+demonstrates how to use <code>ffprobe</code>—the multimedia stream
+analyzer included with FFmpeg—to output stream, format, packet, or frame
+data directly into CSV (Comma-Separated Values) format. By utilizing the
+built-in <code>-print_format csv</code> option and standard command-line
+redirection, you can generate clean CSV files ready for import into
+tools like Microsoft Excel, Google Sheets, or data analysis
+pipelines.</p>
+<hr />
+<h3 id="the-basic-command">The Basic Command</h3>
+<p>To export metadata to a CSV file, specify the CSV output format using
+the <code>-print_format csv</code> (or <code>-of csv</code>) argument
+and redirect standard output to a <code>.csv</code> file using the
+<code>&gt;</code> operator.</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffprobe</span> <span class="at">-v</span> error <span class="at">-show_format</span> <span class="at">-show_streams</span> <span class="at">-print_format</span> csv input.mp4 <span class="op">&gt;</span> output.csv</span></code></pre></div>
+<ul>
+<li><strong><code>-v error</code></strong>: Suppresses diagnostic and
+banner messages so only actual errors and output data appear in the
+final file.</li>
+<li><strong><code>-show_format</code></strong>: Gathers container-level
+metadata (such as overall duration, bit rate, and tags).</li>
+<li><strong><code>-show_streams</code></strong>: Gathers information for
+each audio, video, or subtitle stream.</li>
+<li><strong><code>-print_format csv</code></strong>: Tells
+<code>ffprobe</code> to format the selected output as CSV.</li>
+</ul>
+<hr />
+<h3 id="customizing-csv-output-options">Customizing CSV Output
+Options</h3>
+<p>The <code>csv</code> writer in <code>ffprobe</code> accepts
+sub-parameters to control formatting:</p>
+<ul>
+<li><strong><code>p=0</code> or <code>print_section=0</code></strong>:
+Disables the leading section identifier (such as <code>stream,</code> or
+<code>format,</code>) at the beginning of each row.</li>
+<li><strong><code>s=x</code> or <code>separator=x</code></strong>:
+Changes the delimiter character (default is <code>,</code>).</li>
+<li><strong><code>nk=1</code> or <code>nokey=1</code></strong>: Prints
+only the values without field keys (only applies when printing flat
+sections).</li>
+</ul>
+<p>To pass sub-parameters, use the syntax
+<code>-print_format csv=key=value:key=value</code>:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffprobe</span> <span class="at">-v</span> error <span class="at">-show_entries</span> stream=index,codec_name,width,height <span class="at">-print_format</span> csv=p=0 input.mp4 <span class="op">&gt;</span> streams.csv</span></code></pre></div>
+<hr />
+<h3 id="common-use-cases">Common Use Cases</h3>
+<h4 id="1-export-specific-stream-attributes">1. Export Specific Stream
+Attributes</h4>
+<p>To export only selected attributes (such as codec name, dimensions,
+and frame rate) instead of all data fields:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffprobe</span> <span class="at">-v</span> error <span class="at">-select_streams</span> v:0 <span class="dt">\</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">-show_entries</span> stream=codec_name,width,height,r_frame_rate,bit_rate <span class="dt">\</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">-print_format</span> csv=p=0 input.mp4 <span class="op">&gt;</span> video_info.csv</span></code></pre></div>
+<ul>
+<li><strong><code>-select_streams v:0</code></strong>: Limits analysis
+to the primary video stream.</li>
+</ul>
+<h4 id="2-export-frame-by-frame-data">2. Export Frame-by-Frame Data</h4>
+<p>To analyze every frame in a video file (useful for detecting
+keyframes or variable frame rates):</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffprobe</span> <span class="at">-v</span> error <span class="at">-select_streams</span> v:0 <span class="dt">\</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">-show_frames</span> <span class="dt">\</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">-show_entries</span> frame=pkt_pts_time,pict_type,key_frame <span class="dt">\</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">-print_format</span> csv=p=0 input.mp4 <span class="op">&gt;</span> frames.csv</span></code></pre></div>
+<h4 id="3-export-packet-information">3. Export Packet Information</h4>
+<p>To inspect individual packet presentation timestamps (PTS) and
+sizes:</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffprobe</span> <span class="at">-v</span> error <span class="at">-select_streams</span> v:0 <span class="dt">\</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">-show_packets</span> <span class="dt">\</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">-show_entries</span> packet=pts_time,dts_time,size,flags <span class="dt">\</span></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">-print_format</span> csv=p=0 input.mp4 <span class="op">&gt;</span> packets.csv</span></code></pre></div>
+<hr />
+<h3 id="batch-processing-multiple-files">Batch Processing Multiple
+Files</h3>
+<p>To export data from multiple video files into a single CSV using a
+Bash loop:</p>
+<div class="sourceCode" id="cb6"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="bu">echo</span> <span class="st">&quot;file,codec,width,height,duration&quot;</span> <span class="op">&gt;</span> batch_report.csv</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> f <span class="kw">in</span> <span class="pp">*</span>.mp4<span class="kw">;</span> <span class="cf">do</span></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>  <span class="ex">ffprobe</span> <span class="at">-v</span> error <span class="at">-select_streams</span> v:0 <span class="dt">\</span></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">-show_entries</span> stream=codec_name,width,height,duration <span class="dt">\</span></span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">-print_format</span> csv=p=0 <span class="st">&quot;</span><span class="va">$f</span><span class="st">&quot;</span> <span class="kw">|</span> <span class="fu">sed</span> <span class="st">&quot;s/^/</span><span class="va">$f</span><span class="st">,/&quot;</span> <span class="op">&gt;&gt;</span> batch_report.csv</span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a><span class="cf">done</span></span></code></pre></div>
+<p>This command loops through all <code>.mp4</code> files in the
+directory, appends the filename as the first column, and writes the
+results to <code>batch_report.csv</code>.</p></article>
+        <div id="comments-container"></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

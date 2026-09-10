@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Use the FFmpeg tiltsdr Audio Filter - ffmpeg</title>
+    <meta name="description" content="Spectral tilt alters the overall frequency balance of a sound recording across the audible spectrum, creating a warmer or brighter tonal character by applying a continuous gain slope. This guide explains how to use FFmpeg's tiltsdr filter to apply a spec">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/how-to-use-the-ffmpeg-tiltsdr-audio-filter">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Use the FFmpeg tiltsdr Audio Filter - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/how-to-use-the-ffmpeg-tiltsdr-audio-filter" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Spectral tilt alters the overall frequency balance of a sound recording across the audible spectrum, creating a warmer or brighter tonal character by applying a continuous gain slope. This guide explains how to use FFmpeg's tiltsdr filter to apply a spec" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="how-to-use-the-ffmpeg-tiltsdr-audio-filter">How to Use the
+FFmpeg tiltsdr Audio Filter</h1>
+<p>Spectral tilt alters the overall frequency balance of a sound
+recording across the audible spectrum, creating a warmer or brighter
+tonal character by applying a continuous gain slope. This guide explains
+how to use FFmpeg's <code>tiltsdr</code> filter to apply a spectral tilt
+to an audio file, covering command-line syntax, key configuration
+parameters, and practical usage examples.</p>
+<h2 id="basic-syntax">Basic Syntax</h2>
+<p>The <code>tiltsdr</code> filter is applied using FFmpeg’s audio
+filter graph flag (<code>-af</code>). The basic command structure
+is:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.wav <span class="at">-af</span> <span class="st">&quot;tiltsdr=option1=value1:option2=value2&quot;</span> output.wav</span></code></pre></div>
+<p>If no parameters are passed, the filter runs using its default
+parameters, applying standard linear spectral attenuation or boost
+depending on the input configuration.</p>
+<h2 id="key-filter-parameters">Key Filter Parameters</h2>
+<p>The <code>tiltsdr</code> filter accepts parameters that dictate how
+and where the spectral slope is applied across the frequency range:</p>
+<ul>
+<li><strong>tilt / t</strong>: Sets the slope of the spectral tilt in
+decibels (typically per octave or across the entire frequency range).
+Positive values tilt the spectrum upward (boosting high frequencies and
+reducing low frequencies), while negative values tilt downward (boosting
+lows and attenuating highs).</li>
+<li><strong>frequency / f</strong>: Defines the pivot or center
+frequency in Hertz (Hz). Frequencies above this point are boosted or cut
+in opposition to frequencies below this point. The default is typically
+set to the acoustic midrange, such as 1000 Hz.</li>
+<li><strong>gain / g</strong>: Sets an overall gain offset applied
+across the processed output to prevent clipping caused by excessive
+high-frequency or low-frequency boosts.</li>
+</ul>
+<h2 id="practical-examples">Practical Examples</h2>
+<h3 id="1-brightening-dark-audio">1. Brightening Dark Audio</h3>
+<p>To lift the high frequencies and simultaneously roll off heavy low
+end, apply a positive tilt value with a pivot around 1000 Hz:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp3 <span class="at">-af</span> <span class="st">&quot;tiltsdr=tilt=2.0:frequency=1000&quot;</span> <span class="at">-c:a</span> pcm_s16le output.wav</span></code></pre></div>
+<h3 id="2-creating-a-warmer-darker-sound">2. Creating a Warmer, Darker
+Sound</h3>
+<p>To dampen harsh high frequencies and add warmth across the lower
+registers, apply a negative tilt value:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.flac <span class="at">-af</span> <span class="st">&quot;tiltsdr=tilt=-1.5:frequency=1000&quot;</span> output.flac</span></code></pre></div>
+<h3 id="3-preventing-digital-clipping-with-gain-adjustment">3.
+Preventing Digital Clipping with Gain Adjustment</h3>
+<p>Significant upward tilts can push peak signals beyond 0 dBFS.
+Incorporate the gain parameter to compensate for high-end boost:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> voice.wav <span class="at">-af</span> <span class="st">&quot;tiltsdr=tilt=3.0:frequency=1500:gain=-3.0&quot;</span> voice_tilted.wav</span></code></pre></div>
+<h2 id="integrating-with-video-files">Integrating with Video Files</h2>
+<p>If you are modifying audio within a video container without
+re-encoding the video track, combine the filter with video stream
+copying:</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-c:v</span> copy <span class="at">-af</span> <span class="st">&quot;tiltsdr=tilt=1.0:frequency=1000&quot;</span> <span class="at">-c:a</span> aac <span class="at">-b:a</span> 192k output.mp4</span></code></pre></div>
+<p>This updates the spectral profile of the audio track while preserving
+the original video quality and saving processing time.</p></article>
+        <div id="comments-container"></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FFmpeg Bilateral Filter for Edge-Preserving Denoising - ffmpeg</title>
+    <meta name="description" content="This guide explains how to use FFmpeg's built-in bilateral filter to remove noise from video footage while keeping sharp edges intact. You will learn the core command syntax, how the primary filter parameters function, and practical command-line examples">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/ffmpeg-bilateral-filter-for-edge-preserving-denoising">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="FFmpeg Bilateral Filter for Edge-Preserving Denoising - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/ffmpeg-bilateral-filter-for-edge-preserving-denoising" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This guide explains how to use FFmpeg's built-in bilateral filter to remove noise from video footage while keeping sharp edges intact. You will learn the core command syntax, how the primary filter parameters function, and practical command-line examples" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="ffmpeg-bilateral-filter-for-edge-preserving-denoising">FFmpeg
+Bilateral Filter for Edge-Preserving Denoising</h1>
+<p>This guide explains how to use FFmpeg's built-in bilateral filter to
+remove noise from video footage while keeping sharp edges intact. You
+will learn the core command syntax, how the primary filter parameters
+function, and practical command-line examples for achieving clean,
+edge-preserved video output.</p>
+<h2 id="the-basic-command">The Basic Command</h2>
+<p>FFmpeg includes a dedicated <code>bilateral</code> video filter. To
+apply the default bilateral filter to a video, run:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;bilateral&quot;</span> <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<h2 id="understanding-bilateral-filter-parameters">Understanding
+Bilateral Filter Parameters</h2>
+<p>The bilateral filter smooths images while respecting edges by
+calculating weights based on both geometric closeness (spatial distance)
+and photometric similarity (color/luminance difference). You can tune
+this behavior using two main parameters:</p>
+<ul>
+<li><strong><code>sigmaS</code> (Spatial Sigma):</strong> Sets the
+spatial variance of the filter. It controls the neighborhood size around
+each pixel to consider for blurring. Higher values consider pixels
+farther away, producing a stronger spatial blur. The allowed range is
+<code>0.1</code> to <code>512.0</code> (default is
+<code>3.0</code>).</li>
+<li><strong><code>sigmaR</code> (Range Sigma):</strong> Sets the range
+variance. It determines how different a neighboring pixel's color or
+brightness can be while still being blurred together. Lower values
+strictly preserve edges by only blending pixels with nearly identical
+values. Higher values treat larger differences as smooth surfaces,
+potentially blurring across edges. The allowed range is <code>0.0</code>
+to <code>1.0</code> (default is <code>0.1</code>).</li>
+<li><strong><code>planes</code>:</strong> Specifies which video planes
+to process (Y, U, V, Alpha). By default, it processes all available
+planes (<code>7</code> for standard YUV video).</li>
+</ul>
+<h2 id="practical-examples">Practical Examples</h2>
+<h3 id="light-denoising-preserving-fine-detail">Light Denoising
+(Preserving Fine Detail)</h3>
+<p>For high-definition video with mild sensor noise where you want to
+keep textures and edges crisp, keep both <code>sigmaS</code> and
+<code>sigmaR</code> low:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;bilateral=sigmaS=2.0:sigmaR=0.05&quot;</span> <span class="at">-c:v</span> libx264 <span class="at">-crf</span> 18 <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<h3 id="moderate-denoising-general-purpose">Moderate Denoising (General
+Purpose)</h3>
+<p>For standard grain reduction without significant edge
+degradation:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;bilateral=sigmaS=5.0:sigmaR=0.1&quot;</span> <span class="at">-c:v</span> libx264 <span class="at">-crf</span> 18 <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<h3 id="heavy-denoising-high-noise-or-grain">Heavy Denoising (High Noise
+or Grain)</h3>
+<p>For footage shot in low light with noticeable noise, increase the
+spatial radius and allow slightly more range variance:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;bilateral=sigmaS=9.0:sigmaR=0.2&quot;</span> <span class="at">-c:v</span> libx264 <span class="at">-crf</span> 18 <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<h3 id="filtering-luma-only">Filtering Luma Only</h3>
+<p>Processing only the luminance (Y) plane can speed up processing and
+prevent color smearing. To target only the Y plane, set
+<code>planes=1</code>:</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;bilateral=sigmaS=4.0:sigmaR=0.08:planes=1&quot;</span> <span class="at">-c:v</span> libx264 <span class="at">-crf</span> 18 <span class="at">-c:a</span> copy output.mp4</span></code></pre></div></article>
+        <div id="comments-container"></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

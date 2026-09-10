@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Configure FFmpeg Mandelbrot Zoom and Iterations - ffmpeg</title>
+    <meta name="description" content="The mandelbrot video filter in FFmpeg serves as a source filter that dynamically renders the Mandelbrot fractal. This article demonstrates how to control the visual detail and the camera zoom animation of the fractal by configuring the maxiter, startscal">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/configure-ffmpeg-mandelbrot-zoom-and-iterations">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Configure FFmpeg Mandelbrot Zoom and Iterations - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/configure-ffmpeg-mandelbrot-zoom-and-iterations" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="The mandelbrot video filter in FFmpeg serves as a source filter that dynamically renders the Mandelbrot fractal. This article demonstrates how to control the visual detail and the camera zoom animation of the fractal by configuring the maxiter, startscal" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="configure-ffmpeg-mandelbrot-zoom-and-iterations">Configure
+FFmpeg Mandelbrot Zoom and Iterations</h1>
+<p>The <code>mandelbrot</code> video filter in FFmpeg serves as a source
+filter that dynamically renders the Mandelbrot fractal. This article
+demonstrates how to control the visual detail and the camera zoom
+animation of the fractal by configuring the <code>maxiter</code>,
+<code>start_scale</code>, and <code>end_scale</code> parameters.</p>
+<h3 id="key-parameters-for-zoom-and-iterations">Key Parameters for Zoom
+and Iterations</h3>
+<p>FFmpeg's <code>mandelbrot</code> filter provides specific options to
+handle detail depth and zoom range:</p>
+<ul>
+<li><strong><code>maxiter</code></strong>: Sets the maximum iteration
+count for each rendered point. Higher values produce greater edge detail
+and finer fractal boundaries at deep zoom levels, but require more
+processing time.</li>
+<li><strong><code>start_scale</code></strong>: Defines the initial scale
+(zoom level) at the start of the video. Lower values represent a closer
+zoom. The default is <code>3.0</code>.</li>
+<li><strong><code>end_scale</code></strong>: Defines the terminal scale
+(zoom level) at the end of the video timeline. Setting this
+significantly lower than <code>start_scale</code> produces a continuous
+zoom-in effect. The default is <code>0.3</code>.</li>
+</ul>
+<h3 id="basic-command-structure">Basic Command Structure</h3>
+<p>Because <code>mandelbrot</code> is a source filter, it is loaded via
+the <code>lavfi</code> virtual device using the <code>-f lavfi</code>
+input flag. Parameters are passed as key-value pairs separated by
+colons:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-f</span> lavfi <span class="at">-i</span> mandelbrot=maxiter=1500:start_scale=3.0:end_scale=0.005 <span class="at">-t</span> 10 output.mp4</span></code></pre></div>
+<p>In this command:</p>
+<ul>
+<li><code>maxiter=1500</code> increases calculation depth to prevent the
+edges from turning into flat black blobs as the camera zooms in.</li>
+<li><code>start_scale=3.0</code> begins rendering with the standard full
+view of the Mandelbrot set.</li>
+<li><code>end_scale=0.005</code> magnifies the fractal view
+significantly by the end of the duration.</li>
+<li><code>-t 10</code> limits the output video to 10 seconds, which
+dictates the speed of the zoom transition between
+<code>start_scale</code> and <code>end_scale</code>.</li>
+</ul>
+<h3 id="setting-a-static-zoom-level">Setting a Static Zoom Level</h3>
+<p>If you want a static, non-moving image or a stationary video without
+zooming, set both <code>start_scale</code> and <code>end_scale</code> to
+the same value:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-f</span> lavfi <span class="at">-i</span> mandelbrot=maxiter=2000:start_scale=0.01:end_scale=0.01 <span class="at">-t</span> 5 <span class="at">-r</span> 30 static_mandelbrot.mp4</span></code></pre></div>
+<h3 id="targeting-a-specific-zoom-coordinate">Targeting a Specific Zoom
+Coordinate</h3>
+<p>Deep zooms require steering the camera toward an interesting boundary
+point rather than the center of the set. Use coordinates alongside your
+iteration and scale settings:</p>
+<ul>
+<li><strong><code>start_x</code></strong> and
+<strong><code>start_y</code></strong>: The starting coordinates on the
+complex plane (defaults are
+<code>-0.743643887037158704752191506114774</code> and
+<code>-0.131825904205311970493132056385139</code>).</li>
+<li><strong><code>end_x</code></strong> and
+<strong><code>end_y</code></strong>: The ending coordinates to shift the
+frame position over time.</li>
+</ul>
+<p>Example with targeted coordinates and deep iterations:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-f</span> lavfi <span class="at">-i</span> <span class="st">&quot;mandelbrot=maxiter=5000:start_scale=2.0:end_scale=0.00005:start_x=-0.74364388703715:start_y=0.13182590420531:end_x=-0.74364388703715:end_y=0.13182590420531&quot;</span> <span class="at">-t</span> 15 <span class="at">-c:v</span> libx264 zoom_deep.mp4</span></code></pre></div></article>
+        <div id="comments-container"></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

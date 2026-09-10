@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Convert Video to High-Contrast Black and White in FFmpeg - ffmpeg</title>
+    <meta name="description" content="This guide explains how to convert a video to high-contrast black and white using the powerful colorchannelmixer filter in FFmpeg. By remapping and multiplying the red, green, and blue color channels, you can simulate optical lens filters, push midtones">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/convert-video-to-high-contrast-black-and-white-in-ffmpeg">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Convert Video to High-Contrast Black and White in FFmpeg - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/convert-video-to-high-contrast-black-and-white-in-ffmpeg" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This guide explains how to convert a video to high-contrast black and white using the powerful colorchannelmixer filter in FFmpeg. By remapping and multiplying the red, green, and blue color channels, you can simulate optical lens filters, push midtones" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1
+id="convert-video-to-high-contrast-black-and-white-in-ffmpeg">Convert
+Video to High-Contrast Black and White in FFmpeg</h1>
+<p>This guide explains how to convert a video to high-contrast black and
+white using the powerful <code>colorchannelmixer</code> filter in
+FFmpeg. By remapping and multiplying the red, green, and blue color
+channels, you can simulate optical lens filters, push midtones into
+extremes, and generate a sharp, dramatic monochrome look directly from
+the command line.</p>
+<hr />
+<h3 id="understanding-the-colorchannelmixer-filter">Understanding the
+<code>colorchannelmixer</code> Filter</h3>
+<p>The <code>colorchannelmixer</code> filter recalculates each output
+color channel (R, G, B, A) as a linear combination of all input color
+channels.</p>
+<p>To convert an image to black and white, the red, green, and blue
+output channels must receive the exact same input mix. The parameters
+follow the syntax <code>[output_channel][input_channel]</code>:</p>
+<ul>
+<li><strong><code>rr</code></strong>, <strong><code>rg</code></strong>,
+<strong><code>rb</code></strong>: The contribution of input Red, Green,
+and Blue to the output Red channel.</li>
+<li><strong><code>gr</code></strong>, <strong><code>gg</code></strong>,
+<strong><code>gb</code></strong>: The contribution of input Red, Green,
+and Blue to the output Green channel.</li>
+<li><strong><code>br</code></strong>, <strong><code>bg</code></strong>,
+<strong><code>bb</code></strong>: The contribution of input Red, Green,
+and Blue to the output Blue channel.</li>
+</ul>
+<p>When all three output rows are identical, color saturation drops to
+zero, producing a monochrome image.</p>
+<h3 id="achieving-high-contrast">Achieving High Contrast</h3>
+<p>In standard grayscale conversion (such as standard luma ITU-R
+BT.709), channel weights add up to <code>1.0</code> (e.g.,
+<code>0.2126*R + 0.7152*G + 0.0722*B</code>).</p>
+<p>To generate <strong>high contrast</strong>, you can:</p>
+<ol type="1">
+<li><strong>Overdrive channel sums (values &gt; 1.0):</strong> This
+clips highlights to pure white.</li>
+<li><strong>Use negative weights:</strong> Subtracting a channel crushes
+shadows and deepens midtones.</li>
+<li><strong>Emphasize contrasting spectral channels:</strong> Heavily
+weighting the red channel mimics a physical red contrast filter in
+black-and-white photography, dramatically darkening blue skies and
+lightening skin tones.</li>
+</ol>
+<hr />
+<h3 id="the-command-red-filter-dramatic-contrast">The Command:
+Red-Filter Dramatic Contrast</h3>
+<p>This command mimics a red filter combined with aggressive tone
+separation. It amplifies the red channel, slightly includes green, and
+subtracts blue to deepen shadows.</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;colorchannelmixer=rr=1.4:rg=0.2:rb=-0.4:gr=1.4:gg=0.2:gb=-0.4:br=1.4:bg=0.2:bb=-0.4&quot;</span> <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<h4 id="parameter-breakdown">Parameter Breakdown:</h4>
+<ul>
+<li><code>rr=1.4</code>, <code>gr=1.4</code>, <code>br=1.4</code>:
+Strong red exposure makes red elements glow and pushes brighter tones
+toward white.</li>
+<li><code>rg=0.2</code>, <code>gg=0.2</code>, <code>bg=0.2</code>:
+Retains necessary midtone definition from green foliage and light.</li>
+<li><code>rb=-0.4</code>, <code>gb=-0.4</code>, <code>bb=-0.4</code>:
+Negative blue darkens skies, water, and deep shadows, preventing a
+washed-out look.</li>
+<li><code>-c:a copy</code>: Copies the audio stream without re-encoding
+to preserve quality and speed up processing.</li>
+</ul>
+<hr />
+<h3 id="alternative-mix-blown-out-film-noir-look">Alternative Mix:
+Blown-Out Film Noir Look</h3>
+<p>If you want a bright, high-key contrast look where midtones blow out
+rapidly into bright whites while retaining sharp blacks:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;colorchannelmixer=rr=0.6:rg=0.6:rb=0.3:gr=0.6:gg=0.6:gb=0.3:br=0.6:bg=0.6:bb=0.3&quot;</span> <span class="at">-c:a</span> copy output_noir.mp4</span></code></pre></div>
+<p>In this mix, the coefficients sum to <code>1.5</code> per channel.
+Because the sum is greater than <code>1.0</code>, luminance is boosted
+across the entire image, forcing lighter regions into pure white and
+creating a stark, high-contrast monochrome aesthetic.</p>
+<hr />
+<h3 id="fine-tuning-your-output">Fine-Tuning Your Output</h3>
+<ul>
+<li><strong>To darken shadows further:</strong> Lower the
+<code>rb</code>, <code>gb</code>, and <code>bb</code> values deeper into
+negative numbers (e.g., <code>-0.5</code> or <code>-0.6</code>).</li>
+<li><strong>To soften clipped whites:</strong> Reduce the primary
+positive values until the sum of the three values sits closer to
+<code>1.0</code> or <code>1.1</code>.</li>
+<li><strong>Ensure exact matching:</strong> Always ensure that
+<code>rr=gr=br</code>, <code>rg=gg=bg</code>, and <code>rb=gb=bb</code>.
+If these triplets differ, color tints will bleed back into your
+image.</li>
+</ul></article>
+        <div id="comments-container"></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

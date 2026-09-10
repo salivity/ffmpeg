@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Extract Keyframes as Images with FFmpeg - ffmpeg</title>
+    <meta name="description" content="Extracting keyframes (also known as I-frames) from a video allows you to capture the highest-quality, standalone frames representing scene changes or reference points without decoding every intermediate frame. This guide demonstrates how to use the open-">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/how-to-extract-keyframes-as-images-with-ffmpeg">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Extract Keyframes as Images with FFmpeg - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/how-to-extract-keyframes-as-images-with-ffmpeg" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Extracting keyframes (also known as I-frames) from a video allows you to capture the highest-quality, standalone frames representing scene changes or reference points without decoding every intermediate frame. This guide demonstrates how to use the open-" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="how-to-extract-keyframes-as-images-with-ffmpeg">How to Extract
+Keyframes as Images with FFmpeg</h1>
+<p>Extracting keyframes (also known as I-frames) from a video allows you
+to capture the highest-quality, standalone frames representing scene
+changes or reference points without decoding every intermediate frame.
+This guide demonstrates how to use the open-source multimedia framework
+FFmpeg to detect all I-frames in a video stream and automatically export
+them as standalone image files.</p>
+<h2 id="the-standard-keyframe-extraction-command">The Standard Keyframe
+Extraction Command</h2>
+<p>To extract all I-frames from a video file using video filtering, open
+your terminal or command prompt and run the following command:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;select=&#39;eq(pict_type,PICT_TYPE_I)&#39;&quot;</span> <span class="at">-vsync</span> vfr keyframe_%04d.png</span></code></pre></div>
+<h3 id="breakdown-of-arguments">Breakdown of Arguments</h3>
+<ul>
+<li><strong><code>-i input.mp4</code></strong>: Specifies the path to
+your source video file.</li>
+<li><strong><code>-vf "select='eq(pict_type,PICT_TYPE_I)'"</code></strong>:
+Uses FFmpeg's video filter engine to evaluate the picture type of each
+frame. It only selects frames designated as <code>PICT_TYPE_I</code>
+(Intra-coded frames).</li>
+<li><strong><code>-vsync vfr</code></strong> (or
+<strong><code>-fps_mode vfr</code></strong> in newer FFmpeg releases):
+Sets the video sync method to Variable Frame Rate. This prevents FFmpeg
+from duplicating frames to fill the gaps between selected
+keyframes.</li>
+<li><strong><code>keyframe_%04d.png</code></strong>: Defines the naming
+pattern for the output files. The <code>%04d</code> placeholder produces
+four-digit sequential numbering (e.g., <code>keyframe_0001.png</code>,
+<code>keyframe_0002.png</code>).</li>
+</ul>
+<h2 id="faster-extraction-using-decoder-skipping">Faster Extraction
+Using Decoder Skipping</h2>
+<p>The filtering method decodes the entire video stream to identify
+which frames are I-frames. For large files or long videos, you can
+significantly accelerate the process by telling the decoder to skip
+non-keyframe packets directly:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-skip_frame</span> nokey <span class="at">-i</span> input.mp4 <span class="at">-vsync</span> vfr <span class="at">-frame_pts</span> true keyframe_%04d.jpg</span></code></pre></div>
+<ul>
+<li><strong><code>-skip_frame nokey</code></strong>: Instructs the
+decoder to discard all frames except keyframes before decoding. This
+drastically reduces CPU usage and processing time.</li>
+<li><strong><code>-frame_pts true</code></strong>: Names output files
+using their Presentation Time Stamp (PTS) index instead of a simple
+consecutive sequence, making it easier to identify where each frame
+occurs in the video.</li>
+</ul>
+<h2 id="output-format-options">Output Format Options</h2>
+<p>You can adjust the output file format based on your storage and
+quality requirements:</p>
+<ul>
+<li><strong>PNG (Lossless)</strong>: Best for maximum visual fidelity
+and computer vision workflows.
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-skip_frame</span> nokey <span class="at">-i</span> input.mp4 <span class="at">-vsync</span> vfr output_%03d.png</span></code></pre></div></li>
+<li><strong>JPEG (Compressed)</strong>: Best for saving disk space. You
+can control the quality using the <code>-q:v</code> flag (values range
+from <code>2</code> to <code>31</code>, where <code>2</code> is the
+highest quality).
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-skip_frame</span> nokey <span class="at">-i</span> input.mp4 <span class="at">-vsync</span> vfr <span class="at">-q:v</span> 2 output_%03d.jpg</span></code></pre></div></li>
+</ul></article>
+        <div id="comments-container"></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

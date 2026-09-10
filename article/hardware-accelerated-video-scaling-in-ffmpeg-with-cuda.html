@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hardware-Accelerated Video Scaling in FFmpeg with CUDA - ffmpeg</title>
+    <meta name="description" content="This guide provides a quick overview and actionable instructions for implementing hardware-accelerated video scaling using NVIDIA CUDA inside FFmpeg. By offloading video decoding, scaling, and encoding directly to an NVIDIA GPU, you prevent CPU bottlenec">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/hardware-accelerated-video-scaling-in-ffmpeg-with-cuda">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Hardware-Accelerated Video Scaling in FFmpeg with CUDA - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/hardware-accelerated-video-scaling-in-ffmpeg-with-cuda" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This guide provides a quick overview and actionable instructions for implementing hardware-accelerated video scaling using NVIDIA CUDA inside FFmpeg. By offloading video decoding, scaling, and encoding directly to an NVIDIA GPU, you prevent CPU bottlenec" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1
+id="hardware-accelerated-video-scaling-in-ffmpeg-with-cuda">Hardware-Accelerated
+Video Scaling in FFmpeg with CUDA</h1>
+<p>This guide provides a quick overview and actionable instructions for
+implementing hardware-accelerated video scaling using NVIDIA CUDA inside
+FFmpeg. By offloading video decoding, scaling, and encoding directly to
+an NVIDIA GPU, you prevent CPU bottlenecks and avoid costly data
+transfers between system RAM and VRAM. The following sections cover the
+necessary prerequisites, standard command syntax using the
+<code>scale_cuda</code> filter, aspect-ratio preservation, and
+performance-tuning options.</p>
+<h2 id="prerequisites">Prerequisites</h2>
+<p>To perform CUDA-accelerated scaling, ensure your environment meets
+the following requirements:</p>
+<ul>
+<li>An NVIDIA GPU that supports NVDEC and NVENC.</li>
+<li>Up-to-date proprietary NVIDIA display drivers.</li>
+<li>An FFmpeg build compiled with CUDA support (flags:
+<code>--enable-cuda-nvcc</code>, <code>--enable-cuvid</code>,
+<code>--enable-nvenc</code>, and <code>--enable-libnpp</code> if using
+NPP filters).</li>
+</ul>
+<p>Verify your FFmpeg installation supports CUDA filters by running:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-filters</span> <span class="kw">|</span> <span class="fu">grep</span> cuda</span></code></pre></div>
+<p>Look for <code>scale_cuda</code> in the output list.</p>
+<h2 id="basic-cuda-scaling-command">Basic CUDA Scaling Command</h2>
+<p>To achieve maximum performance, decode the input video in hardware,
+keep the frames in VRAM using <code>-hwaccel_output_format cuda</code>,
+apply the <code>scale_cuda</code> filter, and encode using an NVIDIA
+hardware encoder (<code>h264_nvenc</code> or
+<code>hevc_nvenc</code>).</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-hwaccel</span> cuda <span class="at">-hwaccel_output_format</span> cuda <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;scale_cuda=1920:1080&quot;</span> <span class="at">-c:v</span> h264_nvenc <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<h3 id="parameter-breakdown">Parameter Breakdown:</h3>
+<ul>
+<li><code>-hwaccel cuda</code>: Enables CUDA hardware acceleration for
+decoding.</li>
+<li><code>-hwaccel_output_format cuda</code>: Retains decoded frames
+directly in GPU memory so the scaling filter can process them without
+copying frames back to system memory.</li>
+<li><code>-vf "scale_cuda=1920:1080"</code>: Scales the video to a fixed
+width of 1920 and a height of 1080 on the GPU.</li>
+<li><code>-c:v h264_nvenc</code>: Encodes the output using NVIDIA's
+H.264 hardware encoder.</li>
+<li><code>-c:a copy</code>: Copies the audio stream without
+re-encoding.</li>
+</ul>
+<h2 id="maintaining-aspect-ratio">Maintaining Aspect Ratio</h2>
+<p>To resize a video while preserving its original aspect ratio, set one
+dimension explicitly and pass <code>-1</code> or <code>-2</code> to the
+other dimension:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-hwaccel</span> cuda <span class="at">-hwaccel_output_format</span> cuda <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;scale_cuda=1280:-2&quot;</span> <span class="at">-c:v</span> h264_nvenc <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<p>Using <code>-2</code> ensures that the calculated dimension is
+divisible by 2, which is required by most video codecs.</p>
+<h2 id="selecting-an-interpolation-algorithm">Selecting an Interpolation
+Algorithm</h2>
+<p>The <code>scale_cuda</code> filter supports several interpolation
+algorithms via the <code>interp_algo</code> parameter. Available options
+include <code>nearest</code>, <code>bilinear</code>,
+<code>bicubic</code>, and <code>lanczos</code>.</p>
+<p>For higher quality upscaling, use <code>lanczos</code> or
+<code>bicubic</code>:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-hwaccel</span> cuda <span class="at">-hwaccel_output_format</span> cuda <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;scale_cuda=3840:2160:interp_algo=lanczos&quot;</span> <span class="at">-c:v</span> hevc_nvenc <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<p>For maximum processing speed, <code>bilinear</code> (the default) or
+<code>nearest</code> provides the lowest latency.</p>
+<h2 id="scaling-cpu-decoded-video-on-the-gpu">Scaling CPU-Decoded Video
+on the GPU</h2>
+<p>If your input codec cannot be decoded by your GPU, you can decode the
+stream using the CPU and manually upload the frames to the GPU for
+scaling and encoding using the <code>hwupload_cuda</code> filter:</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mkv <span class="at">-vf</span> <span class="st">&quot;hwupload_cuda,scale_cuda=1280:720&quot;</span> <span class="at">-c:v</span> h264_nvenc <span class="at">-c:a</span> copy output.mp4</span></code></pre></div></article>
+        <div id="comments-container"></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

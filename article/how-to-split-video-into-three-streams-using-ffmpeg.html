@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Split Video into Three Streams Using FFmpeg - ffmpeg</title>
+    <meta name="description" content="This guide explains how to use the FFmpeg split filter to duplicate a single video input into three identical, independent streams inside a filtergraph. By splitting the video pipeline internally, you can apply distinct video filters, scaling algorithms,">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/how-to-split-video-into-three-streams-using-ffmpeg">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Split Video into Three Streams Using FFmpeg - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/how-to-split-video-into-three-streams-using-ffmpeg" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This guide explains how to use the FFmpeg split filter to duplicate a single video input into three identical, independent streams inside a filtergraph. By splitting the video pipeline internally, you can apply distinct video filters, scaling algorithms," />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="how-to-split-video-into-three-streams-using-ffmpeg">How to Split
+Video into Three Streams Using FFmpeg</h1>
+<p>This guide explains how to use the FFmpeg <code>split</code> filter
+to duplicate a single video input into three identical, independent
+streams inside a filtergraph. By splitting the video pipeline
+internally, you can apply distinct video filters, scaling algorithms, or
+encoding presets to each stream simultaneously without reading the
+source file multiple times from disk.</p>
+<h2 id="the-split-filter-syntax">The <code>split</code> Filter
+Syntax</h2>
+<p>The <code>split</code> filter takes a single video stream as input
+and outputs two or more identical copies. By default, running
+<code>split</code> produces two streams. To generate three streams, you
+must pass the parameter <code>3</code> to the filter:</p>
+<pre class="text"><code>split=3</code></pre>
+<p>Within a <code>-filter_complex</code> graph, each output must be
+assigned a unique stream label (e.g., <code>[v1]</code>,
+<code>[v2]</code>, <code>[v3]</code>) so that subsequent filters can
+reference them independently.</p>
+<h2 id="basic-structure-in--filter_complex">Basic Structure in
+<code>-filter_complex</code></h2>
+<p>A standard implementation defines the source stream, invokes
+<code>split=3</code>, and labels the three outputs:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-filter_complex</span> <span class="st">&quot;[0:v]split=3[out1][out2][out3]&quot;</span> ...</span></code></pre></div>
+<ul>
+<li><code>[0:v]</code> specifies the primary video stream of the first
+input file.</li>
+<li><code>split=3</code> instructs FFmpeg to duplicate the stream into
+three branches.</li>
+<li><code>[out1][out2][out3]</code> assigns custom labels to each
+resulting stream.</li>
+</ul>
+<h2 id="practical-example-multi-filter-processing">Practical Example:
+Multi-Filter Processing</h2>
+<p>A common use case involves routing the three split streams to
+different filters—such as applying grayscale to the first, blurring the
+second, and scaling the third—before exporting them.</p>
+<h3 id="command-example">Command Example</h3>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-filter_complex</span> <span class="dt">\</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="st">&quot;[0:v]split=3[stream1][stream2][stream3]; </span><span class="dt">\</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="st"> [stream1]hue=s=0[gray]; </span><span class="dt">\</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="st"> [stream2]boxblur=5:1[blurred]; </span><span class="dt">\</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="st"> [stream3]scale=640:360[small]&quot;</span> <span class="dt">\</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>-map <span class="st">&quot;[gray]&quot;</span> <span class="at">-c:v</span> libx264 output_gray.mp4 <span class="dt">\</span></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>-map <span class="st">&quot;[blurred]&quot;</span> <span class="at">-c:v</span> libx264 output_blurred.mp4 <span class="dt">\</span></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>-map <span class="st">&quot;[small]&quot;</span> <span class="at">-c:v</span> libx264 output_small.mp4</span></code></pre></div>
+<h3 id="breakdown-of-the-pipeline">Breakdown of the Pipeline</h3>
+<ol type="1">
+<li><strong>Splitting the Source</strong>:
+<code>[0:v]split=3[stream1][stream2][stream3]</code> takes the input
+video and creates three identical instances labeled
+<code>[stream1]</code>, <code>[stream2]</code>, and
+<code>[stream3]</code>.</li>
+<li><strong>First Processing Branch</strong>:
+<code>[stream1]hue=s=0[gray]</code> strips the color saturation from the
+first stream, naming the result <code>[gray]</code>.</li>
+<li><strong>Second Processing Branch</strong>:
+<code>[stream2]boxblur=5:1[blurred]</code> applies a blur effect to the
+second stream, naming the result <code>[blurred]</code>.</li>
+<li><strong>Third Processing Branch</strong>:
+<code>[stream3]scale=640:360[small]</code> resizes the third stream to
+360p resolution, naming the result <code>[small]</code>.</li>
+<li><strong>Mapping Outputs</strong>: The <code>-map</code> flags route
+each processed stream to its respective output file
+(<code>output_gray.mp4</code>, <code>output_blurred.mp4</code>, and
+<code>output_small.mp4</code>), encoding each with the
+<code>libx264</code> codec.</li>
+</ol>
+<h2 id="merging-the-streams-later-in-the-graph">Merging the Streams
+Later in the Graph</h2>
+<p>You can also use the split streams to assemble a single composite
+video (such as a split-screen or picture-in-picture effect) within the
+same command:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-filter_complex</span> <span class="dt">\</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="st">&quot;[0:v]split=3[v1][v2][v3]; </span><span class="dt">\</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="st"> [v1]scale=640:360[top]; </span><span class="dt">\</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a><span class="st"> [v2]scale=640:360,hue=s=0[bottom_left]; </span><span class="dt">\</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a><span class="st"> [v3]scale=640:360,negate[bottom_right]; </span><span class="dt">\</span></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a><span class="st"> [bottom_left][bottom_right]hstack[bottom_row]; </span><span class="dt">\</span></span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a><span class="st"> [top]pad=1280:360:320:0[top_row]; </span><span class="dt">\</span></span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a><span class="st"> [top_row][bottom_row]vstack[final]&quot;</span> <span class="dt">\</span></span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>-map <span class="st">&quot;[final]&quot;</span> <span class="at">-c:v</span> libx264 combined_output.mp4</span></code></pre></div>
+<p>In this pipeline, <code>split=3</code> supplies the three copies
+needed to create three resized variations, which are then combined
+horizontally and vertically into a single output video.</p></article>
+        <div id="comments-container"></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FFmpeg Fish-Eye Correction with Remap Filter - ffmpeg</title>
+    <meta name="description" content="This article explains how to correct fish-eye lens distortion in video files using FFmpeg's remap filter alongside custom coordinate maps. You will learn the mechanics of the remap filter, how to generate custom X and Y displacement maps using Python and">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/ffmpeg-fish-eye-correction-with-remap-filter">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="FFmpeg Fish-Eye Correction with Remap Filter - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/ffmpeg-fish-eye-correction-with-remap-filter" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article explains how to correct fish-eye lens distortion in video files using FFmpeg's remap filter alongside custom coordinate maps. You will learn the mechanics of the remap filter, how to generate custom X and Y displacement maps using Python and" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="ffmpeg-fish-eye-correction-with-remap-filter">FFmpeg Fish-Eye
+Correction with Remap Filter</h1>
+<p>This article explains how to correct fish-eye lens distortion in
+video files using FFmpeg's <code>remap</code> filter alongside custom
+coordinate maps. You will learn the mechanics of the <code>remap</code>
+filter, how to generate custom X and Y displacement maps using Python
+and OpenCV, and how to execute the final FFmpeg command to render
+undistorted video.</p>
+<h3 id="understanding-the-remap-filter">Understanding the
+<code>remap</code> Filter</h3>
+<p>The FFmpeg <code>remap</code> filter transforms an image by mapping
+source pixels to new destination coordinates. It requires three distinct
+video or image inputs:</p>
+<ol type="1">
+<li><strong>Input 0:</strong> The source video to be corrected.</li>
+<li><strong>Input 1:</strong> The X-map, an image defining the
+horizontal source coordinate for each destination pixel.</li>
+<li><strong>Input 2:</strong> The Y-map, an image defining the vertical
+source coordinate for each destination pixel.</li>
+</ol>
+<p>The dimensions of the X and Y maps dictate the resolution of the
+output video. Pixel values in these maps store coordinate data,
+typically represented as 16-bit unsigned integers
+(<code>gray16le</code>) to support pixel dimensions up to
+65535×65535.</p>
+<h3 id="step-1-generating-custom-coordinate-maps">Step 1: Generating
+Custom Coordinate Maps</h3>
+<p>To un-distort fish-eye footage, compute an inverse mapping grid that
+transforms rectilinear destination coordinates back into distorted
+source coordinates. A script using Python, NumPy, and OpenCV generates
+the necessary 16-bit PGM map files based on lens calibration
+parameters.</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> cv2</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Output dimensions</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>width <span class="op">=</span> <span class="dv">1920</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>height <span class="op">=</span> <span class="dv">1080</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="co"># Camera matrix (fx, fy: focal lengths; cx, cy: principal point)</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>K <span class="op">=</span> np.array([[<span class="fl">800.0</span>, <span class="fl">0.0</span>, width <span class="op">/</span> <span class="fl">2.0</span>],</span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>              [<span class="fl">0.0</span>, <span class="fl">800.0</span>, height <span class="op">/</span> <span class="fl">2.0</span>],</span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>              [<span class="fl">0.0</span>, <span class="fl">0.0</span>, <span class="fl">1.0</span>]], dtype<span class="op">=</span>np.float32)</span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a><span class="co"># Fish-eye distortion coefficients (k1, k2, k3, k4)</span></span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>D <span class="op">=</span> np.array([<span class="op">-</span><span class="fl">0.05</span>, <span class="fl">0.01</span>, <span class="op">-</span><span class="fl">0.005</span>, <span class="fl">0.0</span>], dtype<span class="op">=</span>np.float32)</span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a><span class="co"># Compute identity rectification and new camera matrix</span></span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a>R <span class="op">=</span> np.eye(<span class="dv">3</span>, dtype<span class="op">=</span>np.float32)</span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a>new_K <span class="op">=</span> cv2.fisheye.estimateNewCameraMatrixForUndistortRectify(K, D, (width, height), np.eye(<span class="dv">3</span>), balance<span class="op">=</span><span class="fl">0.0</span>)</span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a><span class="co"># Generate undistortion maps</span></span>
+<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a>map_x, map_y <span class="op">=</span> cv2.fisheye.initUndistortRectifyMap(K, D, R, new_K, (width, height), cv2.CV_32FC1)</span>
+<span id="cb1-22"><a href="#cb1-22" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-23"><a href="#cb1-23" aria-hidden="true" tabindex="-1"></a><span class="co"># Convert float coordinates to 16-bit unsigned integers</span></span>
+<span id="cb1-24"><a href="#cb1-24" aria-hidden="true" tabindex="-1"></a>map_x_16 <span class="op">=</span> np.clip(np.<span class="bu">round</span>(map_x), <span class="dv">0</span>, <span class="dv">65535</span>).astype(np.uint16)</span>
+<span id="cb1-25"><a href="#cb1-25" aria-hidden="true" tabindex="-1"></a>map_y_16 <span class="op">=</span> np.clip(np.<span class="bu">round</span>(map_y), <span class="dv">0</span>, <span class="dv">65535</span>).astype(np.uint16)</span>
+<span id="cb1-26"><a href="#cb1-26" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-27"><a href="#cb1-27" aria-hidden="true" tabindex="-1"></a><span class="co"># Save as 16-bit PGM files</span></span>
+<span id="cb1-28"><a href="#cb1-28" aria-hidden="true" tabindex="-1"></a>cv2.imwrite(<span class="st">&quot;xmap.pgm&quot;</span>, map_x_16)</span>
+<span id="cb1-29"><a href="#cb1-29" aria-hidden="true" tabindex="-1"></a>cv2.imwrite(<span class="st">&quot;ymap.pgm&quot;</span>, map_y_16)</span></code></pre></div>
+<p>This script outputs <code>xmap.pgm</code> and <code>ymap.pgm</code>,
+which serve as look-up tables containing the source pixel indices for
+every pixel in the corrected frame.</p>
+<h3 id="step-2-applying-the-maps-in-ffmpeg">Step 2: Applying the Maps in
+FFmpeg</h3>
+<p>Run FFmpeg with the source video and the two generated
+<code>.pgm</code> map files. Use the <code>-lavfi</code> flag to feed
+all three streams into the <code>remap</code> filter:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-i</span> xmap.pgm <span class="at">-i</span> ymap.pgm <span class="at">-lavfi</span> <span class="st">&quot;[0:v][1:v][2:v]remap&quot;</span> <span class="at">-c:v</span> libx264 <span class="at">-crf</span> 18 <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<h3 id="map-generation-and-command-considerations">Map Generation and
+Command Considerations</h3>
+<ul>
+<li><strong>Interpolation Modes:</strong> By default, the
+<code>remap</code> filter uses bilinear interpolation. You can
+explicitly set nearest-neighbor, bilinear, or bicubic interpolation
+using the <code>interp</code> option:
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">-lavfi</span> <span class="st">&quot;[0:v][1:v][2:v]remap=interp=bicubic&quot;</span></span></code></pre></div></li>
+<li><strong>Pixel Formats:</strong> Ensure that map files generated
+manually or without OpenCV are encoded in <code>gray16le</code> format
+so FFmpeg reads coordinate data precisely without downsampling
+artifacts.</li>
+</ul></article>
+        <div id="comments-container"></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

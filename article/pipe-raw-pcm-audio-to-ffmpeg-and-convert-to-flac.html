@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pipe Raw PCM Audio to FFmpeg and Convert to FLAC - ffmpeg</title>
+    <meta name="description" content="This guide explains how to pipe raw Pulse-Code Modulation (PCM) audio data into FFmpeg via standard input (stdin) and transcode it directly to the lossless FLAC format. Because raw PCM data contains no headers to describe its properties, you must explici">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/pipe-raw-pcm-audio-to-ffmpeg-and-convert-to-flac">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Pipe Raw PCM Audio to FFmpeg and Convert to FLAC - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/pipe-raw-pcm-audio-to-ffmpeg-and-convert-to-flac" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This guide explains how to pipe raw Pulse-Code Modulation (PCM) audio data into FFmpeg via standard input (stdin) and transcode it directly to the lossless FLAC format. Because raw PCM data contains no headers to describe its properties, you must explici" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="pipe-raw-pcm-audio-to-ffmpeg-and-convert-to-flac">Pipe Raw PCM
+Audio to FFmpeg and Convert to FLAC</h1>
+<p>This guide explains how to pipe raw Pulse-Code Modulation (PCM) audio
+data into FFmpeg via standard input (<code>stdin</code>) and transcode
+it directly to the lossless FLAC format. Because raw PCM data contains
+no headers to describe its properties, you must explicitly declare the
+sample format, sample rate, and channel count in the FFmpeg command
+before passing the input stream.</p>
+<h2 id="the-basic-command">The Basic Command</h2>
+<p>To accept audio from a pipe, tell FFmpeg to read from
+<code>stdin</code> by specifying <code>-i -</code> (a hyphen
+representing the pipe) along with the raw audio parameters:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span> input.raw <span class="kw">|</span> <span class="ex">ffmpeg</span> <span class="at">-f</span> s16le <span class="at">-ar</span> 44100 <span class="at">-ac</span> 2 <span class="at">-i</span> <span class="at">-</span> output.flac</span></code></pre></div>
+<p>Or, when piping directly from another command or application:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">your_audio_source</span> <span class="kw">|</span> <span class="ex">ffmpeg</span> <span class="at">-f</span> s16le <span class="at">-ar</span> 44100 <span class="at">-ac</span> 2 <span class="at">-i</span> <span class="at">-</span> output.flac</span></code></pre></div>
+<h2 id="required-input-parameters">Required Input Parameters</h2>
+<p>Because raw PCM lacks container metadata, the following flags
+<strong>must</strong> be placed <em>before</em> <code>-i -</code>:</p>
+<ul>
+<li><strong><code>-f &lt;format&gt;</code> (Format):</strong> Specifies
+the sample format and endianness.
+<ul>
+<li><code>s16le</code>: Signed 16-bit Little-Endian (Standard CD
+audio).</li>
+<li><code>s24le</code>: Signed 24-bit Little-Endian.</li>
+<li><code>s32le</code>: Signed 32-bit Little-Endian.</li>
+<li><code>f32le</code>: 32-bit floating-point Little-Endian.</li>
+<li><em>(Run <code>ffmpeg -formats</code> to view all available raw PCM
+demuxers).</em></li>
+</ul></li>
+<li><strong><code>-ar &lt;rate&gt;</code> (Sample Rate):</strong>
+Specifies the frequency in Hertz (e.g., <code>44100</code> for 44.1 kHz,
+<code>48000</code> for 48 kHz).</li>
+<li><strong><code>-ac &lt;channels&gt;</code> (Channels):</strong>
+Specifies the number of audio channels (e.g., <code>1</code> for mono,
+<code>2</code> for stereo).</li>
+<li><strong><code>-i -</code>:</strong> Instructs FFmpeg to read the raw
+data stream from standard input.</li>
+</ul>
+<h2 id="advanced-examples">Advanced Examples</h2>
+<h3 id="24-bit-48-khz-studio-quality">24-bit, 48 kHz Studio Quality</h3>
+<p>If your source generates 24-bit audio at 48,000 Hz in stereo:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">generate_audio</span> <span class="kw">|</span> <span class="ex">ffmpeg</span> <span class="at">-f</span> s24le <span class="at">-ar</span> 48000 <span class="at">-ac</span> 2 <span class="at">-i</span> <span class="at">-</span> <span class="at">-c:a</span> flac output.flac</span></code></pre></div>
+<h3 id="adjusting-flac-compression-level">Adjusting FLAC Compression
+Level</h3>
+<p>FLAC compression levels range from <code>0</code> (fastest encoding,
+larger file size) to <code>12</code> (slowest encoding, smallest file
+size). The default level is <code>5</code>. You can specify the
+compression level using <code>-compression_level</code>:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span> audio.pcm <span class="kw">|</span> <span class="ex">ffmpeg</span> <span class="at">-f</span> s16le <span class="at">-ar</span> 44100 <span class="at">-ac</span> 2 <span class="at">-i</span> <span class="at">-</span> <span class="at">-c:a</span> flac <span class="at">-compression_level</span> 8 output.flac</span></code></pre></div>
+<h3 id="piping-from-alsa-recording-tool-arecord">Piping from ALSA
+Recording Tool (<code>arecord</code>)</h3>
+<p>You can capture live microphone input via <code>arecord</code> and
+encode it directly to FLAC:</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="fu">arecord</span> <span class="at">-f</span> cd <span class="at">-t</span> raw <span class="kw">|</span> <span class="ex">ffmpeg</span> <span class="at">-f</span> s16le <span class="at">-ar</span> 44100 <span class="at">-ac</span> 2 <span class="at">-i</span> <span class="at">-</span> output.flac</span></code></pre></div></article>
+        <div id="comments-container"></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

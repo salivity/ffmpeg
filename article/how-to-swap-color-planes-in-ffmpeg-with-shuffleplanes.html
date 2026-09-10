@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Swap Color Planes in FFmpeg with shuffleplanes - ffmpeg</title>
+    <meta name="description" content="This guide explains how to use FFmpeg's shuffleplanes filter to reorder color planes in digital video. By manipulating color components directly, you can easily swap the chrominance planes—specifically U and V in YUV video—to correct channel mapping">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/how-to-swap-color-planes-in-ffmpeg-with-shuffleplanes">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Swap Color Planes in FFmpeg with shuffleplanes - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/how-to-swap-color-planes-in-ffmpeg-with-shuffleplanes" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This guide explains how to use FFmpeg's shuffleplanes filter to reorder color planes in digital video. By manipulating color components directly, you can easily swap the chrominance planes—specifically U and V in YUV video—to correct channel mapping" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="how-to-swap-color-planes-in-ffmpeg-with-shuffleplanes">How to
+Swap Color Planes in FFmpeg with shuffleplanes</h1>
+<p>This guide explains how to use FFmpeg's <code>shuffleplanes</code>
+filter to reorder color planes in digital video. By manipulating color
+components directly, you can easily swap the chrominance
+planes—specifically U and V in YUV video—to correct channel mapping
+errors or produce unique stylized visual effects. Below, you will find
+the parameter syntax, plane indexing conventions, and practical FFmpeg
+command examples.</p>
+<h2 id="understanding-the-shuffleplanes-filter">Understanding the
+shuffleplanes Filter</h2>
+<p>The <code>shuffleplanes</code> filter reorders color planes according
+to four mapping arguments:</p>
+<pre class="text"><code>shuffleplanes=map0:map1:map2:map3</code></pre>
+<p>Each argument specifies which input plane should be mapped to the
+corresponding output plane:</p>
+<ul>
+<li><strong>map0</strong>: Destination for the 1st plane (Y in YUV, or
+the first color channel).</li>
+<li><strong>map1</strong>: Destination for the 2nd plane (U / Cb in
+YUV).</li>
+<li><strong>map2</strong>: Destination for the 3rd plane (V / Cr in
+YUV).</li>
+<li><strong>map3</strong>: Destination for the 4th plane (Alpha channel,
+if present).</li>
+</ul>
+<p>In a standard YUV format:</p>
+<ul>
+<li><strong>0</strong> represents the <strong>Y</strong> (Luma)
+plane.</li>
+<li><strong>1</strong> represents the <strong>U</strong> (Chroma Blue)
+plane.</li>
+<li><strong>2</strong> represents the <strong>V</strong> (Chroma Red)
+plane.</li>
+<li><strong>3</strong> represents the <strong>Alpha</strong> plane.</li>
+</ul>
+<h2 id="swapping-u-and-v-planes">Swapping U and V Planes</h2>
+<p>To swap the U and V planes while leaving the luma (Y) untouched, map
+plane 0 to 0, plane 2 to 1, and plane 1 to 2:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;shuffleplanes=0:2:1&quot;</span> <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<h3 id="explanation-of-the-parameters">Explanation of the
+Parameters</h3>
+<ul>
+<li><code>0</code>: The output Y plane receives input plane
+<code>0</code> (Y).</li>
+<li><code>2</code>: The output U plane receives input plane
+<code>2</code> (V).</li>
+<li><code>1</code>: The output V plane receives input plane
+<code>1</code> (U).</li>
+<li>Any omitted trailing plane indices keep their original mappings by
+default.</li>
+</ul>
+<h2 id="preserving-the-alpha-channel">Preserving the Alpha Channel</h2>
+<p>If your source video includes an alpha (transparency) channel (such
+as <code>yuva420p</code>), include the fourth plane explicitly to
+prevent the alpha channel from being dropped:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mov <span class="at">-vf</span> <span class="st">&quot;shuffleplanes=0:2:1:3&quot;</span> <span class="at">-c:v</span> prores_ks <span class="at">-pix_fmt</span> yuva444p10le output.mov</span></code></pre></div>
+<h2 id="additional-use-cases">Additional Use Cases</h2>
+<h3 id="inverting-rgb-color-channels">Inverting RGB Color Channels</h3>
+<p>For RGB pixel formats (such as <code>gbrp</code> or planar RGB
+layouts), the indices correspond to the order of planes in that specific
+format. To swap Red and Blue in a planar RGB format:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;format=gbrp,shuffleplanes=2:1:0,format=yuv420p&quot;</span> <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<h3 id="duplicating-a-plane">Duplicating a Plane</h3>
+<p>You can copy a single plane to another channel. For example,
+replacing the V plane with the U plane:</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;shuffleplanes=0:1:1&quot;</span> <span class="at">-c:a</span> copy output.mp4</span></code></pre></div></article>
+        <div id="comments-container"></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

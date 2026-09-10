@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Decode 2nd and 3rd Order Ambisonics in FFmpeg - ffmpeg</title>
+    <meta name="description" content="This guide explains how to decode 2nd-order (9-channel) and 3rd-order (16-channel) Higher-Order Ambisonics (HOA) audio files into standard speaker formats or binaural headphone audio using FFmpeg. You will learn how to verify Ambisonic channel counts, re">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/decode-2nd-and-3rd-order-ambisonics-in-ffmpeg">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Decode 2nd and 3rd Order Ambisonics in FFmpeg - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/decode-2nd-and-3rd-order-ambisonics-in-ffmpeg" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This guide explains how to decode 2nd-order (9-channel) and 3rd-order (16-channel) Higher-Order Ambisonics (HOA) audio files into standard speaker formats or binaural headphone audio using FFmpeg. You will learn how to verify Ambisonic channel counts, re" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="decode-2nd-and-3rd-order-ambisonics-in-ffmpeg">Decode 2nd and
+3rd Order Ambisonics in FFmpeg</h1>
+<p>This guide explains how to decode 2nd-order (9-channel) and 3rd-order
+(16-channel) Higher-Order Ambisonics (HOA) audio files into standard
+speaker formats or binaural headphone audio using FFmpeg. You will learn
+how to verify Ambisonic channel counts, remap non-standard channel
+ordering into standard ACN/SN3D configurations using the
+<code>pan</code> filter, and decode the resulting stream using matrix
+coefficients or the <code>sofalizer</code> filter.</p>
+<hr />
+<h3 id="1-understand-channel-counts-and-standards">1. Understand Channel
+Counts and Standards</h3>
+<p>Higher-Order Ambisonics requires a specific number of channels
+determined by the formula <span class="math inline">\((N +
+1)^2\)</span>, where <span class="math inline">\(N\)</span> represents
+the Ambisonic order:</p>
+<ul>
+<li><strong>2nd-Order Ambisonics:</strong> <span
+class="math inline">\((2 + 1)^2 = 9\text{ channels}\)</span> (ACN 0
+through 8)</li>
+<li><strong>3rd-Order Ambisonics:</strong> <span
+class="math inline">\((3 + 1)^2 = 16\text{ channels}\)</span> (ACN 0
+through 15)</li>
+</ul>
+<p>Most modern spatial audio pipelines expect <strong>AmbiX</strong>
+format, which combines <strong>ACN</strong> (Ambisonic Channel Number)
+ordering and <strong>SN3D</strong> normalization. If your input source
+uses a proprietary, interleaved, or non-standard order, you must first
+remap it to ACN before decoding.</p>
+<hr />
+<h3 id="2-remapping-custom-channels-to-standard-acn">2. Remapping Custom
+Channels to Standard ACN</h3>
+<p>If your input channels are in an unusual sequence, use FFmpeg's
+<code>pan</code> filter to reroute the audio channels into proper ACN
+order.</p>
+<h4 id="remapping-2nd-order-9-channels">Remapping 2nd-Order (9
+Channels)</h4>
+<p>Suppose an incoming 9-channel file has its height channels placed out
+of order. You can define an explicit 9-channel output map:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input_custom_2nd_order.wav <span class="at">-filter_complex</span> <span class="dt">\</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="st">&quot;pan=9c|c0=c0|c1=c2|c2=c1|c3=c3|c4=c4|c5=c5|c6=c6|c7=c7|c8=c8&quot;</span> <span class="dt">\</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>-c:a pcm_s24le standardized_2nd_order.wav</span></code></pre></div>
+<h4 id="remapping-3rd-order-16-channels">Remapping 3rd-Order (16
+Channels)</h4>
+<p>To standardize a 16-channel layout:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input_custom_3rd_order.wav <span class="at">-filter_complex</span> <span class="dt">\</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="st">&quot;pan=16c|c0=c0|c1=c1|c2=c2|c3=c3|c4=c4|c5=c5|c6=c6|c7=c7|c8=c8|c9=c9|c10=c10|c11=c11|c12=c12|c13=c13|c14=c14|c15=c15&quot;</span> <span class="dt">\</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>-c:a pcm_s24le standardized_3rd_order.wav</span></code></pre></div>
+<p><em>(Swap the source channel numbers on the right-hand side of each
+equal sign to match your specific layout).</em></p>
+<hr />
+<h3 id="3-decoding-to-binaural-headphones-via-sofa">3. Decoding to
+Binaural (Headphones) via SOFA</h3>
+<p>The most accurate method for decoding 2nd- or 3rd-order Ambisonics
+directly to headphones is using the <code>sofalizer</code> filter with a
+Spatially Oriented Format for Acoustics (SOFA) file that contains
+measured impulse responses corresponding to your HOA order.</p>
+<h4 id="2nd-order-to-binaural">2nd-Order to Binaural</h4>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> standardized_2nd_order.wav <span class="at">-af</span> <span class="dt">\</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="st">&quot;sofalizer=sofa=/path/to/impulse_response_order2.sofa:type=freq:gain=0&quot;</span> <span class="dt">\</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>-c:a pcm_s24le binaural_output.wav</span></code></pre></div>
+<h4 id="3rd-order-to-binaural">3rd-Order to Binaural</h4>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> standardized_3rd_order.wav <span class="at">-af</span> <span class="dt">\</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="st">&quot;sofalizer=sofa=/path/to/impulse_response_order3.sofa:type=freq:gain=0&quot;</span> <span class="dt">\</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>-c:a pcm_s24le binaural_output.wav</span></code></pre></div>
+<hr />
+<h3 id="4-decoding-to-discrete-speakers-51-or-71">4. Decoding to
+Discrete Speakers (5.1 or 7.1)</h3>
+<p>To decode Ambisonic signals to traditional speaker systems, you must
+apply a decoding matrix. The <code>pan</code> filter handles this by
+applying gain coefficients to mix Ambisonic channels into specific
+speaker destinations.</p>
+<h4 id="example-decoding-2nd-order-to-51-surround">Example: Decoding
+2nd-Order to 5.1 Surround</h4>
+<p>In this matrix example, incoming ACN channels (<span
+class="math inline">\(c0\)</span> to <span
+class="math inline">\(c8\)</span>) are weighted to create Left, Right,
+Center, LFE, Left Surround, and Right Surround outputs:</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> standardized_2nd_order.wav <span class="at">-filter_complex</span> <span class="dt">\</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="st">&quot;pan=5.1| </span><span class="dt">\</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="st">FL = 0.35*c0 + 0.35*c1 + 0.25*c3 + 0.15*c6 + 0.15*c8 | </span><span class="dt">\</span></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a><span class="st">FR = 0.35*c0 - 0.35*c1 + 0.25*c3 + 0.15*c6 - 0.15*c8 | </span><span class="dt">\</span></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a><span class="st">FC = 0.50*c0 + 0.50*c3 + 0.25*c6 | </span><span class="dt">\</span></span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a><span class="st">LFE = 0.0 | </span><span class="dt">\</span></span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a><span class="st">BL = 0.35*c0 + 0.35*c1 - 0.25*c3 - 0.15*c6 + 0.15*c8 | </span><span class="dt">\</span></span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a><span class="st">BR = 0.35*c0 - 0.35*c1 - 0.25*c3 - 0.15*c6 - 0.15*c8&quot;</span> <span class="dt">\</span></span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>-c:a pcm_s24le decoded_5.1.wav</span></code></pre></div>
+<hr />
+<h3 id="5-combining-remapping-and-decoding-in-one-command">5. Combining
+Remapping and Decoding in One Command</h3>
+<p>You do not need to generate intermediate files. Chain the custom
+remapping and the decoding step together in a single
+<code>-filter_complex</code> call:</p>
+<div class="sourceCode" id="cb6"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input_custom_raw_16ch.wav <span class="at">-filter_complex</span> <span class="dt">\</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="st">&quot;[0:a]pan=16c|c0=c0|c1=c3|c2=c1|c3=c2|c4=c4|c5=c5|c6=c6|c7=c7|c8=c8|c9=c9|c10=c10|c11=c11|c12=c12|c13=c13|c14=c14|c15=c15[acn]; </span><span class="dt">\</span></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a><span class="st"> [acn]sofalizer=sofa=/path/to/impulse_response_order3.sofa:type=freq[out]&quot;</span> <span class="dt">\</span></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>-map <span class="st">&quot;[out]&quot;</span> <span class="at">-c:a</span> pcm_s24le final_binaural.wav</span></code></pre></div>
+<p>This command takes your non-standard 16-channel input, realigns
+channels 1, 2, and 3 into standard ACN sequence, and renders the
+3rd-order soundfield straight to binaural stereo.</p></article>
+        <div id="comments-container"></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

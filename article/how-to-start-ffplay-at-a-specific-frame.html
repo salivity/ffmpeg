@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Start FFplay at a Specific Frame - ffmpeg</title>
+    <meta name="description" content="While FFplay does not include a native command-line option to jump directly to a frame number, you can achieve frame-accurate playback by utilizing FFmpeg's video filtering engine or by calculating time-based seeking offsets. This guide explains how to s">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/how-to-start-ffplay-at-a-specific-frame">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Start FFplay at a Specific Frame - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/how-to-start-ffplay-at-a-specific-frame" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="While FFplay does not include a native command-line option to jump directly to a frame number, you can achieve frame-accurate playback by utilizing FFmpeg's video filtering engine or by calculating time-based seeking offsets. This guide explains how to s" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="how-to-start-ffplay-at-a-specific-frame">How to Start FFplay at
+a Specific Frame</h1>
+<p>While FFplay does not include a native command-line option to jump
+directly to a frame number, you can achieve frame-accurate playback by
+utilizing FFmpeg's video filtering engine or by calculating time-based
+seeking offsets. This guide explains how to start playback at an exact
+frame using the <code>select</code> video filter, as well as the
+alternative method of converting frame counts to timestamps for faster
+seeking.</p>
+<h3 id="method-1-exact-frame-selection-using-video-filters">Method 1:
+Exact Frame Selection Using Video Filters</h3>
+<p>The most accurate method to start playback at a precise frame is
+using the <code>select</code> video filter. This instructs FFplay to
+evaluate every frame index and drop all frames occurring before your
+target number.</p>
+<p>Run the following command in your terminal:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffplay</span> <span class="at">-vf</span> <span class="st">&quot;select=&#39;gte(n\,TARGET_FRAME)&#39;,setpts=PTS-STARTPTS&quot;</span> input.mp4</span></code></pre></div>
+<p>Replace <code>TARGET_FRAME</code> with your desired frame number
+(indexing starts at 0).</p>
+<ul>
+<li><code>select='gte(n\,TARGET_FRAME)'</code>: The variable
+<code>n</code> represents the current frame number. The <code>gte</code>
+(greater than or equal to) function ensures FFplay only renders frames
+from that index forward.</li>
+<li><code>setpts=PTS-STARTPTS</code>: Resets the Presentation Timestamps
+of the remaining frames to start at zero. Without this, FFplay may pause
+or freeze until the player reaches the real-time timestamp of the
+selected frame.</li>
+</ul>
+<p>If your media file contains audio, the video filter alone will not
+drop the corresponding audio stream. To sync or mute the audio, you can
+either disable audio output entirely using <code>-an</code>:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffplay</span> <span class="at">-vf</span> <span class="st">&quot;select=&#39;gte(n\,TARGET_FRAME)&#39;,setpts=PTS-STARTPTS&quot;</span> <span class="at">-an</span> input.mp4</span></code></pre></div>
+<p>Or apply a corresponding audio filter:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffplay</span> <span class="at">-vf</span> <span class="st">&quot;select=&#39;gte(n\,TARGET_FRAME)&#39;,setpts=PTS-STARTPTS&quot;</span> <span class="at">-af</span> <span class="st">&quot;aselect=&#39;gte(n\,TARGET_FRAME)&#39;,asetpts=PTS-STARTPTS&quot;</span> input.mp4</span></code></pre></div>
+<h3 id="method-2-calculated-timestamp-seeking--ss">Method 2: Calculated
+Timestamp Seeking (<code>-ss</code>)</h3>
+<p>For very large files where decoding every frame from the beginning is
+too slow, you can calculate the timestamp of the target frame and use
+the <code>-ss</code> flag.</p>
+<p>First, determine the frame rate (FPS) of the video using
+<code>ffprobe</code>:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffprobe</span> <span class="at">-v</span> error <span class="at">-select_streams</span> v:0 <span class="at">-show_entries</span> stream=r_frame_rate <span class="at">-of</span> default=noprint_wrappers=1:nokey=1 input.mp4</span></code></pre></div>
+<p>Next, calculate the time offset using the formula:</p>
+<p><span class="math display">\[\text{Time in Seconds} =
+\frac{\text{Target Frame Number}}{\text{Frame Rate}}\]</span></p>
+<p>For example, if your target frame is 300 and the frame rate is 30
+FPS, the timestamp is 10 seconds:</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffplay</span> <span class="at">-ss</span> 10 input.mp4</span></code></pre></div>
+<p>You can specify the <code>-ss</code> argument in seconds (e.g.,
+<code>10.5</code>) or in standard time format
+(<code>HOURS:MM:SS.MICROSECONDS</code>). Note that while this method
+starts playback immediately, it may snap to the nearest preceding
+keyframe (I-frame) rather than the exact target frame depending on the
+file's container and codec. Combine <code>-ss</code> with Method 1 if
+you require both fast navigation and exact frame precision.</p></article>
+        <div id="comments-container"></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

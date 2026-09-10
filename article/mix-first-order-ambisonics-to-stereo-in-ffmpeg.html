@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mix First-Order Ambisonics to Stereo in FFmpeg - ffmpeg</title>
+    <meta name="description" content="First-order Ambisonics (FOA) uses four channels to capture a complete three-dimensional soundfield, but standard playback systems require a two-channel stereo downmix. By synthesizing virtual cardioid microphones pointed at left and right angles, FFmpeg'">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/mix-first-order-ambisonics-to-stereo-in-ffmpeg">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Mix First-Order Ambisonics to Stereo in FFmpeg - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/mix-first-order-ambisonics-to-stereo-in-ffmpeg" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="First-order Ambisonics (FOA) uses four channels to capture a complete three-dimensional soundfield, but standard playback systems require a two-channel stereo downmix. By synthesizing virtual cardioid microphones pointed at left and right angles, FFmpeg'" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="mix-first-order-ambisonics-to-stereo-in-ffmpeg">Mix First-Order
+Ambisonics to Stereo in FFmpeg</h1>
+<p>First-order Ambisonics (FOA) uses four channels to capture a complete
+three-dimensional soundfield, but standard playback systems require a
+two-channel stereo downmix. By synthesizing virtual cardioid microphones
+pointed at left and right angles, FFmpeg's <code>pan</code> filter can
+decode four-channel Ambisonics into standard stereo without needing
+external plugins. This guide explains how to calculate the matrix
+coefficients and execute the FFmpeg commands for both modern AmbiX and
+legacy FuMa Ambisonic formats.</p>
+<h2 id="understanding-ambisonic-channel-orders">Understanding Ambisonic
+Channel Orders</h2>
+<p>Before applying the <code>pan</code> filter, you must identify
+whether your source audio is in <strong>AmbiX</strong> (standard for
+YouTube and modern spatial audio) or <strong>FuMa</strong> (traditional
+Ambisonics). Each uses a different channel assignment:</p>
+<ul>
+<li><strong>AmbiX (ACN / SN3D):</strong>
+<ul>
+<li>Channel 0 (<code>c0</code>): <span class="math inline">\(W\)</span>
+(Omnidirectional)</li>
+<li>Channel 1 (<code>c1</code>): <span class="math inline">\(Y\)</span>
+(Left / Right)</li>
+<li>Channel 2 (<code>c2</code>): <span class="math inline">\(Z\)</span>
+(Up / Down)</li>
+<li>Channel 3 (<code>c3</code>): <span class="math inline">\(X\)</span>
+(Front / Back)</li>
+</ul></li>
+<li><strong>FuMa (Traditional):</strong>
+<ul>
+<li>Channel 0 (<code>c0</code>): <span class="math inline">\(W\)</span>
+(Omnidirectional)</li>
+<li>Channel 1 (<code>c1</code>): <span class="math inline">\(X\)</span>
+(Front / Back)</li>
+<li>Channel 2 (<code>c2</code>): <span class="math inline">\(Y\)</span>
+(Left / Right)</li>
+<li>Channel 3 (<code>c3</code>): <span class="math inline">\(Z\)</span>
+(Up / Down)</li>
+</ul></li>
+</ul>
+<h2 id="decoding-via-virtual-microphones">Decoding via Virtual
+Microphones</h2>
+<p>A standard stereo downmix synthesizes two virtual cardioid
+microphones angled at <span class="math inline">\(\pm 45^\circ\)</span>
+from the center front (<span class="math inline">\(\pm 90^\circ\)</span>
+stereo aperture). The mathematical formula for a virtual cardioid
+combines the omnidirectional component (<span
+class="math inline">\(W\)</span>), the forward component (<span
+class="math inline">\(X\)</span>), and the lateral component (<span
+class="math inline">\(Y\)</span>). The vertical component (<span
+class="math inline">\(Z\)</span>) is discarded for horizontal
+stereo.</p>
+<p>For normalized AmbiX:</p>
+<ul>
+<li><strong>Left (<span class="math inline">\(c0\)</span>
+output):</strong> <span class="math inline">\(0.5 \times W + 0.3535
+\times X + 0.3535 \times Y\)</span></li>
+<li><strong>Right (<span class="math inline">\(c1\)</span>
+output):</strong> <span class="math inline">\(0.5 \times W + 0.3535
+\times X - 0.3535 \times Y\)</span></li>
+</ul>
+<h2 id="ffmpeg-command-for-ambix-acnsn3d">FFmpeg Command for AmbiX
+(ACN/SN3D)</h2>
+<p>In AmbiX, <span class="math inline">\(W\)</span> is <code>c0</code>,
+<span class="math inline">\(Y\)</span> is <code>c1</code>, and <span
+class="math inline">\(X\)</span> is <code>c3</code>. Run the following
+command to downmix to stereo:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input_ambix.wav <span class="at">-af</span> <span class="st">&quot;pan=stereo|c0=0.5*c0 + 0.3535*c3 + 0.3535*c1|c1=0.5*c0 + 0.3535*c3 - 0.3535*c1&quot;</span> output_stereo.wav</span></code></pre></div>
+<h3 id="explanation-of-the-filter">Explanation of the Filter:</h3>
+<ul>
+<li><code>pan=stereo</code>: Defines the target output layout as a
+2-channel stereo file.</li>
+<li><code>c0=...</code>: Sums 50% omni (<code>c0</code>), ~35.4% front
+(<code>c3</code>), and ~35.4% left (<code>c1</code>) to create the left
+stereo output.</li>
+<li><code>c1=...</code>: Sums 50% omni (<code>c0</code>), ~35.4% front
+(<code>c3</code>), and subtracts ~35.4% left (yielding right) to create
+the right stereo output.</li>
+</ul>
+<h2 id="ffmpeg-command-for-fuma">FFmpeg Command for FuMa</h2>
+<p>In FuMa, <span class="math inline">\(W\)</span> is attenuated by
+<span class="math inline">\(3\text{ dB}\)</span> (<span
+class="math inline">\(\approx 0.707\)</span>), <span
+class="math inline">\(X\)</span> is <code>c1</code>, and <span
+class="math inline">\(Y\)</span> is <code>c2</code>. Adjust the
+coefficients accordingly:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input_fuma.wav <span class="at">-af</span> <span class="st">&quot;pan=stereo|c0=0.7071*c0 + 0.5*c1 + 0.5*c2|c1=0.7071*c0 + 0.5*c1 - 0.5*c2&quot;</span> output_stereo.wav</span></code></pre></div>
+<h2 id="preventing-clipping">Preventing Clipping</h2>
+<p>Summing multiple audio channels together can increase the overall
+amplitude and cause digital clipping if the source is mastered close to
+<span class="math inline">\(0\text{ dBFS}\)</span>. To avoid distortion,
+append the <code>volume</code> filter or the <code>loudnorm</code>
+filter after the <code>pan</code> filter:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input_ambix.wav <span class="at">-af</span> <span class="st">&quot;pan=stereo|c0=0.5*c0 + 0.3535*c3 + 0.3535*c1|c1=0.5*c0 + 0.3535*c3 - 0.3535*c1,loudnorm&quot;</span> output_stereo.wav</span></code></pre></div></article>
+        <div id="comments-container"></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

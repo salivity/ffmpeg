@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FFmpeg lut2 Filter Math Expression Guide - ffmpeg</title>
+    <meta name="description" content="The FFmpeg lut2 filter computes a 2-input lookup table that processes two video streams of identical dimensions and pixel formats on a per-pixel basis using mathematical expressions. Unlike the per-frame evaluation of the geq filter, lut2 computes the ex">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/ffmpeg-lut2-filter-math-expression-guide">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="FFmpeg lut2 Filter Math Expression Guide - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/ffmpeg-lut2-filter-math-expression-guide" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="The FFmpeg lut2 filter computes a 2-input lookup table that processes two video streams of identical dimensions and pixel formats on a per-pixel basis using mathematical expressions. Unlike the per-frame evaluation of the geq filter, lut2 computes the ex" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="ffmpeg-lut2-filter-math-expression-guide">FFmpeg lut2 Filter
+Math Expression Guide</h1>
+<p>The FFmpeg <code>lut2</code> filter computes a 2-input lookup table
+that processes two video streams of identical dimensions and pixel
+formats on a per-pixel basis using mathematical expressions. Unlike the
+per-frame evaluation of the <code>geq</code> filter, <code>lut2</code>
+computes the expression values once across the input range (e.g.,
+256x256 values for 8-bit video) into a lookup table, resulting in
+significantly faster processing. This guide explains how to define
+components, utilize the built-in variables, and construct functional
+math expressions for video manipulation.</p>
+<h3 id="understanding-lut2-syntax">Understanding <code>lut2</code>
+Syntax</h3>
+<p>The filter operates on color planes, which can be defined by
+individual component parameters (<code>c0</code>, <code>c1</code>,
+<code>c2</code>, <code>c3</code>):</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input1.mp4 <span class="at">-i</span> input2.mp4 <span class="at">-filter_complex</span> <span class="st">&quot;[0:v][1:v]lut2=c0=&#39;expr&#39;:c1=&#39;expr&#39;:c2=&#39;expr&#39;:c3=&#39;expr&#39;[out]&quot;</span> <span class="at">-map</span> <span class="st">&quot;[out]&quot;</span> output.mp4</span></code></pre></div>
+<ul>
+<li><strong><code>c0</code></strong>: First color component (Y in YUV, R
+in RGB).</li>
+<li><strong><code>c1</code></strong>: Second color component (U in YUV,
+G in RGB).</li>
+<li><strong><code>c2</code></strong>: Third color component (V in YUV, B
+in RGB).</li>
+<li><strong><code>c3</code></strong>: Alpha channel component (if
+present).</li>
+</ul>
+<p>If all planes use the same formula, the shorthand
+<code>all='expr'</code> can be used instead of specifying each component
+individually.</p>
+<h3 id="built-in-variables-and-constants">Built-in Variables and
+Constants</h3>
+<p>Expressions in <code>lut2</code> accept standard FFmpeg mathematical
+functions and variables:</p>
+<ul>
+<li><strong><code>x</code></strong>: The value of the pixel from the
+first input stream.</li>
+<li><strong><code>y</code></strong>: The value of the pixel from the
+second input stream.</li>
+<li><strong><code>minval</code></strong>: The minimum allowed pixel
+value for the component (typically <code>0</code>).</li>
+<li><strong><code>maxval</code></strong>: The maximum allowed pixel
+value (e.g., <code>255</code> for 8-bit, <code>1023</code> for
+10-bit).</li>
+<li><strong><code>clipval(val)</code></strong>: A helper function to
+clamp <code>val</code> between <code>minval</code> and
+<code>maxval</code>.</li>
+<li><strong><code>bitdepth</code></strong>: The component bit depth
+(e.g., <code>8</code>, <code>10</code>, <code>12</code>).</li>
+</ul>
+<h3 id="practical-math-expression-examples">Practical Math Expression
+Examples</h3>
+<h4 id="1-frame-difference-detection">1. Frame Difference Detection</h4>
+<p>To calculate the absolute difference between two inputs (useful for
+motion detection or comparing compression artifacts):</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> video1.mp4 <span class="at">-i</span> video2.mp4 <span class="at">-filter_complex</span> <span class="st">&quot;[0:v][1:v]lut2=all=&#39;abs(x-y)&#39;&quot;</span> output.mp4</span></code></pre></div>
+<h4 id="2-5050-frame-averaging">2. 50/50 Frame Averaging</h4>
+<p>To compute the arithmetic mean of two streams:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> video1.mp4 <span class="at">-i</span> video2.mp4 <span class="at">-filter_complex</span> <span class="st">&quot;[0:v][1:v]lut2=all=&#39;(x+y)/2&#39;&quot;</span> output.mp4</span></code></pre></div>
+<h4 id="3-multiply-blend-mode">3. Multiply Blend Mode</h4>
+<p>To multiply two video signals normalized by the bit depth:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> video1.mp4 <span class="at">-i</span> video2.mp4 <span class="at">-filter_complex</span> <span class="st">&quot;[0:v][1:v]lut2=all=&#39;clipval((x*y)/maxval)&#39;&quot;</span> output.mp4</span></code></pre></div>
+<h4 id="4-conditional-masking">4. Conditional Masking</h4>
+<p>To conditionally replace pixels from the first video based on a
+threshold from the second video (e.g., if the mask pixel value is
+greater than half the maximum range):</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> source.mp4 <span class="at">-i</span> mask.mp4 <span class="at">-filter_complex</span> <span class="st">&quot;[0:v][1:v]lut2=all=&#39;if(gt(y, maxval/2), x, 0)&#39;&quot;</span> output.mp4</span></code></pre></div>
+<h4 id="5-screen-blend-mode">5. Screen Blend Mode</h4>
+<p>To implement a standard screen blending mode:</p>
+<div class="sourceCode" id="cb6"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> video1.mp4 <span class="at">-i</span> video2.mp4 <span class="at">-filter_complex</span> <span class="st">&quot;[0:v][1:v]lut2=all=&#39;clipval(maxval - ((maxval-x)*(maxval-y))/maxval)&#39;&quot;</span> output.mp4</span></code></pre></div>
+<h3 id="tips-for-writing-expressions">Tips for Writing Expressions</h3>
+<ol type="1">
+<li><strong>Always Clamp Out-of-Bounds Results</strong>: Expressions
+that exceed <code>maxval</code> or drop below <code>minval</code> can
+cause unexpected wrap-around artifacts. Wrap arithmetic that may
+overflow or underflow inside <code>clipval()</code>.</li>
+<li><strong>Account for Pixel Format Ranges</strong>: When using YUV
+video, remember that standard dynamic range video often uses limited
+range (Y: 16–235, UV: 16–240) rather than full range (0–255). Ensure
+your math reflects the correct range to avoid crushed blacks or clipped
+highlights.</li>
+</ol></article>
+        <div id="comments-container"></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

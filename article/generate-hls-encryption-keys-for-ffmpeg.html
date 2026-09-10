@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generate HLS Encryption Keys for FFmpeg - ffmpeg</title>
+    <meta name="description" content="Securing HTTP Live Streaming (HLS) content requires encrypting video segments with AES-128 encryption so that only authorized clients can access the playback stream. This guide explains how to generate the 16-byte binary encryption key using OpenSSL, con">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/generate-hls-encryption-keys-for-ffmpeg">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Generate HLS Encryption Keys for FFmpeg - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/generate-hls-encryption-keys-for-ffmpeg" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Securing HTTP Live Streaming (HLS) content requires encrypting video segments with AES-128 encryption so that only authorized clients can access the playback stream. This guide explains how to generate the 16-byte binary encryption key using OpenSSL, con" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="generate-hls-encryption-keys-for-ffmpeg">Generate HLS Encryption
+Keys for FFmpeg</h1>
+<p>Securing HTTP Live Streaming (HLS) content requires encrypting video
+segments with AES-128 encryption so that only authorized clients can
+access the playback stream. This guide explains how to generate the
+16-byte binary encryption key using OpenSSL, configure the key info file
+required by FFmpeg, and apply these assets to produce an encrypted HLS
+playlist.</p>
+<h3 id="1-generate-the-aes-128-encryption-key">1. Generate the AES-128
+Encryption Key</h3>
+<p>HLS uses 128-bit (16-byte) symmetric keys to encrypt video segments.
+Generate this key in binary format using OpenSSL:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">openssl</span> rand 16 <span class="op">&gt;</span> stream.key</span></code></pre></div>
+<p>This command creates a raw 16-byte file named
+<code>stream.key</code>. Keep this file secure, as anyone with access to
+it can decrypt the video.</p>
+<h3 id="2-generate-an-initialization-vector-optional">2. Generate an
+Initialization Vector (Optional)</h3>
+<p>An Initialization Vector (IV) provides additional cryptographic
+randomness. While FFmpeg can automatically generate sequence-based IVs,
+you can define a static 128-bit hex string manually:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">openssl</span> rand <span class="at">-hex</span> 16</span></code></pre></div>
+<p>Copy the 32-character hexadecimal output for use in the key info
+file.</p>
+<h3 id="3-create-the-key-info-file">3. Create the Key Info File</h3>
+<p>FFmpeg uses a key info file to determine where to find the key
+locally, what URL to write inside the <code>.m3u8</code> manifest for
+clients, and which IV to use.</p>
+<p>Create a plain text file named <code>stream.keyinfo</code> with the
+following structure:</p>
+<pre class="text"><code>https://example.com/keys/stream.key
+stream.key
+0123456789abcdef0123456789abcdef</code></pre>
+<p>The file format consists of three lines:</p>
+<ul>
+<li><strong>Line 1 (Key URI):</strong> The remote URL or relative path
+where the video player will download the key during playback.</li>
+<li><strong>Line 2 (Local Path):</strong> The local path where FFmpeg
+can read the binary key file during encoding.</li>
+<li><strong>Line 3 (IV - Optional):</strong> The 32-character
+hex-encoded IV generated in step 2. If omitted, FFmpeg uses the segment
+sequence number as the IV.</li>
+</ul>
+<h3 id="4-transcode-and-encrypt-with-ffmpeg">4. Transcode and Encrypt
+with FFmpeg</h3>
+<p>Pass the <code>stream.keyinfo</code> file to FFmpeg using the
+<code>-hls_key_info_file</code> flag:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="dt">\</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">-c:v</span> libx264 <span class="at">-c:a</span> aac <span class="dt">\</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">-hls_time</span> 10 <span class="dt">\</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">-hls_playlist_type</span> vod <span class="dt">\</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">-hls_key_info_file</span> stream.keyinfo <span class="dt">\</span></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>  playlist.m3u8</span></code></pre></div>
+<h3 id="5-verify-the-encrypted-playlist">5. Verify the Encrypted
+Playlist</h3>
+<p>Inspect the generated <code>playlist.m3u8</code> file. It should
+contain an <code>#EXT-X-KEY</code> tag preceding the segment list:</p>
+<pre class="text"><code>#EXTM3U
+#EXT-X-VERSION:3
+#EXT-X-TARGETDURATION:10
+#EXT-X-MEDIA-SEQUENCE:0
+#EXT-X-KEY:METHOD=AES-128,URI=&quot;https://example.com/keys/stream.key&quot;,IV=0x0123456789abcdef0123456789abcdef
+#EXTINF:10.000000,
+playlist0.ts</code></pre>
+<p>When deployed to production, host <code>stream.key</code> behind an
+authentication mechanism to restrict playback access to authorized
+users.</p></article>
+        <div id="comments-container"></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

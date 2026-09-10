@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Read VITC in FFmpeg with readvitc - ffmpeg</title>
+    <meta name="description" content="This guide explains how to use FFmpeg's readvitc filter to parse Vertical Interval Timecode (VITC) from interlaced analog video captures. You will learn the correct filter syntax, how to adjust detection thresholds for noisy analog signals, how to print">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/how-to-read-vitc-in-ffmpeg-with-readvitc">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Read VITC in FFmpeg with readvitc - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/how-to-read-vitc-in-ffmpeg-with-readvitc" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This guide explains how to use FFmpeg's readvitc filter to parse Vertical Interval Timecode (VITC) from interlaced analog video captures. You will learn the correct filter syntax, how to adjust detection thresholds for noisy analog signals, how to print" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="how-to-read-vitc-in-ffmpeg-with-readvitc">How to Read VITC in
+FFmpeg with readvitc</h1>
+<p>This guide explains how to use FFmpeg's <code>readvitc</code> filter
+to parse Vertical Interval Timecode (VITC) from interlaced analog video
+captures. You will learn the correct filter syntax, how to adjust
+detection thresholds for noisy analog signals, how to print the
+extracted timecode to a text file or terminal, and how to burn the
+timecode directly onto the video frames.</p>
+<h2 id="understanding-the-readvitc-filter">Understanding the readvitc
+Filter</h2>
+<p>Analog tape formats like Betacam, U-matic, and broadcast VHS often
+encode timecode data into the non-visible scan lines of the Vertical
+Blanking Interval (VBI). When these tapes are captured without cropping
+the top blanking lines, the <code>readvitc</code> filter can read this
+binary data and expose it as frame metadata under the key
+<code>lavfi.readvitc.tc_str</code>.</p>
+<p>For the filter to work, the video capture must include the top
+vertical blanking lines (typically lines 10–20 in NTSC or lines 6–22 in
+PAL), and the video must not be cropped or deinterlaced prior to running
+the filter.</p>
+<h2 id="filter-options">Filter Options</h2>
+<p>The <code>readvitc</code> filter supports the following optional
+parameters:</p>
+<ul>
+<li><strong><code>scan_max</code></strong>: Sets the maximum field line
+to scan for VITC data. The default is <code>32</code>. If your capture
+includes standard VBI space, the default is usually sufficient, but you
+can lower or raise it depending on where the timecode sits.</li>
+<li><strong><code>thr_b</code></strong>: Sets the black/white threshold
+for black (0.0 to 1.0). The default is <code>0.2</code>.</li>
+<li><strong><code>thr_w</code></strong>: Sets the black/white threshold
+for white (0.0 to 1.0). The default is <code>0.6</code>.</li>
+</ul>
+<p>Adjusting <code>thr_b</code> and <code>thr_w</code> is useful when
+dealing with weak or degraded analog signals where standard luma levels
+have shifted.</p>
+<h2 id="extracting-and-printing-vitc-data">Extracting and Printing VITC
+Data</h2>
+<p>To scan a video file and print every detected timecode value into a
+text file, combine <code>readvitc</code> with the <code>metadata</code>
+filter:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input_capture.mov <span class="at">-vf</span> <span class="st">&quot;readvitc=scan_max=32,metadata=mode=print:key=lavfi.readvitc.tc_str:file=vitc_log.txt&quot;</span> <span class="at">-f</span> null <span class="at">-</span></span></code></pre></div>
+<p>This command parses the entire file without re-encoding video frames,
+creating <code>vitc_log.txt</code> containing entries such as:</p>
+<pre class="text"><code>frame:0    pts:0       pts_time:0
+lavfi.readvitc.tc_str=10:14:32:04
+frame:1    pts:1001    pts_time:0.0333667
+lavfi.readvitc.tc_str=10:14:32:05</code></pre>
+<h2 id="reading-vitc-with-ffprobe">Reading VITC with ffprobe</h2>
+<p>If you need to query a specific frame's VITC via script without
+processing the entire file with FFmpeg, use <code>ffprobe</code>:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffprobe</span> <span class="at">-v</span> error <span class="at">-f</span> lavfi <span class="at">-i</span> <span class="st">&quot;movie=input_capture.mov,readvitc=scan_max=32&quot;</span> <span class="at">-show_entries</span> frame_tags=lavfi.readvitc.tc_str <span class="at">-of</span> default=noprint_wrappers=1:nokey=0</span></code></pre></div>
+<h2 id="burning-vitc-onto-the-video">Burning VITC onto the Video</h2>
+<p>To create a reference or review copy that visibly displays the
+original tape timecode, pipe the metadata string into the
+<code>drawtext</code> filter:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input_capture.mov <span class="at">-vf</span> <span class="st">&quot;readvitc=scan_max=32,drawtext=fontfile=/path/to/font.ttf:text=&#39;%{metadata\:lavfi.readvitc.tc_str}&#39;:x=w-tw-40:y=40:fontsize=32:fontcolor=white:box=1:boxcolor=black@0.6&quot;</span> <span class="at">-c:v</span> libx264 <span class="at">-crf</span> 18 <span class="at">-c:a</span> copy preview_vitc.mp4</span></code></pre></div>
+<p>In this command:</p>
+<ul>
+<li><code>readvitc</code> extracts the timecode on a per-frame
+basis.</li>
+<li><code>drawtext</code> accesses the metadata using
+<code>%{metadata\:lavfi.readvitc.tc_str}</code> and renders it in the
+top-right corner over a semi-transparent black box.</li>
+</ul>
+<h2 id="troubleshooting-weak-signals">Troubleshooting Weak Signals</h2>
+<p>If <code>readvitc</code> fails to detect timecode on an analog
+capture:</p>
+<ol type="1">
+<li><strong>Verify VBI Presence</strong>: Open the raw capture in a
+player and confirm that flickering white dotted lines are visible along
+the very top of the frame.</li>
+<li><strong>Loosen Thresholds</strong>: Broaden the detection margins to
+accommodate luma drift by adjusting <code>thr_b</code> down and
+<code>thr_w</code> up:
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="va">readvitc</span><span class="op">=</span>scan_max=36:thr_b=0.15:thr_w=0.50</span></code></pre></div></li>
+<li><strong>Check Processing Order</strong>: Ensure
+<code>readvitc</code> is the absolute first filter in your filterchain.
+Cropping (<code>crop</code>), scaling (<code>scale</code>), or
+deinterlacing (<code>yadif</code>, <code>bwdif</code>) before
+<code>readvitc</code> will corrupt the raw waveform lines and prevent
+decoding.</li>
+</ol></article>
+        <div id="comments-container"></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

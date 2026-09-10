@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Change Video Field Order in FFmpeg - ffmpeg</title>
+    <meta name="description" content="Interlaced video relies on field dominance—either Top Field First (TFF) or Bottom Field First (BFF)—to ensure smooth temporal playback. If a video's field order is reversed, moving elements will exhibit an unnatural jitter or stuttering effect. This">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/change-video-field-order-in-ffmpeg">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Change Video Field Order in FFmpeg - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/change-video-field-order-in-ffmpeg" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Interlaced video relies on field dominance—either Top Field First (TFF) or Bottom Field First (BFF)—to ensure smooth temporal playback. If a video's field order is reversed, moving elements will exhibit an unnatural jitter or stuttering effect. This" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="change-video-field-order-in-ffmpeg">Change Video Field Order in
+FFmpeg</h1>
+<p>Interlaced video relies on field dominance—either Top Field First
+(TFF) or Bottom Field First (BFF)—to ensure smooth temporal playback. If
+a video's field order is reversed, moving elements will exhibit an
+unnatural jitter or stuttering effect. This guide explains how to use
+FFmpeg's <code>fieldorder</code> video filter to convert the field order
+of your footage by physically shifting the scan lines, correcting
+playback issues without needing to fully deinterlace the video.</p>
+<h3 id="how-the-fieldorder-filter-works">How the fieldorder Filter
+Works</h3>
+<p>The <code>fieldorder</code> filter transforms the field structure of
+interlaced video by shifting the image up or down by one scan line and
+updating the internal field flag. This operation effectively inverts the
+temporal priority between the two fields (converting TFF to BFF, or BFF
+to TFF).</p>
+<h3 id="converting-to-top-field-first-tff">Converting to Top Field First
+(TFF)</h3>
+<p>If your source video is Bottom Field First (or is displaying jitter
+caused by being treated as TFF when it should not be), you can convert
+it to Top Field First using the <code>tff</code> parameter:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mov <span class="at">-vf</span> <span class="st">&quot;fieldorder=tff&quot;</span> <span class="at">-c:v</span> prores <span class="at">-c:a</span> copy output.mov</span></code></pre></div>
+<p>For H.264 video, specify your video encoder and interlacing flags
+explicitly:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;fieldorder=tff&quot;</span> <span class="at">-c:v</span> libx264 <span class="at">-flags</span> +ilme+ildct <span class="at">-top</span> 1 <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<h3 id="converting-to-bottom-field-first-bff">Converting to Bottom Field
+First (BFF)</h3>
+<p>To convert Top Field First footage to Bottom Field First (commonly
+required for standard-definition DV formats):</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mov <span class="at">-vf</span> <span class="st">&quot;fieldorder=bff&quot;</span> <span class="at">-c:v</span> prores <span class="at">-c:a</span> copy output.mov</span></code></pre></div>
+<p>For an H.264 destination requiring BFF:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;fieldorder=bff&quot;</span> <span class="at">-c:v</span> libx264 <span class="at">-flags</span> +ilme+ildct <span class="at">-top</span> 0 <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<h3 id="fieldorder-vs-setfield">fieldorder vs. setfield</h3>
+<p>It is critical to distinguish between <code>fieldorder</code> and
+<code>setfield</code>:</p>
+<ul>
+<li><strong><code>fieldorder</code></strong>: Modifies the actual image
+data by moving scan lines vertically, converting the visual contents
+from one order to another. Use this when the video's fields were
+genuinely captured or rendered incorrectly relative to your target
+specification.</li>
+<li><strong><code>setfield</code></strong>: Only alters the metadata tag
+indicating field order without altering video lines. If the image data
+is already in the correct order but the container header is falsely
+reporting the wrong field dominance, use <code>-vf "setfield=tff"</code>
+or <code>-vf "setfield=bff"</code> instead.</li>
+</ul>
+<h3 id="verifying-field-order-with-idet">Verifying Field Order with
+idet</h3>
+<p>To verify whether your change was successful and to inspect the
+interlace characteristics of the output, run the <code>idet</code>
+(interlace detect) filter:</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> output.mp4 <span class="at">-vf</span> <span class="st">&quot;idet&quot;</span> <span class="at">-frames:v</span> 300 <span class="at">-f</span> null <span class="at">-</span></span></code></pre></div>
+<p>The output summary in the terminal will display counts for
+<code>TFF</code> and <code>BFF</code> frames, confirming whether your
+video is predominantly parsed in the desired field dominance.</p></article>
+        <div id="comments-container"></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

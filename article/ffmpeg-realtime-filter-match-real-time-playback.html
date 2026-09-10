@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FFmpeg Realtime Filter: Match Real-Time Playback - ffmpeg</title>
+    <meta name="description" content="By default, FFmpeg processes media files as fast as your CPU and GPU will allow, which can cause issues when testing live streams or generating simulated real-time outputs. The realtime video filter and arealtime audio filter throttle FFmpeg's internal p">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/ffmpeg-realtime-filter-match-real-time-playback">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="FFmpeg Realtime Filter: Match Real-Time Playback - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/ffmpeg-realtime-filter-match-real-time-playback" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="By default, FFmpeg processes media files as fast as your CPU and GPU will allow, which can cause issues when testing live streams or generating simulated real-time outputs. The realtime video filter and arealtime audio filter throttle FFmpeg's internal p" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="ffmpeg-realtime-filter-match-real-time-playback">FFmpeg Realtime
+Filter: Match Real-Time Playback</h1>
+<p>By default, FFmpeg processes media files as fast as your CPU and GPU
+will allow, which can cause issues when testing live streams or
+generating simulated real-time outputs. The <code>realtime</code> video
+filter and <code>arealtime</code> audio filter throttle FFmpeg's
+internal processing pipeline to match the wall-clock playback speed of
+the media. This article explains how the filter works, how to use it in
+your commands, and how it compares to the common <code>-re</code> input
+flag.</p>
+<h3 id="why-use-the-realtime-filter">Why Use the <code>realtime</code>
+Filter?</h3>
+<p>FFmpeg usually encodes offline media at speeds much faster than 1x.
+While ideal for standard file conversion, this can overload downstream
+network buffers or RTMP/SRT servers when simulating a live camera feed
+from a file. The <code>realtime</code> filter evaluates the presentation
+timestamps (PTS) of passing frames and pauses FFmpeg processing if the
+frames arrive faster than the actual clock time.</p>
+<h3 id="basic-usage-for-video">Basic Usage for Video</h3>
+<p>To slow down video processing to 1x real-time speed, insert
+<code>realtime</code> into your video filter chain using
+<code>-vf</code>:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> realtime <span class="at">-c:v</span> libx264 <span class="at">-c:a</span> aac <span class="at">-f</span> flv rtmp://localhost/live/stream</span></code></pre></div>
+<p>In this command:</p>
+<ul>
+<li><code>-i input.mp4</code>: The source file being read.</li>
+<li><code>-vf realtime</code>: The filter checks the PTS of each frame
+and introduces delays to ensure 1 second of video takes at least 1
+second of wall-clock time to process.</li>
+</ul>
+<h3 id="basic-usage-for-audio">Basic Usage for Audio</h3>
+<p>If you are only processing an audio stream, use the audio equivalent,
+<code>arealtime</code>:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp3 <span class="at">-af</span> arealtime <span class="at">-c:a</span> aac output.aac</span></code></pre></div>
+<h3 id="applying-real-time-throttling-to-both-streams">Applying
+Real-Time Throttling to Both Streams</h3>
+<p>When processing both audio and video, you can throttle either stream,
+but throttling the video stream is generally sufficient. If you want
+strict enforcement on both, apply <code>realtime</code> to the video and
+<code>arealtime</code> to the audio simultaneously:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> realtime <span class="at">-af</span> arealtime <span class="at">-c:v</span> libx264 <span class="at">-c:a</span> aac output.mp4</span></code></pre></div>
+<p>Alternatively, use <code>filter_complex</code>:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-filter_complex</span> <span class="st">&quot;[0:v]realtime[v];[0:a]arealtime[a]&quot;</span> <span class="at">-map</span> <span class="st">&quot;[v]&quot;</span> <span class="at">-map</span> <span class="st">&quot;[a]&quot;</span> <span class="at">-c:v</span> libx264 <span class="at">-c:a</span> aac output.mp4</span></code></pre></div>
+<h3 id="filter-options-and-parameters">Filter Options and
+Parameters</h3>
+<p>The <code>realtime</code> filter supports optional parameters to
+fine-tune behavior:</p>
+<ul>
+<li><strong><code>limit</code></strong>: Specifies the maximum
+acceptable pause time (in seconds). If the time delta is greater than
+this limit, the filter assumes a timestamp discontinuity and will not
+pause for the full duration. The default is 2 seconds.</li>
+<li><strong><code>speed</code></strong>: Controls the playback speed
+multiplier. The default is <code>1.0</code> (standard real-time).
+Setting this to <code>2.0</code> will process the stream at twice
+real-time speed.</li>
+</ul>
+<p>Example using options:</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;realtime=limit=5:speed=1.0&quot;</span> <span class="at">-f</span> null <span class="at">-</span></span></code></pre></div>
+<h3 id="realtime-filter-vs-the--re-option"><code>realtime</code> Filter
+vs. the <code>-re</code> Option</h3>
+<p>While both restrict speed, they operate at different stages of the
+FFmpeg pipeline:</p>
+<ul>
+<li><strong><code>-re</code> (Input Option):</strong> Placed before the
+input (<code>ffmpeg -re -i input.mp4</code>), it tells the demuxer to
+read packets from the disk at native frame rate. However, it can
+sometimes be imprecise with complex filter graphs or stream
+generators.</li>
+<li><strong><code>realtime</code> (Filter Option):</strong> Operates
+inside the filter graph. This makes it suitable for synthetic inputs
+(such as <code>testsrc</code> or <code>gradients</code>) that do not
+read from a disk-based container, or inside mid-pipeline processing
+where filtering introduces variable latency.</li>
+</ul></article>
+        <div id="comments-container"></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

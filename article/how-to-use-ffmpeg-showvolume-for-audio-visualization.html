@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Use FFmpeg showvolume for Audio Visualization - ffmpeg</title>
+    <meta name="description" content="This guide covers how to use the FFmpeg showvolume filter to render dynamic visual audio meters directly from an audio source. You will learn the core command structure to generate standalone meter videos, how to superimpose meters onto existing video tr">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/how-to-use-ffmpeg-showvolume-for-audio-visualization">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Use FFmpeg showvolume for Audio Visualization - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/how-to-use-ffmpeg-showvolume-for-audio-visualization" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This guide covers how to use the FFmpeg showvolume filter to render dynamic visual audio meters directly from an audio source. You will learn the core command structure to generate standalone meter videos, how to superimpose meters onto existing video tr" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="how-to-use-ffmpeg-showvolume-for-audio-visualization">How to Use
+FFmpeg showvolume for Audio Visualization</h1>
+<p>This guide covers how to use the FFmpeg <code>showvolume</code>
+filter to render dynamic visual audio meters directly from an audio
+source. You will learn the core command structure to generate standalone
+meter videos, how to superimpose meters onto existing video tracks, and
+how to modify display parameters such as orientation, color modes, fade
+speeds, and decibel values.</p>
+<h2 id="basic-usage-standalone-volume-meter">Basic Usage: Standalone
+Volume Meter</h2>
+<p>The <code>showvolume</code> filter is an audio-to-video filter. To
+turn an audio file into a standalone video featuring a volume bar, use
+<code>-filter_complex</code>:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp3 <span class="at">-filter_complex</span> <span class="st">&quot;[0:a]showvolume=w=600:h=40[v]&quot;</span> <span class="at">-map</span> <span class="st">&quot;[v]&quot;</span> <span class="at">-map</span> 0:a <span class="at">-c:v</span> libx264 <span class="at">-c:a</span> aac output.mp4</span></code></pre></div>
+<p>In this command:</p>
+<ul>
+<li><code>[0:a]showvolume=w=600:h=40[v]</code> takes the primary audio
+stream, generates a volume bar 600 pixels wide and 40 pixels high, and
+labels the resulting video stream as <code>[v]</code>.</li>
+<li><code>-map "[v]"</code> and <code>-map 0:a</code> bundle the newly
+created visualization with the original audio track.</li>
+</ul>
+<h2 id="overlaying-the-volume-meter-onto-a-video">Overlaying the Volume
+Meter onto a Video</h2>
+<p>To place the volume meter on top of a video stream (such as a podcast
+recording or gameplay footage), combine <code>showvolume</code> with the
+<code>overlay</code> filter:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-filter_complex</span> <span class="st">&quot;[0:a]showvolume=w=400:h=30:b=4[meter];[0:v][meter]overlay=x=20:y=20[v]&quot;</span> <span class="at">-map</span> <span class="st">&quot;[v]&quot;</span> <span class="at">-map</span> 0:a <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<p>This pipeline generates the meter, applies a 4-pixel border
+(<code>b=4</code>), and positions it 20 pixels from the top-left corner
+of the input video (<code>overlay=x=20:y=20</code>).</p>
+<h2 id="key-configuration-parameters">Key Configuration Parameters</h2>
+<p>The <code>showvolume</code> filter includes multiple options to
+refine the look and behavior of the meter:</p>
+<ul>
+<li><strong>Orientation (<code>o</code>)</strong>: Accepts
+<code>h</code> (horizontal, default) or <code>v</code> (vertical).</li>
+<li><strong>Dimensions (<code>w</code> and <code>h</code>)</strong>:
+Sets width and height in pixels. For vertical meters, <code>w</code>
+controls thickness while <code>h</code> controls height.</li>
+<li><strong>Fade (<code>f</code>)</strong>: Adjusts the decay/fall-off
+speed of the meter. Values range between <code>0.0</code> and
+<code>1.0</code>. A lower value (such as <code>0.1</code>) makes the bar
+fall faster, while higher values make the decay smoother.</li>
+<li><strong>Color Mode (<code>c</code>)</strong>: Defines the color
+scheme. Common options include:
+<ul>
+<li><code>channel</code>: Assigns different default colors to each audio
+channel.</li>
+<li>A custom color expression (e.g., <code>c=PEAK</code> or custom RGBA
+hex values).</li>
+</ul></li>
+<li><strong>Text / dB Scale (<code>t</code>)</strong>: Displays decibel
+labels and scale markers. Set to <code>1</code> (or <code>true</code>)
+to show text labels, or <code>0</code> to disable them.</li>
+<li><strong>Display Mode (<code>dm</code>)</strong>: Configures what the
+meter tracks:
+<ul>
+<li><code>p</code>: Peak volume (default).</li>
+<li><code>r</code>: RMS (Root Mean Square) volume.</li>
+</ul></li>
+</ul>
+<h2 id="advanced-customization-example">Advanced Customization
+Example</h2>
+<p>To create a transparent, vertical stereo meter with custom colors and
+decibel text enabled:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-filter_complex</span> <span class="dt">\</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="st">&quot;[0:a]showvolume=o=v:w=30:h=400:f=0.8:t=1:c=volume:b=2[meter]; </span><span class="dt">\</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="st"> [0:v][meter]overlay=W-w-20:H-h-20[outv]&quot;</span> <span class="dt">\</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>-map <span class="st">&quot;[outv]&quot;</span> <span class="at">-map</span> 0:a <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<ul>
+<li><code>o=v</code>: Sets the orientation to vertical.</li>
+<li><code>w=30:h=400</code>: Creates a tall, narrow bar suitable for
+vertical display.</li>
+<li><code>f=0.8</code>: Gives the meters a gradual decay rate.</li>
+<li><code>t=1</code>: Displays numerical decibel indicators along the
+meter.</li>
+<li><code>c=volume</code>: Colors the meter green at safe levels,
+changing to yellow and red near peak levels.</li>
+<li><code>overlay=W-w-20:H-h-20</code>: Positions the meter 20 pixels
+away from the bottom-right corner of the video frame.</li>
+</ul></article>
+        <div id="comments-container"></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Set Field Order to TFF or BFF in FFmpeg - ffmpeg</title>
+    <meta name="description" content="This guide explains how to set or convert interlaced video field dominance to Top-Field-First (TFF) or Bottom-Field-First (BFF) using FFmpeg. Whether you need to correct mislabeled container metadata or physically shift scan lines to convert interlaced m">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/how-to-set-field-order-to-tff-or-bff-in-ffmpeg">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Set Field Order to TFF or BFF in FFmpeg - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/how-to-set-field-order-to-tff-or-bff-in-ffmpeg" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This guide explains how to set or convert interlaced video field dominance to Top-Field-First (TFF) or Bottom-Field-First (BFF) using FFmpeg. Whether you need to correct mislabeled container metadata or physically shift scan lines to convert interlaced m" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="how-to-set-field-order-to-tff-or-bff-in-ffmpeg">How to Set Field
+Order to TFF or BFF in FFmpeg</h1>
+<p>This guide explains how to set or convert interlaced video field
+dominance to Top-Field-First (TFF) or Bottom-Field-First (BFF) using
+FFmpeg. Whether you need to correct mislabeled container metadata or
+physically shift scan lines to convert interlaced material for broadcast
+and archival specifications, FFmpeg provides dedicated video filters and
+encoder flags to manage both scenarios efficiently.</p>
+<h3 id="1-correcting-metadata-flags-without-modifying-video-lines">1.
+Correcting Metadata Flags Without Modifying Video Lines</h3>
+<p>If a video was recorded as TFF or BFF but is incorrectly flagged in
+its metadata, you should update the field label without moving any
+picture lines. Use the <code>setfield</code> filter:</p>
+<p><strong>To mark as Top-Field-First (TFF):</strong></p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;setfield=tff&quot;</span> <span class="at">-c:v</span> libx264 <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<p><strong>To mark as Bottom-Field-First (BFF):</strong></p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;setfield=bff&quot;</span> <span class="at">-c:v</span> libx264 <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<p>The <code>setfield</code> filter only alters the internal frame
+property indicating field order, ensuring downstream decoders read the
+frames correctly.</p>
+<hr />
+<h3 id="2-converting-the-video-content-shifting-fields">2. Converting
+the Video Content (Shifting Fields)</h3>
+<p>If the video is already flagged correctly (for example, native DV
+footage that is BFF), but your target deliverable requires the opposite
+order (such as standard broadcast TFF), you must use the
+<code>fieldorder</code> filter. This physically shifts the picture data
+vertically by one line to swap dominance.</p>
+<p><strong>Convert from BFF to TFF:</strong></p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mov <span class="at">-vf</span> <span class="st">&quot;fieldorder=tff&quot;</span> <span class="at">-c:v</span> prores_ks <span class="at">-profile:v</span> 3 <span class="at">-c:a</span> copy output.mov</span></code></pre></div>
+<p><strong>Convert from TFF to BFF:</strong></p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mov <span class="at">-vf</span> <span class="st">&quot;fieldorder=bff&quot;</span> <span class="at">-c:v</span> prores_ks <span class="at">-profile:v</span> 3 <span class="at">-c:a</span> copy output.mov</span></code></pre></div>
+<hr />
+<h3 id="3-setting-encoder-interlacing-flags">3. Setting Encoder
+Interlacing Flags</h3>
+<p>When encoding to codecs such as MPEG-2 or H.264, the encoder needs to
+be explicitly instructed to maintain interlaced coding and flag the
+field order in the bitstream.</p>
+<p>Use the <code>-top</code> parameter alongside the interlaced DCT and
+Motion Estimation flags (<code>-flags +ildct+ilme</code>):</p>
+<ul>
+<li><code>-top 1</code> = Top-Field-First (TFF)</li>
+<li><code>-top 0</code> = Bottom-Field-First (BFF)</li>
+</ul>
+<p><strong>Full H.264 Interlaced TFF Encoding Example:</strong></p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mov <span class="at">-vf</span> <span class="st">&quot;setfield=tff&quot;</span> <span class="at">-c:v</span> libx264 <span class="at">-flags</span> +ildct+ilme <span class="at">-top</span> 1 <span class="at">-pix_fmt</span> yuv420p <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<p><strong>Full MPEG-2 Interlaced BFF Encoding Example:</strong></p>
+<div class="sourceCode" id="cb6"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mov <span class="at">-vf</span> <span class="st">&quot;setfield=bff&quot;</span> <span class="at">-c:v</span> mpeg2video <span class="at">-flags</span> +ildct+ilme <span class="at">-top</span> 0 <span class="at">-b:v</span> 15M <span class="at">-c:a</span> copy output.mpg</span></code></pre></div>
+<hr />
+<h3 id="4-verifying-the-field-order">4. Verifying the Field Order</h3>
+<p>To verify whether your output has been correctly tagged, use
+<code>ffprobe</code> to inspect the field order metadata on the video
+stream:</p>
+<div class="sourceCode" id="cb7"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffprobe</span> <span class="at">-v</span> error <span class="at">-select_streams</span> v:0 <span class="at">-show_entries</span> stream=field_order <span class="at">-of</span> default=noprint_wrappers=1 input.mp4</span></code></pre></div>
+<p>This command will return <code>tt</code> (Top-Field-First),
+<code>bb</code> (Bottom-Field-First), or <code>progressive</code>.</p></article>
+        <div id="comments-container"></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

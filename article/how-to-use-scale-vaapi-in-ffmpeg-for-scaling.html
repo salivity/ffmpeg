@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Use scale_vaapi in FFmpeg for Scaling - ffmpeg</title>
+    <meta name="description" content="This guide provides a practical overview of using FFmpeg's scalevaapi filter to perform hardware-accelerated video scaling on Linux systems with compatible Intel or AMD GPUs. You will learn the required driver settings, how to initialize the hardware dev">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/how-to-use-scale-vaapi-in-ffmpeg-for-scaling">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Use scale_vaapi in FFmpeg for Scaling - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/how-to-use-scale-vaapi-in-ffmpeg-for-scaling" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This guide provides a practical overview of using FFmpeg's scalevaapi filter to perform hardware-accelerated video scaling on Linux systems with compatible Intel or AMD GPUs. You will learn the required driver settings, how to initialize the hardware dev" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="how-to-use-scale_vaapi-in-ffmpeg-for-scaling">How to Use
+scale_vaapi in FFmpeg for Scaling</h1>
+<p>This guide provides a practical overview of using FFmpeg's
+<code>scale_vaapi</code> filter to perform hardware-accelerated video
+scaling on Linux systems with compatible Intel or AMD GPUs. You will
+learn the required driver settings, how to initialize the hardware
+device, and how to construct commands for both hybrid and fully
+hardware-accelerated transcoding pipelines.</p>
+<h3 id="prerequisites">Prerequisites</h3>
+<p>To use <code>scale_vaapi</code>, your system must meet the following
+requirements:</p>
+<ul>
+<li>A compatible GPU (Intel integrated graphics or AMD Radeon).</li>
+<li>The appropriate VAAPI drivers installed
+(<code>intel-media-va-driver</code>, <code>i965-va-driver</code>, or
+<code>mesa-va-drivers</code>).</li>
+<li>FFmpeg compiled with <code>--enable-vaapi</code>.</li>
+<li>Verified hardware access via the <code>vainfo</code> command.</li>
+</ul>
+<h3 id="basic-concepts">Basic Concepts</h3>
+<p>FFmpeg requires you to specify a hardware device using the
+<code>-vaapi_device</code> option (typically pointing to
+<code>/dev/dri/renderD128</code>).</p>
+<p>Because <code>scale_vaapi</code> operates in GPU memory, the video
+frames must be in VAAPI surface format before reaching the filter. This
+is achieved either by:</p>
+<ol type="1">
+<li>Uploading software-decoded frames to the GPU via the
+<code>hwupload</code> filter.</li>
+<li>Decoding directly into GPU memory using the
+<code>-hwaccel vaapi</code> option.</li>
+</ol>
+<h3 id="method-1-full-hardware-pipeline-decode-scale-and-encode">Method
+1: Full Hardware Pipeline (Decode, Scale, and Encode)</h3>
+<p>For maximum performance, decode the video using hardware, pass the
+frames directly to <code>scale_vaapi</code>, and encode using a VAAPI
+encoder like <code>h264_vaapi</code>. This avoids copying frames between
+CPU and GPU memory.</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-hwaccel</span> vaapi <span class="dt">\</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>       <span class="at">-hwaccel_output_format</span> vaapi <span class="dt">\</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>       <span class="at">-vaapi_device</span> /dev/dri/renderD128 <span class="dt">\</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>       <span class="at">-i</span> input.mp4 <span class="dt">\</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>       <span class="at">-vf</span> <span class="st">&quot;scale_vaapi=w=1280:h=720&quot;</span> <span class="dt">\</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>       <span class="at">-c:v</span> h264_vaapi <span class="dt">\</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>       <span class="at">-b:v</span> 2M <span class="dt">\</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>       output_720p.mp4</span></code></pre></div>
+<h3
+id="method-2-software-decode-with-hardware-scaling-and-encoding">Method
+2: Software Decode with Hardware Scaling and Encoding</h3>
+<p>If the input codec is not supported by your hardware decoder, you can
+decode the stream with your CPU, upload the frames to the GPU for
+scaling, and encode them with VAAPI.</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-vaapi_device</span> /dev/dri/renderD128 <span class="dt">\</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>       <span class="at">-i</span> input.mkv <span class="dt">\</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>       <span class="at">-vf</span> <span class="st">&quot;format=nv12,hwupload,scale_vaapi=w=1920:h=1080&quot;</span> <span class="dt">\</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>       <span class="at">-c:v</span> h264_vaapi <span class="dt">\</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>       <span class="at">-b:v</span> 4M <span class="dt">\</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>       output_1080p.mp4</span></code></pre></div>
+<p><em>Note: The <code>format=nv12</code> filter ensures pixel
+compatibility before uploading frames via
+<code>hwupload</code>.</em></p>
+<h3 id="method-3-hardware-scaling-with-software-encoding">Method 3:
+Hardware Scaling with Software Encoding</h3>
+<p>If you need to use a software encoder like <code>libx264</code> or
+<code>libx265</code> for higher compression efficiency, download the
+frames back to system memory using <code>hwdownload</code> after
+scaling.</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-hwaccel</span> vaapi <span class="dt">\</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>       <span class="at">-hwaccel_output_format</span> vaapi <span class="dt">\</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>       <span class="at">-vaapi_device</span> /dev/dri/renderD128 <span class="dt">\</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>       <span class="at">-i</span> input.mp4 <span class="dt">\</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>       <span class="at">-vf</span> <span class="st">&quot;scale_vaapi=w=1280:h=720,hwdownload,format=nv12&quot;</span> <span class="dt">\</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>       <span class="at">-c:v</span> libx264 <span class="dt">\</span></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>       <span class="at">-crf</span> 23 <span class="dt">\</span></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>       output_soft.mp4</span></code></pre></div>
+<h3 id="common-scale_vaapi-parameters">Common <code>scale_vaapi</code>
+Parameters</h3>
+<ul>
+<li><p><strong>Maintaining Aspect Ratio:</strong> Set one dimension to
+<code>-1</code> to preserve the aspect ratio, or <code>-2</code> to
+ensure the calculated dimension is divisible by 2:</p>
+<pre class="text"><code>scale_vaapi=w=1280:h=-2</code></pre></li>
+<li><p><strong>Output Pixel Format (<code>format</code>):</strong> Force
+a specific pixel format supported by the hardware surface:</p>
+<pre class="text"><code>scale_vaapi=w=1920:h=1080:format=nv12</code></pre></li>
+<li><p><strong>Scaling Algorithm (<code>mode</code>):</strong> Control
+the scaling quality/algorithm supported by the driver:</p>
+<ul>
+<li><code>default</code>: The driver's default algorithm.</li>
+<li><code>fast</code>: Prioritizes speed over quality (e.g.,
+nearest-neighbor or bilinear).</li>
+<li><code>hq</code>: Enables high-quality scaling
+(hardware-dependent).</li>
+</ul>
+<pre class="text"><code>scale_vaapi=w=1280:h=720:mode=hq</code></pre></li>
+</ul></article>
+        <div id="comments-container"></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

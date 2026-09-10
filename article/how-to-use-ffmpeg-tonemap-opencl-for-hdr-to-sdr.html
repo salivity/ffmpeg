@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Use FFmpeg tonemap_opencl for HDR to SDR - ffmpeg</title>
+    <meta name="description" content="This guide explains how to leverage the tonemapopencl filter in FFmpeg to perform fast, hardware-accelerated HDR-to-SDR tone mapping using OpenCL. Tone mapping converts High Dynamic Range (HDR) content with wide color gamuts (like BT.2020) down to Standa">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/how-to-use-ffmpeg-tonemap-opencl-for-hdr-to-sdr">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Use FFmpeg tonemap_opencl for HDR to SDR - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/how-to-use-ffmpeg-tonemap-opencl-for-hdr-to-sdr" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This guide explains how to leverage the tonemapopencl filter in FFmpeg to perform fast, hardware-accelerated HDR-to-SDR tone mapping using OpenCL. Tone mapping converts High Dynamic Range (HDR) content with wide color gamuts (like BT.2020) down to Standa" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="how-to-use-ffmpeg-tonemap_opencl-for-hdr-to-sdr">How to Use
+FFmpeg tonemap_opencl for HDR to SDR</h1>
+<p>This guide explains how to leverage the <code>tonemap_opencl</code>
+filter in FFmpeg to perform fast, hardware-accelerated HDR-to-SDR tone
+mapping using OpenCL. Tone mapping converts High Dynamic Range (HDR)
+content with wide color gamuts (like BT.2020) down to Standard Dynamic
+Range (SDR) with Rec.709 color profiles. Using OpenCL offloads the
+computationally heavy color transformation to your GPU, resulting in
+significantly faster encoding times compared to software-based filters
+like <code>zscale</code>.</p>
+<h3 id="prerequisites">Prerequisites</h3>
+<p>Before using the filter, ensure your environment meets the following
+requirements:</p>
+<ol type="1">
+<li><strong>FFmpeg Compilation</strong>: FFmpeg must be compiled with
+<code>--enable-opencl</code>. You can check this by running
+<code>ffmpeg -version</code> and looking for
+<code>--enable-opencl</code> in the configuration output.</li>
+<li><strong>GPU Drivers</strong>: Proper OpenCL runtime drivers must be
+installed for your hardware (Intel Neo/Compute Runtime, NVIDIA
+CUDA/OpenCL, or AMD ROCm/AMDGPU-PRO).</li>
+<li><strong>OpenCL Device</strong>: Identify your available OpenCL
+devices with <code>clinfo</code> or by using FFmpeg's device
+detection.</li>
+</ol>
+<h3 id="the-opencl-processing-pipeline">The OpenCL Processing
+Pipeline</h3>
+<p>The <code>tonemap_opencl</code> filter operates in GPU memory. When
+reading an input stream decoded on the CPU, you must transfer frames to
+the GPU, process them, and download them back unless you pass them
+directly to an OpenCL-compatible hardware encoder.</p>
+<p>The filtergraph sequence follows this general structure:</p>
+<ol type="1">
+<li>Initialize the OpenCL hardware device
+(<code>-init_hw_device</code>).</li>
+<li>Format the CPU frames into an OpenCL-compatible pixel format
+(typically 10-bit <code>p010le</code> for HDR10).</li>
+<li>Upload frames to the GPU (<code>hwupload</code>).</li>
+<li>Apply the <code>tonemap_opencl</code> filter to convert luminance
+and color primaries.</li>
+<li>Download frames back to CPU memory (<code>hwdownload</code>) and
+reformat them (usually to 8-bit <code>nv12</code> or
+<code>yuv420p</code> for standard SDR encoding).</li>
+</ol>
+<h3 id="basic-command-example">Basic Command Example</h3>
+<p>The following command converts an HDR10 video to SDR using the Mobius
+tone mapping algorithm and encodes it using <code>libx264</code>:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-init_hw_device</span> opencl=gpu:0.0 <span class="at">-filter_hw_device</span> gpu <span class="dt">\</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>-i input_hdr.mkv <span class="dt">\</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>-filter_complex <span class="dt">\</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="st">&quot;[0:v]format=p010,hwupload,tonemap_opencl=tonemap=mobius:format=nv12:desat=0.5,hwdownload,format=nv12[v]&quot;</span> <span class="dt">\</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>-map <span class="st">&quot;[v]&quot;</span> <span class="at">-map</span> 0:a<span class="pp">?</span> <span class="dt">\</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>-c:v libx264 <span class="at">-crf</span> 20 <span class="at">-preset</span> medium <span class="dt">\</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>-c:a copy output_sdr.mp4</span></code></pre></div>
+<h3 id="explanation-of-key-flags">Explanation of Key Flags</h3>
+<ul>
+<li><strong><code>-init_hw_device opencl=gpu:0.0 -filter_hw_device gpu</code></strong>:
+Initializes the OpenCL context using the first platform and first device
+(<code>0.0</code>), assigning it the label <code>gpu</code> and binding
+it to the filter graph.</li>
+<li><strong><code>format=p010,hwupload</code></strong>: Ensures the
+decoded input is in 10-bit format before transferring it to the GPU via
+<code>hwupload</code>.</li>
+<li><strong><code>tonemap_opencl</code></strong>: The core filter.
+<ul>
+<li><strong><code>tonemap=mobius</code></strong>: The tone-mapping
+curve. Alternatives include <code>reinhard</code>, <code>hable</code>,
+and <code>clip</code>. <code>mobius</code> typically preserves
+highlights while maintaining contrast.</li>
+<li><strong><code>format=nv12</code></strong>: Specifies the output
+pixel format in OpenCL memory. Setting this to <code>nv12</code> reduces
+the frame depth to 8-bit, appropriate for SDR.</li>
+<li><strong><code>desat=0.5</code></strong>: Adjusts desaturation for
+bright pixels to prevent blown-out colors.</li>
+</ul></li>
+<li><strong><code>hwdownload,format=nv12</code></strong>: Pulls the
+processed frames from GPU memory back to host RAM and normalizes the
+format for standard CPU encoders.</li>
+</ul>
+<h3 id="common-tonemap_opencl-parameters">Common
+<code>tonemap_opencl</code> Parameters</h3>
+<p>You can fine-tune the output by adjusting the following options
+inside the <code>tonemap_opencl</code> filter:</p>
+<ul>
+<li><strong><code>tonemap</code></strong>: Specifies the tone-mapping
+algorithm:
+<ul>
+<li><code>mobius</code>: Smooth roll-off of highlights; best balance
+between details and contrast.</li>
+<li><code>hable</code>: Filmic tone mapping; prevents oversaturated
+highlights at the expense of dark detail.</li>
+<li><code>reinhard</code>: Simple non-linear curve; bright scenes can
+appear washed out if not tuned.</li>
+<li><code>clip</code>: Hard clips out-of-range luminance; fastest, but
+loses highlight details.</li>
+</ul></li>
+<li><strong><code>param</code></strong>: Modifies algorithm-specific
+behavior (e.g., transition threshold for <code>mobius</code>). Default
+is typically tuned for general use.</li>
+<li><strong><code>desat</code></strong>: Controls desaturation strength
+for out-of-gamut luminance (range <code>0.0</code> to <code>1.0</code>).
+Higher values prevent color clipping in high-brightness areas.</li>
+<li><strong><code>peak</code></strong>: Overrides signal peak luminance
+in nits. If the source metadata is absent or inaccurate, you can define
+it explicitly (e.g., <code>peak=1000</code>).</li>
+</ul>
+<h3 id="advanced-integrating-with-hardware-encoders">Advanced:
+Integrating with Hardware Encoders</h3>
+<p>If you use a hardware encoder like VAAPI or NVENC, you can reduce
+host memory roundtrips by deriving the hardware device context directly,
+avoiding <code>hwdownload</code> where supported by your driver stack.
+For general compatibility across diverse GPU vendors, the standard
+pipeline using <code>hwupload</code> and <code>hwdownload</code> paired
+with standard encoders provides the most consistent tone-mapping
+results.</p></article>
+        <div id="comments-container"></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

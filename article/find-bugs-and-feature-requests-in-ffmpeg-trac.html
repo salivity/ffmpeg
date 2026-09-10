@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Find Bugs and Feature Requests in FFmpeg Trac - ffmpeg</title>
+    <meta name="description" content="Navigating the FFmpeg Trac issue tracker allows developers and users to track ongoing software issues, monitor feature proposals, and contribute to discussions. This guide outlines how to access the FFmpeg Trac system, use pre-built reports, filter for a">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/find-bugs-and-feature-requests-in-ffmpeg-trac">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Find Bugs and Feature Requests in FFmpeg Trac - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/find-bugs-and-feature-requests-in-ffmpeg-trac" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Navigating the FFmpeg Trac issue tracker allows developers and users to track ongoing software issues, monitor feature proposals, and contribute to discussions. This guide outlines how to access the FFmpeg Trac system, use pre-built reports, filter for a" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="find-bugs-and-feature-requests-in-ffmpeg-trac">Find Bugs and
+Feature Requests in FFmpeg Trac</h1>
+<p>Navigating the FFmpeg Trac issue tracker allows developers and users
+to track ongoing software issues, monitor feature proposals, and
+contribute to discussions. This guide outlines how to access the FFmpeg
+Trac system, use pre-built reports, filter for active defects, and query
+open feature requests efficiently.</p>
+<h3 id="accessing-the-ticket-system">Accessing the Ticket System</h3>
+<p>Navigate to the official FFmpeg Trac system via your web browser.
+From the main page, the primary interface for inspecting tickets is
+located in the top navigation bar under the <strong>View
+Tickets</strong> tab.</p>
+<h3 id="viewing-pre-defined-reports">Viewing Pre-Defined Reports</h3>
+<p>The simplest way to browse existing issues is by using the default
+reports provided by Trac:</p>
+<ol type="1">
+<li>Click on <strong>View Tickets</strong> in the main navigation
+menu.</li>
+<li>Select a pre-configured report from the list:
+<ul>
+<li><strong>Active Tickets</strong>: Displays all open tickets across
+all categories.</li>
+<li><strong>Active Tickets by Component</strong>: Groups open tickets
+based on FFmpeg components (e.g., <code>ffmpeg</code>,
+<code>ffprobe</code>, <code>avcodec</code>, <code>avformat</code>).</li>
+</ul></li>
+<li>Sort the results dynamically by clicking on any column header, such
+as <em>Priority</em>, <em>Component</em>, or <em>Created</em>.</li>
+</ol>
+<h3 id="filtering-for-active-bug-reports-using-custom-query">Filtering
+for Active Bug Reports Using Custom Query</h3>
+<p>To isolate active bug reports specifically, use the <strong>Custom
+Query</strong> feature:</p>
+<ol type="1">
+<li>Go to the <strong>View Tickets</strong> page and click
+<strong>Custom Query</strong> (or the search/filter button).</li>
+<li>Set the filters to match active defects:
+<ul>
+<li><strong>Type</strong>: Select <code>defect</code>.</li>
+<li><strong>Status</strong>: Check <code>new</code>, <code>open</code>,
+and <code>reopened</code> (ensure <code>closed</code> is
+unchecked).</li>
+<li><strong>Resolution</strong>: Leave empty or exclude
+<code>fixed</code>, <code>invalid</code>, <code>duplicate</code>, and
+<code>wontfix</code>.</li>
+</ul></li>
+<li>Select any additional fields you want to view, such as
+<em>Version</em>, <em>Milestone</em>, or <em>Summary</em>.</li>
+<li>Click <strong>Update</strong> to generate the list of unresolved bug
+reports.</li>
+</ol>
+<h3 id="finding-active-feature-requests">Finding Active Feature
+Requests</h3>
+<p>Feature requests in Trac are categorized as enhancements rather than
+bugs. To query active feature requests:</p>
+<ol type="1">
+<li>Open the <strong>Custom Query</strong> interface.</li>
+<li>Adjust the search parameters:
+<ul>
+<li><strong>Type</strong>: Select <code>enhancement</code>.</li>
+<li><strong>Status</strong>: Ensure only <code>new</code>,
+<code>open</code>, or <code>reopened</code> are selected.</li>
+</ul></li>
+<li>Click <strong>Update</strong> to view all proposed features that
+have not yet been implemented or resolved.</li>
+</ol>
+<h3 id="searching-by-keywords">Searching by Keywords</h3>
+<p>If you are looking for specific issues (such as a particular codec or
+hardware acceleration method):</p>
+<ol type="1">
+<li>Use the <strong>Search</strong> box located in the top-right corner
+of the Trac interface.</li>
+<li>Enter your keyword (for example, <code>hevc</code>,
+<code>vaapi</code>, or <code>subtitles</code>).</li>
+<li>Filter the search results on the results page by checking only the
+<strong>Tickets</strong> box to exclude wiki pages and changesets from
+your search.</li>
+</ol></article>
+        <div id="comments-container"></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

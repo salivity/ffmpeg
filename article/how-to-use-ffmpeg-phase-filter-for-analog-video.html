@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Use FFmpeg Phase Filter for Analog Video - ffmpeg</title>
+    <meta name="description" content="Analog video captures from sources like VHS, Betamax, or LaserDisc frequently suffer from field phase shifts where interlaced fields become misaligned across frame boundaries. This article explains how field phase shifts occur, how the FFmpeg phase video">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/how-to-use-ffmpeg-phase-filter-for-analog-video">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Use FFmpeg Phase Filter for Analog Video - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/how-to-use-ffmpeg-phase-filter-for-analog-video" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Analog video captures from sources like VHS, Betamax, or LaserDisc frequently suffer from field phase shifts where interlaced fields become misaligned across frame boundaries. This article explains how field phase shifts occur, how the FFmpeg phase video" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="how-to-use-ffmpeg-phase-filter-for-analog-video">How to Use
+FFmpeg Phase Filter for Analog Video</h1>
+<p>Analog video captures from sources like VHS, Betamax, or LaserDisc
+frequently suffer from field phase shifts where interlaced fields become
+misaligned across frame boundaries. This article explains how field
+phase shifts occur, how the FFmpeg <code>phase</code> video filter
+operates, and the exact commands required to automatically or manually
+correct field alignment to eliminate unwanted combing artifacts.</p>
+<h3 id="understanding-phase-shifts-in-analog-video">Understanding Phase
+Shifts in Analog Video</h3>
+<p>Analog video is inherently interlaced, consisting of alternating top
+and bottom fields captured sequentially in time. When analog video is
+digitized, capture cards assemble these pairs of fields into digital
+frames. If the capture device drops a single field, begins recording on
+the wrong field, or encounters bad timecode sync, the temporal pairing
+breaks.</p>
+<p>In a phase-shifted capture, the top field of the current frame is
+paired with the bottom field of the subsequent frame. On progressive
+source material transferred to analog tape (such as films), this causes
+severe horizontal comb lines (interlacing artifacts) across the entire
+image during motion, even when the underlying footage should be
+progressive.</p>
+<h3 id="the-ffmpeg-phase-filter">The FFmpeg <code>phase</code>
+Filter</h3>
+<p>The FFmpeg <code>phase</code> filter realigns delayed or
+phase-shifted fields without having to deinterlace or discard spatial
+resolution. It inspects adjacent fields and shifts the pairing forward
+or backward to reconstruct the original frames.</p>
+<p>The filter accepts a primary mode parameter that dictates how field
+correction is resolved:</p>
+<ul>
+<li><strong><code>a</code> (Auto):</strong> Automatically analyzes the
+fields to detect whether a phase shift is present frame-by-frame,
+selecting the pairing that produces the least combing.</li>
+<li><strong><code>t</code> (Top-field first):</strong> Forces correction
+by pairing the current bottom field with the top field of the next
+frame.</li>
+<li><strong><code>b</code> (Bottom-field first):</strong> Forces
+correction by pairing the current top field with the bottom field of the
+next frame.</li>
+<li><strong><code>p</code> (Progressive):</strong> Treats the input as
+progressive and does not alter field ordering.</li>
+</ul>
+<h3 id="correcting-phase-shifts-with-ffmpeg-commands">Correcting Phase
+Shifts with FFmpeg Commands</h3>
+<h4 id="1-automatic-phase-correction">1. Automatic Phase Correction</h4>
+<p>For variable captures or tapes where the phase shift occurs
+intermittently due to tracking errors or edits, automatic detection is
+the most effective choice.</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mkv <span class="at">-vf</span> <span class="st">&quot;phase=a&quot;</span> <span class="at">-c:v</span> libx264 <span class="at">-crf</span> 18 <span class="at">-preset</span> slow <span class="at">-c:a</span> copy output.mkv</span></code></pre></div>
+<p>In this command, <code>phase=a</code> continuously monitors the image
+lines. When it detects motion combed with an out-of-phase field, it
+dynamically shifts the field pairing to restore clean frames.</p>
+<h4 id="2-fixed-manual-correction">2. Fixed Manual Correction</h4>
+<p>If an entire capture has a constant phase shift from start to finish,
+manually forcing the field shift prevents detection errors during
+slow-moving or low-contrast scenes.</p>
+<p>If the top field is delayed:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mkv <span class="at">-vf</span> <span class="st">&quot;phase=t&quot;</span> <span class="at">-c:v</span> libx264 <span class="at">-crf</span> 18 <span class="at">-preset</span> slow <span class="at">-c:a</span> copy output.mkv</span></code></pre></div>
+<p>If the bottom field is delayed:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mkv <span class="at">-vf</span> <span class="st">&quot;phase=b&quot;</span> <span class="at">-c:v</span> libx264 <span class="at">-crf</span> 18 <span class="at">-preset</span> slow <span class="at">-c:a</span> copy output.mkv</span></code></pre></div>
+<h3 id="order-of-operations-in-filter-chains">Order of Operations in
+Filter Chains</h3>
+<p>For analog restorations, the <code>phase</code> filter must be
+applied before any spatial scaling, deinterlacing, or color grading.
+Rescaling an interlaced frame before correcting the phase shift
+permanently blends the out-of-phase scan lines, making clean field
+separation impossible.</p>
+<p>If working with telecined film material on analog tape, use the
+<code>phase</code> filter prior to inverse telecine
+(<code>fieldmatch</code> and <code>decimate</code>):</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mkv <span class="at">-vf</span> <span class="st">&quot;phase=a,fieldmatch,decimate&quot;</span> <span class="at">-c:v</span> libx264 <span class="at">-crf</span> 18 <span class="at">-c:a</span> copy output.mkv</span></code></pre></div>
+<p>This sequence first repairs any broken field phase, provides cleanly
+matched full frames to <code>fieldmatch</code>, and drops redundant
+duplicate frames with <code>decimate</code> to produce a pristine,
+full-resolution progressive file.</p></article>
+        <div id="comments-container"></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

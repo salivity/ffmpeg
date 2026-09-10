@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Run FFmpeg with Higher Process Priority - ffmpeg</title>
+    <meta name="description" content="FFmpeg does not have a built-in command-line flag to control its own CPU scheduling priority. Instead, you must rely on your operating system's process management tools to allocate higher priority to the FFmpeg process. This guide explains how to increas">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/how-to-run-ffmpeg-with-higher-process-priority">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Run FFmpeg with Higher Process Priority - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/how-to-run-ffmpeg-with-higher-process-priority" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="FFmpeg does not have a built-in command-line flag to control its own CPU scheduling priority. Instead, you must rely on your operating system's process management tools to allocate higher priority to the FFmpeg process. This guide explains how to increas" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="how-to-run-ffmpeg-with-higher-process-priority">How to Run
+FFmpeg with Higher Process Priority</h1>
+<p>FFmpeg does not have a built-in command-line flag to control its own
+CPU scheduling priority. Instead, you must rely on your operating
+system's process management tools to allocate higher priority to the
+FFmpeg process. This guide explains how to increase FFmpeg's process
+priority on Linux, macOS, and Windows to ensure your media encoding
+tasks receive maximum system resources over other background
+applications.</p>
+<h3 id="linux-and-macos">Linux and macOS</h3>
+<p>On Unix-like systems, process priority is managed using "niceness"
+values ranging from <code>-20</code> (highest priority) to
+<code>19</code> (lowest priority). The default priority for standard
+processes is <code>0</code>.</p>
+<h4 id="starting-ffmpeg-with-high-priority">Starting FFmpeg with High
+Priority</h4>
+<p>To launch FFmpeg with elevated priority, use the <code>nice</code>
+utility. Because setting a negative nice value requires administrative
+privileges, you must prepend the command with <code>sudo</code>:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> nice <span class="at">-n</span> <span class="at">-10</span> ffmpeg <span class="at">-i</span> input.mp4 <span class="at">-c:v</span> libx264 output.mp4</span></code></pre></div>
+<p>In this command, <code>-n -10</code> assigns a high-priority state.
+For maximum priority, you can use <code>-n -20</code>, though this may
+cause system responsiveness issues if system-critical threads are
+starved.</p>
+<h4 id="changing-the-priority-of-a-running-process">Changing the
+Priority of a Running Process</h4>
+<p>If FFmpeg is already executing, find its Process ID (PID) and use the
+<code>renice</code> command:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Find the PID</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="ex">pgrep</span> ffmpeg</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Adjust priority using the PID</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> renice <span class="at">-n</span> <span class="at">-10</span> <span class="at">-p</span> <span class="op">&lt;</span>PID<span class="op">&gt;</span></span></code></pre></div>
+<hr />
+<h3 id="windows">Windows</h3>
+<p>Windows manages priority using discrete priority classes:
+<code>Low</code>, <code>BelowNormal</code>, <code>Normal</code>,
+<code>AboveNormal</code>, <code>High</code>, and
+<code>Realtime</code>.</p>
+<h4 id="using-the-windows-command-prompt-cmd">Using the Windows Command
+Prompt (CMD)</h4>
+<p>You can launch FFmpeg with high priority using the <code>start</code>
+command. Run the following in Command Prompt:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode cmd"><code class="sourceCode dosbat"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="bu">start</span> <span class="at">/high</span> ffmpeg <span class="at">-i</span> input.mp4 <span class="at">-c:</span>v libx264 output.mp4</span></code></pre></div>
+<p><em>Note: Avoid using <code>/realtime</code>, as it can completely
+freeze input devices, networking, and system-critical drivers.</em></p>
+<h4 id="using-powershell">Using PowerShell</h4>
+<p>To launch the process via PowerShell with higher priority:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode powershell"><code class="sourceCode powershell"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="fu">Start-Process</span> ffmpeg <span class="op">-</span>ArgumentList <span class="st">&quot;-i input.mp4 -c:v libx264 output.mp4&quot;</span> <span class="op">-</span>Priority High</span></code></pre></div>
+<h4 id="changing-the-priority-via-task-manager">Changing the Priority
+via Task Manager</h4>
+<p>If FFmpeg is already running:</p>
+<ol type="1">
+<li>Press <code>Ctrl + Shift + Esc</code> to open <strong>Task
+Manager</strong>.</li>
+<li>Navigate to the <strong>Details</strong> tab.</li>
+<li>Locate <code>ffmpeg.exe</code> in the list.</li>
+<li>Right-click the process, hover over <strong>Set priority</strong>,
+and select <strong>High</strong>.</li>
+</ol>
+<hr />
+<h3 id="maximizing-cpu-utilization-via-threading">Maximizing CPU
+Utilization via Threading</h3>
+<p>Process priority only determines which task gets CPU time when
+multiple tasks are competing for resources; it does not automatically
+force FFmpeg to use all CPU cores. To ensure full resource utilization
+alongside high priority, configure FFmpeg's native threading
+parameters:</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-threads</span> 0 <span class="at">-i</span> input.mp4 <span class="at">-c:v</span> libx264 output.mp4</span></code></pre></div>
+<p>Setting <code>-threads 0</code> instructs FFmpeg and supported
+encoders (like <code>libx264</code> and <code>libx265</code>) to
+automatically detect and utilize all available CPU threads.</p></article>
+        <div id="comments-container"></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

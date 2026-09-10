@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Monitor FFmpeg Speed and CPU Usage in Real-Time - ffmpeg</title>
+    <meta name="description" content="Monitoring the real-time encoding speed and CPU consumption of an FFmpeg task is critical for benchmarking hardware, optimizing transcoding pipelines, and diagnosing system bottlenecks. This guide covers how to extract FFmpeg’s built-in real-time speed">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/monitor-ffmpeg-speed-and-cpu-usage-in-real-time">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Monitor FFmpeg Speed and CPU Usage in Real-Time - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/monitor-ffmpeg-speed-and-cpu-usage-in-real-time" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Monitoring the real-time encoding speed and CPU consumption of an FFmpeg task is critical for benchmarking hardware, optimizing transcoding pipelines, and diagnosing system bottlenecks. This guide covers how to extract FFmpeg’s built-in real-time speed" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="monitor-ffmpeg-speed-and-cpu-usage-in-real-time">Monitor FFmpeg
+Speed and CPU Usage in Real-Time</h1>
+<p>Monitoring the real-time encoding speed and CPU consumption of an
+FFmpeg task is critical for benchmarking hardware, optimizing
+transcoding pipelines, and diagnosing system bottlenecks. This guide
+covers how to extract FFmpeg’s built-in real-time speed metric, track
+CPU utilization via system monitoring utilities on Linux, macOS, and
+Windows, and combine these outputs into a single pipeline.</p>
+<hr />
+<h2 id="1-reading-ffmpegs-native-encoding-speed">1. Reading FFmpeg’s
+Native Encoding Speed</h2>
+<p>FFmpeg prints dynamic progress information to <code>stderr</code>
+during execution. Among these metrics is the real-time speed
+multiplier:</p>
+<pre class="text"><code>frame= 1240 fps= 62 q=28.0 size=   15872kB time=00:00:51.60 bitrate=2518.2kbits/s speed=2.58x</code></pre>
+<ul>
+<li><strong><code>speed=</code></strong>: Indicates how fast FFmpeg
+processes the file relative to real-time playback. A speed of
+<code>1.0x</code> means 1 second of video is encoded every second. A
+speed of <code>2.58x</code> means the encoder is running 2.58 times
+faster than real-time playback.</li>
+<li><strong><code>fps=</code></strong>: Indicates the number of frames
+processed per second.</li>
+</ul>
+<h3 id="capturing-progress-via-machine-readable-output">Capturing
+Progress via Machine-Readable Output</h3>
+<p>If you are automating the monitoring process, pass the
+<code>-progress</code> flag to send metrics directly to
+<code>stdout</code> or a Unix socket:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-c:v</span> libx264 <span class="at">-progress</span> pipe:1 <span class="at">-nostats</span> output.mp4</span></code></pre></div>
+<p>This streams key-value pairs line-by-line, including:</p>
+<ul>
+<li><code>fps=</code></li>
+<li><code>total_size=</code></li>
+<li><code>out_time_us=</code></li>
+<li><code>speed=</code></li>
+</ul>
+<hr />
+<h2 id="2-measuring-cpu-usage-in-real-time">2. Measuring CPU Usage in
+Real-Time</h2>
+<p>FFmpeg does not monitor system-level CPU resource consumption
+natively. You must measure this using operating-system tools alongside
+the process.</p>
+<h3 id="linux-and-macos">Linux and macOS</h3>
+<h4 id="option-a-using-pidstat-most-accurate-for-linux">Option A: Using
+<code>pidstat</code> (Most Accurate for Linux)</h4>
+<p><code>pidstat</code> (part of the <code>sysstat</code> package)
+outputs real-time CPU percentages per core and aggregated across threads
+at regular intervals:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Run FFmpeg in the background or another terminal, then monitor by process name:</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="ex">pidstat</span> <span class="at">-C</span> <span class="st">&quot;ffmpeg&quot;</span> 1</span></code></pre></div>
+<ul>
+<li>The <code>1</code> sets the polling interval to 1 second.</li>
+<li><code>%CPU</code> shows total CPU utilization across all cores
+(e.g., 800% means 8 cores fully saturated).</li>
+</ul>
+<h4 id="option-b-using-top-in-batch-mode">Option B: Using
+<code>top</code> in Batch Mode</h4>
+<p>To monitor CPU usage non-interactively:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">top</span> <span class="at">-b</span> <span class="at">-d</span> 1 <span class="at">-p</span> <span class="va">$(</span><span class="ex">pgrep</span> <span class="at">-d</span><span class="st">&#39;,&#39;</span> ffmpeg<span class="va">)</span> <span class="kw">|</span> <span class="fu">grep</span> <span class="at">--line-buffered</span> ffmpeg</span></code></pre></div>
+<h4 id="option-c-interactive-monitoring-with-htop">Option C: Interactive
+Monitoring with <code>htop</code></h4>
+<p>Run <code>htop</code> in a separate terminal and press
+<code>F4</code> to filter for <code>ffmpeg</code>. This displays
+per-thread CPU consumption, total memory allocation, and processor
+affinity dynamically.</p>
+<hr />
+<h3 id="windows">Windows</h3>
+<h4 id="option-a-powershell">Option A: PowerShell</h4>
+<p>To continuously poll the CPU utilization of an active FFmpeg process
+every second:</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode powershell"><code class="sourceCode powershell"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="cf">while</span> <span class="op">(</span><span class="va">$true</span><span class="op">)</span> <span class="op">{</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>    <span class="fu">Get-Process</span> ffmpeg <span class="op">-</span>ErrorAction SilentlyContinue <span class="op">|</span> </span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>    <span class="fu">Select-Object</span> ProcessName<span class="op">,</span> Id<span class="op">,</span> CPU<span class="op">,</span> @<span class="op">{</span>Name<span class="op">=</span><span class="st">&quot;CPU%&quot;</span><span class="op">;</span> Expression<span class="op">={</span></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>        <span class="va">$prev</span> <span class="op">=</span> <span class="va">$_</span><span class="op">.</span><span class="fu">CPU</span><span class="op">;</span> </span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>        <span class="fu">Start-Sleep</span> <span class="op">-</span>Seconds <span class="dv">1</span><span class="op">;</span> </span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>        <span class="va">$curr</span> <span class="op">=</span> <span class="op">(</span><span class="fu">Get-Process</span> <span class="op">-</span>Id <span class="va">$_</span><span class="op">.</span><span class="fu">Id</span><span class="op">).</span><span class="fu">CPU</span><span class="op">;</span> </span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>        <span class="op">[</span>math<span class="op">]::</span>Round<span class="op">((</span><span class="va">$curr</span> <span class="op">-</span> <span class="va">$prev</span><span class="op">)</span> <span class="op">/</span> <span class="op">[</span>System<span class="op">.</span><span class="fu">Environment</span><span class="op">]::</span>ProcessorCount<span class="op">,</span> <span class="dv">2</span><span class="op">)</span></span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>    <span class="op">}}</span> <span class="op">|</span> <span class="fu">Format-Table</span> <span class="op">-</span>AutoSize</span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<h4 id="option-b-performance-monitor-gui">Option B: Performance Monitor
+(GUI)</h4>
+<ol type="1">
+<li>Press <code>Win + R</code>, type <code>perfmon.exe</code>, and press
+Enter.</li>
+<li>Add the counter: <code>Process</code> -&gt;
+<code>% Processor Time</code> -&gt; Select <code>ffmpeg</code>.</li>
+</ol>
+<hr />
+<h2 id="3-combining-speed-and-cpu-tracking-in-a-single-script">3.
+Combining Speed and CPU Tracking in a Single Script</h2>
+<p>To observe both metrics concurrently in a terminal, run FFmpeg
+alongside a polling loop in a POSIX-compliant shell:</p>
+<div class="sourceCode" id="cb6"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="co">#!/usr/bin/env bash</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Start FFmpeg in the background with progress piped</span></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-y</span> <span class="at">-i</span> input.mp4 <span class="at">-c:v</span> libx264 <span class="at">-preset</span> slow output.mp4 <span class="at">-progress</span> pipe:1 <span class="dv">2</span><span class="op">&gt;</span> ffmpeg.log <span class="kw">|</span> <span class="cf">while</span> <span class="bu">read</span> <span class="at">-r</span> <span class="va">line</span><span class="kw">;</span> <span class="cf">do</span></span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>    <span class="cf">case</span> <span class="st">&quot;</span><span class="va">$line</span><span class="st">&quot;</span> <span class="kw">in</span></span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>        <span class="ss">speed=</span><span class="pp">*</span><span class="kw">)</span></span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>            <span class="va">SPEED</span><span class="op">=</span><span class="st">&quot;</span><span class="va">${line</span><span class="op">#</span>speed=<span class="va">}</span><span class="st">&quot;</span></span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>            <span class="cf">;;</span></span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>        <span class="ss">fps=</span><span class="pp">*</span><span class="kw">)</span></span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>            <span class="va">FPS</span><span class="op">=</span><span class="st">&quot;</span><span class="va">${line</span><span class="op">#</span>fps=<span class="va">}</span><span class="st">&quot;</span></span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a>            <span class="cf">;;</span></span>
+<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a>        <span class="ss">progress=continue</span><span class="kw">)</span></span>
+<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a>            <span class="co"># Fetch current CPU usage for the ffmpeg process</span></span>
+<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a>            <span class="va">CPU_USAGE</span><span class="op">=</span><span class="va">$(</span><span class="fu">ps</span> <span class="at">-C</span> ffmpeg <span class="at">-o</span> %cpu= <span class="kw">|</span> <span class="fu">awk</span> <span class="st">&#39;{s+=$1} END {print s}&#39;</span><span class="va">)</span></span>
+<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a>            <span class="bu">printf</span> <span class="st">&quot;\r[FFmpeg] Speed: %s | FPS: %s | Total CPU: %s%%&quot;</span> <span class="st">&quot;</span><span class="va">$SPEED</span><span class="st">&quot;</span> <span class="st">&quot;</span><span class="va">$FPS</span><span class="st">&quot;</span> <span class="st">&quot;</span><span class="va">$CPU_USAGE</span><span class="st">&quot;</span></span>
+<span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a>            <span class="cf">;;</span></span>
+<span id="cb6-17"><a href="#cb6-17" aria-hidden="true" tabindex="-1"></a>        <span class="ss">progress=end</span><span class="kw">)</span></span>
+<span id="cb6-18"><a href="#cb6-18" aria-hidden="true" tabindex="-1"></a>            <span class="bu">echo</span> <span class="at">-e</span> <span class="st">&quot;\nEncoding Complete.&quot;</span></span>
+<span id="cb6-19"><a href="#cb6-19" aria-hidden="true" tabindex="-1"></a>            <span class="cf">;;</span></span>
+<span id="cb6-20"><a href="#cb6-20" aria-hidden="true" tabindex="-1"></a>    <span class="cf">esac</span></span>
+<span id="cb6-21"><a href="#cb6-21" aria-hidden="true" tabindex="-1"></a><span class="cf">done</span></span></code></pre></div>
+<p>This method reads FFmpeg's internal throughput and matches it to
+current processor workload at each reporting cycle.</p></article>
+        <div id="comments-container"></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Configure fast-intra in FFmpeg libx265 - ffmpeg</title>
+    <meta name="description" content="This article explains how to configure the fast-intra option in the FFmpeg libx265 encoder to speed up H.265/HEVC video encoding. You will learn the correct command-line syntax for applying this setting and understand how it impacts both your encoding pe">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/configure-fast-intra-in-ffmpeg-libx265">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Configure fast-intra in FFmpeg libx265 - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/configure-fast-intra-in-ffmpeg-libx265" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article explains how to configure the fast-intra option in the FFmpeg libx265 encoder to speed up H.265/HEVC video encoding. You will learn the correct command-line syntax for applying this setting and understand how it impacts both your encoding pe" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="configure-fast-intra-in-ffmpeg-libx265">Configure fast-intra in
+FFmpeg libx265</h1>
+<p>This article explains how to configure the <code>fast-intra</code>
+option in the FFmpeg <code>libx265</code> encoder to speed up H.265/HEVC
+video encoding. You will learn the correct command-line syntax for
+applying this setting and understand how it impacts both your encoding
+performance and the final video quality.</p>
+<h3 id="what-is-the-fast-intra-option">What is the fast-intra
+Option?</h3>
+<p>In the HEVC (H.265) standard, intra-prediction (compressing space
+within a single frame) involves analyzing up to 35 different angular
+prediction modes to find the most efficient one. This process is highly
+CPU-intensive.</p>
+<p>The <code>fast-intra</code> option in <code>libx265</code> speeds up
+this process. When enabled, the encoder performs a simplified, faster
+evaluation of these intra modes, significantly reducing encoding time at
+the expense of a minor loss in compression efficiency (slightly larger
+file sizes or minor quality reduction at the same bitrate).</p>
+<h3 id="how-to-configure-fast-intra-in-ffmpeg">How to Configure
+fast-intra in FFmpeg</h3>
+<p>Because <code>fast-intra</code> is a native option of the underlying
+<code>x265</code> library rather than a standard FFmpeg flag, you must
+pass it to the encoder using the <code>-x265-params</code> flag.</p>
+<p>To enable <code>fast-intra</code>, use the following command
+structure:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-c:v</span> libx265 <span class="at">-x265-params</span> fast-intra=1 output.mp4</span></code></pre></div>
+<p>To explicitly disable <code>fast-intra</code> (which is the default
+behavior for slower presets to ensure maximum quality), set the value to
+<code>0</code>:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-c:v</span> libx265 <span class="at">-x265-params</span> fast-intra=0 output.mp4</span></code></pre></div>
+<h3 id="combining-fast-intra-with-other-parameters">Combining fast-intra
+with Other Parameters</h3>
+<p>If you are already passing other parameters through
+<code>-x265-params</code>, you can append <code>fast-intra</code> by
+separating the arguments with a colon (<code>:</code>):</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-c:v</span> libx265 <span class="at">-crf</span> 23 <span class="at">-x265-params</span> fast-intra=1:keyint=240 output.mp4</span></code></pre></div>
+<h3 id="when-to-use-fast-intra">When to Use fast-intra</h3>
+<ul>
+<li><strong>Enable it (fast-intra=1):</strong> When you are performing
+live streaming, doing draft renders, or encoding on low-power hardware
+where CPU resources are limited and encoding speed is a priority.</li>
+<li><strong>Disable it (fast-intra=0):</strong> When archiving video or
+preparing final renders where file size optimization and maximum visual
+quality are more important than how long the encoding process
+takes.</li>
+</ul></article>
+        <div id="comments-container"></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulate Surround Sound with FFmpeg Headphone Filter - ffmpeg</title>
+    <meta name="description" content="The headphone filter in FFmpeg converts multi-channel audio—such as 5.1 or 7.1 surround sound—into a binaural stereo track, recreating the acoustic environment of a multi-speaker studio room for standard headphone listeners. By convolving each audio">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/simulate-surround-sound-with-ffmpeg-headphone-filter">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Simulate Surround Sound with FFmpeg Headphone Filter - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/simulate-surround-sound-with-ffmpeg-headphone-filter" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="The headphone filter in FFmpeg converts multi-channel audio—such as 5.1 or 7.1 surround sound—into a binaural stereo track, recreating the acoustic environment of a multi-speaker studio room for standard headphone listeners. By convolving each audio" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="simulate-surround-sound-with-ffmpeg-headphone-filter">Simulate
+Surround Sound with FFmpeg Headphone Filter</h1>
+<p>The <code>headphone</code> filter in FFmpeg converts multi-channel
+audio—such as 5.1 or 7.1 surround sound—into a binaural stereo track,
+recreating the acoustic environment of a multi-speaker studio room for
+standard headphone listeners. By convolving each audio channel with
+Head-Related Impulse Responses (HRIR) or Spatially Oriented Format for
+Acoustics (SOFA) profiles, the filter simulates how sound travels from
+distinct physical speakers through a room's acoustics to human ears.
+This guide details how to obtain the necessary spatial response files,
+configure channel mapping, and run the FFmpeg commands required to
+achieve realistic multi-channel room virtualization.</p>
+<h3 id="understanding-the-requirements">Understanding the
+Requirements</h3>
+<p>To simulate a studio listening space, FFmpeg requires two primary
+elements:</p>
+<ol type="1">
+<li><strong>Multi-channel source audio:</strong> A 5.1, 7.1, or custom
+multi-channel audio file.</li>
+<li><strong>Impulse response data:</strong> Acoustic profile data
+capturing how directional speakers sound in a room. This can be provided
+as a <code>.sofa</code> file (requires FFmpeg compiled with
+<code>--enable-libmysofa</code>) or as multi-channel WAV files
+containing measured Head-Related Impulse Responses (HRIR).</li>
+</ol>
+<h3 id="method-1-virtualizing-a-room-using-a-sofa-file">Method 1:
+Virtualizing a Room Using a SOFA File</h3>
+<p>The simplest and most acoustically accurate approach uses a
+standardized SOFA file containing spatial coordinates and room impulse
+responses.</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input_5.1.wav <span class="at">-lavfi</span> <span class="st">&quot;headphone=sofa=/path/to/studio_model.sofa:type=time:gain=0&quot;</span> <span class="at">-c:a</span> pcm_s24le output_binaural.wav</span></code></pre></div>
+<h4 id="key-parameters">Key Parameters:</h4>
+<ul>
+<li><strong><code>sofa</code></strong>: The direct path to your
+<code>.sofa</code> database file.</li>
+<li><strong><code>type</code></strong>: Processing domain. Choose
+<code>time</code> for standard time-domain convolution, or
+<code>freq</code> for frequency-domain processing, which reduces CPU
+usage on longer impulse responses.</li>
+<li><strong><code>gain</code></strong>: An overall attenuation or gain
+offset in dB to prevent digital clipping caused by acoustic
+summing.</li>
+</ul>
+<h3 id="method-2-using-multi-channel-impulse-response-hrir-files">Method
+2: Using Multi-Channel Impulse Response (HRIR) Files</h3>
+<p>If using traditional impulse response WAV files instead of SOFA
+databases, you can map channels directly using a secondary audio stream
+that contains the stereo impulse measurements for each speaker
+position.</p>
+<p>For a 5.1 mix (Front Left, Front Right, Center, LFE, Surround Left,
+Surround Right), the HRIR audio file must provide a stereo impulse
+response for each respective channel position.</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input_5.1.wav <span class="at">-i</span> hrir_5.1.wav <span class="at">-filter_complex</span> <span class="st">&quot;[0:a][1:a]headphone=map=FL|FR|FC|LFE|SL|SR:gain=-6[out]&quot;</span> <span class="at">-map</span> <span class="st">&quot;[out]&quot;</span> output_binaural.wav</span></code></pre></div>
+<h4 id="parameter-breakdown">Parameter Breakdown:</h4>
+<ul>
+<li><strong><code>[0:a][1:a]</code></strong>: Takes stream
+<code>0</code> (the source audio) and stream <code>1</code> (the impulse
+response audio) as inputs into the filter.</li>
+<li><strong><code>map</code></strong>: Defines the physical speaker
+layout order corresponding to the tracks within the HRIR file. Channels
+are delimited by vertical bars (<code>|</code>).</li>
+<li><strong><code>gain=-6</code></strong>: Attenuates the mixed result
+by 6 dB to ensure headroom when multiple virtual speaker reflections sum
+together.</li>
+</ul>
+<h3 id="method-3-using-individual-impulse-files-per-channel">Method 3:
+Using Individual Impulse Files per Channel</h3>
+<p>If your room measurements are stored as separate stereo WAV files for
+each physical speaker position, map them sequentially into the
+filter:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input_5.1.wav <span class="dt">\</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>-i hrir_FL.wav <span class="at">-i</span> hrir_FR.wav <span class="at">-i</span> hrir_FC.wav <span class="dt">\</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>-i hrir_LFE.wav <span class="at">-i</span> hrir_SL.wav <span class="at">-i</span> hrir_SR.wav <span class="dt">\</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>-filter_complex <span class="st">&quot;[0:a][1:a][2:a][3:a][4:a][5:a][6:a]headphone=map=FL|FR|FC|LFE|SL|SR[out]&quot;</span> <span class="dt">\</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>-map <span class="st">&quot;[out]&quot;</span> output_binaural.wav</span></code></pre></div>
+<h3 id="optimizing-the-studio-room-simulation">Optimizing the Studio
+Room Simulation</h3>
+<ul>
+<li><strong>Handling the Low-Frequency Effects (LFE) Channel:</strong>
+By default, low bass frequencies do not carry strong directional cues.
+If your HRIR does not include a dedicated subwoofer measurement, omit
+the <code>LFE</code> flag from the <code>map</code> string or lower its
+gain using the <code>lfe</code> parameter (e.g.,
+<code>headphone=...:lfe=-3</code>).</li>
+<li><strong>Preventing Distortion:</strong> Convolving multiple audio
+signals with room reverberation inherently increases total peak
+amplitude. Always monitor output levels and apply a negative gain value
+(<code>gain=-3</code> to <code>gain=-8</code>) within the filter
+parameters if clipping occurs.</li>
+</ul></article>
+        <div id="comments-container"></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

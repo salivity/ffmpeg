@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Use the FFmpeg showspectrum Filter - ffmpeg</title>
+    <meta name="description" content="This article provides a practical guide on how to use the showspectrum filter in FFmpeg to convert audio files into visual spectrogram videos. You will learn the basic command structure, explore essential configuration parameters like resolution, color m">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/how-to-use-the-ffmpeg-showspectrum-filter">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Use the FFmpeg showspectrum Filter - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/how-to-use-the-ffmpeg-showspectrum-filter" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article provides a practical guide on how to use the showspectrum filter in FFmpeg to convert audio files into visual spectrogram videos. You will learn the basic command structure, explore essential configuration parameters like resolution, color m" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="how-to-use-the-ffmpeg-showspectrum-filter">How to Use the FFmpeg
+showspectrum Filter</h1>
+<p>This article provides a practical guide on how to use the
+<code>showspectrum</code> filter in FFmpeg to convert audio files into
+visual spectrogram videos. You will learn the basic command structure,
+explore essential configuration parameters like resolution, color modes,
+and scaling, and view ready-to-use command examples for creating
+high-quality audio visualizations.</p>
+<h2 id="what-is-the-showspectrum-filter">What is the showspectrum
+Filter?</h2>
+<p>The <code>showspectrum</code> filter in FFmpeg is a visualization
+tool that converts incoming audio signals into a video stream
+representing the audio frequency spectrum. It is highly customizable,
+allowing you to control how frequencies are scaled, colored, and
+displayed over time.</p>
+<h2 id="basic-usage">Basic Usage</h2>
+<p>To generate a video from an audio file using the default
+<code>showspectrum</code> settings, use the following basic command
+structure. This command takes an audio input, applies the filter, and
+pairs the generated video back with the original audio.</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp3 <span class="at">-filter_complex</span> <span class="st">&quot;[0:a]showspectrum=s=1280x720[v]&quot;</span> <span class="at">-map</span> <span class="st">&quot;[v]&quot;</span> <span class="at">-map</span> 0:a output.mp4</span></code></pre></div>
+<h3 id="command-breakdown">Command Breakdown:</h3>
+<ul>
+<li><code>-i input.mp3</code>: Specifies the input audio file.</li>
+<li><code>-filter_complex "[0:a]showspectrum=s=1280x720[v]"</code>:
+Takes the audio track (<code>[0:a]</code>), applies the
+<code>showspectrum</code> filter with a resolution of 1280x720, and
+outputs the video stream as <code>[v]</code>.</li>
+<li><code>-map "[v]" -map 0:a</code>: Combines the newly created video
+stream and the original audio stream into the final output.</li>
+<li><code>output.mp4</code>: The resulting video file.</li>
+</ul>
+<h2 id="key-parameters-and-customization">Key Parameters and
+Customization</h2>
+<p>You can customize the look and behavior of the spectrogram by passing
+specific parameters to the <code>showspectrum</code> filter, separated
+by colons.</p>
+<h3 id="1-set-video-resolution-size-or-s">1. Set Video Resolution
+(<code>size</code> or <code>s</code>)</h3>
+<p>Defines the width and height of the output video.</p>
+<ul>
+<li><strong>Example:</strong> <code>showspectrum=s=1920x1080</code>
+(Full HD)</li>
+</ul>
+<h3 id="2-adjust-frequency-scale-scale">2. Adjust Frequency Scale
+(<code>scale</code>)</h3>
+<p>Determines how frequencies are spaced vertically.</p>
+<ul>
+<li><code>linear</code>: Linear spacing (default).</li>
+<li><code>log</code>: Logarithmic spacing, which better represents how
+human ears perceive pitch.</li>
+<li><code>sqrt</code>: Square root spacing.</li>
+<li><strong>Example:</strong> <code>showspectrum=scale=log</code></li>
+</ul>
+<h3 id="3-change-color-schemes-color">3. Change Color Schemes
+(<code>color</code>)</h3>
+<p>Specifies the color palette of the intensity levels. Available
+options include <code>rainbow</code>, <code>cool</code>,
+<code>magma</code>, <code>intensity</code>, and <code>channel</code>
+(different colors per audio channel).</p>
+<ul>
+<li><strong>Example:</strong>
+<code>showspectrum=color=rainbow</code></li>
+</ul>
+<h3 id="4-choose-sliding-mode-slide">4. Choose sliding mode
+(<code>slide</code>)</h3>
+<p>Controls how the spectrum moves across the screen.</p>
+<ul>
+<li><code>flow</code>: The spectrum scrolls from right to left.</li>
+<li><code>scroll</code>: The spectrum scrolls, leaving a trail.</li>
+<li><code>replace</code>: The drawing line wraps around the screen.</li>
+<li><strong>Example:</strong>
+<code>showspectrum=slide=scroll</code></li>
+</ul>
+<h3 id="5-multi-channel-display-mode">5. Multi-channel display
+(<code>mode</code>)</h3>
+<p>Controls how multiple audio channels are drawn.</p>
+<ul>
+<li><code>combined</code>: Channels are blended together.</li>
+<li><code>separate</code>: Each channel is drawn in its own row.</li>
+<li><strong>Example:</strong>
+<code>showspectrum=mode=separate</code></li>
+</ul>
+<h2 id="practical-examples">Practical Examples</h2>
+<h3 id="high-definition-logarithmic-spectrogram">High-Definition
+Logarithmic Spectrogram</h3>
+<p>This command creates a 1080p video using a logarithmic frequency
+scale, which is ideal for musical analysis.</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.wav <span class="at">-filter_complex</span> <span class="st">&quot;[0:a]showspectrum=s=1920x1080:scale=log:color=intensity[v]&quot;</span> <span class="at">-map</span> <span class="st">&quot;[v]&quot;</span> <span class="at">-map</span> 0:a <span class="at">-c:v</span> libx264 <span class="at">-pix_fmt</span> yuv420p output.mp4</span></code></pre></div>
+<h3 id="separate-channel-stereo-visualization">Separate Channel Stereo
+Visualization</h3>
+<p>If you have a stereo track and want to visualize the left and right
+channels separately with a rainbow color scheme, use this
+configuration:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp3 <span class="at">-filter_complex</span> <span class="st">&quot;[0:a]showspectrum=s=1280x720:mode=separate:color=rainbow:slide=flow[v]&quot;</span> <span class="at">-map</span> <span class="st">&quot;[v]&quot;</span> <span class="at">-map</span> 0:a output.mp4</span></code></pre></div></article>
+        <div id="comments-container"></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

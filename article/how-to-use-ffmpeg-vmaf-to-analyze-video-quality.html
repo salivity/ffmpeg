@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Use FFmpeg VMAF to Analyze Video Quality - ffmpeg</title>
+    <meta name="description" content="This guide explains how to measure perceptual video quality using Netflix's VMAF (Video Multi-Method Assessment Fusion) filter in FFmpeg. You will learn the prerequisites for running the filter, the basic syntax for comparing an encoded video against an">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/how-to-use-ffmpeg-vmaf-to-analyze-video-quality">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Use FFmpeg VMAF to Analyze Video Quality - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/how-to-use-ffmpeg-vmaf-to-analyze-video-quality" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This guide explains how to measure perceptual video quality using Netflix's VMAF (Video Multi-Method Assessment Fusion) filter in FFmpeg. You will learn the prerequisites for running the filter, the basic syntax for comparing an encoded video against an" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="how-to-use-ffmpeg-vmaf-to-analyze-video-quality">How to Use
+FFmpeg VMAF to Analyze Video Quality</h1>
+<p>This guide explains how to measure perceptual video quality using
+Netflix's VMAF (Video Multi-Method Assessment Fusion) filter in FFmpeg.
+You will learn the prerequisites for running the filter, the basic
+syntax for comparing an encoded video against an original source, how to
+align mismatched resolutions or frame rates, and how to export the
+metrics to a log file for further analysis.</p>
+<h3 id="prerequisites">Prerequisites</h3>
+<p>To use VMAF, your FFmpeg build must be compiled with the
+<code>--enable-libvmaf</code> configuration flag. You can verify this by
+running:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-filters</span> <span class="kw">|</span> <span class="fu">grep</span> libvmaf</span></code></pre></div>
+<p>If <code>libvmaf</code> appears in the output, your build supports
+VMAF analysis.</p>
+<h3 id="basic-vmaf-command">Basic VMAF Command</h3>
+<p>The <code>libvmaf</code> filter requires two inputs: the distorted
+(encoded) video and the reference (original) video. The reference video
+is generally mapped as the second input.</p>
+<p>Run the following command in your terminal:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> encoded.mp4 <span class="at">-i</span> reference.mp4 <span class="at">-filter_complex</span> <span class="st">&quot;[0:v][1:v]libvmaf&quot;</span> <span class="at">-f</span> null <span class="at">-</span></span></code></pre></div>
+<ul>
+<li><code>[0:v]</code> refers to the video stream of the first input
+(<code>encoded.mp4</code>).</li>
+<li><code>[1:v]</code> refers to the video stream of the second input
+(<code>reference.mp4</code>).</li>
+<li><code>-f null -</code> processes the video frames without writing an
+output video file to disk.</li>
+</ul>
+<p>Once processing finishes, FFmpeg displays the overall VMAF score
+(ranging from 0 to 100) directly in the terminal console.</p>
+<h3 id="exporting-detailed-results-to-a-file">Exporting Detailed Results
+to a File</h3>
+<p>To store per-frame scores and summary statistics, specify the model
+and configure logging parameters:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> encoded.mp4 <span class="at">-i</span> reference.mp4 <span class="at">-filter_complex</span> <span class="st">&quot;[0:v][1:v]libvmaf=log_fmt=json:log_path=vmaf_output.json:model=version=vmaf_v0.6.1&quot;</span> <span class="at">-f</span> null <span class="at">-</span></span></code></pre></div>
+<p>Key options include:</p>
+<ul>
+<li><code>log_fmt</code>: Sets the output log format (<code>json</code>,
+<code>xml</code>, or <code>csv</code>).</li>
+<li><code>log_path</code>: Specifies the destination path for the
+generated log.</li>
+<li><code>model</code>: Specifies the VMAF model version or the path to
+a <code>.json</code> model file. Modern builds default to standard 1080p
+models (<code>version=vmaf_v0.6.1</code>), but 4K models
+(<code>version=vmaf_4k_v0.6.1</code>) are also supported.</li>
+</ul>
+<h3 id="handling-mismatched-resolutions">Handling Mismatched
+Resolutions</h3>
+<p>VMAF requires both inputs to have the exact same dimensions. If the
+encoded video was downscaled (for example, from 1080p to 720p), you must
+upscale it back to the reference resolution using the
+<code>bicubic</code> scaler:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> encoded_720p.mp4 <span class="at">-i</span> reference_1080p.mp4 <span class="at">-filter_complex</span> <span class="st">&quot;[0:v]scale=1920:1080:flags=bicubic[distorted];[distorted][1:v]libvmaf=log_fmt=json:log_path=output.json&quot;</span> <span class="at">-f</span> null <span class="at">-</span></span></code></pre></div>
+<h3 id="handling-frame-rate-and-timestamp-sync">Handling Frame Rate and
+Timestamp Sync</h3>
+<p>Both streams must be temporally synchronized. If the encoded video
+has a different frame rate or dropped frames, use the <code>fps</code>
+filter to normalize rates before computing the metric:</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> encoded.mp4 <span class="at">-i</span> reference.mp4 <span class="at">-filter_complex</span> <span class="st">&quot;[0:v]fps=60[dist];[1:v]fps=60[ref];[dist][ref]libvmaf&quot;</span> <span class="at">-f</span> null <span class="at">-</span></span></code></pre></div>
+<h3 id="interpreting-vmaf-scores">Interpreting VMAF Scores</h3>
+<ul>
+<li><strong>93–100:</strong> Perceptually transparent; the average
+viewer cannot distinguish the encoded video from the original.</li>
+<li><strong>80–92:</strong> Good quality; minor artifacts are present
+upon close inspection, but acceptable for general streaming.</li>
+<li><strong>70–79:</strong> Noticeable distortion and compression
+artifacts.</li>
+<li><strong>Below 70:</strong> Significant loss in visual fidelity.</li>
+</ul></article>
+        <div id="comments-container"></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

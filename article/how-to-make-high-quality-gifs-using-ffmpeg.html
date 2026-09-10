@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Make High-Quality GIFs Using FFmpeg - ffmpeg</title>
+    <meta name="description" content="Generating standard GIFs with FFmpeg often results in severe color banding and heavy pixelation because the GIF format is restricted to a maximum palette of 256 colors. By default, FFmpeg relies on a generic, static color palette that rarely matches the">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/how-to-make-high-quality-gifs-using-ffmpeg">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Make High-Quality GIFs Using FFmpeg - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/how-to-make-high-quality-gifs-using-ffmpeg" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Generating standard GIFs with FFmpeg often results in severe color banding and heavy pixelation because the GIF format is restricted to a maximum palette of 256 colors. By default, FFmpeg relies on a generic, static color palette that rarely matches the" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="how-to-make-high-quality-gifs-using-ffmpeg">How to Make
+High-Quality GIFs Using FFmpeg</h1>
+<p>Generating standard GIFs with FFmpeg often results in severe color
+banding and heavy pixelation because the GIF format is restricted to a
+maximum palette of 256 colors. By default, FFmpeg relies on a generic,
+static color palette that rarely matches the colors in your source
+video. To create sharp, high-quality GIFs, you must use the
+<code>palettegen</code> filter to extract a custom color palette
+specifically tailored to your video frames, and then apply that palette
+using the <code>paletteuse</code> filter.</p>
+<h3 id="the-problem-with-default-conversions">The Problem with Default
+Conversions</h3>
+<p>Running a simple command like
+<code>ffmpeg -i input.mp4 output.gif</code> creates poor results because
+FFmpeg forces the video into an arbitrary 256-color map. The
+<code>palettegen</code> and <code>paletteuse</code> filters solve this
+via a two-stage process:</p>
+<ol type="1">
+<li><strong><code>palettegen</code></strong>: Scans the input video,
+determines the 256 most dominant and visually significant colors across
+the frames, and generates a small PNG image containing this custom color
+map.</li>
+<li><strong><code>paletteuse</code></strong>: Takes the original video
+and the generated palette, mapping the video pixels to the custom
+palette using advanced dithering algorithms to hide color transitions
+smoothly.</li>
+</ol>
+<hr />
+<h3 id="method-1-the-single-command-approach">Method 1: The
+Single-Command Approach</h3>
+<p>You do not need to generate a physical palette file on your disk. You
+can use FFmpeg's <code>-filter_complex</code> pipeline with the
+<code>split</code> filter to generate and apply the palette in a single
+run.</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-filter_complex</span> <span class="st">&quot;[0:v] fps=15,scale=640:-1:flags=lanczos,split [a][b];[a] palettegen [p];[b][p] paletteuse&quot;</span> output.gif</span></code></pre></div>
+<h4 id="how-this-command-works">How this command works:</h4>
+<ul>
+<li><strong><code>fps=15</code></strong>: Reduces the frame rate to 15
+frames per second to reduce file size.</li>
+<li><strong><code>scale=640:-1:flags=lanczos</code></strong>: Resizes
+the width to 640 pixels, automatically calculates the proportional
+height (<code>-1</code>), and applies the high-quality Lanczos
+resampling filter.</li>
+<li><strong><code>split [a][b]</code></strong>: Duplicates the resized
+video stream into two separate streams, labeled <code>[a]</code> and
+<code>[b]</code>.</li>
+<li><strong><code>[a] palettegen [p]</code></strong>: Sends stream
+<code>[a]</code> into <code>palettegen</code>, creating the color
+palette stream labeled <code>[p]</code>.</li>
+<li><strong><code>[b][p] paletteuse</code></strong>: Combines stream
+<code>[b]</code> (the video) and stream <code>[p]</code> (the custom
+palette) to generate the final GIF output.</li>
+</ul>
+<hr />
+<h3 id="method-2-the-two-step-approach">Method 2: The Two-Step
+Approach</h3>
+<p>If you prefer to inspect the generated palette or want granular
+control over multi-step processing, run the generation in two distinct
+steps.</p>
+<h4 id="step-1-generate-the-palette">Step 1: Generate the Palette</h4>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-y</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;fps=15,scale=640:-1:flags=lanczos,palettegen&quot;</span> palette.png</span></code></pre></div>
+<h4 id="step-2-render-the-gif-using-the-palette">Step 2: Render the GIF
+using the Palette</h4>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-i</span> palette.png <span class="at">-filter_complex</span> <span class="st">&quot;[0:v] fps=15,scale=640:-1:flags=lanczos [x]; [x][1:v] paletteuse&quot;</span> output.gif</span></code></pre></div>
+<hr />
+<h3
+id="fine-tuning-for-better-quality-and-smaller-file-sizes">Fine-Tuning
+for Better Quality and Smaller File Sizes</h3>
+<p>Both <code>palettegen</code> and <code>paletteuse</code> support
+configuration flags to optimize quality depending on the scene
+content.</p>
+<h4 id="1-handling-dynamic-scenes-with-stats_mode">1. Handling Dynamic
+Scenes with <code>stats_mode</code></h4>
+<p>By default, <code>palettegen</code> calculates a single global
+palette for the entire video clip (<code>stats_mode=full</code>). If
+your video features drastic scene changes or varying color schemes, you
+can generate a new palette for every single frame:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-filter_complex</span> <span class="st">&quot;[0:v] fps=15,scale=640:-1:flags=lanczos,split [a][b];[a] palettegen=stats_mode=single [p];[b][p] paletteuse=new=1&quot;</span> output.gif</span></code></pre></div>
+<ul>
+<li><strong><code>stats_mode=single</code></strong>: Recomputes the
+color palette for each frame.</li>
+<li><strong><code>new=1</code></strong>: Tells <code>paletteuse</code>
+to acquire a new palette for each frame. Note that this option
+significantly increases file size.</li>
+</ul>
+<h4 id="2-controlling-dithering">2. Controlling Dithering</h4>
+<p>Dithering blends colors to prevent banding, but it can introduce
+background noise and bloat file sizes. You can adjust the dithering
+algorithm inside <code>paletteuse</code>:</p>
+<ul>
+<li><p><strong>Bayer Dithering (Lower file size, crosshatch
+pattern):</strong></p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="va">paletteuse</span><span class="op">=</span>dither=bayer:bayer_scale=3</span></code></pre></div>
+<p><code>bayer_scale</code> ranges from <code>0</code> to
+<code>5</code>. Higher values reduce noise and file size at the cost of
+slight banding.</p></li>
+<li><p><strong>Floyd-Steinberg (Default, smoother
+gradients):</strong></p>
+<div class="sourceCode" id="cb6"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="va">paletteuse</span><span class="op">=</span>dither=floyd_steinberg</span></code></pre></div></li>
+<li><p><strong>No Dithering (Smallest file size, best for flat graphics
+or screen recordings):</strong></p>
+<div class="sourceCode" id="cb7"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="va">paletteuse</span><span class="op">=</span>dither=none</span></code></pre></div></li>
+</ul></article>
+        <div id="comments-container"></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

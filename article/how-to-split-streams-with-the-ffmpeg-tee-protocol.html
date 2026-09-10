@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Split Streams with the FFmpeg Tee Protocol - ffmpeg</title>
+    <meta name="description" content="This guide explains how to use FFmpeg's tee muxer to duplicate and distribute a single audio/video stream across multiple network destinations simultaneously. By routing your output through tee, you can stream to multiple endpoints—such as concurrent R">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/how-to-split-streams-with-the-ffmpeg-tee-protocol">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Split Streams with the FFmpeg Tee Protocol - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/how-to-split-streams-with-the-ffmpeg-tee-protocol" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This guide explains how to use FFmpeg's tee muxer to duplicate and distribute a single audio/video stream across multiple network destinations simultaneously. By routing your output through tee, you can stream to multiple endpoints—such as concurrent R" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="how-to-split-streams-with-the-ffmpeg-tee-protocol">How to Split
+Streams with the FFmpeg Tee Protocol</h1>
+<p>This guide explains how to use FFmpeg's <code>tee</code> muxer to
+duplicate and distribute a single audio/video stream across multiple
+network destinations simultaneously. By routing your output through
+<code>tee</code>, you can stream to multiple endpoints—such as
+concurrent RTMP live platforms or UDP network targets—while encoding the
+source media only once, drastically reducing CPU overhead and memory
+usage.</p>
+<h3 id="the-basic-syntax-of-the-tee-muxer">The Basic Syntax of the
+<code>tee</code> Muxer</h3>
+<p>While commonly discussed as a protocol, FFmpeg implements stream
+splitting via the <code>tee</code> pseudo-muxer (<code>-f tee</code>).
+It takes multiple outputs separated by the pipe (<code>|</code>)
+character within quotes. Each output can specify its own format and
+options inside brackets <code>[...]</code>.</p>
+<p>The fundamental command structure is:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-c:v</span> libx264 <span class="at">-c:a</span> aac <span class="at">-f</span> tee <span class="at">-map</span> 0:v <span class="at">-map</span> 0:a <span class="st">&quot;[f=flv]rtmp://server1/live/stream1|[f=flv]rtmp://server2/live/stream2&quot;</span></span></code></pre></div>
+<h3 id="splitting-to-multiple-rtmp-destinations">Splitting to Multiple
+RTMP Destinations</h3>
+<p>A common network use case is broadcasting a single live stream to two
+different ingest servers (such as YouTube and Twitch). Instead of
+running two separate FFmpeg instances or re-encoding the stream, encode
+once and write to both targets:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-re</span> <span class="at">-i</span> input.mp4 <span class="dt">\</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">-c:v</span> libx264 <span class="at">-preset</span> veryfast <span class="at">-b:v</span> 4500k <span class="at">-maxrate</span> 4500k <span class="at">-bufsize</span> 9000k <span class="dt">\</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">-c:a</span> aac <span class="at">-b:a</span> 160k <span class="dt">\</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">-flags</span> +global_header <span class="dt">\</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">-f</span> tee <span class="at">-map</span> 0:v <span class="at">-map</span> 0:a <span class="dt">\</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>  <span class="st">&quot;[f=flv]rtmp://a.rtmp.youtube.com/live2/YOUR_YT_KEY|[f=flv]rtmp://live.twitch.tv/app/YOUR_TWITCH_KEY&quot;</span></span></code></pre></div>
+<p>The <code>-flags +global_header</code> flag is recommended when
+multiplexing to container formats like FLV to ensure headers are
+properly transmitted to all RTMP endpoints.</p>
+<h3
+id="splitting-to-heterogeneous-network-protocols-rtmp--udprtp">Splitting
+to Heterogeneous Network Protocols (RTMP + UDP/RTP)</h3>
+<p>You can output to completely different container formats and network
+transport protocols from the same pipeline:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-re</span> <span class="at">-i</span> input.mp4 <span class="dt">\</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">-c:v</span> libx264 <span class="at">-c:a</span> aac <span class="dt">\</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">-f</span> tee <span class="at">-map</span> 0:v <span class="at">-map</span> 0:a <span class="dt">\</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>  <span class="st">&quot;[f=flv]rtmp://live.example.com/app/stream|[f=mpegts]udp://239.255.0.1:1234?pkt_size=1316&quot;</span></span></code></pre></div>
+<p>In this example, FFmpeg sends one stream as FLV over RTMP and
+simultaneously packages the identical bitstream as an MPEG-TS container
+over UDP multicast.</p>
+<h3 id="preventing-stream-failures-with-onfailignore">Preventing Stream
+Failures with <code>onfail=ignore</code></h3>
+<p>By default, if any target in a <code>tee</code> output encounters a
+network error (such as a disconnected socket or server timeout), the
+entire FFmpeg process terminates. To keep streaming to the remaining
+healthy endpoints if one fails, apply <code>onfail=ignore</code> to each
+output:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-re</span> <span class="at">-i</span> input.mp4 <span class="dt">\</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">-c:v</span> libx264 <span class="at">-c:a</span> aac <span class="dt">\</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">-f</span> tee <span class="at">-map</span> 0:v <span class="at">-map</span> 0:a <span class="dt">\</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>  <span class="st">&quot;[f=flv:onfail=ignore]rtmp://primary.live.com/stream|[f=flv:onfail=ignore]rtmp://backup.live.com/stream&quot;</span></span></code></pre></div>
+<h3 id="independent-stream-mapping">Independent Stream Mapping</h3>
+<p>The <code>tee</code> muxer allows sending different stream tracks to
+different network endpoints. For example, if you want one output to
+receive both video and audio, but a secondary network monitor to receive
+only the video stream:</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-re</span> <span class="at">-i</span> input.mp4 <span class="dt">\</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">-c:v</span> libx264 <span class="at">-c:a</span> aac <span class="dt">\</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">-f</span> tee <span class="dt">\</span></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>  <span class="st">&quot;[select=\&#39;v,a\&#39;:f=flv]rtmp://live.example.com/stream|[select=\&#39;v\&#39;:f=mpegts]udp://192.168.1.50:5000&quot;</span></span></code></pre></div>
+<h3 id="key-considerations">Key Considerations</h3>
+<ul>
+<li><strong>Bandwidth Requirements</strong>: The <code>tee</code> muxer
+duplicates data at the application layer. If you are sending two 5 Mbps
+streams, your outbound network interface must sustain at least 10 Mbps
+of upload bandwidth.</li>
+<li><strong>Escaping Special Characters</strong>: If your target URLs
+contain special characters or colons inside parameters, wrap the URL
+components in single quotes or escape characters with backslashes
+(<code>\</code>) according to your shell environment.</li>
+</ul></article>
+        <div id="comments-container"></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

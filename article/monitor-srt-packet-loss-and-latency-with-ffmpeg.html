@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Monitor SRT Packet Loss and Latency with FFmpeg - ffmpeg</title>
+    <meta name="description" content="Monitoring the packet loss and latency of an active Secure Reliable Transport (SRT) connection in FFmpeg allows broadcasters to diagnose network instability and prevent stream degradation before it impacts viewers. While FFmpeg does not have a dedicated">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/monitor-srt-packet-loss-and-latency-with-ffmpeg">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Monitor SRT Packet Loss and Latency with FFmpeg - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/monitor-srt-packet-loss-and-latency-with-ffmpeg" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Monitoring the packet loss and latency of an active Secure Reliable Transport (SRT) connection in FFmpeg allows broadcasters to diagnose network instability and prevent stream degradation before it impacts viewers. While FFmpeg does not have a dedicated" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="monitor-srt-packet-loss-and-latency-with-ffmpeg">Monitor SRT
+Packet Loss and Latency with FFmpeg</h1>
+<p>Monitoring the packet loss and latency of an active Secure Reliable
+Transport (SRT) connection in FFmpeg allows broadcasters to diagnose
+network instability and prevent stream degradation before it impacts
+viewers. While FFmpeg does not have a dedicated graphical interface for
+network diagnostics, it exposes libsrt's internal statistics through its
+debug logging pipeline. By running FFmpeg with elevated log levels and
+parsing standard error output, you can monitor Round-Trip Time (RTT),
+lost packets, and dropped frames in real time.</p>
+<h3 id="enable-srt-debug-logging">Enable SRT Debug Logging</h3>
+<p>By default, FFmpeg suppresses low-level protocol statistics. To
+capture SRT metrics such as latency and packet loss, set the logging
+level to <code>debug</code> using the <code>-loglevel debug</code>
+flag.</p>
+<p>Run your stream command with debug logging enabled:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-loglevel</span> debug <span class="at">-re</span> <span class="at">-i</span> input.mp4 <span class="at">-c</span> copy <span class="at">-f</span> mpegts <span class="st">&quot;srt://192.168.1.100:9000?mode=caller&quot;</span></span></code></pre></div>
+<p>Because FFmpeg outputs all logs and connection statistics to
+<code>stderr</code>, libsrt will print periodic connection reports
+containing real-time transmission metrics directly to your terminal.</p>
+<h3 id="key-metrics-to-monitor">Key Metrics to Monitor</h3>
+<p>When debug logging is active, libsrt outputs statistical lines
+throughout the streaming session. Focus on the following key
+parameters:</p>
+<ul>
+<li><strong>rttMS / rtt:</strong> The Round-Trip Time in milliseconds.
+This represents the real-time network latency between the sender and
+receiver.</li>
+<li><strong>pktSndLoss / pktRcvLoss:</strong> The total count of
+transmitted or received packets reported lost by the transport
+layer.</li>
+<li><strong>pktRcvRetrans / pktSndRetrans:</strong> The number of
+retransmitted packets requested to recover from loss.</li>
+<li><strong>pktRcvDrop / pktSndDrop:</strong> Packets dropped because
+they did not arrive within the configured SRT latency buffer window. If
+this number increases, your configured latency is too low for the
+current network conditions, leading to visible artifacts or frame
+drops.</li>
+<li><strong>byteFlightSize:</strong> The amount of data currently in
+transit and unacknowledged.</li>
+</ul>
+<h3 id="filtering-metrics-in-real-time">Filtering Metrics in Real
+Time</h3>
+<p>Because <code>-loglevel debug</code> produces high-volume output that
+can obscure performance metrics, redirect <code>stderr</code> to
+<code>stdout</code> and filter for SRT statistics using command-line
+utilities.</p>
+<h4 id="on-linux-and-macos-bash">On Linux and macOS (Bash):</h4>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-loglevel</span> debug <span class="at">-re</span> <span class="at">-i</span> input.mp4 <span class="at">-c</span> copy <span class="at">-f</span> mpegts <span class="st">&quot;srt://192.168.1.100:9000?mode=caller&quot;</span> <span class="dv">2</span><span class="op">&gt;&amp;</span><span class="dv">1</span> <span class="kw">|</span> <span class="fu">grep</span> <span class="at">-i</span> <span class="at">--line-buffered</span> <span class="at">-E</span> <span class="st">&quot;rtt|loss|drop&quot;</span></span></code></pre></div>
+<h4 id="on-windows-powershell">On Windows (PowerShell):</h4>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode powershell"><code class="sourceCode powershell"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>ffmpeg <span class="op">-</span>loglevel debug <span class="op">-</span>re <span class="op">-</span>i input<span class="op">.</span><span class="fu">mp4</span> <span class="op">-</span>c <span class="fu">copy</span> <span class="op">-</span>f mpegts <span class="st">&quot;srt://192.168.1.100:9000?mode=caller&quot;</span> <span class="dv">2</span><span class="op">&gt;&amp;</span><span class="dv">1</span> <span class="op">|</span> <span class="fu">Select-String</span> <span class="st">&quot;rtt&quot;</span><span class="op">,</span> <span class="st">&quot;loss&quot;</span><span class="op">,</span> <span class="st">&quot;drop&quot;</span></span></code></pre></div>
+<p>This filters the terminal stream to display only updates concerning
+RTT, packet loss, and dropped frames.</p>
+<h3 id="log-to-a-file-for-post-stream-analysis">Log to a File for
+Post-Stream Analysis</h3>
+<p>To analyze network performance without impacting live terminal
+performance, use FFmpeg's <code>-report</code> flag. This dumps the
+complete debug output, including timestamped SRT statistics, into a log
+file in the working directory:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="va">FFREPORT</span><span class="op">=</span>file=srt_debug.log:level=48 <span class="ex">ffmpeg</span> <span class="at">-re</span> <span class="at">-i</span> input.mp4 <span class="at">-c</span> copy <span class="at">-f</span> mpegts <span class="st">&quot;srt://192.168.1.100:9000?mode=caller&quot;</span></span></code></pre></div>
+<p>After the transmission completes, search <code>srt_debug.log</code>
+for peak RTT values and cumulative loss figures to determine if the SRT
+latency buffer (<code>?latency=&lt;microseconds&gt;</code>) requires
+adjustment for future broadcasts.</p></article>
+        <div id="comments-container"></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

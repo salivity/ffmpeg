@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Load Custom EQ Text Files in FFmpeg Firequalizer - ffmpeg</title>
+    <meta name="description" content="This guide explains how to apply custom equalization curves from a text file using FFmpeg’s firequalizer audio filter. Because firequalizer lacks a built-in parameter for directly importing curve files, custom equalization profiles must be written as m">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/load-custom-eq-text-files-in-ffmpeg-firequalizer">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Load Custom EQ Text Files in FFmpeg Firequalizer - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/load-custom-eq-text-files-in-ffmpeg-firequalizer" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This guide explains how to apply custom equalization curves from a text file using FFmpeg’s firequalizer audio filter. Because firequalizer lacks a built-in parameter for directly importing curve files, custom equalization profiles must be written as m" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="load-custom-eq-text-files-in-ffmpeg-firequalizer">Load Custom EQ
+Text Files in FFmpeg Firequalizer</h1>
+<p>This guide explains how to apply custom equalization curves from a
+text file using FFmpeg’s <code>firequalizer</code> audio filter. Because
+<code>firequalizer</code> lacks a built-in parameter for directly
+importing curve files, custom equalization profiles must be written as
+mathematical expressions based on frequency and injected into the filter
+via shell substitution. The following sections outline how to format
+your text file and pass it into FFmpeg across different operating
+systems.</p>
+<hr />
+<h3 id="1-formatting-the-equalization-text-file">1. Formatting the
+Equalization Text File</h3>
+<p>The <code>firequalizer</code> filter evaluates frequency responses
+using the <code>gain_entry</code> option, where gain is expressed in
+decibels (dB) as a function of frequency <code>f</code> (in Hertz).</p>
+<p>To supply your values via a text file, create a file named
+<code>eq.txt</code> containing a valid FFmpeg expression.</p>
+<h4 id="option-a-stepped-bands-piecewise-constant">Option A: Stepped
+Bands (Piecewise Constant)</h4>
+<p>For simple cutoff points where specific frequency ranges receive a
+fixed dB boost or cut, format <code>eq.txt</code> using nested
+<code>if()</code> statements:</p>
+<pre class="text"><code>if(lte(f,100), 4, if(lte(f,500), 2, if(lte(f,2000), 0, if(lte(f,8000), -2, -4))))</code></pre>
+<p>In this example:</p>
+<ul>
+<li>Frequencies up to 100 Hz receive a +4 dB boost.</li>
+<li>Frequencies between 100 Hz and 500 Hz receive +2 dB.</li>
+<li>Frequencies between 500 Hz and 2000 Hz receive 0 dB.</li>
+<li>Frequencies between 2000 Hz and 8000 Hz receive -2 dB.</li>
+<li>Frequencies above 8000 Hz receive -4 dB.</li>
+</ul>
+<h4 id="option-b-linear-interpolation-between-points">Option B: Linear
+Interpolation Between Points</h4>
+<p>For smoother transitions between frequency points, define linear
+interpolation between target frequencies:</p>
+<pre class="text"><code>if(lte(f,100), 3, if(lte(f,1000), 3 + (f-100)*(-6)/(1000-100), -3))</code></pre>
+<hr />
+<h3 id="2-executing-the-ffmpeg-command">2. Executing the FFmpeg
+Command</h3>
+<p>Since FFmpeg reads the curve through the command-line argument, use
+your environment's shell substitution to load the contents of
+<code>eq.txt</code> into the filter graph.</p>
+<h4 id="linux-and-macos-bash--zsh">Linux and macOS (Bash / Zsh)</h4>
+<p>Use command substitution <code>$(...)</code> and strip newline
+characters to ensure the filter string parses without errors:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp3 <span class="at">-af</span> <span class="st">&quot;firequalizer=gain_entry=&#39;</span><span class="va">$(</span><span class="fu">tr</span> <span class="at">-d</span> <span class="st">&#39;\n&#39;</span> <span class="op">&lt;</span> eq.txt<span class="va">)</span><span class="st">&#39;&quot;</span> output.mp3</span></code></pre></div>
+<h4 id="windows-powershell">Windows (PowerShell)</h4>
+<p>Use PowerShell's <code>Get-Content</code> with the <code>-Raw</code>
+flag to read the file as a continuous string:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode powershell"><code class="sourceCode powershell"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>ffmpeg <span class="op">-</span>i input<span class="op">.</span><span class="fu">mp3</span> <span class="op">-</span>af <span class="st">&quot;firequalizer=gain_entry=&#39;</span><span class="op">$(</span><span class="fu">Get-Content</span> eq<span class="op">.</span><span class="fu">txt</span> <span class="op">-</span>Raw<span class="op">)</span><span class="st">&#39;&quot;</span> output<span class="op">.</span><span class="fu">mp3</span></span></code></pre></div>
+<h4 id="windows-command-prompt">Windows (Command Prompt)</h4>
+<p>Read the file into an environment variable before invoking
+FFmpeg:</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode cmd"><code class="sourceCode dosbat"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="bu">set</span> <span class="at">/p</span> <span class="va">EQ_EXPR</span>=<span class="kw">&lt;</span>eq.txt</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>ffmpeg <span class="at">-i</span> input.mp3 <span class="at">-af</span> <span class="st">&quot;firequalizer=gain_entry=&#39;</span><span class="pp">%</span><span class="va">EQ_EXPR</span><span class="pp">%</span><span class="st">&#39;&quot;</span> output.mp3</span></code></pre></div>
+<hr />
+<h3 id="3-recommended-filter-parameters">3. Recommended Filter
+Parameters</h3>
+<p>To fine-tune performance and accuracy when applying curves via
+<code>firequalizer</code>, consider adding these complementary options
+inside the <code>-af</code> flag:</p>
+<ul>
+<li><strong><code>accuracy</code></strong>: Sets the frequency
+resolution in Hertz (default is <code>5</code>). Lower values produce
+higher precision at the expense of higher CPU usage:
+<div class="sourceCode" id="cb6"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="va">firequalizer</span><span class="op">=</span>gain_entry=<span class="st">&#39;$(tr -d &#39;</span><span class="dt">\n</span><span class="st">&#39; &lt; eq.txt)&#39;</span>:accuracy=1</span></code></pre></div></li>
+<li><strong><code>scale</code></strong>: Changes the interpolation
+scale. Options include <code>lin</code> (linear, default) or
+<code>log</code> (logarithmic). A logarithmic scale often mirrors human
+hearing more accurately:
+<div class="sourceCode" id="cb7"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="va">firequalizer</span><span class="op">=</span>gain_entry=<span class="st">&#39;$(tr -d &#39;</span><span class="dt">\n</span><span class="st">&#39; &lt; eq.txt)&#39;</span>:scale=log</span></code></pre></div></li>
+<li><strong><code>zero_phase</code></strong>: Set to <code>1</code> to
+enable zero-phase filtering, which prevents phase distortion across
+frequencies.</li>
+</ul></article>
+        <div id="comments-container"></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

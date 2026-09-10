@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Configure SRT Streamid Parameter in FFmpeg - ffmpeg</title>
+    <meta name="description" content="This article provides a concise guide on how to configure the stream identifier (streamid) parameter within a Secure Reliable Transport (SRT) URL using FFmpeg. You will learn the correct URL syntax for both simple identifiers and complex authentication s">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/configure-srt-streamid-parameter-in-ffmpeg">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Configure SRT Streamid Parameter in FFmpeg - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/configure-srt-streamid-parameter-in-ffmpeg" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article provides a concise guide on how to configure the stream identifier (streamid) parameter within a Secure Reliable Transport (SRT) URL using FFmpeg. You will learn the correct URL syntax for both simple identifiers and complex authentication s" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="configure-srt-streamid-parameter-in-ffmpeg">Configure SRT
+Streamid Parameter in FFmpeg</h1>
+<p>This article provides a concise guide on how to configure the stream
+identifier (<code>streamid</code>) parameter within a Secure Reliable
+Transport (SRT) URL using FFmpeg. You will learn the correct URL syntax
+for both simple identifiers and complex authentication strings, along
+with crucial tips for escaping special characters in command-line
+environments.</p>
+<h3 id="the-streamid-parameter-syntax">The <code>streamid</code>
+Parameter Syntax</h3>
+<p>In FFmpeg, the <code>streamid</code> parameter is passed directly as
+a query parameter within the SRT output destination URL. The generic
+syntax is:</p>
+<pre class="text"><code>srt://&lt;host&gt;:&lt;port&gt;?streamid=&lt;identifier&gt;</code></pre>
+<p>When invoking FFmpeg from a command-line interface, always enclose
+the entire SRT URL in double quotes to prevent the shell from
+misinterpreting query parameters (such as <code>?</code>,
+<code>&amp;</code>, or <code>#</code>).</p>
+<h3 id="basic-usage-example">Basic Usage Example</h3>
+<p>To stream a media file to an SRT listener using a simple alphanumeric
+identifier:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-re</span> <span class="at">-i</span> input.mp4 <span class="at">-c</span> copy <span class="at">-f</span> mpegts <span class="st">&quot;srt://192.168.1.50:9000?streamid=live_feed_1&quot;</span></span></code></pre></div>
+<p>In this example:</p>
+<ul>
+<li><code>-re</code> reads the input at native frame rate.</li>
+<li><code>-c copy</code> avoids re-encoding the stream.</li>
+<li><code>-f mpegts</code> encapsulates the output into MPEG-TS format,
+which is the standard container for SRT.</li>
+<li><code>streamid=live_feed_1</code> tells the receiving server which
+ingest channel to assign the stream to.</li>
+</ul>
+<h3 id="complex-streamid-format-access-control--routing">Complex
+<code>streamid</code> Format (Access Control &amp; Routing)</h3>
+<p>Many SRT ingest servers (such as Haivision Media Platform, Nimble
+Streamer, or custom SRT relays) use a standardized key-value syntax for
+authentication and routing. This format typically follows the
+<code>#!::</code> prefix:</p>
+<pre class="text"><code>#!::u=&lt;username&gt;,r=&lt;resource&gt;,h=&lt;host&gt;,m=&lt;mode&gt;</code></pre>
+<p>To use this structured format in FFmpeg:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-re</span> <span class="at">-i</span> input.mp4 <span class="at">-c</span> copy <span class="at">-f</span> mpegts <span class="st">&quot;srt://ingest.example.com:9000?streamid=#!::u=myuser,r=live/channel1,m=publish&quot;</span></span></code></pre></div>
+<h3 id="handling-special-characters-and-url-encoding">Handling Special
+Characters and URL Encoding</h3>
+<p>If your <code>streamid</code> contains characters that interfere with
+URL parsing or shell execution (such as spaces, semicolons, or
+ampersands), apply standard percent-encoding:</p>
+<ul>
+<li>Space: <code>%20</code></li>
+<li><code>#</code>: <code>%23</code></li>
+<li><code>&amp;</code>: <code>%26</code></li>
+<li><code>=</code>: <code>%3D</code></li>
+</ul>
+<p>For example, if your destination server expects:</p>
+<pre class="text"><code>user=admin&amp;token=secret123</code></pre>
+<p>Format the URL with encoding for the query separators:</p>
+<div class="sourceCode" id="cb6"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-re</span> <span class="at">-i</span> input.mp4 <span class="at">-c</span> copy <span class="at">-f</span> mpegts <span class="st">&quot;srt://ingest.example.com:9000?streamid=user%3Dadmin%26token%3Dsecret123&quot;</span></span></code></pre></div>
+<h3 id="pulling-a-stream-using-streamid">Pulling a Stream Using
+<code>streamid</code></h3>
+<p>The <code>streamid</code> parameter can also be applied when acting
+as a caller that reads from an SRT server:</p>
+<div class="sourceCode" id="cb7"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> <span class="st">&quot;srt://ingest.example.com:9000?streamid=live/channel1&quot;</span> <span class="at">-c</span> copy output.mp4</span></code></pre></div></article>
+        <div id="comments-container"></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Convert Video to MP4 Using FFmpeg - ffmpeg</title>
+    <meta name="description" content="This article provides a straightforward guide on how to write an FFmpeg command to export videos in the MP4 container format. You will learn the basic command syntax, how to specify the most compatible video and audio codecs, and how to optimize your out">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/how-to-convert-video-to-mp4-using-ffmpeg">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Convert Video to MP4 Using FFmpeg - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/how-to-convert-video-to-mp4-using-ffmpeg" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article provides a straightforward guide on how to write an FFmpeg command to export videos in the MP4 container format. You will learn the basic command syntax, how to specify the most compatible video and audio codecs, and how to optimize your out" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="how-to-convert-video-to-mp4-using-ffmpeg">How to Convert Video
+to MP4 Using FFmpeg</h1>
+<p>This article provides a straightforward guide on how to write an
+FFmpeg command to export videos in the MP4 container format. You will
+learn the basic command syntax, how to specify the most compatible video
+and audio codecs, and how to optimize your output file for web playback
+and quality.</p>
+<h3 id="the-basic-command">The Basic Command</h3>
+<p>To convert any input video into an MP4 file using FFmpeg's default
+settings, use the following basic command structure:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mov output.mp4</span></code></pre></div>
+<p>In this command:</p>
+<ul>
+<li><code>-i input.mov</code> specifies the path to your source video
+file.</li>
+<li><code>output.mp4</code> is the desired name and format of your
+output video.</li>
+</ul>
+<h3 id="ensuring-maximum-compatibility-h264-and-aac">Ensuring Maximum
+Compatibility (H.264 and AAC)</h3>
+<p>While the basic command works, specifying the video and audio codecs
+ensures that your MP4 file will play seamlessly on almost all modern
+devices, web browsers, and media players. The standard combination for
+MP4 is the H.264 video codec and the AAC audio codec.</p>
+<p>Run this command to force these codecs:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mov <span class="at">-c:v</span> libx264 <span class="at">-c:a</span> aac output.mp4</span></code></pre></div>
+<ul>
+<li><code>-c:v libx264</code> instructs FFmpeg to encode the video
+stream using the H.264 encoder.</li>
+<li><code>-c:a aac</code> instructs FFmpeg to encode the audio stream
+using the AAC encoder.</li>
+</ul>
+<h3 id="adjusting-video-quality-and-file-size">Adjusting Video Quality
+and File Size</h3>
+<p>You can control the quality and size of your output MP4 using the
+Constant Rate Factor (CRF). The CRF scale runs from 0 to 51, where lower
+values mean higher quality (and larger file sizes), and higher values
+mean lower quality. A value between 18 and 28 is recommended, with 23
+being the default.</p>
+<p>To set the quality, use the <code>-crf</code> flag:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mov <span class="at">-c:v</span> libx264 <span class="at">-crf</span> 23 <span class="at">-c:a</span> aac output.mp4</span></code></pre></div>
+<h3 id="optimizing-mp4-for-web-playback">Optimizing MP4 for Web
+Playback</h3>
+<p>If you plan to upload the MP4 video to the web, you should optimize
+the file structure so the video can start playing before it is fully
+downloaded. You can achieve this by moving the index information (moov
+atom) to the beginning of the file using the
+<code>-movflags +faststart</code> flag:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mov <span class="at">-c:v</span> libx264 <span class="at">-c:a</span> aac <span class="at">-movflags</span> +faststart output.mp4</span></code></pre></div></article>
+        <div id="comments-container"></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

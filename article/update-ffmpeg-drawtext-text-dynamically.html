@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Update FFmpeg Drawtext Text Dynamically - ffmpeg</title>
+    <meta name="description" content="Updating text overlays during an active FFmpeg stream or recording can be achieved without restarting the encoding process. You can control the drawtext filter dynamically either by utilizing the file-reload mechanism, injecting commands via the sendcmd">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/update-ffmpeg-drawtext-text-dynamically">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Update FFmpeg Drawtext Text Dynamically - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/update-ffmpeg-drawtext-text-dynamically" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Updating text overlays during an active FFmpeg stream or recording can be achieved without restarting the encoding process. You can control the drawtext filter dynamically either by utilizing the file-reload mechanism, injecting commands via the sendcmd" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="update-ffmpeg-drawtext-text-dynamically">Update FFmpeg Drawtext
+Text Dynamically</h1>
+<p>Updating text overlays during an active FFmpeg stream or recording
+can be achieved without restarting the encoding process. You can control
+the <code>drawtext</code> filter dynamically either by utilizing the
+file-reload mechanism, injecting commands via the <code>sendcmd</code>
+filter, or transmitting runtime commands over an IPC socket using the
+<code>zmq</code> (ZeroMQ) filter.</p>
+<h3 id="method-1-the-file-reload-method-simplest-approach">Method 1: The
+File Reload Method (Simplest Approach)</h3>
+<p>The easiest way to update text dynamically is by reading the string
+from an external text file and configuring the <code>drawtext</code>
+filter to reload the file for every frame.</p>
+<p>Run the following command:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;drawtext=textfile=dynamic.txt:reload=1:fontfile=arial.ttf:fontsize=24:fontcolor=white:x=50:y=50&quot;</span> <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<ul>
+<li><strong><code>textfile=dynamic.txt</code></strong>: Specifies the
+path to the text file containing your overlay string.</li>
+<li><strong><code>reload=1</code></strong>: Instructs FFmpeg to re-read
+<code>dynamic.txt</code> on every frame.</li>
+</ul>
+<p>Whenever you write new content to <code>dynamic.txt</code> on your
+filesystem, FFmpeg immediately updates the rendered overlay in the
+output stream.</p>
+<h3 id="method-2-real-time-commands-using-the-zeromq-zmq-filter">Method
+2: Real-Time Commands Using the ZeroMQ (<code>zmq</code>) Filter</h3>
+<p>If you need to push text updates programmatically over a network or
+IPC socket, compile FFmpeg with <code>--enable-libzmq</code> and prepend
+the <code>zmq</code> filter to your filtergraph.</p>
+<h4 id="1-start-ffmpeg-with-zmq-and-drawtext">1. Start FFmpeg with ZMQ
+and Drawtext</h4>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;zmq=&#39;bind_address=tcp</span><span class="dt">\\</span><span class="st">://127.0.0.1</span><span class="dt">\\</span><span class="st">:5555&#39;,drawtext=fontfile=arial.ttf:text=&#39;Initial Text&#39;:fontsize=24:fontcolor=white:x=50:y=50&quot;</span> output.mp4</span></code></pre></div>
+<h4 id="2-send-the-update-command">2. Send the Update Command</h4>
+<p>You can send commands using the <code>zmqsend</code> utility provided
+with FFmpeg, or using a simple script in languages like Python.</p>
+<p>To update the text using <code>zmqsend</code>:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="bu">echo</span> <span class="st">&quot;Parsed_drawtext_1 reinit text=&#39;New Dynamic Text&#39;&quot;</span> <span class="kw">|</span> <span class="ex">zmqsend</span> <span class="at">-b</span> <span class="st">&quot;tcp://127.0.0.1:5555&quot;</span></span></code></pre></div>
+<ul>
+<li><strong><code>Parsed_drawtext_1</code></strong>: The default
+identifier FFmpeg assigns to the first <code>drawtext</code> filter in
+the chain. You can assign a custom name to the filter using the
+<code>drawtext@my_text=...</code> syntax, allowing you to target it with
+<code>my_text reinit text='...'</code>.</li>
+<li><strong><code>reinit</code></strong>: The command sent to the filter
+to reinitialize its parameters with the new <code>text</code>
+value.</li>
+</ul>
+<h3 id="method-3-timed-changes-using-the-sendcmd-filter">Method 3: Timed
+Changes Using the <code>sendcmd</code> Filter</h3>
+<p>If the text changes are predetermined according to timestamps, the
+<code>sendcmd</code> filter can execute dynamic text updates
+sequentially.</p>
+<h4 id="1-create-a-command-file-commandstxt">1. Create a Command File
+(<code>commands.txt</code>)</h4>
+<pre class="text"><code>2.0 drawtext reinit text &#39;Text at 2 Seconds&#39;;
+5.5 drawtext reinit text &#39;Text at 5.5 Seconds&#39;;
+10.0 drawtext reinit text &#39;Text at 10 Seconds&#39;;</code></pre>
+<h4 id="2-execute-ffmpeg-with-sendcmd">2. Execute FFmpeg with
+<code>sendcmd</code></h4>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;sendcmd=f=commands.txt,drawtext=fontfile=arial.ttf:text=&#39;Starting Text&#39;:fontsize=24:fontcolor=white:x=50:y=50&quot;</span> output.mp4</span></code></pre></div>
+<p>At each specified timestamp, <code>sendcmd</code> triggers the
+<code>reinit</code> directive on the <code>drawtext</code> filter,
+updating the displayed string automatically.</p></article>
+        <div id="comments-container"></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

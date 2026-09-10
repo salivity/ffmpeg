@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Capture RTMP Stream to stdout with FFmpeg - ffmpeg</title>
+    <meta name="description" content="This guide explains how to pull an RTMP live stream and pipe its media payload directly to standard output (stdout) using FFmpeg. By configuring stream-friendly muxing formats and disabling interactive prompts or log pollution, you can easily ingest RTMP">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/capture-rtmp-stream-to-stdout-with-ffmpeg">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Capture RTMP Stream to stdout with FFmpeg - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/capture-rtmp-stream-to-stdout-with-ffmpeg" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This guide explains how to pull an RTMP live stream and pipe its media payload directly to standard output (stdout) using FFmpeg. By configuring stream-friendly muxing formats and disabling interactive prompts or log pollution, you can easily ingest RTMP" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="capture-rtmp-stream-to-stdout-with-ffmpeg">Capture RTMP Stream
+to stdout with FFmpeg</h1>
+<p>This guide explains how to pull an RTMP live stream and pipe its
+media payload directly to standard output (<code>stdout</code>) using
+FFmpeg. By configuring stream-friendly muxing formats and disabling
+interactive prompts or log pollution, you can easily ingest RTMP feeds
+into downstream utilities, custom scripts, or external processing
+pipelines in real time.</p>
+<h3 id="the-basic-command">The Basic Command</h3>
+<p>To read an RTMP stream and output the raw or repackaged data to
+<code>stdout</code>, use the following standard syntax:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> <span class="st">&quot;rtmp://source.server.com/live/stream_key&quot;</span> <span class="at">-c</span> copy <span class="at">-f</span> flv <span class="at">-</span></span></code></pre></div>
+<p>In FFmpeg, a hyphen (<code>-</code>) or <code>pipe:1</code>
+designates standard output as the target destination.</p>
+<h3 id="essential-flags-explained">Essential Flags Explained</h3>
+<p>When streaming directly to <code>stdout</code>, specific parameters
+are required to ensure continuous, uninterrupted data delivery:</p>
+<ul>
+<li><strong><code>-i "rtmp://..."</code></strong>: Specifies the RTMP
+source URL.</li>
+<li><strong><code>-c copy</code></strong>: Copies the incoming video and
+audio streams directly without re-encoding, preserving the original
+payload and minimizing CPU usage.</li>
+<li><strong><code>-f &lt;format&gt;</code></strong>: Defines the output
+container format. Standard output cannot seek backwards, meaning the
+container format must support non-seekable streaming. Common streamable
+formats include:
+<ul>
+<li><code>flv</code>: Standard wrapper for RTMP content (H.264 +
+AAC).</li>
+<li><code>mpegts</code>: Ideal for broadcast-oriented stream
+processing.</li>
+<li><code>h264</code>: Raw H.264 elementary video stream (no
+audio).</li>
+<li><code>nut</code>: Lightweight container format supporting arbitrary
+codecs.</li>
+</ul></li>
+<li><strong><code>-</code></strong>: Represents
+<code>stdout</code>.</li>
+</ul>
+<h3 id="handling-log-output">Handling Log Output</h3>
+<p>By default, FFmpeg prints banner, configuration, and transcoding
+statistics to <code>stderr</code>. While <code>stderr</code> is distinct
+from <code>stdout</code> in most shell environments, suppressing
+unnecessary logs prevents performance degradation and keeps output
+pipelines clean:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-loglevel</span> error <span class="at">-i</span> <span class="st">&quot;rtmp://source.server.com/live/stream_key&quot;</span> <span class="at">-c</span> copy <span class="at">-f</span> flv <span class="at">-</span></span></code></pre></div>
+<p>Using <code>-loglevel error</code> ensures only critical failures are
+logged.</p>
+<h3 id="common-implementation-scenarios">Common Implementation
+Scenarios</h3>
+<h4 id="1-piping-into-another-command">1. Piping into Another
+Command</h4>
+<p>To pipe an RTMP stream directly to a media player such as MPV or VLC
+without saving to disk:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-loglevel</span> error <span class="at">-i</span> <span class="st">&quot;rtmp://source.server.com/live/stream_key&quot;</span> <span class="at">-c</span> copy <span class="at">-f</span> flv <span class="at">-</span> <span class="kw">|</span> <span class="ex">mpv</span> <span class="at">-</span></span></code></pre></div>
+<h4 id="2-extracting-raw-h264-video-only">2. Extracting Raw H.264 Video
+Only</h4>
+<p>If a downstream decoder requires raw Network Abstraction Layer (NAL)
+units without container metadata, strip the audio and output elementary
+H.264 data:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> <span class="st">&quot;rtmp://source.server.com/live/stream_key&quot;</span> <span class="at">-an</span> <span class="at">-c:v</span> copy <span class="at">-f</span> h264 <span class="at">-</span></span></code></pre></div>
+<h4 id="3-operating-in-listen-mode">3. Operating in Listen Mode</h4>
+<p>If FFmpeg should act as the RTMP receiver waiting for an external
+broadcaster (such as OBS) to push data to it, add the
+<code>-listen 1</code> flag before the input:</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-listen</span> 1 <span class="at">-i</span> <span class="st">&quot;rtmp://0.0.0.0:1935/live/stream_key&quot;</span> <span class="at">-c</span> copy <span class="at">-f</span> mpegts <span class="at">-</span></span></code></pre></div></article>
+        <div id="comments-container"></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

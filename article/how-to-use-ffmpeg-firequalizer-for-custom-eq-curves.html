@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Use FFmpeg firequalizer for Custom EQ Curves - ffmpeg</title>
+    <meta name="description" content="This guide demonstrates how to apply arbitrary frequency response curves to audio streams using FFmpeg's built-in firequalizer (Finite Impulse Response Equalizer) filter. You will learn the two primary methods for shaping the frequency spectrum—using d">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/how-to-use-ffmpeg-firequalizer-for-custom-eq-curves">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Use FFmpeg firequalizer for Custom EQ Curves - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/how-to-use-ffmpeg-firequalizer-for-custom-eq-curves" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This guide demonstrates how to apply arbitrary frequency response curves to audio streams using FFmpeg's built-in firequalizer (Finite Impulse Response Equalizer) filter. You will learn the two primary methods for shaping the frequency spectrum—using d" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="how-to-use-ffmpeg-firequalizer-for-custom-eq-curves">How to Use
+FFmpeg firequalizer for Custom EQ Curves</h1>
+<p>This guide demonstrates how to apply arbitrary frequency response
+curves to audio streams using FFmpeg's built-in
+<code>firequalizer</code> (Finite Impulse Response Equalizer) filter.
+You will learn the two primary methods for shaping the frequency
+spectrum—using discrete coordinate points with linear interpolation or
+using continuous mathematical expressions—along with the critical
+parameters needed to control curve accuracy and sound quality.</p>
+<h3 id="core-concepts-of-firequalizer">Core Concepts of
+<code>firequalizer</code></h3>
+<p>The <code>firequalizer</code> filter shapes audio in the frequency
+domain using Fast Fourier Transforms (FFT). Unlike traditional
+parametric equalizers that rely on cascaded IIR peak/shelf filters,
+<code>firequalizer</code> allows you to define an exact target response
+curve across the spectrum from 0 Hz to the Nyquist frequency (half your
+sample rate).</p>
+<p>You define your custom curve using one of two parameters:</p>
+<ol type="1">
+<li><code>gain_entry</code>: Defines the curve by setting explicit
+frequency-gain pairs that FFmpeg interpolates between.</li>
+<li><code>gain</code>: Defines the curve continuously using a
+mathematical formula evaluated as a function of frequency
+(<code>f</code>).</li>
+</ol>
+<hr />
+<h3 id="method-1-specifying-points-with-gain_entry">Method 1: Specifying
+Points with <code>gain_entry</code></h3>
+<p>The <code>gain_entry</code> parameter is the most straightforward
+method for creating arbitrary equalizer curves. It takes a list of
+entries formatted as <code>entry(frequency, gain_in_dB)</code>.</p>
+<h4 id="basic-syntax">Basic Syntax</h4>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.wav <span class="at">-af</span> <span class="st">&quot;firequalizer=gain_entry=&#39;entry(f1, g1); entry(f2, g2); ...&#39;&quot;</span> output.wav</span></code></pre></div>
+<h4 id="example-multi-point-custom-curve">Example: Multi-Point Custom
+Curve</h4>
+<p>To apply a 6 dB boost at 80 Hz, a cut of 3 dB at 400 Hz, a 4 dB boost
+at 3 kHz, and a steep roll-off above 10 kHz:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.wav <span class="at">-af</span> <span class="st">&quot;firequalizer=gain_entry=&#39;entry(0, 0); entry(80, 6); entry(400, -3); entry(3000, 4); entry(10000, 0); entry(14000, -24)&#39;&quot;</span> output.wav</span></code></pre></div>
+<p><em>Note: Always anchor the curve at <code>0</code> Hz and at or near
+your maximum expected frequency to prevent undefined gains at the
+frequency boundaries.</em></p>
+<hr />
+<h3 id="method-2-mathematical-expressions-with-gain">Method 2:
+Mathematical Expressions with <code>gain</code></h3>
+<p>The <code>gain</code> parameter lets you describe the target gain in
+dB as an algebraic formula using FFmpeg's expression evaluator. The
+variable <code>f</code> represents the frequency in Hertz.</p>
+<h4 id="basic-syntax-1">Basic Syntax</h4>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.wav <span class="at">-af</span> <span class="st">&quot;firequalizer=gain=&#39;EXPRESSION&#39;&quot;</span> output.wav</span></code></pre></div>
+<h4 id="example-conditional-band-shelf">Example: Conditional Band
+Shelf</h4>
+<p>To apply a 6 dB boost only between 1 kHz and 4 kHz, while keeping all
+other frequencies flat (0 dB):</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.wav <span class="at">-af</span> <span class="st">&quot;firequalizer=gain=&#39;if(between(f, 1000, 4000), 6, 0)&#39;&quot;</span> output.wav</span></code></pre></div>
+<h4 id="example-continuous-slope-tilt-eq">Example: Continuous Slope
+(Tilt EQ)</h4>
+<p>To apply a continuous tilt across the spectrum:</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.wav <span class="at">-af</span> <span class="st">&quot;firequalizer=gain=&#39;3 * log2(f / 1000)&#39;&quot;</span> output.wav</span></code></pre></div>
+<hr />
+<h3 id="essential-configuration-parameters">Essential Configuration
+Parameters</h3>
+<p>To ensure the filter interprets your custom curve accurately and
+without audio artifacts, adjust the following optional settings:</p>
+<h4 id="1-frequency-and-gain-scaling-scale">1. Frequency and Gain
+Scaling (<code>scale</code>)</h4>
+<p>By default, FFmpeg interpolates frequencies linearly. Because human
+hearing is logarithmic, frequency points should usually be interpolated
+logarithmically by setting <code>scale=loglin</code>:</p>
+<div class="sourceCode" id="cb6"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.wav <span class="at">-af</span> <span class="st">&quot;firequalizer=scale=loglin:gain_entry=&#39;entry(20, 0); entry(100, 4); entry(1000, -2); entry(10000, 3)&#39;&quot;</span> output.wav</span></code></pre></div>
+<p>Available <code>scale</code> options:</p>
+<ul>
+<li><code>linlin</code>: Linear frequency scale, linear gain scale.</li>
+<li><code>linlog</code>: Linear frequency scale, logarithmic gain
+scale.</li>
+<li><code>loglin</code> (Recommended): Logarithmic frequency scale,
+linear gain (dB) scale.</li>
+<li><code>loglog</code>: Logarithmic frequency scale, logarithmic gain
+scale.</li>
+</ul>
+<h4 id="2-accuracy-and-resolution-delay">2. Accuracy and Resolution
+(<code>delay</code>)</h4>
+<p>The <code>delay</code> parameter (measured in seconds) controls the
+length of the impulse response filter. A larger delay allows for steeper
+slopes and more precise low-frequency control, at the cost of higher
+latency and CPU usage:</p>
+<div class="sourceCode" id="cb7"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.wav <span class="at">-af</span> <span class="st">&quot;firequalizer=delay=0.05:gain_entry=&#39;...&#39;&quot;</span> output.wav</span></code></pre></div>
+<p>The default delay is <code>0.05</code> seconds (50 ms), which is
+typically sufficient for most curves. Increase this up to
+<code>0.1</code> or higher if you need sharp cuts at sub-bass
+frequencies below 100 Hz.</p>
+<h4 id="3-window-function-wfunc">3. Window Function
+(<code>wfunc</code>)</h4>
+<p>The window function shapes the transition of the FIR filter kernel.
+The default is <code>hann</code>, but you can change it to reduce
+ripple:</p>
+<ul>
+<li><code>hann</code>: Balanced roll-off and stop-band attenuation
+(default).</li>
+<li><code>blackman</code>: Provides greater stop-band rejection with
+slightly wider transition bands.</li>
+<li><code>rectangular</code>: Sharpest transitions, but introduces
+significant frequency rippling.</li>
+</ul>
+<div class="sourceCode" id="cb8"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.wav <span class="at">-af</span> <span class="st">&quot;firequalizer=wfunc=blackman:gain_entry=&#39;...&#39;&quot;</span> output.wav</span></code></pre></div>
+<hr />
+<h3 id="complete-production-example">Complete Production Example</h3>
+<p>The following command applies a smooth, log-interpolated headphone
+compensation curve with high precision (<code>delay=0.1</code>) and high
+dynamic range windowing (<code>wfunc=blackman</code>):</p>
+<div class="sourceCode" id="cb9"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> source.flac <span class="at">-af</span> <span class="st">&quot;firequalizer=scale=loglin:delay=0.1:wfunc=blackman:gain_entry=&#39;entry(20, 3); entry(100, 1.5); entry(800, -1); entry(3500, 4); entry(7000, -2); entry(12000, 1); entry(20000, -4)&#39;&quot;</span> <span class="at">-c:a</span> flac corrected_output.flac</span></code></pre></div></article>
+        <div id="comments-container"></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FFmpeg Removegrain Luma and Chroma Plane Modes - ffmpeg</title>
+    <meta name="description" content="The FFmpeg removegrain filter provides spatial denoising and blurring functions controlled through mode parameters assigned to individual image planes. By configuring the mode arguments—m0, m1, m2, and m3—you can precisely apply different filtering s">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/ffmpeg-removegrain-luma-and-chroma-plane-modes">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="FFmpeg Removegrain Luma and Chroma Plane Modes - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/ffmpeg-removegrain-luma-and-chroma-plane-modes" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="The FFmpeg removegrain filter provides spatial denoising and blurring functions controlled through mode parameters assigned to individual image planes. By configuring the mode arguments—m0, m1, m2, and m3—you can precisely apply different filtering s" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="ffmpeg-removegrain-luma-and-chroma-plane-modes">FFmpeg
+Removegrain Luma and Chroma Plane Modes</h1>
+<p>The FFmpeg <code>removegrain</code> filter provides spatial denoising
+and blurring functions controlled through mode parameters assigned to
+individual image planes. By configuring the mode
+arguments—<code>m0</code>, <code>m1</code>, <code>m2</code>, and
+<code>m3</code>—you can precisely apply different filtering strengths or
+algorithms to the luma (brightness) and chroma (color) planes, or bypass
+specific planes entirely to conserve processing power and preserve color
+detail.</p>
+<h3 id="understanding-plane-arguments">Understanding Plane
+Arguments</h3>
+<p>The <code>removegrain</code> filter accepts up to four mode
+parameters corresponding to the planes of the input video format:</p>
+<ul>
+<li><strong><code>m0</code></strong>: Sets the mode for Plane 0, which
+corresponds to the <strong>Luma (<span
+class="math inline">\(Y\)</span>)</strong> plane in YUV formats or the
+Red plane in RGB formats.</li>
+<li><strong><code>m1</code></strong>: Sets the mode for Plane 1, which
+corresponds to the first <strong>Chroma (<span
+class="math inline">\(U\)</span> / <span
+class="math inline">\(Cb\)</span>)</strong> plane or the Green plane in
+RGB formats.</li>
+<li><strong><code>m2</code></strong>: Sets the mode for Plane 2, which
+corresponds to the second <strong>Chroma (<span
+class="math inline">\(V\)</span> / <span
+class="math inline">\(Cr\)</span>)</strong> plane or the Blue plane in
+RGB formats.</li>
+<li><strong><code>m3</code></strong>: Sets the mode for Plane 3,
+typically the <strong>Alpha</strong> plane if one exists.</li>
+</ul>
+<p>If fewer parameters are provided, unassigned planes inherit the value
+of the preceding plane. For example, setting only <code>m0=1</code>
+automatically applies mode <code>1</code> to <code>m1</code>,
+<code>m2</code>, and <code>m3</code>.</p>
+<h3 id="mode-values-overview">Mode Values Overview</h3>
+<p>Each mode integer (from <code>0</code> to <code>24</code>)
+corresponds to a specific 3x3 spatial algorithm derived from the
+AviSynth RemoveGrain plugin:</p>
+<ul>
+<li><strong>Mode <code>0</code></strong>: Bypass. The plane is left
+untouched.</li>
+<li><strong>Mode <code>1</code></strong>: Clips the pixel to the minimum
+and maximum of its eight neighbors.</li>
+<li><strong>Mode <code>2</code></strong>: Clips to the second-highest
+and second-lowest neighbor values.</li>
+<li><strong>Mode <code>4</code></strong>: Standard 3x3 median
+filter.</li>
+<li><strong>Mode <code>17</code></strong>: Common edge-preserving
+blur.</li>
+<li><strong>Mode <code>19</code>–<code>24</code></strong>: Various
+blurring and box-filtering operations.</li>
+</ul>
+<h3 id="configuration-syntax">Configuration Syntax</h3>
+<p>You can specify planes using positional arguments or explicit
+key-value pairs.</p>
+<h4 id="positional-syntax">Positional Syntax</h4>
+<p>Parameters are passed as colon-separated values in the order
+<code>m0:m1:m2:m3</code>:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;removegrain=17:0:0&quot;</span> output.mp4</span></code></pre></div>
+<p>In this command:</p>
+<ul>
+<li><code>m0 = 17</code>: Mode 17 is applied to the luma plane.</li>
+<li><code>m1 = 0</code>: The first chroma plane (<span
+class="math inline">\(U\)</span>) is passed through without
+changes.</li>
+<li><code>m2 = 0</code>: The second chroma plane (<span
+class="math inline">\(V\)</span>) is passed through without
+changes.</li>
+</ul>
+<h4 id="named-parameter-syntax">Named Parameter Syntax</h4>
+<p>Explicitly declaring parameter names ensures clarity and avoids
+positional ordering errors:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;removegrain=m0=17:m1=4:m2=4&quot;</span> output.mp4</span></code></pre></div>
+<p>In this command:</p>
+<ul>
+<li><code>m0=17</code>: Applies an edge-preserving blur to the luma
+plane.</li>
+<li><code>m1=4</code>: Applies a median filter to the <span
+class="math inline">\(U\)</span> chroma plane.</li>
+<li><code>m2=4</code>: Applies a median filter to the <span
+class="math inline">\(V\)</span> chroma plane.</li>
+</ul>
+<h3 id="practical-examples">Practical Examples</h3>
+<h4 id="1-luma-only-denoising-color-untouched">1. Luma-Only Denoising
+(Color Untouched)</h4>
+<p>Film grain and compression artifacts are often most noticeable in the
+luma plane. To avoid smearing subtle color gradients, bypass the chroma
+planes using mode <code>0</code>:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;removegrain=m0=1:m1=0:m2=0&quot;</span> <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<h4 id="2-chroma-only-noise-reduction">2. Chroma-Only Noise
+Reduction</h4>
+<p>Analogue captures often contain high amounts of chroma noise while
+retaining sharp luma detail. To denoise color without softening luma
+edges:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;removegrain=m0=0:m1=17:m2=17&quot;</span> <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<h4 id="3-uniform-filtering-across-all-planes">3. Uniform Filtering
+Across All Planes</h4>
+<p>To apply the same processing across every plane, specify only the
+first mode:</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;removegrain=m0=4&quot;</span> <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<p>Because <code>m1</code> and <code>m2</code> are omitted, they default
+to the value of <code>m0</code> (mode <code>4</code>).</p></article>
+        <div id="comments-container"></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

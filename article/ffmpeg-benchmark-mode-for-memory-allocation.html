@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FFmpeg Benchmark Mode for Memory Allocation - ffmpeg</title>
+    <meta name="description" content="Measuring memory allocation in FFmpeg is essential for optimizing media processing pipelines, preventing out-of-memory crashes, and profiling hardware resource consumption. FFmpeg features native benchmarking flags that expose runtime statistics, includi">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/ffmpeg-benchmark-mode-for-memory-allocation">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="FFmpeg Benchmark Mode for Memory Allocation - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/ffmpeg-benchmark-mode-for-memory-allocation" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Measuring memory allocation in FFmpeg is essential for optimizing media processing pipelines, preventing out-of-memory crashes, and profiling hardware resource consumption. FFmpeg features native benchmarking flags that expose runtime statistics, includi" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="ffmpeg-benchmark-mode-for-memory-allocation">FFmpeg Benchmark
+Mode for Memory Allocation</h1>
+<p>Measuring memory allocation in FFmpeg is essential for optimizing
+media processing pipelines, preventing out-of-memory crashes, and
+profiling hardware resource consumption. FFmpeg features native
+benchmarking flags that expose runtime statistics, including the peak
+resident set size (memory) used during an operation. This guide covers
+how to enable benchmark mode in FFmpeg to capture memory metrics and
+interpret the output accurately.</p>
+<h3 id="using-the-built-in--benchmark-flag">Using the Built-In
+<code>-benchmark</code> Flag</h3>
+<p>To measure resource usage during execution, add the
+<code>-benchmark</code> flag to your command. Place the flag after the
+inputs and before the output file, or right before the output.</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-c:v</span> libx264 <span class="at">-preset</span> fast <span class="at">-benchmark</span> output.mp4</span></code></pre></div>
+<p>To benchmark decoding or filter chains without measuring disk write
+overhead, route the output to the null muxer:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-benchmark</span> <span class="at">-i</span> input.mp4 <span class="at">-f</span> null <span class="at">-</span></span></code></pre></div>
+<h3 id="understanding-the-benchmark-output">Understanding the Benchmark
+Output</h3>
+<p>Once the command finishes, FFmpeg outputs a summary line containing
+execution statistics:</p>
+<pre class="text"><code>bench: utime=1.420s stime=0.080s rtime=0.650s maxrss=142560kB</code></pre>
+<ul>
+<li><strong>utime:</strong> Total CPU time spent in user mode (in
+seconds).</li>
+<li><strong>stime:</strong> Total CPU time spent in kernel/system mode
+(in seconds).</li>
+<li><strong>rtime:</strong> Real wall-clock elapsed time (in
+seconds).</li>
+<li><strong>maxrss:</strong> Maximum Resident Set Size. This is the peak
+physical memory (RAM) occupied by the FFmpeg process during execution.
+On Linux and macOS, this value is typically reported in kilobytes
+(kB).</li>
+</ul>
+<h3 id="using--benchmark_all-for-granular-tracking">Using
+<code>-benchmark_all</code> for Granular Tracking</h3>
+<p>If you need deeper tracking across individual passes and components
+rather than a single end-of-run summary, use
+<code>-benchmark_all</code>:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-benchmark_all</span> <span class="at">-i</span> input.mp4 <span class="at">-c:v</span> libx265 <span class="at">-f</span> null <span class="at">-</span></span></code></pre></div>
+<p>This flag prints memory and time consumption iteratively during
+processing, allowing you to identify memory spikes associated with
+specific filters, complex scenes, or keyframe intervals.</p>
+<h3 id="advanced-memory-measurement-with-system-tools">Advanced Memory
+Measurement with System Tools</h3>
+<p>On some platforms, FFmpeg's <code>maxrss</code> output depends on the
+underlying C library's <code>getrusage()</code> implementation, which
+can vary. For complete operating-system-level verification of memory
+allocation, run the command using the GNU <code>time</code> binary (not
+the shell built-in):</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="ex">/usr/bin/time</span> <span class="at">-v</span> ffmpeg <span class="at">-i</span> input.mp4 <span class="at">-c:v</span> libx264 <span class="at">-f</span> null <span class="at">-</span></span></code></pre></div>
+<p>In the output, locate:</p>
+<ul>
+<li><strong>Maximum resident set size (kbytes):</strong> Peak physical
+RAM usage.</li>
+<li><strong>Page faults (major/minor):</strong> Indicates whether memory
+paging or swapping to disk occurred.</li>
+</ul></article>
+        <div id="comments-container"></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

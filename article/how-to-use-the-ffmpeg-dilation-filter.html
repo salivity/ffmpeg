@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Use the FFmpeg Dilation Filter - ffmpeg</title>
+    <meta name="description" content="The dilation filter in FFmpeg is a morphological video filter that replaces each pixel with the maximum value found in its surrounding neighborhood, effectively expanding bright regions and shrinking dark areas. This guide provides a straightforward over">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/how-to-use-the-ffmpeg-dilation-filter">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Use the FFmpeg Dilation Filter - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/how-to-use-the-ffmpeg-dilation-filter" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="The dilation filter in FFmpeg is a morphological video filter that replaces each pixel with the maximum value found in its surrounding neighborhood, effectively expanding bright regions and shrinking dark areas. This guide provides a straightforward over" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="how-to-use-the-ffmpeg-dilation-filter">How to Use the FFmpeg
+Dilation Filter</h1>
+<p>The <code>dilation</code> filter in FFmpeg is a morphological video
+filter that replaces each pixel with the maximum value found in its
+surrounding neighborhood, effectively expanding bright regions and
+shrinking dark areas. This guide provides a straightforward overview of
+how the filter functions, its primary configuration options, and
+practical command-line examples to apply single-pass, multi-pass, or
+selective plane dilation to your video files.</p>
+<h3 id="understanding-the-dilation-filter">Understanding the Dilation
+Filter</h3>
+<p>In image processing and morphological analysis, dilation acts on
+local pixel neighborhoods (a 3x3 grid by default). When applied to an
+image or video, the filter evaluates each pixel alongside its adjacent
+neighbors and assigns the highest value to the target pixel. As a
+result, highlights, white text, lines, and bright areas grow
+outward.</p>
+<h3 id="basic-syntax">Basic Syntax</h3>
+<p>To apply the default 3x3 dilation across all color channels, run:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;dilation&quot;</span> output.mp4</span></code></pre></div>
+<p>By default, this command evaluates all eight surrounding pixels and
+applies the maximum luminance/color change possible.</p>
+<h3 id="filter-parameters">Filter Parameters</h3>
+<p>The <code>dilation</code> filter accepts two primary sets of
+parameters:</p>
+<ol type="1">
+<li><p><strong><code>threshold0</code>, <code>threshold1</code>,
+<code>threshold2</code>, <code>threshold3</code></strong><br />
+Sets the maximum change allowed for each plane (plane 0 is Luma/Red,
+plane 1 is Chroma-U/Green, plane 2 is Chroma-V/Blue, and plane 3 is
+Alpha).</p>
+<ul>
+<li>Range: <code>0</code> to <code>65535</code></li>
+<li>Default: <code>65535</code> (unlimited expansion)</li>
+<li>Setting a threshold to <code>0</code> leaves that plane completely
+untouched.</li>
+</ul></li>
+<li><p><strong><code>coordinates</code></strong><br />
+An 8-bit integer mask controlling which neighboring pixels in the 3x3
+grid are evaluated.</p>
+<ul>
+<li>Default: <code>255</code> (all 8 neighbors: top-left, top,
+top-right, left, right, bottom-left, bottom, bottom-right).</li>
+<li>Each bit corresponds to a specific neighbor position.</li>
+</ul></li>
+</ol>
+<h3 id="practical-examples">Practical Examples</h3>
+<h4 id="1-expand-brightness-on-luminance-only">1. Expand Brightness on
+Luminance Only</h4>
+<p>To expand bright highlights without distorting chroma (color balance)
+in YUV videos, limit the filter to plane 0:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;dilation=threshold0=65535:threshold1=0:threshold2=0&quot;</span> <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<h4 id="2-subtle-dilation-with-a-threshold-limit">2. Subtle Dilation
+with a Threshold Limit</h4>
+<p>To prevent bright areas from overwhelming neighboring details,
+restrict the maximum amount a pixel value can increase:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;dilation=threshold0=30:threshold1=15:threshold2=15&quot;</span> <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<h4 id="3-chaining-passes-for-a-stronger-expansion">3. Chaining Passes
+for a Stronger Expansion</h4>
+<p>Because the filter operates on a fixed 3x3 matrix per pass, chaining
+multiple instances increases the radius of the effect:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;dilation,dilation,dilation&quot;</span> <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<h4 id="4-directional-dilation">4. Directional Dilation</h4>
+<p>You can adjust the <code>coordinates</code> parameter to limit
+expansion to specific directions. For instance, using horizontal-only
+neighbors (left and right, which correspond to bit flags 8 and 16,
+totaling <code>24</code>):</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;dilation=coordinates=24&quot;</span> <span class="at">-c:a</span> copy output.mp4</span></code></pre></div></article>
+        <div id="comments-container"></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

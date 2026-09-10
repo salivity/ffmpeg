@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Convert Progressive to Interlaced with FFmpeg tinterlace - ffmpeg</title>
+    <meta name="description" content="This article explains how to convert high-frame-rate progressive video into standard interlaced video using the FFmpeg tinterlace filter. By applying temporal decimation, you can take a 50p or 60p progressive source and generate a broadcast-compliant 25i">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/convert-progressive-to-interlaced-with-ffmpeg-tinterlace">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Convert Progressive to Interlaced with FFmpeg tinterlace - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/convert-progressive-to-interlaced-with-ffmpeg-tinterlace" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article explains how to convert high-frame-rate progressive video into standard interlaced video using the FFmpeg tinterlace filter. By applying temporal decimation, you can take a 50p or 60p progressive source and generate a broadcast-compliant 25i" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1
+id="convert-progressive-to-interlaced-with-ffmpeg-tinterlace">Convert
+Progressive to Interlaced with FFmpeg tinterlace</h1>
+<p>This article explains how to convert high-frame-rate progressive
+video into standard interlaced video using the FFmpeg
+<code>tinterlace</code> filter. By applying temporal decimation, you can
+take a 50p or 60p progressive source and generate a broadcast-compliant
+25i or 30i interlaced output where alternate progressive frames are
+merged into alternating fields to preserve fluid motion.</p>
+<h3 id="understanding-temporal-decimation-with-tinterlace">Understanding
+Temporal Decimation with <code>tinterlace</code></h3>
+<p>Interlacing via temporal decimation halves the frame rate by taking
+consecutive full frames and interleaving them into a single frame.
+Instead of dropping frames, odd lines from one frame and even lines from
+the next are combined.</p>
+<ul>
+<li><strong>Input:</strong> Progressive video at double the target
+interlaced frame rate (e.g., 50 fps or 59.94 fps).</li>
+<li><strong>Output:</strong> Interlaced video at standard frame rate
+(e.g., 25 fps or 29.97 fps) containing 50 or 59.94 fields per
+second.</li>
+</ul>
+<h3 id="selecting-the-field-order">Selecting the Field Order</h3>
+<p>The <code>tinterlace</code> filter uses the <code>mode</code>
+parameter to define how lines are combined:</p>
+<ul>
+<li><strong>Top Field First (TFF):</strong>
+<code>mode=interleave_top</code> (or <code>mode=0</code>). Takes the top
+field (even lines) from the first frame and the bottom field (odd lines)
+from the subsequent frame.</li>
+<li><strong>Bottom Field First (BFF):</strong>
+<code>mode=interleave_bottom</code> (or <code>mode=1</code>). Takes the
+bottom field from the first frame and the top field from the subsequent
+frame.</li>
+</ul>
+<h3 id="basic-command-syntax">Basic Command Syntax</h3>
+<p>To convert a 60p progressive file to 30i (Top Field First), use the
+following basic filter configuration:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input_60p.mp4 <span class="at">-vf</span> <span class="st">&quot;tinterlace=mode=interleave_top,setfield=tff&quot;</span> <span class="at">-c:v</span> libx264 <span class="at">-flags</span> +ildct+ilme output_30i.mp4</span></code></pre></div>
+<h3 id="complete-practical-examples">Complete Practical Examples</h3>
+<h4 id="example-1-top-field-first-h264-encoding">Example 1: Top Field
+First H.264 Encoding</h4>
+<p>Broadcast standards such as 1080i50 or 1080i59.94 typically require
+Top Field First (TFF).</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input_50p.mp4 <span class="at">-vf</span> <span class="st">&quot;tinterlace=mode=interleave_top,setfield=tff&quot;</span> <span class="at">-c:v</span> libx264 <span class="at">-flags</span> +ildct+ilme <span class="at">-top</span> 1 <span class="at">-c:a</span> copy output_25i.mp4</span></code></pre></div>
+<ul>
+<li><code>tinterlace=mode=interleave_top</code>: Interleaves consecutive
+frames into fields and halves the output frame rate.</li>
+<li><code>setfield=tff</code>: Tags the internal video frames as Top
+Field First.</li>
+<li><code>-flags +ildct+ilme</code>: Enables interlaced Discrete Cosine
+Transform (DCT) and interlaced Motion Estimation (ME) in the video
+encoder.</li>
+<li><code>-top 1</code>: Sets the container/codec-level field order flag
+to Top Field First (<code>-top 0</code> sets Bottom Field First).</li>
+</ul>
+<h4
+id="example-2-interlacing-to-apple-prores-for-broadcast-delivery">Example
+2: Interlacing to Apple ProRes for Broadcast Delivery</h4>
+<p>For editing and mezzanine archive workflows, interlaced ProRes is
+frequently required:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input_5994p.mov <span class="at">-vf</span> <span class="st">&quot;tinterlace=mode=interleave_top,setfield=tff&quot;</span> <span class="at">-c:v</span> prores_ks <span class="at">-profile:v</span> 3 <span class="at">-flags</span> +ildct+ilme <span class="at">-c:a</span> copy output_2997i.mov</span></code></pre></div>
+<h4 id="example-3-bottom-field-first-dv-standards">Example 3: Bottom
+Field First (DV Standards)</h4>
+<p>If producing content for legacy formats such as standard-definition
+DV, specify Bottom Field First:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input_5994p.mp4 <span class="at">-vf</span> <span class="st">&quot;tinterlace=mode=interleave_bottom,setfield=bff&quot;</span> <span class="at">-c:v</span> libx264 <span class="at">-flags</span> +ildct+ilme <span class="at">-top</span> 0 <span class="at">-c:a</span> copy output_bff.mp4</span></code></pre></div>
+<h3 id="verification">Verification</h3>
+<p>To verify that the resulting file contains interlaced frames and
+accurate metadata, run <code>ffprobe</code>:</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffprobe</span> <span class="at">-v</span> error <span class="at">-select_streams</span> v:0 <span class="at">-show_entries</span> stream=field_order,r_frame_rate output_30i.mp4</span></code></pre></div>
+<p>The output should report the halved frame rate (e.g.,
+<code>30/1</code> or <code>25/1</code>) and the specified field order
+(<code>tt</code> for Top Field First, <code>bb</code> for Bottom Field
+First).</p></article>
+        <div id="comments-container"></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

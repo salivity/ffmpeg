@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Use the FFmpeg tlut2 Filter - ffmpeg</title>
+    <meta name="description" content="The tlut2 (Temporal Look-Up Table 2) filter in FFmpeg applies custom mathematical expressions across consecutive frames within a single video stream to create temporal visual effects, generate motion-detection masks, or calculate frame-to-frame differenc">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/how-to-use-the-ffmpeg-tlut2-filter">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Use the FFmpeg tlut2 Filter - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/how-to-use-the-ffmpeg-tlut2-filter" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="The tlut2 (Temporal Look-Up Table 2) filter in FFmpeg applies custom mathematical expressions across consecutive frames within a single video stream to create temporal visual effects, generate motion-detection masks, or calculate frame-to-frame differenc" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="how-to-use-the-ffmpeg-tlut2-filter">How to Use the FFmpeg tlut2
+Filter</h1>
+<p>The <code>tlut2</code> (Temporal Look-Up Table 2) filter in FFmpeg
+applies custom mathematical expressions across consecutive frames within
+a single video stream to create temporal visual effects, generate
+motion-detection masks, or calculate frame-to-frame differences. This
+guide explains how the filter functions, details its syntax and primary
+variables, and provides practical, copy-pasteable command examples for
+common video processing tasks.</p>
+<h3 id="understanding-the-tlut2-filter">Understanding the tlut2
+Filter</h3>
+<p>Unlike standard 2D LUT filters that operate on spatial data or static
+color maps, <code>tlut2</code> processes pixels across the time domain.
+It evaluates the pixel value of the current frame alongside the
+corresponding pixel value from the immediately preceding frame.</p>
+<p>In any given expression:</p>
+<ul>
+<li><strong><code>x</code></strong>: Represents the pixel value of the
+current frame.</li>
+<li><strong><code>y</code></strong>: Represents the pixel value of the
+previous frame.</li>
+</ul>
+<p>The filter assigns the calculated result to the current frame's
+output.</p>
+<h3 id="basic-syntax-and-parameters">Basic Syntax and Parameters</h3>
+<p>The basic filter syntax is:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;tlut2=c0=&#39;expression&#39;:c1=&#39;expression&#39;:c2=&#39;expression&#39;:c3=&#39;expression&#39;&quot;</span> output.mp4</span></code></pre></div>
+<ul>
+<li><strong><code>c0</code></strong>: Expression for the first component
+(Y in YUV, R in RGB).</li>
+<li><strong><code>c1</code></strong>: Expression for the second
+component (U in YUV, G in RGB).</li>
+<li><strong><code>c2</code></strong>: Expression for the third component
+(V in YUV, B in RGB).</li>
+<li><strong><code>c3</code></strong>: Expression for the alpha
+component.</li>
+</ul>
+<p>If an expression for a component is omitted, it defaults to retaining
+the current frame's value (<code>x</code>).</p>
+<hr />
+<h3 id="practical-examples">Practical Examples</h3>
+<h4 id="1-frame-differencing-temporal-difference">1. Frame Differencing
+(Temporal Difference)</h4>
+<p>To visualize movement between frames, compute the absolute difference
+between the current pixel and the previous pixel.</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;format=yuv420p,tlut2=c0=&#39;abs(x-y)&#39;:c1=&#39;128&#39;:c2=&#39;128&#39;&quot;</span> <span class="at">-c:a</span> copy difference.mp4</span></code></pre></div>
+<ul>
+<li><code>c0='abs(x-y)'</code> calculates the difference in the luma
+(brightness) plane. Areas with no movement become black (0), while
+moving objects appear brighter.</li>
+<li><code>c1='128'</code> and <code>c2='128'</code> neutralize chroma to
+render the result as grayscale.</li>
+</ul>
+<h4 id="2-temporal-smoothing--simple-two-frame-blur">2. Temporal
+Smoothing / Simple Two-Frame Blur</h4>
+<p>To blend consecutive frames together for a slight motion-smoothing or
+temporal ghosting effect, calculate the average of the current and
+previous pixel values:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;tlut2=c0=&#39;(x+y)/2&#39;:c1=&#39;(x+y)/2&#39;:c2=&#39;(x+y)/2&#39;&quot;</span> <span class="at">-c:a</span> copy smoothed.mp4</span></code></pre></div>
+<h4 id="3-binary-motion-mask">3. Binary Motion Mask</h4>
+<p>To create a high-contrast motion mask that turns pixels pure white if
+movement exceeds a certain threshold and pure black otherwise:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;format=yuv420p,tlut2=c0=&#39;if(gt(abs(x-y),25),235,16)&#39;:c1=&#39;128&#39;:c2=&#39;128&#39;&quot;</span> <span class="at">-c:a</span> copy motion_mask.mp4</span></code></pre></div>
+<ul>
+<li><code>gt(abs(x-y), 25)</code> checks if the absolute difference in
+luminance exceeds the threshold value of 25.</li>
+<li>If true, it assigns <code>235</code> (broadcast white); otherwise,
+it assigns <code>16</code> (broadcast black).</li>
+</ul>
+<h4 id="4-highlighting-temporal-additions">4. Highlighting Temporal
+Additions</h4>
+<p>To highlight only newly introduced elements (where current brightness
+exceeds previous brightness) while ignoring areas where brightness
+decreased:</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;format=yuv420p,tlut2=c0=&#39;max(x-y,0)&#39;:c1=&#39;128&#39;:c2=&#39;128&#39;&quot;</span> <span class="at">-c:a</span> copy additions.mp4</span></code></pre></div>
+<hr />
+<h3 id="key-operational-notes">Key Operational Notes</h3>
+<ul>
+<li><strong>Initial Frame Handling</strong>: On the very first frame of
+a stream, there is no preceding frame. FFmpeg uses the first frame's own
+values for <code>y</code>, resulting in <code>x == y</code> for frame
+0.</li>
+<li><strong>Pixel Ranges</strong>: For standard 8-bit video, pixel
+values typically range from <code>0</code> to <code>255</code> (or
+<code>16</code> to <code>235</code> in limited range YUV). For 10-bit or
+higher bit-depth video, scale expression constants accordingly (e.g., up
+to <code>1023</code> for 10-bit).</li>
+<li><strong>Color Space Consistency</strong>: Preceding the filter with
+<code>format=yuv420p</code> or <code>format=rgb24</code> ensures
+predictable component mapping across diverse input sources.</li>
+</ul></article>
+        <div id="comments-container"></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

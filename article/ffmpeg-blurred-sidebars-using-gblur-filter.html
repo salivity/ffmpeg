@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FFmpeg Blurred Sidebars Using gblur Filter - ffmpeg</title>
+    <meta name="description" content="This guide demonstrates how to convert videos with mismatched aspect ratios—such as a vertical smartphone recording displayed on a widescreen display—into a professional 16:9 presentation using FFmpeg. By splitting the video into two streams, scaling">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/ffmpeg-blurred-sidebars-using-gblur-filter">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="FFmpeg Blurred Sidebars Using gblur Filter - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/ffmpeg-blurred-sidebars-using-gblur-filter" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This guide demonstrates how to convert videos with mismatched aspect ratios—such as a vertical smartphone recording displayed on a widescreen display—into a professional 16:9 presentation using FFmpeg. By splitting the video into two streams, scaling" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="ffmpeg-blurred-sidebars-using-gblur-filter">FFmpeg Blurred
+Sidebars Using gblur Filter</h1>
+<p>This guide demonstrates how to convert videos with mismatched aspect
+ratios—such as a vertical smartphone recording displayed on a widescreen
+display—into a professional 16:9 presentation using FFmpeg. By splitting
+the video into two streams, scaling and blurring the background stream
+using the <code>gblur</code> (Gaussian blur) filter, and centering the
+original sharp video on top, you can eliminate black pillarbox bars and
+replace them with dynamic, blurred sidebars.</p>
+<h3 id="the-complete-ffmpeg-command">The Complete FFmpeg Command</h3>
+<p>To apply blurred sidebars to an input video, run the following
+command in your terminal:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-filter_complex</span> <span class="st">&quot;[0:v]split=2[fg][bg]; [bg]scale=1920:1080:force_original_aspect_ratio=increase,crop=1920:1080,gblur=sigma=30[blurred]; [fg]scale=-1:1080[main]; [blurred][main]overlay=(W-w)/2:(H-h)/2&quot;</span> <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<h3 id="how-the-filtergraph-works">How the Filtergraph Works</h3>
+<p>The <code>-filter_complex</code> parameter processes the video
+through a series of chained operations:</p>
+<ol type="1">
+<li><p><strong><code>[0:v]split=2[fg][bg]</code></strong><br />
+Duplicates the original video track into two independent video streams:
+<code>[fg]</code> (foreground) and <code>[bg]</code>
+(background).</p></li>
+<li><p><strong><code>scale=1920:1080:force_original_aspect_ratio=increase,crop=1920:1080</code></strong><br />
+Resizes the background stream so that it completely fills the target
+1920x1080 resolution without distorting the aspect ratio. The
+<code>crop</code> filter trims off any excess pixels that spill outside
+the target boundaries.</p></li>
+<li><p><strong><code>gblur=sigma=30</code></strong><br />
+Applies a Gaussian blur to the scaled background stream. The
+<code>sigma</code> parameter determines the blur intensity; higher
+values result in a heavier blur, while lower values preserve more
+detail. A value between <code>20</code> and <code>40</code> is
+recommended for sidebars.</p></li>
+<li><p><strong><code>[fg]scale=-1:1080[main]</code></strong><br />
+Scales the foreground video to fit within the 1080-pixel height limit
+while automatically calculating the width (<code>-1</code>) to preserve
+its original aspect ratio.</p></li>
+<li><p><strong><code>[blurred][main]overlay=(W-w)/2:(H-h)/2</code></strong><br />
+Places the sharp foreground stream (<code>[main]</code>) over the center
+of the blurred background stream (<code>[blurred]</code>). The formula
+<code>(W-w)/2:(H-h)/2</code> calculates the exact center coordinates for
+horizontal and vertical alignment.</p></li>
+<li><p><strong><code>-c:a copy</code></strong><br />
+Copies the audio stream directly from the input without re-encoding,
+preserving original audio quality and saving processing time.</p></li>
+</ol>
+<h3 id="customization-options">Customization Options</h3>
+<ul>
+<li><strong>Adjust Blur Strength:</strong> Change <code>sigma=30</code>
+to a higher or lower integer. You can also specify horizontal and
+vertical blur separately by using <code>sigma=30:steps=2</code> to
+adjust blur smoothness and quality.</li>
+<li><strong>Target Resolution:</strong> To produce a vertical video
+(e.g., 1080x1920 for platforms like TikTok or YouTube Shorts) from a
+widescreen source, change the resolution values in the background to
+<code>scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920</code>
+and the foreground scaling to <code>scale=1080:-1</code>.</li>
+</ul></article>
+        <div id="comments-container"></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

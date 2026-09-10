@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Burn Subtitles with Custom Outline in FFmpeg - ffmpeg</title>
+    <meta name="description" content="Burning subtitles directly into a video stream—known as hardcoding—ensures that captions are permanently visible on any player without requiring external files. In FFmpeg, this is achieved using the subtitles video filter combined with the forcestyle">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/burn-subtitles-with-custom-outline-in-ffmpeg">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Burn Subtitles with Custom Outline in FFmpeg - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/burn-subtitles-with-custom-outline-in-ffmpeg" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Burning subtitles directly into a video stream—known as hardcoding—ensures that captions are permanently visible on any player without requiring external files. In FFmpeg, this is achieved using the subtitles video filter combined with the forcestyle" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="burn-subtitles-with-custom-outline-in-ffmpeg">Burn Subtitles
+with Custom Outline in FFmpeg</h1>
+<p>Burning subtitles directly into a video stream—known as
+hardcoding—ensures that captions are permanently visible on any player
+without requiring external files. In FFmpeg, this is achieved using the
+<code>subtitles</code> video filter combined with the
+<code>force_style</code> parameter to override default styling rules.
+This guide provides the complete command syntax, explains how FFmpeg
+handles outline colors and widths, and details the specific color
+formatting required to style your subtitles effectively.</p>
+<h3 id="the-basic-command">The Basic Command</h3>
+<p>To burn subtitles from an <code>.srt</code> file into a video and
+define a custom outline color, use the following FFmpeg command:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;subtitles=subs.srt:force_style=&#39;OutlineColour=&amp;H0000FF&amp;,BorderStyle=1,Outline=2&#39;&quot;</span> <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<h3 id="understanding-the-color-format">Understanding the Color
+Format</h3>
+<p>FFmpeg subtitle styling uses the Advanced SubStation Alpha (ASS)
+format. In this format, colors are defined in hexadecimal using the
+<strong><code>&amp;HAABBGGRR&amp;</code></strong> (Alpha, Blue, Green,
+Red) or <strong><code>&amp;HBBGGRR&amp;</code></strong> (Blue, Green,
+Red) format, rather than standard HTML/web <code>RRGGBB</code>
+format.</p>
+<ul>
+<li><strong>Red Outline:</strong> <code>&amp;H0000FF&amp;</code></li>
+<li><strong>Green Outline:</strong> <code>&amp;H00FF00&amp;</code></li>
+<li><strong>Blue Outline:</strong> <code>&amp;HFF0000&amp;</code></li>
+<li><strong>Yellow Outline:</strong> <code>&amp;H00FFFF&amp;</code></li>
+<li><strong>Black Outline:</strong> <code>&amp;H000000&amp;</code></li>
+<li><strong>White Outline:</strong> <code>&amp;HFFFFFF&amp;</code></li>
+</ul>
+<p>If an alpha channel is included, <code>00</code> denotes completely
+opaque and <code>FF</code> denotes fully transparent (e.g.,
+<code>&amp;H000000FF&amp;</code> is fully opaque red).</p>
+<h3 id="key-style-parameters">Key Style Parameters</h3>
+<p>When using <code>force_style</code>, you can separate multiple style
+options with commas inside the quotation marks:</p>
+<ul>
+<li><strong><code>OutlineColour</code></strong>: Sets the color of the
+border surrounding the text in <code>&amp;HAABBGGRR&amp;</code>
+format.</li>
+<li><strong><code>Outline</code></strong>: Controls the thickness of the
+border in pixels (e.g., <code>Outline=2</code> or
+<code>Outline=3</code>).</li>
+<li><strong><code>BorderStyle</code></strong>: Set this to
+<code>1</code> to enable a standard outline with drop shadow. Setting it
+to <code>3</code> produces an opaque background bounding box instead of
+a text outline.</li>
+<li><strong><code>PrimaryColour</code></strong>: Sets the main font fill
+color.</li>
+<li><strong><code>FontSize</code></strong>: Adjusts the subtitle font
+size.</li>
+<li><strong><code>FontName</code></strong>: Specifies the typeface
+(e.g., <code>FontName=Arial</code>).</li>
+</ul>
+<h3 id="complete-example-white-text-with-a-blue-outline">Complete
+Example: White Text with a Blue Outline</h3>
+<p>The following command burns <code>captions.srt</code> into
+<code>input.mp4</code>, rendering the text in 24pt Arial, filled with
+white, and outlined with a 3-pixel-wide pure blue border:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;subtitles=captions.srt:force_style=&#39;FontName=Arial,FontSize=24,PrimaryColour=&amp;H00FFFFFF&amp;,OutlineColour=&amp;HFF0000&amp;,BorderStyle=1,Outline=3&#39;&quot;</span> <span class="at">-c:v</span> libx264 <span class="at">-crf</span> 20 <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<h3 id="windows-path-formatting-note">Windows Path Formatting Note</h3>
+<p>If you are using Windows and providing an absolute path to the
+subtitle file, backslashes must be escaped or converted to forward
+slashes, and the drive colon must be escaped:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">-vf</span> <span class="st">&quot;subtitles=&#39;C</span><span class="dt">\\</span><span class="st">:/path/to/subs.srt&#39;:force_style=&#39;OutlineColour=&amp;H0000FF&amp;,Outline=2&#39;&quot;</span></span></code></pre></div></article>
+        <div id="comments-container"></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

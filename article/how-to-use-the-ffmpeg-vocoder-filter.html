@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Use the FFmpeg Vocoder Filter - ffmpeg</title>
+    <meta name="description" content="This guide explains how to configure and apply the vocoder filter in FFmpeg to create classic robotic vocal effects and synthetic speech. You will learn the mechanics behind the two-input vocoder design, the essential parameters available for shaping the">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/how-to-use-the-ffmpeg-vocoder-filter">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Use the FFmpeg Vocoder Filter - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/how-to-use-the-ffmpeg-vocoder-filter" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This guide explains how to configure and apply the vocoder filter in FFmpeg to create classic robotic vocal effects and synthetic speech. You will learn the mechanics behind the two-input vocoder design, the essential parameters available for shaping the" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="how-to-use-the-ffmpeg-vocoder-filter">How to Use the FFmpeg
+Vocoder Filter</h1>
+<p>This guide explains how to configure and apply the
+<code>vocoder</code> filter in FFmpeg to create classic robotic vocal
+effects and synthetic speech. You will learn the mechanics behind the
+two-input vocoder design, the essential parameters available for shaping
+the sound, and the exact command-line syntax required to process your
+audio files.</p>
+<h3 id="understanding-the-inputs-carrier-and-modulator">Understanding
+the Inputs: Carrier and Modulator</h3>
+<p>The FFmpeg <code>vocoder</code> filter operates by imposing the
+spectral envelope of one audio signal onto another. It requires two
+separate audio streams mapped through FFmpeg's
+<code>-filter_complex</code>:</p>
+<ol type="1">
+<li><strong>Carrier (Input 0):</strong> The base musical tone or sound
+source that provides pitch and timbre (such as a synthesizer pad,
+sustained chord, or saw wave).</li>
+<li><strong>Modulator (Input 1):</strong> The signal that provides
+speech, articulation, or rhythm (typically a spoken vocal track).</li>
+</ol>
+<h3 id="filter-parameters">Filter Parameters</h3>
+<p>The <code>vocoder</code> filter accepts several parameters to control
+the frequency splitting and envelope behavior:</p>
+<ul>
+<li><strong><code>bands</code></strong>: Sets the number of frequency
+bands for filtering. The value ranges from <code>4</code> to
+<code>240</code> (default is <code>16</code>). Higher values provide
+clearer speech intelligibility, while lower values produce a more
+vintage, heavily processed effect.</li>
+<li><strong><code>attack</code></strong>: Sets the envelope follower
+attack time in milliseconds (range: <code>0.1</code> to
+<code>500.0</code>, default is <code>1.0</code>). A shorter attack
+responds faster to consonants.</li>
+<li><strong><code>release</code></strong>: Sets the envelope follower
+release time in milliseconds (range: <code>0.1</code> to
+<code>500.0</code>, default is <code>1.0</code>). Longer values result
+in smoother, lingering transitions between syllables.</li>
+</ul>
+<h3 id="basic-command-line-syntax">Basic Command-Line Syntax</h3>
+<p>To run the filter, pass your carrier audio as the first input and
+your voice audio as the second input. Map them into the filter graph in
+that exact order:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> carrier.wav <span class="at">-i</span> speech.wav <span class="at">-filter_complex</span> <span class="st">&quot;[0:a][1:a]vocoder=bands=32:attack=5:release=20[aout]&quot;</span> <span class="at">-map</span> <span class="st">&quot;[aout]&quot;</span> output.wav</span></code></pre></div>
+<p>In this example:</p>
+<ul>
+<li><code>[0:a]</code> assigns the audio stream from
+<code>carrier.wav</code> to the carrier input.</li>
+<li><code>[1:a]</code> assigns the audio stream from
+<code>speech.wav</code> to the modulator input.</li>
+<li><code>bands=32</code> increases the frequency bands from the default
+for enhanced intelligibility.</li>
+<li><code>attack=5</code> and <code>release=20</code> provide a smooth
+natural envelope following the voice.</li>
+</ul>
+<h3 id="advanced-usage-and-tuning">Advanced Usage and Tuning</h3>
+<h4 id="high-intelligibility-configuration">High-Intelligibility
+Configuration</h4>
+<p>For clearer speech where lyrics or spoken words must remain easy to
+understand, increase the band count:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> synth.wav <span class="at">-i</span> voice.wav <span class="at">-filter_complex</span> <span class="st">&quot;[0:a][1:a]vocoder=bands=64:attack=2:release=10[out]&quot;</span> <span class="at">-map</span> <span class="st">&quot;[out]&quot;</span> output.wav</span></code></pre></div>
+<h4 id="vintage-robotic-sound">Vintage Robotic Sound</h4>
+<p>To emulate classic early hardware vocoders, reduce the number of
+bands and use quick envelope times:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> synth.wav <span class="at">-i</span> voice.wav <span class="at">-filter_complex</span> <span class="st">&quot;[0:a][1:a]vocoder=bands=8:attack=1:release=5[out]&quot;</span> <span class="at">-map</span> <span class="st">&quot;[out]&quot;</span> output.wav</span></code></pre></div>
+<h4 id="handling-differing-audio-lengths">Handling Differing Audio
+Lengths</h4>
+<p>If your carrier audio is shorter or longer than the speech, use the
+<code>apad</code> or <code>atrim</code> filter, or add the
+<code>-shortest</code> flag to cut the output as soon as the voice
+finishes:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> synth.wav <span class="at">-i</span> voice.wav <span class="at">-filter_complex</span> <span class="st">&quot;[0:a][1:a]vocoder=bands=24:attack=3:release=15[out]&quot;</span> <span class="at">-map</span> <span class="st">&quot;[out]&quot;</span> <span class="at">-shortest</span> output.wav</span></code></pre></div></article>
+        <div id="comments-container"></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

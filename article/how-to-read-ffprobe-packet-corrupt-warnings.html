@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Read FFprobe Packet Corrupt Warnings - ffmpeg</title>
+    <meta name="description" content="The "Packet corrupt" warning in ffprobe indicates that a specific frame or data segment within a media container fails validation checks during parsing or decoding. This article explains what causes this warning, how to extract precise packet-level diagn">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/how-to-read-ffprobe-packet-corrupt-warnings">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Read FFprobe Packet Corrupt Warnings - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/how-to-read-ffprobe-packet-corrupt-warnings" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="The "Packet corrupt" warning in ffprobe indicates that a specific frame or data segment within a media container fails validation checks during parsing or decoding. This article explains what causes this warning, how to extract precise packet-level diagn" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="how-to-read-ffprobe-packet-corrupt-warnings">How to Read FFprobe
+Packet Corrupt Warnings</h1>
+<p>The "Packet corrupt" warning in <code>ffprobe</code> indicates that a
+specific frame or data segment within a media container fails validation
+checks during parsing or decoding. This article explains what causes
+this warning, how to extract precise packet-level diagnostic data using
+<code>ffprobe</code>, how to locate the damaged segment in your file,
+and what the corruption means for playback and processing.</p>
+<hr />
+<h3 id="what-packet-corrupt-means">What "Packet Corrupt" Means</h3>
+<p>When <code>ffprobe</code> scans a file, it unpacks the container
+format (such as MP4, MKV, or TS) and inspects the individual elementary
+stream packets (audio, video, subtitles). If the demuxer or codec parser
+detects missing bytes, an unexpected frame size, broken headers, or
+mismatched checksums, FFmpeg marks the packet with the
+<code>AV_PKT_FLAG_CORRUPT</code> flag and logs a warning:</p>
+<pre class="text"><code>[mp4 @ 0x...] Packet corrupt (stream = 0, dts = 123456)</code></pre>
+<p>This warning is typically non-fatal. It means the container itself is
+readable, but the raw data for that specific frame is partially lost or
+mangled.</p>
+<h3 id="how-to-expose-corrupt-packets-in-ffprobe">How to Expose Corrupt
+Packets in FFprobe</h3>
+<p>By default, simple <code>ffprobe</code> commands might suppress
+packet-level warnings unless you explicitly query packet details or
+adjust log levels. To identify every corrupt packet, inspect the packet
+stream directly:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffprobe</span> <span class="at">-v</span> warning <span class="at">-show_packets</span> <span class="at">-select_streams</span> v:0 input.mp4</span></code></pre></div>
+<p>To narrow the output specifically to corrupted packets, request the
+packet flags, presentation timestamp (<code>pts</code>), and decode
+timestamp (<code>dts</code>):</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffprobe</span> <span class="at">-v</span> error <span class="at">-show_entries</span> packet=codec_type,stream_index,pts_time,dts_time,flags <span class="at">-of</span> csv input.mp4 <span class="kw">|</span> <span class="fu">grep</span> <span class="st">&quot;c&quot;</span></span></code></pre></div>
+<p>In the output, the <code>flags</code> field represents the status of
+the packet:</p>
+<ul>
+<li><code>K</code> — Keyframe (I-frame)</li>
+<li><code>_</code> — Non-keyframe</li>
+<li><code>c</code> — Corrupt packet</li>
+<li><code>d</code> — Discarded packet</li>
+</ul>
+<p>A flag showing <code>_c_</code> or <code>Kc_</code> explicitly marks
+a corrupted frame.</p>
+<h3 id="key-fields-to-interpret">Key Fields to Interpret</h3>
+<p>When evaluating a corrupted packet, pay attention to the following
+metadata:</p>
+<ol type="1">
+<li><strong><code>stream_index</code> /
+<code>codec_type</code></strong>: Identifies whether the corruption
+affects video, audio, or metadata. Video packet corruption often results
+in visual macroblocking or dropped frames; audio packet corruption
+typically causes pops, silence, or desynchronization.</li>
+<li><strong><code>pts_time</code> / <code>dts_time</code></strong>:
+Provides the exact timestamp (in seconds) where the damage occurs. Use
+this timestamp to jump directly to that point in a player or video
+editor to visually inspect the defect.</li>
+<li><strong><code>pos</code></strong>: The byte offset inside the
+container. This helps determine whether the file suffered disk/download
+corruption at a specific physical sector.</li>
+<li><strong><code>flags</code></strong>: A corrupt keyframe
+(<code>K</code>) is significantly worse than a corrupt delta frame
+(<code>_</code>). If an I-frame is corrupted, every subsequent frame
+that relies on it (the entire GOP) will display visual artifacts until
+the next keyframe arrives.</li>
+</ol>
+<h3 id="practical-impact-and-next-steps">Practical Impact and Next
+Steps</h3>
+<ul>
+<li><strong>Minor Glitches</strong>: If only a single non-keyframe
+packet is corrupt, modern decoders usually conceal the error by skipping
+the frame or interpolating motion, making the defect barely
+noticeable.</li>
+<li><strong>Stream Desync</strong>: In live-stream captures or MPEG-TS
+files, a corrupt audio packet can disrupt clock synchronization, causing
+audio/video drift.</li>
+<li><strong>Remuxing and Transcoding</strong>: When copying streams
+(<code>ffmpeg -i input.mp4 -c copy output.mp4</code>), corrupt packets
+may be discarded or copied over as-is, which can trigger errors in
+strict playback software. Re-encoding the file
+(<code>-c:v libx264</code>) allows FFmpeg's decoder to apply error
+concealment and generate a standard-compliant, repaired output
+file.</li>
+</ul></article>
+        <div id="comments-container"></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

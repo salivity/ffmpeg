@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FFmpeg Crystalizer Filter: Expand Audio Dynamic Range - ffmpeg</title>
+    <meta name="description" content="This guide covers how to use FFmpeg's crystalizer audio filter to restore punch and expand the dynamic range of over-compressed, squashed audio tracks. You will learn how the filter operates, understand its primary parameters, and see practical command-l">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/ffmpeg-crystalizer-filter-expand-audio-dynamic-range">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="FFmpeg Crystalizer Filter: Expand Audio Dynamic Range - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/ffmpeg-crystalizer-filter-expand-audio-dynamic-range" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This guide covers how to use FFmpeg's crystalizer audio filter to restore punch and expand the dynamic range of over-compressed, squashed audio tracks. You will learn how the filter operates, understand its primary parameters, and see practical command-l" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="ffmpeg-crystalizer-filter-expand-audio-dynamic-range">FFmpeg
+Crystalizer Filter: Expand Audio Dynamic Range</h1>
+<p>This guide covers how to use FFmpeg's <code>crystalizer</code> audio
+filter to restore punch and expand the dynamic range of over-compressed,
+squashed audio tracks. You will learn how the filter operates,
+understand its primary parameters, and see practical command-line
+examples to decompress dynamic range without introducing unwanted
+digital distortion.</p>
+<h2 id="understanding-the-crystalizer-filter">Understanding the
+Crystalizer Filter</h2>
+<p>The <code>crystalizer</code> filter works by accentuating the
+differences between successive audio samples. When audio is heavily
+limited or compressed, transients are flattened, reducing dynamic
+contrast. By applying a positive intensity value with
+<code>crystalizer</code>, small variations in volume are magnified,
+effectively sharpening peaks, expanding the perceived dynamic range, and
+restoring transient attack.</p>
+<h2 id="syntax-and-key-parameters">Syntax and Key Parameters</h2>
+<p>The filter takes two main parameters:</p>
+<ul>
+<li><strong><code>intensity</code> (or <code>i</code>)</strong>: Sets
+the magnitude of dynamic alteration. The acceptable range is from
+<code>-10.0</code> to <code>10.0</code>, with a default of
+<code>2.0</code>. Positive values (e.g., <code>1.0</code> to
+<code>10.0</code>) expand the dynamic range and sharpen attacks.
+Negative values reduce dynamic range and soften audio.</li>
+<li><strong><code>clipping</code> (or <code>c</code>)</strong>: Enables
+or disables internal clipping detection. Accepting a boolean
+(<code>1</code> for enabled, <code>0</code> for disabled), this
+parameter defaults to <code>1</code> (enabled) to help prevent
+hard-clipping distortion when peaks exceed full scale.</li>
+</ul>
+<h2 id="basic-usage-example">Basic Usage Example</h2>
+<p>To apply the default expansion effect to an audio file, run:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp3 <span class="at">-af</span> <span class="st">&quot;crystalizer=i=2.0&quot;</span> output.wav</span></code></pre></div>
+<h2
+id="recommended-practice-preventing-clipping-and-distortion">Recommended
+Practice: Preventing Clipping and Distortion</h2>
+<p>Because dynamic expansion raises the level of peaks, it frequently
+pushes audio beyond 0 dBFS (decibels relative to full scale), creating
+harsh digital clipping. While the internal <code>clipping=1</code> flag
+handles hard edge boundaries, it can cause truncation artifacts if
+driven too hard.</p>
+<p>To achieve clean results, pair the <code>crystalizer</code> filter
+with pre-attenuation or a downstream peak limiter:</p>
+<h3 id="method-1-using-a-pre-attenuation-gain-drop">Method 1: Using a
+Pre-Attenuation Gain Drop</h3>
+<p>Lower the volume slightly before crystallization to give your audio
+headroom:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp3 <span class="at">-af</span> <span class="st">&quot;volume=-2dB,crystalizer=i=2.5&quot;</span> output.wav</span></code></pre></div>
+<h3 id="method-2-combining-crystalizer-with-the-alimiter-filter">Method
+2: Combining Crystalizer with the Alimiter Filter</h3>
+<p>Using the <code>alimiter</code> filter directly after
+<code>crystalizer</code> ensures that restored transients do not clip
+the master output:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp3 <span class="at">-af</span> <span class="st">&quot;crystalizer=i=2.0,alimiter=limit=0.98&quot;</span> output.flac</span></code></pre></div>
+<h2 id="recommended-settings-for-different-audio-sources">Recommended
+Settings for Different Audio Sources</h2>
+<ul>
+<li><strong>Subtle Transient Recovery (Podcasts / Light Music):</strong>
+Use <code>i=1.2</code> to <code>i=1.5</code>. This adds clarity to
+muffled speech and lightly expands snare hits without coloring the
+mix.</li>
+<li><strong>Moderate Expansion (Heavily Mastered Pop/Rock):</strong> Use
+<code>i=1.8</code> to <code>i=2.5</code>. This counters the "loudness
+war" effect by driving peaks further apart from sustained sustained
+tones.</li>
+<li><strong>Extreme Expansion:</strong> Values above <code>i=3.0</code>
+generally introduce audible grain, hiss, and severe harmonic distortion,
+and should be used cautiously.</li>
+</ul></article>
+        <div id="comments-container"></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

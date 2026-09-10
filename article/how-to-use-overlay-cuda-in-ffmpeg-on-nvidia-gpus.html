@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Use overlay_cuda in FFmpeg on NVIDIA GPUs - ffmpeg</title>
+    <meta name="description" content="Hardware-accelerated picture-in-picture (PiP) allows you to composite multiple video streams entirely within your NVIDIA GPU's VRAM, eliminating CPU bottlenecks and system memory transfer overhead. This guide explains how to set up and execute an end-to-">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/how-to-use-overlay-cuda-in-ffmpeg-on-nvidia-gpus">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Use overlay_cuda in FFmpeg on NVIDIA GPUs - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/how-to-use-overlay-cuda-in-ffmpeg-on-nvidia-gpus" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Hardware-accelerated picture-in-picture (PiP) allows you to composite multiple video streams entirely within your NVIDIA GPU's VRAM, eliminating CPU bottlenecks and system memory transfer overhead. This guide explains how to set up and execute an end-to-" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="how-to-use-overlay_cuda-in-ffmpeg-on-nvidia-gpus">How to Use
+overlay_cuda in FFmpeg on NVIDIA GPUs</h1>
+<p>Hardware-accelerated picture-in-picture (PiP) allows you to composite
+multiple video streams entirely within your NVIDIA GPU's VRAM,
+eliminating CPU bottlenecks and system memory transfer overhead. This
+guide explains how to set up and execute an end-to-end GPU-accelerated
+video overlay workflow in FFmpeg using the <code>overlay_cuda</code>
+filter alongside hardware decoding and encoding.</p>
+<h3 id="prerequisites">Prerequisites</h3>
+<p>To use <code>overlay_cuda</code>, you need an NVIDIA graphics card
+with current proprietary drivers and an FFmpeg build compiled with the
+following flags enabled:</p>
+<ul>
+<li><code>--enable-cuda-nvcc</code> (or
+<code>--enable-cuda-llvm</code>)</li>
+<li><code>--enable-cuvid</code></li>
+<li><code>--enable-nvenc</code></li>
+<li><code>--enable-nonfree</code></li>
+<li><code>--enable-libnpp</code></li>
+</ul>
+<h3 id="the-complete-gpu-pipeline">The Complete GPU Pipeline</h3>
+<p>For maximum performance, the entire pipeline—decoding, scaling,
+compositing, and encoding—should remain on the GPU. If you upload frames
+back and forth to system RAM, performance drops significantly.</p>
+<p>Run the following command to place a smaller secondary video in the
+bottom-right corner of a primary video:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-hwaccel</span> cuda <span class="at">-hwaccel_output_format</span> cuda <span class="at">-i</span> main_video.mp4 <span class="dt">\</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>       <span class="at">-hwaccel</span> cuda <span class="at">-hwaccel_output_format</span> cuda <span class="at">-i</span> pip_video.mp4 <span class="dt">\</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>       <span class="at">-filter_complex</span> <span class="st">&quot;[1:v]scale_cuda=640:360[pip];[0:v][pip]overlay_cuda=x=W-w-30:y=H-h-30[out]&quot;</span> <span class="dt">\</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>       <span class="at">-map</span> <span class="st">&quot;[out]&quot;</span> <span class="at">-map</span> 0:a<span class="pp">?</span> <span class="dt">\</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>       <span class="at">-c:v</span> h264_nvenc <span class="at">-preset</span> p4 <span class="at">-b:v</span> 5M <span class="dt">\</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>       <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<h3 id="command-breakdown">Command Breakdown</h3>
+<ul>
+<li><strong><code>-hwaccel cuda -hwaccel_output_format cuda</code></strong>:
+Tells FFmpeg to decode the input files using NVDEC and keep the decoded
+frames directly in CUDA device memory. This must precede each
+<code>-i</code> input flag.</li>
+<li><strong><code>scale_cuda=640:360</code></strong>: Resizes the
+secondary input on the GPU. Using the software <code>scale</code> filter
+here would cause an error because the frames reside in CUDA memory,
+requiring a hardware-compatible scaling filter like
+<code>scale_cuda</code> or <code>scale_npp</code>.</li>
+<li><strong><code>overlay_cuda=x=W-w-30:y=H-h-30</code></strong>: Blends
+the scaled overlay stream (<code>[pip]</code>) onto the background
+stream (<code>[0:v]</code>).
+<ul>
+<li><code>W</code> and <code>H</code> represent the width and height of
+the main video.</li>
+<li><code>w</code> and <code>h</code> represent the width and height of
+the overlay video.</li>
+<li><code>30</code> defines the pixel padding from the right and bottom
+edges.</li>
+</ul></li>
+<li><strong><code>-c:v h264_nvenc</code></strong>: Encodes the final
+output video using the NVENC hardware encoder directly from CUDA
+memory.</li>
+<li><strong><code>-map 0:a? -c:a copy</code></strong>: Copies the
+primary video's audio track without re-encoding, avoiding errors if no
+audio stream exists.</li>
+</ul>
+<h3 id="mixing-software-decoded-inputs-with-overlay_cuda">Mixing
+Software Decoded Inputs with overlay_cuda</h3>
+<p>If one of your input files uses an unsupported codec that NVDEC
+cannot decode, you can manually upload software frames to CUDA memory
+using <code>hwupload_cuda</code>:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-hwaccel</span> cuda <span class="at">-hwaccel_output_format</span> cuda <span class="at">-i</span> main_video.mp4 <span class="dt">\</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>       <span class="at">-i</span> software_pip.mkv <span class="dt">\</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>       <span class="at">-filter_complex</span> <span class="st">&quot;[1:v]hwupload_cuda,scale_cuda=480:270[pip];[0:v][pip]overlay_cuda=x=20:y=20[out]&quot;</span> <span class="dt">\</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>       <span class="at">-map</span> <span class="st">&quot;[out]&quot;</span> <span class="at">-c:v</span> hevc_nvenc output.mp4</span></code></pre></div>
+<p>In this setup, the secondary input is decoded via the CPU, uploaded
+to VRAM with <code>hwupload_cuda</code>, scaled, and then composited via
+<code>overlay_cuda</code> at the top-left coordinate
+<code>(20, 20)</code>.</p></article>
+        <div id="comments-container"></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

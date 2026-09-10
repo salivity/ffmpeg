@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hardware Accelerated Multi-Bitrate FFmpeg Encoding - ffmpeg</title>
+    <meta name="description" content="This guide explains how to configure a multi-bitrate adaptive bitrate (ABR) encoding ladder for HTTP Live Streaming (HLS) and Dynamic Adaptive Streaming over HTTP (DASH) using FFmpeg with hardware acceleration. By leveraging hardware encoders such as NVI">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/hardware-accelerated-multi-bitrate-ffmpeg-encoding">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Hardware Accelerated Multi-Bitrate FFmpeg Encoding - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/hardware-accelerated-multi-bitrate-ffmpeg-encoding" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This guide explains how to configure a multi-bitrate adaptive bitrate (ABR) encoding ladder for HTTP Live Streaming (HLS) and Dynamic Adaptive Streaming over HTTP (DASH) using FFmpeg with hardware acceleration. By leveraging hardware encoders such as NVI" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="hardware-accelerated-multi-bitrate-ffmpeg-encoding">Hardware
+Accelerated Multi-Bitrate FFmpeg Encoding</h1>
+<p>This guide explains how to configure a multi-bitrate adaptive bitrate
+(ABR) encoding ladder for HTTP Live Streaming (HLS) and Dynamic Adaptive
+Streaming over HTTP (DASH) using FFmpeg with hardware acceleration. By
+leveraging hardware encoders such as NVIDIA NVENC or Intel Quick Sync
+Video (QSV), you can offload decoding, scaling, and encoding from the
+CPU to the GPU, enabling high-throughput generation of multiple video
+renditions in a single execution pipeline.</p>
+<h3 id="prerequisites-and-hardware-setup">Prerequisites and Hardware
+Setup</h3>
+<p>To execute hardware-accelerated multi-bitrate encoding, FFmpeg must
+be compiled with the appropriate hardware acceleration libraries:</p>
+<ul>
+<li><strong>NVIDIA:</strong> Requires <code>--enable-cuda-nvcc</code>,
+<code>--enable-libnpp</code>, and <code>--enable-nvenc</code> with
+compatible NVIDIA drivers and CUDA toolkit installed.</li>
+<li><strong>Intel:</strong> Requires <code>--enable-libvpl</code> (or
+<code>--enable-libmfx</code> on older versions) with the Intel oneVPL
+runtime installed.</li>
+</ul>
+<p>Keyframe alignment across all renditions is mandatory for seamless
+ABR switching. Set a fixed Group of Pictures (GOP) size using
+<code>-g</code> and disable scene-cut detection.</p>
+<hr />
+<h3 id="nvidia-nvenc-multi-bitrate-hls-pipeline">NVIDIA NVENC:
+Multi-Bitrate HLS Pipeline</h3>
+<p>Using <code>cuda</code> hardware acceleration keeps video frames in
+GPU VRAM across the decode, scale, and encode stages, avoiding costly
+CPU-GPU memory transfers.</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-hwaccel</span> cuda <span class="at">-hwaccel_output_format</span> cuda <span class="at">-i</span> input.mp4 <span class="dt">\</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">-filter_complex</span> <span class="dt">\</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>  <span class="st">&quot;[0:v]split=3[v1_in][v2_in][v3_in]; </span><span class="dt">\</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="st">   [v1_in]scale_cuda=1920:1080[v1_out]; </span><span class="dt">\</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="st">   [v2_in]scale_cuda=1280:720[v2_out]; </span><span class="dt">\</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="st">   [v3_in]scale_cuda=854:480[v3_out]&quot;</span> <span class="dt">\</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">-map</span> <span class="st">&quot;[v1_out]&quot;</span> <span class="at">-c:v:0</span> h264_nvenc <span class="at">-b:v:0</span> 5000k <span class="at">-maxrate:v:0</span> 5350k <span class="at">-bufsize:v:0</span> 7500k <span class="at">-g</span> 48 <span class="at">-keyint_min</span> 48 <span class="at">-sc_threshold</span> 0 <span class="dt">\</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>  <span class="at">-map</span> <span class="st">&quot;[v2_out]&quot;</span> <span class="at">-c:v:1</span> h264_nvenc <span class="at">-b:v:1</span> 2800k <span class="at">-maxrate:v:1</span> 2996k <span class="at">-bufsize:v:1</span> 4200k <span class="at">-g</span> 48 <span class="at">-keyint_min</span> 48 <span class="at">-sc_threshold</span> 0 <span class="dt">\</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>  <span class="at">-map</span> <span class="st">&quot;[v3_out]&quot;</span> <span class="at">-c:v:2</span> h264_nvenc <span class="at">-b:v:2</span> 1400k <span class="at">-maxrate:v:2</span> 1498k <span class="at">-bufsize:v:2</span> 2100k <span class="at">-g</span> 48 <span class="at">-keyint_min</span> 48 <span class="at">-sc_threshold</span> 0 <span class="dt">\</span></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>  <span class="at">-map</span> 0:a<span class="pp">?</span> <span class="at">-c:a:0</span> aac <span class="at">-b:a:0</span> 192k <span class="dt">\</span></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>  <span class="at">-map</span> 0:a<span class="pp">?</span> <span class="at">-c:a:1</span> aac <span class="at">-b:a:1</span> 128k <span class="dt">\</span></span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>  <span class="at">-map</span> 0:a<span class="pp">?</span> <span class="at">-c:a:2</span> aac <span class="at">-b:a:2</span> 96k <span class="dt">\</span></span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>  <span class="at">-f</span> hls <span class="dt">\</span></span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>  <span class="at">-hls_time</span> 2 <span class="dt">\</span></span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>  <span class="at">-hls_playlist_type</span> vod <span class="dt">\</span></span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a>  <span class="at">-hls_flags</span> independent_segments <span class="dt">\</span></span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a>  <span class="at">-master_pl_name</span> master.m3u8 <span class="dt">\</span></span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a>  <span class="at">-var_stream_map</span> <span class="st">&quot;v:0,a:0 v:1,a:1 v:2,a:2&quot;</span> <span class="dt">\</span></span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a>  hls_%v/stream.m3u8</span></code></pre></div>
+<h4 id="command-breakdown">Command Breakdown:</h4>
+<ul>
+<li><code>-hwaccel cuda -hwaccel_output_format cuda</code>: Decodes the
+input directly into CUDA memory.</li>
+<li><code>split=3</code>: Duplicates the hardware frame surface into
+three branches within VRAM.</li>
+<li><code>scale_cuda</code>: Performs hardware-based bicubic/bilinear
+scaling on the GPU.</li>
+<li><code>-g 48 -keyint_min 48 -sc_threshold 0</code>: Enforces a
+deterministic keyframe interval (assuming 24 fps, this creates an IDR
+frame every 2 seconds).</li>
+<li><code>-var_stream_map</code>: Maps video streams (<code>v:n</code>)
+and audio streams (<code>a:n</code>) to generate variants linked in
+<code>master.m3u8</code>.</li>
+</ul>
+<hr />
+<h3 id="intel-qsv-multi-bitrate-dash-pipeline">Intel QSV: Multi-Bitrate
+DASH Pipeline</h3>
+<p>Intel Quick Sync Video achieves complete in-VRAM processing using the
+<code>qsv</code> device driver and <code>vpp_qsv</code> (Video
+Processing Project) filter for hardware scaling.</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-init_hw_device</span> qsv=hw <span class="at">-filter_hw_device</span> hw <span class="dt">\</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">-hwaccel</span> qsv <span class="at">-hwaccel_output_format</span> qsv <span class="at">-i</span> input.mp4 <span class="dt">\</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">-filter_complex</span> <span class="dt">\</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>  <span class="st">&quot;[0:v]split=3[v1_in][v2_in][v3_in]; </span><span class="dt">\</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="st">   [v1_in]vpp_qsv=w=1920:h=1080[v1_out]; </span><span class="dt">\</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a><span class="st">   [v2_in]vpp_qsv=w=1280:h=720[v2_out]; </span><span class="dt">\</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a><span class="st">   [v3_in]vpp_qsv=w=854:h=480[v3_out]&quot;</span> <span class="dt">\</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>  <span class="at">-map</span> <span class="st">&quot;[v1_out]&quot;</span> <span class="at">-c:v:0</span> h264_qsv <span class="at">-b:v:0</span> 5000k <span class="at">-maxrate:v:0</span> 5000k <span class="at">-bufsize:v:0</span> 10000k <span class="at">-g</span> 60 <span class="at">-sc_threshold</span> 0 <span class="dt">\</span></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>  <span class="at">-map</span> <span class="st">&quot;[v2_out]&quot;</span> <span class="at">-c:v:1</span> h264_qsv <span class="at">-b:v:1</span> 2800k <span class="at">-maxrate:v:1</span> 2800k <span class="at">-bufsize:v:1</span> 5600k <span class="at">-g</span> 60 <span class="at">-sc_threshold</span> 0 <span class="dt">\</span></span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>  <span class="at">-map</span> <span class="st">&quot;[v3_out]&quot;</span> <span class="at">-c:v:2</span> h264_qsv <span class="at">-b:v:2</span> 1400k <span class="at">-maxrate:v:2</span> 1400k <span class="at">-bufsize:v:2</span> 2800k <span class="at">-g</span> 60 <span class="at">-sc_threshold</span> 0 <span class="dt">\</span></span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>  <span class="at">-map</span> 0:a<span class="pp">?</span> <span class="at">-c:a</span> aac <span class="at">-b:a</span> 128k <span class="dt">\</span></span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a>  <span class="at">-f</span> dash <span class="dt">\</span></span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a>  <span class="at">-seg_duration</span> 2 <span class="dt">\</span></span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a>  <span class="at">-use_template</span> 1 <span class="dt">\</span></span>
+<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a>  <span class="at">-use_timeline</span> 1 <span class="dt">\</span></span>
+<span id="cb2-16"><a href="#cb2-16" aria-hidden="true" tabindex="-1"></a>  <span class="at">-adaptation_sets</span> <span class="st">&quot;id=0,streams=v id=1,streams=a&quot;</span> <span class="dt">\</span></span>
+<span id="cb2-17"><a href="#cb2-17" aria-hidden="true" tabindex="-1"></a>  manifest.mpd</span></code></pre></div>
+<h4 id="command-breakdown-1">Command Breakdown:</h4>
+<ul>
+<li><code>-init_hw_device qsv=hw -filter_hw_device hw</code>:
+Initializes the QSV context for filter pipelines.</li>
+<li><code>vpp_qsv</code>: Scales video surfaces directly on the Intel
+GPU execution units.</li>
+<li><code>-f dash</code>: Configures the MPD (Media Presentation
+Description) multiplexer.</li>
+<li><code>-adaptation_sets "id=0,streams=v id=1,streams=a"</code>:
+Groups all video renditions under a single adaptive set and pairs them
+with the audio track.</li>
+</ul>
+<hr />
+<h3 id="important-operational-considerations">Important Operational
+Considerations</h3>
+<ol type="1">
+<li><strong>VRAM Constraints:</strong> Hardware-accelerated pipelines
+decode and scale all renditions in parallel. Monitor GPU memory usage
+via <code>nvidia-smi</code> or <code>intel_gpu_top</code> to prevent
+out-of-memory errors when processing high-resolution 4K inputs.</li>
+<li><strong>Buffer Sizing:</strong> Always set <code>-bufsize</code> to
+between 1.5x and 2x the target <code>-b:v</code> to give the hardware
+rate controller sufficient elasticity for VBR (variable bitrate) while
+maintaining strict limits for network streaming clients.</li>
+<li><strong>Audio Mapping:</strong> For DASH packaging, a single
+high-quality audio stream mapped once under an adaptation set avoids
+redundant bandwidth usage across resolutions. For HLS, pairing dedicated
+audio renditions via <code>-var_stream_map</code> ensures broad
+compatibility across older Apple devices.</li>
+</ol></article>
+        <div id="comments-container"></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

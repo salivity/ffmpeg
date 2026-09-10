@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Transcode VR180 Video Using FFmpeg v360 and stereo3d - ffmpeg</title>
+    <meta name="description" content="This guide explains how to process and transcode stereoscopic VR180 video using FFmpeg’s stereo3d and v360 filters. You will learn how to extract individual stereoscopic views, apply projection transformations (such as converting between fisheye and ha">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/transcode-vr180-video-using-ffmpeg-v360-and-stereo3d">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Transcode VR180 Video Using FFmpeg v360 and stereo3d - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/transcode-vr180-video-using-ffmpeg-v360-and-stereo3d" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This guide explains how to process and transcode stereoscopic VR180 video using FFmpeg’s stereo3d and v360 filters. You will learn how to extract individual stereoscopic views, apply projection transformations (such as converting between fisheye and ha" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="transcode-vr180-video-using-ffmpeg-v360-and-stereo3d">Transcode
+VR180 Video Using FFmpeg v360 and stereo3d</h1>
+<p>This guide explains how to process and transcode stereoscopic VR180
+video using FFmpeg’s <code>stereo3d</code> and <code>v360</code>
+filters. You will learn how to extract individual stereoscopic views,
+apply projection transformations (such as converting between fisheye and
+half-equirectangular projections), and remux the final output into a
+standard format ready for VR headsets or standard displays.</p>
+<h3 id="understanding-the-pipeline">Understanding the Pipeline</h3>
+<p>A standard VR180 video consists of two half-spherical views (left eye
+and right eye) arranged side-by-side (SBS) or top-bottom
+(above-below).</p>
+<p>Transcoding VR180 using both filters involves a three-step
+pipeline:</p>
+<ol type="1">
+<li><strong>Stereo Separation (<code>stereo3d</code>)</strong>: Isolates
+the left and right eye streams from the source layout.</li>
+<li><strong>Spherical Projection Transformation
+(<code>v360</code>)</strong>: Transforms each eye independently from its
+source projection (e.g., dual fisheye) into the target projection (e.g.,
+equirectangular or half-equirectangular).</li>
+<li><strong>Recombination</strong>: Merges the two transformed eyes back
+into a single stereoscopic frame (SBS or top-bottom).</li>
+</ol>
+<hr />
+<h3
+id="method-1-converting-vr180-fisheye-to-equirectangular-side-by-side">Method
+1: Converting VR180 Fisheye to Equirectangular Side-by-Side</h3>
+<p>Most VR180 cameras (such as the Canon dual fisheye or Insta360 EVO)
+capture footage in a dual-fisheye format. To convert this into standard
+half-equirectangular (<code>hequirect</code>) or full equirectangular
+(<code>equirect</code>) Side-by-Side video:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input_vr180_fisheye.mp4 <span class="at">-filter_complex</span> <span class="dt">\</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="st">&quot;[0:v]stereo3d=in=sbsl:out=ml[left_raw]; </span><span class="dt">\</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="st"> [0:v]stereo3d=in=sbsl:out=mr[right_raw]; </span><span class="dt">\</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="st"> [left_raw]v360=input=fisheye:output=hequirect:ih_fov=180:iv_fov=180[left_rect]; </span><span class="dt">\</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="st"> [right_raw]v360=input=fisheye:output=hequirect:ih_fov=180:iv_fov=180[right_rect]; </span><span class="dt">\</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="st"> [left_rect][right_rect]hstack=inputs=2[v]&quot;</span> <span class="dt">\</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>-map <span class="st">&quot;[v]&quot;</span> <span class="at">-map</span> 0:a<span class="pp">?</span> <span class="at">-c:v</span> libx264 <span class="at">-crf</span> 18 <span class="at">-preset</span> slow <span class="at">-c:a</span> copy output_vr180_sbs.mp4</span></code></pre></div>
+<h4 id="breakdown-of-filters">Breakdown of Filters:</h4>
+<ul>
+<li><code>stereo3d=in=sbsl:out=ml</code>: Takes the side-by-side
+left-eye-first input (<code>sbsl</code>) and extracts only the left eye
+as a mono frame (<code>ml</code>).</li>
+<li><code>stereo3d=in=sbsl:out=mr</code>: Takes the same input and
+extracts the right eye (<code>mr</code>).</li>
+<li><code>v360=input=fisheye:output=hequirect:ih_fov=180:iv_fov=180</code>:
+Converts the circular 180° field-of-view fisheye stream into a
+half-equirectangular projection.</li>
+<li><code>hstack=inputs=2</code>: Horizontally stacks the left and right
+equirectangular streams side by side.</li>
+</ul>
+<hr />
+<h3
+id="method-2-converting-vr180-sbs-to-top-bottom-above-below-layout">Method
+2: Converting VR180 SBS to Top-Bottom (Above-Below) Layout</h3>
+<p>If your playback platform or editing software requires a top-bottom
+(over-under) format instead of side-by-side, use <code>stereo3d</code>
+to remap the layout after applying any required spherical corrections
+with <code>v360</code>:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input_vr180_sbs.mp4 <span class="at">-filter_complex</span> <span class="dt">\</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="st">&quot;[0:v]v360=input=hequirect:output=hequirect:yaw=0:pitch=0:roll=0:in_stereo=sbs:out_stereo=sbs, </span><span class="dt">\</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="st"> stereo3d=in=sbsl:out=abl[v]&quot;</span> <span class="dt">\</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>-map <span class="st">&quot;[v]&quot;</span> <span class="at">-map</span> 0:a<span class="pp">?</span> <span class="at">-c:v</span> libx265 <span class="at">-crf</span> 20 <span class="at">-preset</span> medium <span class="at">-c:a</span> copy output_vr180_tab.mp4</span></code></pre></div>
+<ul>
+<li><code>in_stereo=sbs:out_stereo=sbs</code>: Instructs
+<code>v360</code> to apply spherical adjustments (such as leveling
+horizon via <code>yaw</code>, <code>pitch</code>, or <code>roll</code>)
+across both eyes simultaneously.</li>
+<li><code>stereo3d=in=sbsl:out=abl</code>: Converts the side-by-side
+layout directly into above-below left-eye-first (<code>abl</code>).</li>
+</ul>
+<hr />
+<h3
+id="method-3-converting-vr180-to-anaglyph-3d-redcyan-for-standard-screens">Method
+3: Converting VR180 to Anaglyph 3D (Red/Cyan) for Standard Screens</h3>
+<p>To preview VR180 content on a traditional 2D monitor using red/cyan
+3D glasses, use <code>v360</code> to flatten the 180° sphere into a
+rectilinear view, then merge the streams with <code>stereo3d</code>:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input_vr180_sbs.mp4 <span class="at">-filter_complex</span> <span class="dt">\</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="st">&quot;[0:v]stereo3d=in=sbsl:out=ml[left]; </span><span class="dt">\</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="st"> [0:v]stereo3d=in=sbsl:out=mr[right]; </span><span class="dt">\</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="st"> [left]v360=input=hequirect:output=rectilinear:h_fov=100:v_fov=70[left_flat]; </span><span class="dt">\</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="st"> [right]v360=input=hequirect:output=rectilinear:h_fov=100:v_fov=70[right_flat]; </span><span class="dt">\</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a><span class="st"> [left_flat][right_flat]hstack=inputs=2,stereo3d=in=sbsl:out=arcm[v]&quot;</span> <span class="dt">\</span></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>-map <span class="st">&quot;[v]&quot;</span> <span class="at">-map</span> 0:a<span class="pp">?</span> <span class="at">-c:v</span> libx264 <span class="at">-crf</span> 18 output_anaglyph.mp4</span></code></pre></div>
+<ul>
+<li><code>output=rectilinear</code>: Converts the curved equirectangular
+field of view into a flat camera perspective.</li>
+<li><code>h_fov=100:v_fov=70</code>: Sets the horizontal and vertical
+field of view to standard viewing angles.</li>
+<li><code>stereo3d=in=sbsl:out=arcm</code>: Blends the two views into
+red/cyan anaglyph color format (<code>arcm</code>).</li>
+</ul>
+<hr />
+<h3 id="injecting-spatial-metadata">Injecting Spatial Metadata</h3>
+<p>FFmpeg outputs standard video files. For VR platforms (such as
+YouTube or Meta Quest headsets) to recognize the video as VR180, you
+must inject stereoscopic spherical metadata into the MP4 container.</p>
+<p>Use the <code>spatial-media</code> tool or enable FFmpeg's
+stereoscopic container disposition where supported:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> output_vr180_sbs.mp4 <span class="at">-c</span> copy <span class="at">-disposition:v:0</span> +stereo output_flagged.mp4</span></code></pre></div></article>
+        <div id="comments-container"></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

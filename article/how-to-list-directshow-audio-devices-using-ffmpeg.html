@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to List DirectShow Audio Devices Using FFmpeg - ffmpeg</title>
+    <meta name="description" content="This guide explains how to identify and list all available DirectShow audio capture devices on Windows using FFmpeg. DirectShow is the standard multimedia framework used by FFmpeg on Windows to interface with hardware such as microphones, line-in connect">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/how-to-list-directshow-audio-devices-using-ffmpeg">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to List DirectShow Audio Devices Using FFmpeg - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/how-to-list-directshow-audio-devices-using-ffmpeg" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This guide explains how to identify and list all available DirectShow audio capture devices on Windows using FFmpeg. DirectShow is the standard multimedia framework used by FFmpeg on Windows to interface with hardware such as microphones, line-in connect" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="how-to-list-directshow-audio-devices-using-ffmpeg">How to List
+DirectShow Audio Devices Using FFmpeg</h1>
+<p>This guide explains how to identify and list all available DirectShow
+audio capture devices on Windows using FFmpeg. DirectShow is the
+standard multimedia framework used by FFmpeg on Windows to interface
+with hardware such as microphones, line-in connections, and virtual
+audio cables. By running a simple command-line query, you can retrieve
+the exact device names required for recording or streaming audio.</p>
+<h3 id="the-command-to-list-devices">The Command to List Devices</h3>
+<p>To query your system for connected audio (and video) devices, open
+the Windows Command Prompt or PowerShell and execute the following
+command:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode cmd"><code class="sourceCode dosbat"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>ffmpeg <span class="at">-list_devices</span> true <span class="at">-f</span> dshow <span class="at">-i</span> dummy</span></code></pre></div>
+<h3 id="understanding-the-parameters">Understanding the Parameters</h3>
+<ul>
+<li><strong><code>-list_devices true</code></strong>: Instructs the
+DirectShow demuxer to enumerate all available input devices and print
+them to the console instead of capturing data.</li>
+<li><strong><code>-f dshow</code></strong>: Specifies DirectShow as the
+input format.</li>
+<li><strong><code>-i dummy</code></strong>: DirectShow requires an input
+target to initialize, but since the goal is only to list devices, a
+placeholder name like <code>dummy</code> is used.</li>
+</ul>
+<h3 id="reading-the-output">Reading the Output</h3>
+<p>FFmpeg will return an error code (which is normal for device listing
+commands) alongside standard console output. Look for the section
+labeled <code>DirectShow audio devices</code>:</p>
+<pre class="text"><code>[dshow @ 000001bc3b8e7840] DirectShow video devices (some may be both video and audio devices)
+[dshow @ 000001bc3b8e7840]  &quot;Integrated Camera&quot;
+[dshow @ 000001bc3b8e7840] DirectShow audio devices
+[dshow @ 000001bc3b8e7840]  &quot;Microphone Array (Realtek(R) Audio)&quot;
+[dshow @ 000001bc3b8e7840]     Alternative name &quot;@device_cm_{33D9A762-90C8-11D0-BD43-00A0C911CE86}\wave_{...&quot;
+[dshow @ 000001bc3b8e7840]  &quot;Stereo Mix (Realtek(R) Audio)&quot;</code></pre>
+<p>The names enclosed in quotation marks beneath the
+<code>DirectShow audio devices</code> heading represent the available
+hardware and virtual audio inputs on your system.</p>
+<h3 id="using-the-device-name-in-ffmpeg">Using the Device Name in
+FFmpeg</h3>
+<p>Once you have identified your device, use the exact name inside
+quotes following the <code>audio=</code> prefix to capture or stream
+audio:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode cmd"><code class="sourceCode dosbat"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>ffmpeg <span class="at">-f</span> dshow <span class="at">-i</span> audio=<span class="st">&quot;Microphone Array (Realtek(R) Audio)&quot;</span> output.wav</span></code></pre></div>
+<p>If the device name contains non-standard characters or changes
+between reboots, you can use the listed <code>Alternative name</code>
+instead:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode cmd"><code class="sourceCode dosbat"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>ffmpeg <span class="at">-f</span> dshow <span class="at">-i</span> audio=<span class="st">&quot;@device_cm_{33D9A762-90C8-11D0-BD43-00A0C911CE86}\wave_{...}&quot;</span> output.wav</span></code></pre></div></article>
+        <div id="comments-container"></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

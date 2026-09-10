@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Use FFmpeg itsoffset to Sync Audio and Video - ffmpeg</title>
+    <meta name="description" content="This guide explains how to fix audio and video desynchronization by muxing streams using the -itsoffset option in FFmpeg. You will learn the mechanics of timestamp offsets, how to delay either stream to achieve perfect synchronization, and how to approac">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/how-to-use-ffmpeg-itsoffset-to-sync-audio-and-video">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Use FFmpeg itsoffset to Sync Audio and Video - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/how-to-use-ffmpeg-itsoffset-to-sync-audio-and-video" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This guide explains how to fix audio and video desynchronization by muxing streams using the -itsoffset option in FFmpeg. You will learn the mechanics of timestamp offsets, how to delay either stream to achieve perfect synchronization, and how to approac" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="how-to-use-ffmpeg-itsoffset-to-sync-audio-and-video">How to Use
+FFmpeg itsoffset to Sync Audio and Video</h1>
+<p>This guide explains how to fix audio and video desynchronization by
+muxing streams using the <code>-itsoffset</code> option in FFmpeg. You
+will learn the mechanics of timestamp offsets, how to delay either
+stream to achieve perfect synchronization, and how to approach dynamic
+or segment-based timing adjustments.</p>
+<h3 id="how--itsoffset-works">How <code>-itsoffset</code> Works</h3>
+<p>The <code>-itsoffset</code> flag alters the presentation timestamps
+(PTS) of the input file that immediately follows it in the command. It
+accepts an offset specified in seconds (e.g., <code>2.5</code>) or in
+<code>HH:MM:SS.mmm</code> format.</p>
+<p>Because it operates on inputs, its placement on the command line is
+critical:</p>
+<ul>
+<li>Any <code>-itsoffset</code> flag applies <strong>only</strong> to
+the input (<code>-i</code>) declared right after it.</li>
+<li>A positive offset delays the timestamps of that stream, making it
+play later relative to the other streams.</li>
+</ul>
+<h3 id="delaying-audio-to-match-video">Delaying Audio to Match
+Video</h3>
+<p>If your audio plays ahead of your video, you need to delay the audio
+stream. Specify the video file first without an offset, add the offset,
+and then specify the audio file:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> video.mp4 <span class="at">-itsoffset</span> 1.5 <span class="at">-i</span> audio.aac <span class="at">-c:v</span> copy <span class="at">-c:a</span> copy <span class="at">-map</span> 0:v:0 <span class="at">-map</span> 1:a:0 output.mp4</span></code></pre></div>
+<p>In this command:</p>
+<ul>
+<li><code>-i video.mp4</code>: Ingests the video stream at baseline time
+(<code>0.0</code>).</li>
+<li><code>-itsoffset 1.5 -i audio.aac</code>: Delays the audio
+timestamps by 1.5 seconds.</li>
+<li><code>-c:v copy -c:a copy</code>: Stream-copies both tracks without
+re-encoding to preserve original quality and speed up the process.</li>
+<li><code>-map 0:v:0 -map 1:a:0</code>: Explicitly maps the first video
+stream from the first input and the first audio stream from the second
+input.</li>
+</ul>
+<h3 id="delaying-video-to-match-audio">Delaying Video to Match
+Audio</h3>
+<p>If your video plays ahead of your audio, delay the video stream
+instead by applying the offset directly before the video input:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-itsoffset</span> 0.85 <span class="at">-i</span> video.mp4 <span class="at">-i</span> audio.aac <span class="at">-c</span> copy <span class="at">-map</span> 0:v:0 <span class="at">-map</span> 1:a:0 output.mp4</span></code></pre></div>
+<p>This delays the video track by 850 milliseconds relative to the
+unshifted audio input.</p>
+<h3
+id="working-with-single-files-separate-streams-from-one-source">Working
+with Single Files (Separate Streams from One Source)</h3>
+<p>If your desynchronized audio and video are already packaged inside
+the same container (such as a single MP4 file), read the same file twice
+to apply the offset to only one stream:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> combined.mp4 <span class="at">-itsoffset</span> 0.5 <span class="at">-i</span> combined.mp4 <span class="at">-map</span> 0:v:0 <span class="at">-map</span> 1:a:0 <span class="at">-c</span> copy output.mp4</span></code></pre></div>
+<p>This takes the video from the first instance (offset
+<code>0.0</code>) and the audio from the second instance (delayed by
+<code>0.5</code> seconds).</p>
+<h3 id="handling-dynamic-or-variable-offsets">Handling Dynamic or
+Variable Offsets</h3>
+<p>The <code>-itsoffset</code> option applies a static, uniform offset
+across the entire target input stream. If synchronization drifts
+dynamically over time (for example, drift caused by mismatched sample
+rates or dropped frames), resolve it using one of two methods:</p>
+<h4 id="method-1-split-and-stitch">Method 1: Split and Stitch</h4>
+<p>For streams where the required offset changes at specific points:</p>
+<ol type="1">
+<li>Segment the inputs at the drift boundaries using <code>-ss</code>
+and <code>-to</code>.</li>
+<li>Apply specific <code>-itsoffset</code> values to each individual
+segment.</li>
+<li>Concatenate the corrected segments using FFmpeg's
+<code>concat</code> demuxer.</li>
+</ol>
+<h4 id="method-2-use-audio-filters-for-continuous-drift">Method 2: Use
+Audio Filters for Continuous Drift</h4>
+<p>If the drift is progressive rather than a fixed delay, use filter
+graphs instead of <code>-itsoffset</code>. The <code>aresample</code>
+filter can dynamically stretch or compress audio timestamps to match the
+video clock:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-filter_complex</span> <span class="st">&quot;[0:a]aresample=async=1000[aout]&quot;</span> <span class="at">-map</span> 0:v <span class="at">-map</span> <span class="st">&quot;[aout]&quot;</span> <span class="at">-c:v</span> copy <span class="at">-c:a</span> aac output.mp4</span></code></pre></div>
+<p>For discrete inline audio delays where you must re-encode, the
+<code>adelay</code> filter allows targeted delays per channel:</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-af</span> <span class="st">&quot;adelay=1500|1500&quot;</span> <span class="at">-c:v</span> copy <span class="at">-c:a</span> aac output.mp4</span></code></pre></div>
+<p>This introduces a 1500-millisecond delay to both the left and right
+audio channels directly within the processing pipeline.</p></article>
+        <div id="comments-container"></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

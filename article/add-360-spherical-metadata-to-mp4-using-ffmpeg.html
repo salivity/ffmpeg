@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add 360 Spherical Metadata to MP4 Using FFmpeg - ffmpeg</title>
+    <meta name="description" content="This guide explains how spherical 360-degree video metadata (equirectangular projection) is handled within an MP4 container and how to apply it using FFmpeg and complementary command-line utilities. While FFmpeg natively preserves and passes through sphe">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/add-360-spherical-metadata-to-mp4-using-ffmpeg">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Add 360 Spherical Metadata to MP4 Using FFmpeg - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/add-360-spherical-metadata-to-mp4-using-ffmpeg" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This guide explains how spherical 360-degree video metadata (equirectangular projection) is handled within an MP4 container and how to apply it using FFmpeg and complementary command-line utilities. While FFmpeg natively preserves and passes through sphe" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="add-360-spherical-metadata-to-mp4-using-ffmpeg">Add 360
+Spherical Metadata to MP4 Using FFmpeg</h1>
+<p>This guide explains how spherical 360-degree video metadata
+(equirectangular projection) is handled within an MP4 container and how
+to apply it using FFmpeg and complementary command-line utilities. While
+FFmpeg natively preserves and passes through spherical metadata during
+encoding and remuxing, it does not feature an internal command-line flag
+to synthesize new spherical atoms from scratch. The sections below cover
+how to preserve metadata in FFmpeg, inject missing equirectangular
+metadata using standard CLI tools, and verify the resulting file.</p>
+<h2 id="how-360-metadata-works-in-mp4">How 360 Metadata Works in
+MP4</h2>
+<p>For a video player or platform (such as YouTube, VLC, or Meta Quest)
+to recognize a video as 360-degree equirectangular footage, the MP4
+container must contain specific metadata. This is typically stored in
+one of two formats:</p>
+<ol type="1">
+<li><strong>The <code>sv3d</code> Box:</strong> An ISO base media file
+format standard atom that defines spherical video layout and projection
+parameters.</li>
+<li><strong>The Google Spherical Video UUID Box:</strong> A custom MP4
+atom containing an XML payload defining
+<code>&lt;rdf:SphericalVideo&gt;</code> tags.</li>
+</ol>
+<p>FFmpeg's MP4 muxer (<code>movenc</code>) automatically generates the
+<code>sv3d</code> atom if the input stream already contains spherical
+packet side data (<code>AV_PKT_DATA_SPHERICAL</code>). However, FFmpeg
+cannot generate this side data from a flat video file without prior
+metadata.</p>
+<hr />
+<h2 id="preserving-360-metadata-during-ffmpeg-processing">Preserving 360
+Metadata During FFmpeg Processing</h2>
+<p>If your source file already contains 360-degree metadata, FFmpeg can
+process or re-encode the stream without stripping the spherical
+tags.</p>
+<h3 id="1-lossless-stream-copy">1. Lossless Stream Copy</h3>
+<p>To trim, remux, or swap audio while preserving existing spherical
+tags, use stream copy mode:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input_360.mp4 <span class="at">-c</span> copy output_360.mp4</span></code></pre></div>
+<h3 id="2-re-encoding-video">2. Re-encoding Video</h3>
+<p>When re-encoding equirectangular video (for example, applying
+compression or changing codecs), modern FFmpeg builds forward the video
+stream's side data automatically to the output MP4 container:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input_360.mp4 <span class="at">-c:v</span> libx264 <span class="at">-crf</span> 18 <span class="at">-preset</span> slow <span class="at">-c:a</span> aac <span class="at">-b:a</span> 192k output_360.mp4</span></code></pre></div>
+<hr />
+<h2 id="injecting-missing-360-metadata-into-an-mp4">Injecting Missing
+360 Metadata into an MP4</h2>
+<p>If you rendered an equirectangular video from 3D software or an
+editor that output a "flat" MP4 without metadata, you must inject the
+metadata atom. The following CLI tools provide the fastest and most
+reliable methods.</p>
+<h3 id="option-1-using-exiftool-recommended-cli-method">Option 1: Using
+ExifTool (Recommended CLI Method)</h3>
+<p>ExifTool can write the equirectangular projection tags directly into
+an existing MP4 file in place without re-encoding:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">exiftool</span> <span class="at">-ProjectionType</span><span class="op">=</span><span class="st">&quot;equirectangular&quot;</span> video.mp4</span></code></pre></div>
+<p>To add full 360 metadata including stereoscopic configuration if
+needed:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co"># For Monoscopic 360:</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="ex">exiftool</span> <span class="at">-ProjectionType</span><span class="op">=</span><span class="st">&quot;equirectangular&quot;</span> <span class="at">-UseEcho</span><span class="op">=</span><span class="st">&quot;true&quot;</span> video.mp4</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a><span class="co"># For Stereoscopic (Top-Bottom) 360:</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a><span class="ex">exiftool</span> <span class="at">-ProjectionType</span><span class="op">=</span><span class="st">&quot;equirectangular&quot;</span> <span class="at">-StereoMode</span><span class="op">=</span><span class="st">&quot;top-bottom&quot;</span> video.mp4</span></code></pre></div>
+<h3 id="option-2-using-google-spatial-media-metadata-injector">Option 2:
+Using Google Spatial Media Metadata Injector</h3>
+<p>Google provides the reference CLI utility for injecting the spherical
+XML atom required by YouTube and most web players:</p>
+<ol type="1">
+<li><p>Install the tool using Python:</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="ex">pip</span> install spatialmedia</span></code></pre></div></li>
+<li><p>Inject the equirectangular metadata:</p>
+<div class="sourceCode" id="cb6"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="ex">python</span> <span class="at">-m</span> spatialmedia <span class="at">-i</span> input.mp4 output_360.mp4</span></code></pre></div></li>
+</ol>
+<p>For top-bottom stereoscopic 360:</p>
+<div class="sourceCode" id="cb7"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="ex">python</span> <span class="at">-m</span> spatialmedia <span class="at">-i</span> <span class="at">--stereo</span><span class="op">=</span>top-bottom input.mp4 output_360.mp4</span></code></pre></div>
+<h3 id="option-3-using-mp4box-gpac">Option 3: Using MP4Box (GPAC)</h3>
+<p>If you use GPAC tools alongside FFmpeg, MP4Box can inject the native
+<code>sv3d</code> box into the MP4 container:</p>
+<div class="sourceCode" id="cb8"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="ex">MP4Box</span> <span class="at">-add</span> video.mp4:sv3d=proj=equi output_360.mp4</span></code></pre></div>
+<hr />
+<h2 id="verifying-360-metadata-with-ffprobe">Verifying 360 Metadata with
+FFprobe</h2>
+<p>To confirm that the MP4 container now possesses spherical metadata,
+run <code>ffprobe</code> to inspect the video stream's side data:</p>
+<div class="sourceCode" id="cb9"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffprobe</span> <span class="at">-v</span> error <span class="at">-show_entries</span> stream_side_data_list <span class="at">-select_streams</span> v:0 input.mp4</span></code></pre></div>
+<p>A properly tagged file will output side data matching the following
+structure:</p>
+<pre class="text"><code>[SIDE_DATA]
+side_data_type=Spherical Mapping
+projection=equirectangular
+yaw=0
+pitch=0
+roll=0
+[/SIDE_DATA]</code></pre></article>
+        <div id="comments-container"></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

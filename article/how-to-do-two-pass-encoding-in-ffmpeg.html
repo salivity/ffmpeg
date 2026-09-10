@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Do Two-Pass Encoding in FFmpeg - ffmpeg</title>
+    <meta name="description" content="Two-pass encoding is a method used in video compression to achieve the highest possible quality for a specific target file size or average bitrate. This article provides a straightforward, step-by-step guide on how to perform a true two-pass bitrate cont">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/how-to-do-two-pass-encoding-in-ffmpeg">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Do Two-Pass Encoding in FFmpeg - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/how-to-do-two-pass-encoding-in-ffmpeg" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Two-pass encoding is a method used in video compression to achieve the highest possible quality for a specific target file size or average bitrate. This article provides a straightforward, step-by-step guide on how to perform a true two-pass bitrate cont" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="how-to-do-two-pass-encoding-in-ffmpeg">How to Do Two-Pass
+Encoding in FFmpeg</h1>
+<p>Two-pass encoding is a method used in video compression to achieve
+the highest possible quality for a specific target file size or average
+bitrate. This article provides a straightforward, step-by-step guide on
+how to perform a true two-pass bitrate control encoding using FFmpeg,
+detailing the exact commands and parameters needed for both the analysis
+and encoding phases.</p>
+<h3 id="why-use-two-pass-encoding">Why Use Two-Pass Encoding?</h3>
+<p>In a single-pass encoding workflow, the encoder must make decisions
+on the fly without knowing what scenes lie ahead. Two-pass encoding
+solves this by splitting the process into two stages:</p>
+<ol type="1">
+<li><strong>Pass 1:</strong> FFmpeg analyzes the entire video to assess
+scene complexity (identifying fast motion, static scenes, and detail
+levels) and writes this data to a log file.</li>
+<li><strong>Pass 2:</strong> FFmpeg reads the log file and allocates the
+available bitrate dynamically—using more bits for complex scenes and
+saving bits on simple scenes—resulting in optimal visual quality.</li>
+</ol>
+<hr />
+<h3 id="step-by-step-two-pass-commands">Step-by-Step Two-Pass
+Commands</h3>
+<p>To perform two-pass encoding (using the standard <code>libx264</code>
+video codec as an example), you must run two separate FFmpeg commands in
+sequence.</p>
+<h4 id="step-1-the-first-pass-analysis">Step 1: The First Pass
+(Analysis)</h4>
+<p>Run the following command to analyze the video and generate the log
+file.</p>
+<p><strong>For Linux and macOS:</strong></p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-y</span> <span class="at">-i</span> input.mp4 <span class="at">-c:v</span> libx264 <span class="at">-b:v</span> 2000k <span class="at">-pass</span> 1 <span class="at">-an</span> <span class="at">-f</span> null /dev/null</span></code></pre></div>
+<p><strong>For Windows (Command Prompt):</strong></p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode cmd"><code class="sourceCode dosbat"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>ffmpeg <span class="at">-y</span> <span class="at">-i</span> input.mp4 <span class="at">-c:</span>v libx264 <span class="at">-b:</span>v 2000k <span class="at">-pass</span> 1 <span class="at">-an</span> <span class="at">-f</span> null NUL</span></code></pre></div>
+<p><strong>Parameter Breakdown:</strong></p>
+<ul>
+<li><code>-y</code>: Overwrites existing output files
+automatically.</li>
+<li><code>-i input.mp4</code>: Specifies the input video file.</li>
+<li><code>-c:v libx264</code>: Selects the H.264 video encoder.</li>
+<li><code>-b:v 2000k</code>: Sets the target average video bitrate
+(e.g., 2000 kbps).</li>
+<li><code>-pass 1</code>: Tells FFmpeg to perform the first pass and
+write the analysis to a log file (default name is
+<code>ffmpeg2pass-0.log</code>).</li>
+<li><code>-an</code>: Disables audio processing. Audio is ignored in the
+first pass to speed up the analysis.</li>
+<li><code>-f null /dev/null</code> (or <code>NUL</code>): Discards the
+video output. No actual video file is written during this pass, only the
+log file.</li>
+</ul>
+<hr />
+<h4 id="step-2-the-second-pass-encoding">Step 2: The Second Pass
+(Encoding)</h4>
+<p>Run the second command to read the generated log file, compress the
+video, process the audio, and output the final file.</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-c:v</span> libx264 <span class="at">-b:v</span> 2000k <span class="at">-pass</span> 2 <span class="at">-c:a</span> aac <span class="at">-b:a</span> 128k output.mp4</span></code></pre></div>
+<p><strong>Parameter Breakdown:</strong></p>
+<ul>
+<li><code>-pass 2</code>: Tells FFmpeg to read the log file generated in
+Step 1 and apply the bitrate allocation.</li>
+<li><code>-c:a aac</code>: Selects the AAC audio encoder.</li>
+<li><code>-b:a 128k</code>: Sets the target audio bitrate to 128
+kbps.</li>
+<li><code>output.mp4</code>: The final, compressed output file.</li>
+</ul>
+<hr />
+<h3 id="essential-rules-for-two-pass-encoding">Essential Rules for
+Two-Pass Encoding</h3>
+<p>For two-pass encoding to work correctly, you must adhere to these
+rules:</p>
+<ul>
+<li><strong>Keep Settings Identical:</strong> Video-specific parameters
+such as resolution (<code>-s</code>), frame rate (<code>-r</code>),
+aspect ratio, and video bitrate (<code>-b:v</code>) must be identical in
+both Pass 1 and Pass 2 commands. Changing these between passes will
+corrupt the log file data and cause the encoding to fail or produce poor
+results.</li>
+<li><strong>Log Files:</strong> FFmpeg automatically generates files
+named <code>ffmpeg2pass-0.log</code> (and potentially
+<code>ffmpeg2pass-0.log.mbtree</code>) in your working directory. Once
+the second pass is complete, you can safely delete these files.</li>
+</ul></article>
+        <div id="comments-container"></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Use FFmpeg Tee Muxer for Multiple Outputs - ffmpeg</title>
+    <meta name="description" content="The tee muxer in FFmpeg allows you to take a single audio/video stream, encode it once, and distribute the resulting packets to multiple destinations simultaneously. This guide explains how to use the tee muxer to output to multiple local files and netwo">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/how-to-use-ffmpeg-tee-muxer-for-multiple-outputs">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Use FFmpeg Tee Muxer for Multiple Outputs - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/how-to-use-ffmpeg-tee-muxer-for-multiple-outputs" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="The tee muxer in FFmpeg allows you to take a single audio/video stream, encode it once, and distribute the resulting packets to multiple destinations simultaneously. This guide explains how to use the tee muxer to output to multiple local files and netwo" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="how-to-use-ffmpeg-tee-muxer-for-multiple-outputs">How to Use
+FFmpeg Tee Muxer for Multiple Outputs</h1>
+<p>The <code>tee</code> muxer in FFmpeg allows you to take a single
+audio/video stream, encode it once, and distribute the resulting packets
+to multiple destinations simultaneously. This guide explains how to use
+the <code>tee</code> muxer to output to multiple local files and network
+streams in parallel, saving processing power, system memory, and
+encoding time.</p>
+<hr />
+<h3 id="what-is-the-ffmpeg-tee-muxer">What is the FFmpeg
+<code>tee</code> Muxer?</h3>
+<p>Normally, specifying multiple output files in FFmpeg causes it to
+encode the media separately for each output, heavily taxing your CPU or
+GPU. The <code>tee</code> muxer solves this by acting as a virtual
+output format that duplicates the encoded packets and sends them to
+multiple destinations at the same time.</p>
+<h3 id="basic-syntax">Basic Syntax</h3>
+<p>To use the <code>tee</code> muxer, set the format flag to
+<code>-f tee</code> and provide the target paths separated by a vertical
+pipe character (<code>|</code>), enclosed in quotes to prevent your
+command shell from interpreting the pipe:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-c:v</span> libx264 <span class="at">-c:a</span> aac <span class="at">-f</span> tee <span class="st">&quot;output1.mp4|output2.mkv&quot;</span></span></code></pre></div>
+<p>In this command, the input is transcoded once using H.264 video and
+AAC audio, and then written simultaneously to <code>output1.mp4</code>
+and <code>output2.mkv</code>.</p>
+<hr />
+<h3 id="applying-format-specific-options">Applying Format-Specific
+Options</h3>
+<p>Different file containers or streaming protocols often require
+different container formats or flags. You can pass options to individual
+outputs using brackets <code>[...]</code> before the output
+filename.</p>
+<h4
+id="example-multiple-local-containers-with-explicit-formats">Example:
+Multiple Local Containers with Explicit Formats</h4>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mov <span class="at">-c:v</span> libx264 <span class="at">-c:a</span> aac <span class="at">-f</span> tee <span class="st">&quot;[f=mp4]output.mp4|[f=matroska]output.mkv&quot;</span></span></code></pre></div>
+<p>The <code>f=mp4</code> and <code>f=matroska</code> specifiers force
+the correct muxer for each individual destination.</p>
+<hr />
+<h3 id="simultaneous-local-recording-and-live-streaming">Simultaneous
+Local Recording and Live Streaming</h3>
+<p>A common use case for the <code>tee</code> muxer is saving a
+high-quality local archive while streaming to a platform like Twitch,
+YouTube, or an RTMP server.</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-c:v</span> libx264 <span class="at">-preset</span> veryfast <span class="at">-b:v</span> 3000k <span class="at">-maxrate</span> 3000k <span class="at">-bufsize</span> 6000k <span class="dt">\</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">-c:a</span> aac <span class="at">-b:a</span> 128k <span class="at">-f</span> tee <span class="dt">\</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>  <span class="st">&quot;[f=flv:onfail=ignore]rtmp://live.example.com/app/streamkey|[f=mp4]archive.mp4&quot;</span></span></code></pre></div>
+<p>Key features in this example:</p>
+<ul>
+<li><strong><code>[f=flv]</code></strong>: Specifies the Flash Video
+muxer required for standard RTMP streams.</li>
+<li><strong><code>onfail=ignore</code></strong>: Tells FFmpeg to
+continue writing to the local <code>archive.mp4</code> even if the RTMP
+network connection drops. Without this, an error on one output halts the
+entire process.</li>
+</ul>
+<hr />
+<h3 id="handling-bitstream-filters-bsfs">Handling Bitstream Filters
+(BSFs)</h3>
+<p>Some containers require specific bitstream filters to handle codecs
+correctly. For instance, streaming H.264 over FLV or MPEG-TS might
+require converting packet headers.</p>
+<p>You can apply bitstream filters to specific streams within an
+output:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-c:v</span> copy <span class="at">-c:a</span> copy <span class="at">-f</span> tee <span class="dt">\</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>  <span class="st">&quot;output.mp4|[f=mpegts:bsfs/v=dump_extra]udp://127.0.0.1:1234&quot;</span></span></code></pre></div>
+<ul>
+<li><strong><code>bsfs/v=dump_extra</code></strong>: Applies the
+<code>dump_extra</code> bitstream filter specifically to the video
+stream going to the UDP destination, leaving the local MP4 copy
+untouched.</li>
+</ul>
+<hr />
+<h3 id="summary-checklist-for-using-tee">Summary Checklist for Using
+<code>tee</code></h3>
+<ul>
+<li><strong>Wrap in quotes</strong>: Always place the entire output list
+in quotation marks (<code>"..."</code>) to prevent shell pipe
+redirection errors.</li>
+<li><strong>Match codecs</strong>: Ensure all outputs can accept the
+codecs you choose; the <code>tee</code> muxer duplicates encoded data
+and cannot transcode to different codecs per output.</li>
+<li><strong>Use <code>onfail=ignore</code></strong>: Always add this
+flag to network outputs if you want local recordings to survive internet
+interruptions.</li>
+</ul></article>
+        <div id="comments-container"></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

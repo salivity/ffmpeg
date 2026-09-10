@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Use the FFmpeg Shuffleframes Filter - ffmpeg</title>
+    <meta name="description" content="The FFmpeg shuffleframes filter allows you to reorder, duplicate, or drop video frames within recurring blocks of a specified size. This guide explains how the filter functions, details the index-mapping syntax, and provides practical command-line exampl">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/how-to-use-the-ffmpeg-shuffleframes-filter">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Use the FFmpeg Shuffleframes Filter - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/how-to-use-the-ffmpeg-shuffleframes-filter" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="The FFmpeg shuffleframes filter allows you to reorder, duplicate, or drop video frames within recurring blocks of a specified size. This guide explains how the filter functions, details the index-mapping syntax, and provides practical command-line exampl" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="how-to-use-the-ffmpeg-shuffleframes-filter">How to Use the
+FFmpeg Shuffleframes Filter</h1>
+<p>The FFmpeg <code>shuffleframes</code> filter allows you to reorder,
+duplicate, or drop video frames within recurring blocks of a specified
+size. This guide explains how the filter functions, details the
+index-mapping syntax, and provides practical command-line examples for
+swapping, repeating, and deleting frames inside recurring segments.</p>
+<h3 id="understanding-the-shuffleframes-syntax">Understanding the
+shuffleframes Syntax</h3>
+<p>The <code>shuffleframes</code> filter takes a space-separated list of
+zero-based indices. The total count of indices you provide sets the
+block size. During processing, FFmpeg inspects each block of that size
+and outputs the frames in the exact order specified by your list.</p>
+<p>The basic filter syntax is:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">-vf</span> <span class="st">&quot;shuffleframes=index_0 index_1 ... index_N&quot;</span></span></code></pre></div>
+<ul>
+<li><strong>Indices:</strong> Zero-based integers
+(<code>0, 1, 2, ...</code>) referencing the original positions of frames
+in the block.</li>
+<li><strong>Repeating:</strong> Using the same index more than once
+duplicates that frame.</li>
+<li><strong>Dropping:</strong> Using <code>-1</code> discards the frame
+at that output slot.</li>
+</ul>
+<h3 id="rearranging-frames">Rearranging Frames</h3>
+<p>To reorder frames, write the indices in your desired output
+sequence.</p>
+<p><strong>Swap Adjacent Pairs</strong><br />
+To swap every consecutive pair of frames (frame 0 with 1, frame 2 with
+3, etc.):</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;shuffleframes=1 0&quot;</span> <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<p><strong>Reverse 4-Frame Blocks</strong><br />
+To invert the playback direction in recurring 4-frame increments:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;shuffleframes=3 2 1 0&quot;</span> <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<h3 id="repeating-frames">Repeating Frames</h3>
+<p>You can repeat frames within a block by referencing the same source
+index multiple times.</p>
+<p><strong>Duplicate Every Frame</strong><br />
+To output each frame twice within a two-frame block, doubling the output
+frame count:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;shuffleframes=0 0 1 1&quot;</span> <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<p><strong>Freeze-and-Skip Pattern</strong><br />
+To stretch the first frame across three slots and output the final frame
+of a 4-frame segment:</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;shuffleframes=0 0 0 3&quot;</span> <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<h3 id="dropping-frames">Dropping Frames</h3>
+<p>Assigning <code>-1</code> instructs FFmpeg to omit a frame from the
+output sequence entirely.</p>
+<p><strong>Drop Every Second Frame</strong><br />
+To keep the first frame of a pair and drop the second:</p>
+<div class="sourceCode" id="cb6"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;shuffleframes=0 -1&quot;</span> <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<p><strong>Reorder and Drop Combined</strong><br />
+In a 4-frame block, to emit frame 2 first, drop frame 1, emit frame 0,
+and emit frame 3:</p>
+<div class="sourceCode" id="cb7"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;shuffleframes=2 -1 0 3&quot;</span> <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<h3 id="managing-timestamps-and-audio">Managing Timestamps and
+Audio</h3>
+<p>Because <code>shuffleframes</code> alters frame sequences and counts,
+audio may fall out of sync if frames are duplicated or dropped over
+time.</p>
+<p>If you are changing the total frame count (adding or dropping
+frames), append the <code>fps</code> filter or adjust the presentation
+timestamps (PTS) using <code>setpts</code> to maintain proper playback
+timing:</p>
+<div class="sourceCode" id="cb8"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;shuffleframes=0 0 1 1,setpts=N/(FPS*TB)&quot;</span> <span class="at">-c:a</span> copy output.mp4</span></code></pre></div></article>
+        <div id="comments-container"></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

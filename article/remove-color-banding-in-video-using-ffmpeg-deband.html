@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Remove Color Banding in Video Using FFmpeg Deband - ffmpeg</title>
+    <meta name="description" content="Color banding, or posterization, occurs when smooth gradients in a video are broken into distinct, unnatural steps of color due to low bit depth or aggressive compression. FFmpeg includes a native deband video filter that detects and smooths these harsh">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/remove-color-banding-in-video-using-ffmpeg-deband">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Remove Color Banding in Video Using FFmpeg Deband - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/remove-color-banding-in-video-using-ffmpeg-deband" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Color banding, or posterization, occurs when smooth gradients in a video are broken into distinct, unnatural steps of color due to low bit depth or aggressive compression. FFmpeg includes a native deband video filter that detects and smooths these harsh" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="remove-color-banding-in-video-using-ffmpeg-deband">Remove Color
+Banding in Video Using FFmpeg Deband</h1>
+<p>Color banding, or posterization, occurs when smooth gradients in a
+video are broken into distinct, unnatural steps of color due to low bit
+depth or aggressive compression. FFmpeg includes a native
+<code>deband</code> video filter that detects and smooths these harsh
+transitions while attempting to preserve sharp edges and scene details.
+This guide covers how to implement the <code>deband</code> filter, how
+to configure its primary parameters, and practical commands to eliminate
+banding artifacts effectively.</p>
+<hr />
+<h3 id="basic-syntax">Basic Syntax</h3>
+<p>To apply the deband filter with its default settings, use the
+<code>-vf</code> (video filter) flag:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> deband <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<p>This runs the filter across all video planes with default values: a
+detection range of 16 pixels, a detection threshold of 0.02, and
+blurring enabled.</p>
+<hr />
+<h3 id="core-parameters">Core Parameters</h3>
+<p>The <code>deband</code> filter accepts several parameters that let
+you balance artifact removal against the retention of fine detail.</p>
+<ul>
+<li><p><strong><code>1threshold</code>, <code>2threshold</code>,
+<code>3threshold</code>, <code>4threshold</code> (or <code>1t</code>,
+<code>2t</code>, <code>3t</code>, <code>4t</code>)</strong></p>
+<ul>
+<li><strong>Function:</strong> Controls the threshold for detecting
+banding in planes 1 to 4 (Luma, Chroma U, Chroma V, Alpha).</li>
+<li><strong>Range:</strong> <code>0.00003</code> to <code>0.5</code>
+(Default: <code>0.02</code>).</li>
+<li><strong>Behavior:</strong> Higher values remove stronger, more
+noticeable banding lines, but setting this too high will blur fine
+textures like skin, fabric, or subtle film grain.</li>
+</ul></li>
+<li><p><strong><code>range</code> (or <code>r</code>)</strong></p>
+<ul>
+<li><strong>Function:</strong> The maximum distance in pixels to sample
+adjacent pixels for gradient estimation.</li>
+<li><strong>Range:</strong> <code>8</code> to <code>128</code> (Default:
+<code>16</code>).</li>
+<li><strong>Behavior:</strong> Larger values smooth out wider bands
+(often found in large skies or foggy scenes) at the cost of processing
+speed.</li>
+</ul></li>
+<li><p><strong><code>blur</code> (or <code>b</code>)</strong></p>
+<ul>
+<li><strong>Function:</strong> Determines whether the target pixel is
+compared to the average of neighboring pixels (<code>true</code>) or a
+single neighbor (<code>false</code>).</li>
+<li><strong>Default:</strong> <code>true</code>.</li>
+<li><strong>Behavior:</strong> Leaving this set to <code>true</code>
+produces smoother, more natural-looking results.</li>
+</ul></li>
+<li><p><strong><code>coupling</code> (or <code>c</code>)</strong></p>
+<ul>
+<li><strong>Function:</strong> When enabled, compares all color
+components together rather than processing each color plane
+independently.</li>
+<li><strong>Default:</strong> <code>false</code>.</li>
+</ul></li>
+</ul>
+<hr />
+<h3 id="recommended-commands">Recommended Commands</h3>
+<h4 id="1-moderate-debanding-for-typical-web-video">1. Moderate
+Debanding for Typical Web Video</h4>
+<p>For standard banding caused by 8-bit encoding or moderate
+compression:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;deband=1t=0.03:2t=0.03:3t=0.03:range=16&quot;</span> <span class="at">-c:v</span> libx264 <span class="at">-crf</span> 18 <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<h4 id="2-strong-debanding-for-wide-flat-gradients">2. Strong Debanding
+for Wide, Flat Gradients</h4>
+<p>For scenes with large, visible steps across wide areas (such as clear
+skies or underwater shots), increase both the range and threshold:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;deband=1t=0.05:2t=0.05:3t=0.05:range=24:blur=true&quot;</span> <span class="at">-c:v</span> libx264 <span class="at">-crf</span> 18 <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<h4 id="3-plane-specific-debanding">3. Plane-Specific Debanding</h4>
+<p>If color channels (Chroma) show more artifacting than brightness
+(Luma), increase the chroma thresholds independently:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;deband=1t=0.015:2t=0.04:3t=0.04:range=16&quot;</span> <span class="at">-c:v</span> libx264 <span class="at">-crf</span> 18 <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<hr />
+<h3 id="preventing-banding-from-returning">Preventing Banding from
+Returning</h3>
+<p>Applying the filter removes banding during decoding, but re-encoding
+into an 8-bit format at low bitrates can reintroduce the same artifacts.
+To prevent this:</p>
+<ol type="1">
+<li><strong>Encode to 10-bit color:</strong> Even if the source is
+8-bit, 10-bit encoding significantly reduces the mathematical chance of
+rounding errors that cause banding.
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;deband&quot;</span> <span class="at">-c:v</span> libx264 <span class="at">-pix_fmt</span> yuv420p10le <span class="at">-crf</span> 18 <span class="at">-c:a</span> copy output.mp4</span></code></pre></div></li>
+<li><strong>Use a lower CRF / higher bitrate:</strong> Ensure the
+encoder has sufficient data budget to retain the newly smoothed
+gradients.</li>
+</ol></article>
+        <div id="comments-container"></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Use FFmpeg Monochrome Filter for Custom B&W - ffmpeg</title>
+    <meta name="description" content="This guide explains how to use FFmpeg's dedicated monochrome video filter to transform standard color footage into customized black and white imagery. By manipulating key filter options—specifically color balance offsets, effect intensity, and highligh">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/how-to-use-ffmpeg-monochrome-filter-for-custom-b-w">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Use FFmpeg Monochrome Filter for Custom B&W - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/how-to-use-ffmpeg-monochrome-filter-for-custom-b-w" />
+    <meta property="og:image:url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This guide explains how to use FFmpeg's dedicated monochrome video filter to transform standard color footage into customized black and white imagery. By manipulating key filter options—specifically color balance offsets, effect intensity, and highligh" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="how-to-use-ffmpeg-monochrome-filter-for-custom-bw">How to Use
+FFmpeg Monochrome Filter for Custom B&amp;W</h1>
+<p>This guide explains how to use FFmpeg's dedicated
+<code>monochrome</code> video filter to transform standard color footage
+into customized black and white imagery. By manipulating key filter
+options—specifically color balance offsets, effect intensity, and
+highlight retention—you can simulate traditional optical lens filters,
+craft cinematic film styles, and establish distinct visual presets
+directly from the command line.</p>
+<h3 id="understanding-the-monochrome-filter">Understanding the
+<code>monochrome</code> Filter</h3>
+<p>The FFmpeg <code>monochrome</code> filter converts video frames to
+grayscale based on chrominance and luminance interactions rather than
+merely desaturating the image. The filter accepts four primary
+parameters:</p>
+<ul>
+<li><strong><code>cb</code></strong>: Sets the blue-difference color
+balance offset. Accepts floating-point values from <code>-1.0</code> to
+<code>1.0</code> (default is <code>0.0</code>). Negative values darken
+blue spectrums, while positive values lighten them.</li>
+<li><strong><code>cr</code></strong>: Sets the red-difference color
+balance offset. Accepts floating-point values from <code>-1.0</code> to
+<code>1.0</code> (default is <code>0.0</code>). Adjusting this shifts
+the tonal response of red and skin tones.</li>
+<li><strong><code>size</code></strong>: Controls the effect area and
+transition steepness. Accepts values from <code>0.1</code> to
+<code>10.0</code> (default is <code>1.0</code>).</li>
+<li><strong><code>high</code></strong>: Sets highlight preservation and
+threshold blending. Accepts values from <code>0.0</code> to
+<code>1.0</code> (default is <code>0.0</code>). Higher values prevent
+bright areas from blowing out or clipping prematurely.</li>
+</ul>
+<h3 id="basic-command-syntax">Basic Command Syntax</h3>
+<p>The standard implementation applies the filter via the
+<code>-vf</code> (video filter) flag:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;monochrome=cb=0.0:cr=0.0:size=1.0:high=0.0&quot;</span> <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<hr />
+<h3 id="custom-black-and-white-profiles">Custom Black and White
+Profiles</h3>
+<p>By combining different values for <code>cb</code>, <code>cr</code>,
+<code>size</code>, and <code>high</code>, you can create specific
+photographic profiles.</p>
+<h4 id="1-dramatic-landscape-red-filter-simulation">1. Dramatic
+Landscape (Red Filter Simulation)</h4>
+<p>In traditional black and white photography, a red filter darkens blue
+skies and foliage while making clouds and warm highlights pop. To
+achieve this look, increase <code>cr</code> and lower
+<code>cb</code>:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;monochrome=cr=0.5:cb=-0.4:size=1.2:high=0.2&quot;</span> <span class="at">-c:a</span> copy landscape_bw.mp4</span></code></pre></div>
+<h4 id="2-smooth-portrait-yelloworange-filter-simulation">2. Smooth
+Portrait (Yellow/Orange Filter Simulation)</h4>
+<p>To smooth skin tones, reduce blemishes, and keep mid-tone transitions
+soft without harsh contrasts, boost red slightly and preserve
+highlights:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;monochrome=cr=0.25:cb=-0.1:size=0.8:high=0.4&quot;</span> <span class="at">-c:a</span> copy portrait_bw.mp4</span></code></pre></div>
+<h4 id="3-deep-foliage-and-contrast-green-filter-simulation">3. Deep
+Foliage and Contrast (Green Filter Simulation)</h4>
+<p>A green-biased look darkens skin tones and brightens vegetation,
+creating an earthy, vintage tone. This is simulated by driving both red
+and blue downward:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;monochrome=cr=-0.3:cb=-0.3:size=1.0:high=0.1&quot;</span> <span class="at">-c:a</span> copy green_tone_bw.mp4</span></code></pre></div>
+<h4 id="4-high-key--soft-monochrome">4. High-Key / Soft Monochrome</h4>
+<p>For scenes requiring bright, dreamy visuals with minimal deep
+shadows, reduce the effect size and maximize highlight retention:</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;monochrome=cr=0.0:cb=0.0:size=0.5:high=0.8&quot;</span> <span class="at">-c:a</span> copy high_key_bw.mp4</span></code></pre></div>
+<h4 id="5-high-contrast-noir">5. High-Contrast Noir</h4>
+<p>To create aggressive, dark shadows with stark white highlights
+suitable for a classic film noir look, expand the <code>size</code>
+parameter while setting <code>high</code> to zero:</p>
+<div class="sourceCode" id="cb6"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;monochrome=cr=0.2:cb=-0.3:size=2.5:high=0.0&quot;</span> <span class="at">-c:a</span> copy noir_bw.mp4</span></code></pre></div>
+<hr />
+<h3 id="chaining-with-exposure-controls">Chaining with Exposure
+Controls</h3>
+<p>To refine a custom profile further, chain the <code>monochrome</code>
+filter with the <code>eq</code> filter to fine-tune final brightness,
+contrast, or gamma:</p>
+<div class="sourceCode" id="cb7"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;monochrome=cr=0.4:cb=-0.2:size=1.5:high=0.1,eq=contrast=1.15:brightness=-0.02&quot;</span> <span class="at">-c:v</span> libx264 <span class="at">-crf</span> 18 <span class="at">-c:a</span> copy custom_profile.mp4</span></code></pre></div>
+<p>Testing small increments of <code>0.1</code> on <code>cb</code> and
+<code>cr</code> allows you to dial in the precise tonal separation
+required for your source material.</p></article>
+        <div id="comments-container"></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>
