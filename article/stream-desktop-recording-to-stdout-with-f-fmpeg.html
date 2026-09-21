@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stream Desktop Recording to Stdout with FFmpeg - ffmpeg</title>
+    <meta name="description" content="Streaming desktop video directly to standard output (stdout) using FFmpeg enables you to pipe real-time screen captures directly into other applications, network streams, or processing scripts without saving temporary files to disk. Achieving this requir">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/stream-desktop-recording-to-stdout-with-f-fmpeg">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Stream Desktop Recording to Stdout with FFmpeg - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/stream-desktop-recording-to-stdout-with-f-fmpeg" />
+    <meta property="og:image" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Streaming desktop video directly to standard output (stdout) using FFmpeg enables you to pipe real-time screen captures directly into other applications, network streams, or processing scripts without saving temporary files to disk. Achieving this requir" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="stream-desktop-recording-to-stdout-with-ffmpeg">Stream Desktop
+Recording to Stdout with FFmpeg</h1>
+<p>Streaming desktop video directly to standard output
+(<code>stdout</code>) using FFmpeg enables you to pipe real-time screen
+captures directly into other applications, network streams, or
+processing scripts without saving temporary files to disk. Achieving
+this requires specifying your operating system's native capture device,
+selecting a streamable container format that does not require
+file-seeking, and targeting the standard output pipe.</p>
+<h3 id="core-command-syntax">Core Command Syntax</h3>
+<p>To direct FFmpeg output to <code>stdout</code>, replace the output
+filename with <code>-</code> or <code>pipe:1</code>. Because
+<code>stdout</code> cannot seek backwards to update file headers (as
+standard MP4 files require), you must choose a streaming-friendly
+container format, such as MPEG-TS (<code>-f mpegts</code>), Matroska
+(<code>-f matroska</code>), NUT (<code>-f nut</code>), or fragmented MP4
+(<code>-f mp4 -movflags frag_keyframe+empty_moov</code>).</p>
+<h3 id="platform-specific-examples">Platform-Specific Examples</h3>
+<h4 id="linux-x11">Linux (X11)</h4>
+<p>Linux systems using the X Window System use the <code>x11grab</code>
+input device:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-f</span> x11grab <span class="at">-framerate</span> 30 <span class="at">-video_size</span> 1920x1080 <span class="at">-i</span> :0.0 <span class="dt">\</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">-c:v</span> libx264 <span class="at">-preset</span> ultrafast <span class="at">-tune</span> zerolatency <span class="dt">\</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">-f</span> mpegts <span class="at">-</span></span></code></pre></div>
+<ul>
+<li><strong><code>-f x11grab</code></strong>: Specifies the capture
+framework.</li>
+<li><strong><code>-video_size 1920x1080</code></strong>: Defines the
+capture resolution.</li>
+<li><strong><code>-i :0.0</code></strong>: Specifies the primary display
+server and screen.</li>
+<li><strong><code>-f mpegts -</code></strong>: Packages the stream into
+an MPEG-TS container and sends it to <code>stdout</code>.</li>
+</ul>
+<h4 id="windows-gdi--desktop">Windows (GDI / Desktop)</h4>
+<p>Windows uses the <code>gdigrab</code> device to capture the desktop
+interface:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode cmd"><code class="sourceCode dosbat"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>ffmpeg <span class="at">-f</span> gdigrab <span class="at">-framerate</span> 30 <span class="at">-i</span> desktop <span class="sc">\</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">-c:</span>v libx264 <span class="at">-preset</span> ultrafast <span class="at">-tune</span> zerolatency <span class="sc">\</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">-f</span> mpegts pipe:1</span></code></pre></div>
+<ul>
+<li><strong><code>-f gdigrab</code></strong>: Uses the Windows Graphics
+Device Interface.</li>
+<li><strong><code>-i desktop</code></strong>: Captures the entire
+primary display.</li>
+<li><strong><code>pipe:1</code></strong>: Explicitly targets standard
+output (file descriptor 1).</li>
+</ul>
+<h4 id="macos-avfoundation">macOS (AVFoundation)</h4>
+<p>macOS uses the <code>avfoundation</code> input framework:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-f</span> avfoundation <span class="at">-framerate</span> 30 <span class="at">-i</span> <span class="st">&quot;1:none&quot;</span> <span class="dt">\</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">-c:v</span> libx264 <span class="at">-preset</span> ultrafast <span class="at">-tune</span> zerolatency <span class="dt">\</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">-f</span> mpegts <span class="at">-</span></span></code></pre></div>
+<ul>
+<li><strong><code>-f avfoundation</code></strong>: Uses Apple's
+multimedia framework.</li>
+<li><strong><code>-i "1:none"</code></strong>: Selects the screen
+capture device index (usually <code>1</code>) without capturing audio
+(<code>none</code>). Run
+<code>ffmpeg -f avfoundation -list_devices true -i ""</code> to confirm
+your screen index.</li>
+</ul>
+<h3 id="key-considerations">Key Considerations</h3>
+<ul>
+<li><strong>Suppressing Diagnostic Logs</strong>: FFmpeg outputs
+progress and diagnostic information to <code>stderr</code> by default,
+leaving <code>stdout</code> clean for binary video data. To completely
+silence log messages so they do not interfere with scripts, append
+<code>-loglevel quiet</code> or <code>-loglevel error</code>.</li>
+<li><strong>Low Latency Encoding</strong>: Use
+<code>-preset ultrafast</code> and <code>-tune zerolatency</code> when
+encoding with <code>libx264</code> to prevent buffering delays between
+the screen capture and the output stream.</li>
+<li><strong>Raw Video Alternative</strong>: If downstream applications
+require uncompressed frames rather than an encoded stream, specify raw
+video instead:
+<code>-c:v rawvideo -pix_fmt rgb24 -f rawvideo -</code>.</li>
+</ul></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

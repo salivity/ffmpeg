@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>High-Pass Filter Expressions for FFmpeg fftfilt - ffmpeg</title>
+    <meta name="description" content="The FFmpeg fftfilt filter operates in the frequency domain by performing a 2D Fast Fourier Transform (FFT) on video frames or images, modifying frequency coefficients via user-defined expressions, and performing an inverse FFT back to the spatial domain.">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/high-pass-filter-expressions-for-f-fmpeg-fftfilt">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="High-Pass Filter Expressions for FFmpeg fftfilt - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/high-pass-filter-expressions-for-f-fmpeg-fftfilt" />
+    <meta property="og:image" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="The FFmpeg fftfilt filter operates in the frequency domain by performing a 2D Fast Fourier Transform (FFT) on video frames or images, modifying frequency coefficients via user-defined expressions, and performing an inverse FFT back to the spatial domain." />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="high-pass-filter-expressions-for-ffmpeg-fftfilt">High-Pass
+Filter Expressions for FFmpeg fftfilt</h1>
+<p>The FFmpeg <code>fftfilt</code> filter operates in the frequency
+domain by performing a 2D Fast Fourier Transform (FFT) on video frames
+or images, modifying frequency coefficients via user-defined
+expressions, and performing an inverse FFT back to the spatial domain.
+This article explains how to write custom mathematical expressions for
+<code>fftfilt</code> to build high-pass image filters that attenuate
+low-frequency content and preserve fine details, edges, and
+textures.</p>
+<h2 id="understanding-fftfilt-variables-and-options">Understanding
+<code>fftfilt</code> Variables and Options</h2>
+<p>When writing expressions for <code>fftfilt</code>, FFmpeg evaluates
+your formula for each frequency sample in the transform grid. The
+primary parameters and variables include:</p>
+<ul>
+<li><strong><code>X</code> and <code>Y</code></strong>: The horizontal
+and vertical frequency sample indices.</li>
+<li><strong><code>W</code> and <code>H</code></strong>: The width and
+height of the frequency domain plane.</li>
+<li><strong><code>weight_y</code></strong>: The expression calculating
+the multiplier (typically between <code>0.0</code> and <code>1.0</code>)
+applied to the luma channel frequency coefficients.</li>
+<li><strong><code>weight_u</code> / <code>weight_v</code></strong>: The
+expressions for chroma channels.</li>
+<li><strong><code>dc_y</code></strong>: The direct current (DC)
+coefficient for luma, representing the average brightness. Setting this
+to <code>128</code> maps zero frequency to a neutral 8-bit gray,
+preventing clipping of negative spatial values caused by removing low
+frequencies. Setting it to <code>0</code> leaves only high-frequency
+fluctuations centered at zero.</li>
+</ul>
+<h2 id="distance-calculation-in-frequency-space">Distance Calculation in
+Frequency Space</h2>
+<p>A high-pass filter attenuates frequencies close to the center and
+passes frequencies farther away. In FFmpeg's frequency representation
+for <code>fftfilt</code>, the low-frequency center is positioned at
+<code>(W/2, H/2)</code>.</p>
+<p>The Euclidean distance <span class="math inline">\(D(X, Y)\)</span>
+from the center can be calculated using the built-in <code>hypot</code>
+function:</p>
+<pre class="text"><code>hypot(X - W/2, Y - H/2)</code></pre>
+<p>Normalized relative to the frame dimensions, this distance is
+represented as:</p>
+<pre class="text"><code>hypot((X - W/2)/W, (Y - H/2)/H)</code></pre>
+<h2 id="custom-high-pass-filter-expressions">Custom High-Pass Filter
+Expressions</h2>
+<h3 id="1-gaussian-high-pass-filter">1. Gaussian High-Pass Filter</h3>
+<p>The Gaussian high-pass filter provides a smooth transition between
+rejected and passed frequencies, preventing ringing artifacts (Gibbs
+phenomenon) around sharp edges.</p>
+<p>The mathematical formula is:</p>
+<p><span class="math display">\[H(u, v) = 1 - e^{-\frac{D(u, v)^2}{2
+D_0^2}}\]</span></p>
+<p>In FFmpeg expression syntax:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.png <span class="at">-vf</span> <span class="st">&quot;fftfilt=dc_y=128:weight_y=&#39;1-exp(-4*PI*(pow((X-W/2)/W,2)+pow((Y-H/2)/H,2)))&#39;&quot;</span> output.png</span></code></pre></div>
+<p>To control the cutoff radius explicitly, introduce a scaling factor
+<span class="math inline">\(S\)</span>:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.png <span class="at">-vf</span> <span class="st">&quot;fftfilt=dc_y=128:weight_y=&#39;1-exp(-pow(hypot(X-W/2,Y-H/2)/30,2))&#39;&quot;</span> output.png</span></code></pre></div>
+<ul>
+<li>Increasing <code>30</code> increases the cutoff threshold, removing
+more mid-range frequencies and preserving only extremely sharp
+details.</li>
+<li>Decreasing <code>30</code> allows more mid-range textures to pass
+through.</li>
+</ul>
+<h3 id="2-ideal-sharp-cutoff-high-pass-filter">2. Ideal (Sharp Cutoff)
+High-Pass Filter</h3>
+<p>An ideal high-pass filter cuts off all frequencies within a radius
+<span class="math inline">\(R\)</span> completely and passes everything
+outside that radius without modification.</p>
+<p>Using FFmpeg's <code>gte</code> (greater-than-or-equal) conditional
+function:</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.png <span class="at">-vf</span> <span class="st">&quot;fftfilt=dc_y=128:weight_y=&#39;gte(hypot(X-W/2,Y-H/2),25)&#39;&quot;</span> output.png</span></code></pre></div>
+<ul>
+<li>Frequencies where the distance from the center is <span
+class="math inline">\(\ge 25\)</span> receive a multiplier of
+<code>1.0</code>.</li>
+<li>Frequencies inside the radius receive <code>0.0</code>.</li>
+</ul>
+<p><em>Note: Ideal filters introduce visible ripple or ringing artifacts
+around contrast boundaries.</em></p>
+<h3 id="3-butterworth-high-pass-filter">3. Butterworth High-Pass
+Filter</h3>
+<p>A Butterworth filter offers a balance between the sharpness of an
+ideal filter and the smoothness of a Gaussian filter, controlled by the
+order <span class="math inline">\(n\)</span>.</p>
+<p>The formula for an order-1 Butterworth high-pass filter is:</p>
+<p><span class="math display">\[H(u, v) = \frac{1}{1 +
+\left(\frac{D_0}{D(u, v)}\right)^{2n}}\]</span></p>
+<p>In FFmpeg expression syntax with cutoff radius <span
+class="math inline">\(D_0 = 20\)</span> and order <span
+class="math inline">\(n = 1\)</span>:</p>
+<div class="sourceCode" id="cb6"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.png <span class="at">-vf</span> <span class="st">&quot;fftfilt=dc_y=128:weight_y=&#39;1/(1+pow(20/max(hypot(X-W/2,Y-H/2),0.001),2))&#39;&quot;</span> output.png</span></code></pre></div>
+<ul>
+<li>The <code>max(..., 0.001)</code> prevents division by zero at the
+exact center coordinates <code>(W/2, H/2)</code>.</li>
+</ul>
+<h2 id="processing-color-channels">Processing Color Channels</h2>
+<p>By default, modifying only <code>weight_y</code> leaves chroma
+channels intact, which can cause color artifacts. To apply the same
+high-pass filtering across all planes, pass identical expressions to
+<code>weight_u</code> and <code>weight_v</code>, and set their DC
+components to <code>128</code>:</p>
+<div class="sourceCode" id="cb7"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.png <span class="at">-vf</span> <span class="st">&quot;fftfilt=dc_y=128:dc_u=128:dc_v=128:weight_y=&#39;1-exp(-pow(hypot(X-W/2,Y-H/2)/35,2))&#39;:weight_u=&#39;1-exp(-pow(hypot(X-W/2,Y-H/2)/35,2))&#39;:weight_v=&#39;1-exp(-pow(hypot(X-W/2,Y-H/2)/35,2))&#39;&quot;</span> output.png</span></code></pre></div></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

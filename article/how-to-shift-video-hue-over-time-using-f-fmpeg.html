@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Shift Video Hue Over Time Using FFmpeg - ffmpeg</title>
+    <meta name="description" content="This article explains how to use FFmpeg's hue video filter to animate and shift the color spectrum of a video continuously over its duration. By binding the filter's hue angle parameter to the video's playback timestamp, you can achieve smooth, psychedel">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/how-to-shift-video-hue-over-time-using-f-fmpeg">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Shift Video Hue Over Time Using FFmpeg - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/how-to-shift-video-hue-over-time-using-f-fmpeg" />
+    <meta property="og:image" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article explains how to use FFmpeg's hue video filter to animate and shift the color spectrum of a video continuously over its duration. By binding the filter's hue angle parameter to the video's playback timestamp, you can achieve smooth, psychedel" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-to-shift-video-hue-over-time-using-ffmpeg">How to Shift
+Video Hue Over Time Using FFmpeg</h1>
+<p>This article explains how to use FFmpeg's <code>hue</code> video
+filter to animate and shift the color spectrum of a video continuously
+over its duration. By binding the filter's hue angle parameter to the
+video's playback timestamp, you can achieve smooth, psychedelic, or
+dynamic color-cycling effects without requiring complex video editing
+software.</p>
+<h2 id="understanding-the-hue-filter">Understanding the Hue Filter</h2>
+<p>FFmpeg includes a video filter named <code>hue</code> that adjusts
+hue, saturation, and brightness. To shift color over time, you
+manipulate the hue angle (<code>h</code> for degrees, or <code>H</code>
+for radians).</p>
+<p>Instead of passing a static number, you pass a mathematical
+expression that evaluates dynamically for every frame. The filter
+provides built-in variables for this purpose:</p>
+<ul>
+<li><code>t</code>: The current presentation timestamp in seconds.</li>
+<li><code>n</code>: The sequential frame number, starting at 0.</li>
+<li><code>r</code>: The frame rate of the video.</li>
+</ul>
+<h2 id="basic-command-syntax">Basic Command Syntax</h2>
+<p>To rotate the hue based on time, use the <code>-vf</code> (video
+filter) flag and define the <code>h</code> parameter inside quotes:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;hue=h=&#39;60*t&#39;&quot;</span> <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<p>In this command:</p>
+<ul>
+<li><code>-i input.mp4</code>: Specifies the input file.</li>
+<li><code>-vf "hue=h='60*t'"</code>: Shifts the hue angle by 60 degrees
+per second.</li>
+<li><code>-c:a copy</code>: Copies the audio stream without re-encoding
+to preserve quality and speed up processing.</li>
+<li><code>output.mp4</code>: The output file name.</li>
+</ul>
+<h2 id="controlling-the-speed-of-the-shift">Controlling the Speed of the
+Shift</h2>
+<p>Because a full color rotation spans 360 degrees, you can control the
+exact speed of the cycle by adjusting the formula:</p>
+<h3 id="one-full-rotation-every-10-seconds">One full rotation every 10
+seconds:</h3>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;hue=h=&#39;(360/10)*t&#39;&quot;</span> <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<h3 id="one-full-rotation-every-2-seconds-faster-shift">One full
+rotation every 2 seconds (faster shift):</h3>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;hue=h=&#39;180*t&#39;&quot;</span> <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<h2 id="advanced-examples">Advanced Examples</h2>
+<h3 id="modulo-cycling">Modulo Cycling</h3>
+<p>To prevent the degree value from growing indefinitely, wrap the
+expression with the modulo operator (<code>mod</code>):</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;hue=h=&#39;mod(72*t, 360)&#39;&quot;</span> <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<p>This rotates the hue 72 degrees per second, completing a full
+spectrum cycle every 5 seconds, resetting cleanly at 360 degrees.</p>
+<h3 id="frame-based-rotation">Frame-Based Rotation</h3>
+<p>If you want the shift tied strictly to the number of processed frames
+rather than wall-clock time:</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;hue=h=&#39;n*2&#39;&quot;</span> <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<p>This shifts the hue by 2 degrees for every processed video frame.</p>
+<h3 id="combining-hue-shift-with-saturation">Combining Hue Shift with
+Saturation</h3>
+<p>You can alter saturation (<code>s</code>) simultaneously to prevent
+colors from washing out or to create high-contrast effects:</p>
+<div class="sourceCode" id="cb6"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;hue=h=&#39;60*t&#39;:s=1.5&quot;</span> <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<p>This applies the continuous hue rotation while increasing the color
+saturation by 50%.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

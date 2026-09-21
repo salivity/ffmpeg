@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Use FFmpeg -re Option with Live Camera Input - ffmpeg</title>
+    <meta name="description" content="This article explains how the -re (real-time) option in FFmpeg interacts with live camera inputs. You will learn what the -re flag does, why it is generally unnecessary and counterproductive for live hardware devices like webcams or capture cards, and th">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/how-to-use-f-fmpeg-re-option-with-live-camera-input">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Use FFmpeg -re Option with Live Camera Input - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/how-to-use-f-fmpeg-re-option-with-live-camera-input" />
+    <meta property="og:image" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article explains how the -re (real-time) option in FFmpeg interacts with live camera inputs. You will learn what the -re flag does, why it is generally unnecessary and counterproductive for live hardware devices like webcams or capture cards, and th" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-to-use-ffmpeg--re-option-with-live-camera-input">How to Use
+FFmpeg -re Option with Live Camera Input</h1>
+<p>This article explains how the <code>-re</code> (real-time) option in
+FFmpeg interacts with live camera inputs. You will learn what the
+<code>-re</code> flag does, why it is generally unnecessary and
+counterproductive for live hardware devices like webcams or capture
+cards, and the correct way to configure your FFmpeg commands for
+real-time streaming.</p>
+<h3 id="what-is-the--re-option">What is the <code>-re</code>
+Option?</h3>
+<p>By default, FFmpeg processes input files as fast as your CPU and disk
+speed allow. The <code>-re</code> option tells FFmpeg to read the input
+at its native frame rate.</p>
+<p>This flag is crucial when you are streaming a pre-recorded file (like
+an MP4) to a live destination (like YouTube or Twitch via RTMP). Without
+<code>-re</code>, FFmpeg would read and upload the file too fast,
+resulting in a broken stream or a rejected connection.</p>
+<h3 id="why-you-should-not-use--re-with-live-cameras">Why You Should Not
+Use <code>-re</code> with Live Cameras</h3>
+<p>When your input source is a live camera (such as a USB webcam, an
+RTSP IP camera, or a PCIe capture card), the input is already generated
+in real-time. The hardware clock of the camera dictates the frame
+rate.</p>
+<p>Using the <code>-re</code> option on a live camera input is redundant
+and can cause performance issues:</p>
+<ol type="1">
+<li><strong>Double Throttling:</strong> FFmpeg will attempt to apply an
+artificial software delay on top of an input that is already arriving in
+real-time.</li>
+<li><strong>Buffer Overflows:</strong> If the camera's hardware clock
+and FFmpeg's software clock drift slightly out of sync, FFmpeg may fall
+behind, leading to buffer overflow errors and dropped frames.</li>
+<li><strong>Increased Latency:</strong> It introduces unnecessary
+processing delay to the live feed.</li>
+</ol>
+<h3 id="correct-implementation-examples">Correct Implementation
+Examples</h3>
+<h4 id="1-the-incorrect-way-using--re-with-live-camera">1. The Incorrect
+Way (Using <code>-re</code> with Live Camera)</h4>
+<p>Avoid using <code>-re</code> when capturing from a hardware
+device:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co"># AVOID THIS:</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-re</span> <span class="at">-f</span> v4l2 <span class="at">-i</span> /dev/video0 <span class="at">-c:v</span> libx264 <span class="at">-f</span> flv rtmp://live.twitch.tv/app/stream_key</span></code></pre></div>
+<h4 id="2-the-correct-way-omitting--re-for-live-camera">2. The Correct
+Way (Omitting <code>-re</code> for Live Camera)</h4>
+<p>Simply omit the <code>-re</code> flag. Let the camera hardware drive
+the input timing naturally:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Linux (V4L2 Webcam):</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-f</span> v4l2 <span class="at">-framerate</span> 30 <span class="at">-video_size</span> 1280x720 <span class="at">-i</span> /dev/video0 <span class="at">-c:v</span> libx264 <span class="at">-f</span> flv rtmp://live.twitch.tv/app/stream_key</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Windows (dshow Webcam):</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-f</span> dshow <span class="at">-framerate</span> 30 <span class="at">-video_size</span> 1280x720 <span class="at">-i</span> video=<span class="st">&quot;Integrated Camera&quot;</span> <span class="at">-c:v</span> libx264 <span class="at">-f</span> flv rtmp://live.twitch.tv/app/stream_key</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a><span class="co"># macOS (AVFoundation):</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-f</span> avfoundation <span class="at">-framerate</span> 30 <span class="at">-video_size</span> 1280x720 <span class="at">-i</span> <span class="st">&quot;0&quot;</span> <span class="at">-c:v</span> libx264 <span class="at">-f</span> flv rtmp://live.twitch.tv/app/stream_key</span></code></pre></div>
+<h3 id="best-practices-for-live-camera-inputs">Best Practices for Live
+Camera Inputs</h3>
+<p>Instead of using <code>-re</code>, use the following flags to
+optimize live camera performance and prevent frame drops:</p>
+<ul>
+<li><strong>Specify Framerate and Resolution Globally:</strong> Always
+define the camera's native framerate and resolution <em>before</em> the
+input (<code>-i</code>) to ensure FFmpeg opens the device with the
+correct hardware settings.</li>
+<li><strong>Increase Thread Queue Size:</strong> Use
+<code>-thread_queue_size</code> to allocate a larger buffer for the
+input packets. This prevents "real-time buffer too-full" warnings if the
+encoder experiences temporary CPU spikes.</li>
+</ul>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Recommended command structure for Windows:</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-f</span> dshow <span class="at">-rtbufsize</span> 100M <span class="at">-thread_queue_size</span> 1024 <span class="at">-framerate</span> 30 <span class="at">-video_size</span> 1280x720 <span class="at">-i</span> video=<span class="st">&quot;Integrated Camera&quot;</span> <span class="at">-c:v</span> libx264 <span class="at">-preset</span> veryfast <span class="at">-f</span> flv rtmp://live.twitch.tv/app/stream_key</span></code></pre></div></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

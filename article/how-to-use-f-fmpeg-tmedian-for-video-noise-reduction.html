@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Use FFmpeg tmedian for Video Noise Reduction - ffmpeg</title>
+    <meta name="description" content="The tmedian filter in FFmpeg offers an effective way to reduce temporal video noise, grain, and sensor artifacts across progressive footage by calculating the median pixel value across a defined window of sequential frames. This article explains how the">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/how-to-use-f-fmpeg-tmedian-for-video-noise-reduction">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Use FFmpeg tmedian for Video Noise Reduction - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/how-to-use-f-fmpeg-tmedian-for-video-noise-reduction" />
+    <meta property="og:image" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="The tmedian filter in FFmpeg offers an effective way to reduce temporal video noise, grain, and sensor artifacts across progressive footage by calculating the median pixel value across a defined window of sequential frames. This article explains how the" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-to-use-ffmpeg-tmedian-for-video-noise-reduction">How to Use
+FFmpeg tmedian for Video Noise Reduction</h1>
+<p>The <code>tmedian</code> filter in FFmpeg offers an effective way to
+reduce temporal video noise, grain, and sensor artifacts across
+progressive footage by calculating the median pixel value across a
+defined window of sequential frames. This article explains how the
+<code>tmedian</code> filter works, details its essential parameters, and
+provides ready-to-use FFmpeg commands for processing static and
+low-motion footage without losing spatial sharpness.</p>
+<hr />
+<h3 id="how-the-tmedian-filter-works">How the <code>tmedian</code>
+Filter Works</h3>
+<p>Unlike spatial denoisers that smooth pixel values within the same
+frame, the <code>tmedian</code> filter operates temporally. It looks at
+the current frame alongside preceding and succeeding frames, sorting the
+values for each pixel coordinate across time and selecting the
+median.</p>
+<p>Because random noise (such as sensor grain or compression specks)
+fluctuates rapidly from frame to frame, the outlier pixel values caused
+by noise are discarded, while consistent visual elements are
+preserved.</p>
+<h3 id="core-parameters">Core Parameters</h3>
+<p>The <code>tmedian</code> filter provides several parameters to
+control how frames are sampled:</p>
+<ul>
+<li><strong><code>radius</code></strong>: Specifies the number of frames
+to inspect before and after the current frame. The total window size is
+calculated as <code>(2 * radius) + 1</code>. The default radius is
+<code>4</code> (a 9-frame window). Higher values produce stronger
+denoising but increase processing time and the likelihood of ghosting
+artifacts on moving objects.</li>
+<li><strong><code>planes</code></strong>: Sets which color planes to
+filter. Available options are <code>1</code> (Y/Luma), <code>7</code>
+(all planes: Y, U, and V), or specific bitmasks. The default applies
+filtering to all planes.</li>
+<li><strong><code>percentile</code></strong>: Determines the temporal
+percentile to pick instead of a strict median. The default is
+<code>0.5</code> (the exact median). Values lower than <code>0.5</code>
+pick darker temporal pixels, while values higher pick brighter temporal
+pixels.</li>
+</ul>
+<h3 id="practical-ffmpeg-examples">Practical FFmpeg Examples</h3>
+<h4 id="1-basic-denoising-with-default-settings">1. Basic Denoising with
+Default Settings</h4>
+<p>To apply the filter with default settings (radius of 4 across all
+color planes):</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;tmedian&quot;</span> <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<h4 id="2-subtle-denoising-for-moderate-motion">2. Subtle Denoising for
+Moderate Motion</h4>
+<p>When working with footage containing moderate motion, reduce the
+<code>radius</code> to minimize ghosting or motion trails:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;tmedian=radius=2&quot;</span> <span class="at">-c:v</span> libx264 <span class="at">-crf</span> 18 <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<p>A radius of <code>2</code> checks 2 frames forward and 2 frames back
+(5 frames total), effectively removing high-frequency grain while
+preserving moving edges.</p>
+<h4 id="3-heavy-denoising-for-static-shots">3. Heavy Denoising for
+Static Shots</h4>
+<p>For stationary camera setups, such as tripod-mounted landscape or
+surveillance video with heavy low-light noise, increase the
+<code>radius</code>:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;tmedian=radius=6&quot;</span> <span class="at">-c:v</span> libx264 <span class="at">-crf</span> 18 <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<p>This inspects 13 consecutive frames to average out persistent
+temporal noise.</p>
+<h4 id="4-denoising-chroma-noise-only">4. Denoising Chroma Noise
+Only</h4>
+<p>If the luma detail is clean but color noise (chroma jitter) is
+visible, target only the chroma planes (planes 2 and 4, or U and V
+components):</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;tmedian=radius=3:planes=6&quot;</span> <span class="at">-c:v</span> libx264 <span class="at">-crf</span> 18 <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<h3 id="best-practices-and-limitations">Best Practices and
+Limitations</h3>
+<ul>
+<li><strong>Motion Sensitivity</strong>: Because <code>tmedian</code>
+does not use motion estimation or motion vectors, fast-moving objects
+will leave translucent trails (ghosting). Keep the radius low (between
+<code>1</code> and <code>3</code>) for videos with moving subjects.</li>
+<li><strong>Progressive Scan Only</strong>: Ensure your input video is
+progressive. If the source is interlaced, deinterlace it first (e.g.,
+using <code>-vf "yadif,tmedian"</code>) to prevent combining fields
+incorrectly.</li>
+<li><strong>Bitrate Efficiency</strong>: Temporal median filtering makes
+video streams substantially easier for encoders like H.264 or H.265 to
+compress, resulting in smaller file sizes at equivalent CRF values.</li>
+</ul></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pipe FFmpeg Output to Another FFmpeg Instance - ffmpeg</title>
+    <meta name="description" content="Piping the output of one FFmpeg process directly into another allows you to chain multiple processing stages together in memory without the overhead of writing intermediate files to your disk. This workflow relies on standard output (stdout) and standard">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/pipe-f-fmpeg-output-to-another-f-fmpeg-instance">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Pipe FFmpeg Output to Another FFmpeg Instance - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/pipe-f-fmpeg-output-to-another-f-fmpeg-instance" />
+    <meta property="og:image" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Piping the output of one FFmpeg process directly into another allows you to chain multiple processing stages together in memory without the overhead of writing intermediate files to your disk. This workflow relies on standard output (stdout) and standard" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="pipe-ffmpeg-output-to-another-ffmpeg-instance">Pipe FFmpeg
+Output to Another FFmpeg Instance</h1>
+<p>Piping the output of one FFmpeg process directly into another allows
+you to chain multiple processing stages together in memory without the
+overhead of writing intermediate files to your disk. This workflow
+relies on standard output (<code>stdout</code>) and standard input
+(<code>stdin</code>) via the shell pipe operator (<code>|</code>).
+Because pipes are non-seekable streams, the primary technical
+requirement is selecting a container format for the intermediate stream
+that supports sequential writing.</p>
+<h2 id="the-basic-command-structure">The Basic Command Structure</h2>
+<p>In FFmpeg, a hyphen (<code>-</code>) or <code>pipe:1</code>
+represents standard output when used as an output destination, and a
+hyphen (<code>-</code>) or <code>pipe:0</code> represents standard input
+when used as an input source.</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 [encoding options] <span class="at">-f</span> <span class="op">&lt;</span>format<span class="op">&gt;</span> - <span class="kw">|</span> <span class="ex">ffmpeg</span> <span class="at">-f</span> <span class="op">&lt;</span>format<span class="op">&gt;</span> -i <span class="at">-</span> [encoding options] output.mp4</span></code></pre></div>
+<h2 id="choosing-the-right-intermediate-format">Choosing the Right
+Intermediate Format</h2>
+<p>Standard MP4 files cannot be piped out of the box because the default
+container structure requires a seekable medium to finalize the index
+(<code>moov</code> atom) at the beginning or end of the file. To send
+data through a pipe, you must force FFmpeg to use a streaming container
+format using the <code>-f</code> flag.</p>
+<h3 id="1-the-nut-container--f-nut">1. The NUT Container
+(<code>-f nut</code>)</h3>
+<p>The <code>nut</code> format is developed by the FFmpeg project. It
+supports virtually every codec, has minimal container overhead, and is
+fully streamable, making it the best general-purpose format for
+intermediate piping.</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;scale=1280:720&quot;</span> <span class="at">-c:v</span> libx264 <span class="at">-c:a</span> copy <span class="at">-f</span> nut <span class="at">-</span> <span class="kw">|</span> <span class="ex">ffmpeg</span> <span class="at">-f</span> nut <span class="at">-i</span> <span class="at">-</span> <span class="at">-c:v</span> libx265 <span class="at">-crf</span> 28 final_output.mp4</span></code></pre></div>
+<h3 id="2-mpeg-ts--f-mpegts">2. MPEG-TS (<code>-f mpegts</code>)</h3>
+<p>MPEG Transport Stream is natively designed for broadcast networks and
+packet-based streaming. It works well if your intermediate video is
+H.264 or H.265 and your audio is AAC or MP3.</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mov <span class="at">-c:v</span> libx264 <span class="at">-preset</span> ultrafast <span class="at">-c:a</span> aac <span class="at">-f</span> mpegts <span class="at">-</span> <span class="kw">|</span> <span class="ex">ffmpeg</span> <span class="at">-i</span> <span class="at">-</span> <span class="at">-c:v</span> copy <span class="at">-c:a</span> copy output.mkv</span></code></pre></div>
+<h3 id="3-raw-video-and-audio--f-rawvideo">3. Raw Video and Audio
+(<code>-f rawvideo</code>)</h3>
+<p>If you want to decode video completely and pipe the raw pixel data
+directly into the next instance without any intermediate compression
+artifacts:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-f</span> rawvideo <span class="at">-pix_fmt</span> yuv420p <span class="at">-</span> <span class="kw">|</span> <span class="ex">ffmpeg</span> <span class="at">-f</span> rawvideo <span class="at">-pixel_format</span> yuv420p <span class="at">-video_size</span> 1920x1080 <span class="at">-framerate</span> 30 <span class="at">-i</span> <span class="at">-</span> <span class="at">-c:v</span> libx264 output.mp4</span></code></pre></div>
+<p><em>Note: When piping raw data, the receiving instance cannot detect
+stream parameters automatically. You must explicitly declare the pixel
+format, frame size, and framerate on the receiving FFmpeg
+command.</em></p>
+<h2 id="key-considerations">Key Considerations</h2>
+<ul>
+<li><strong>Standard Error Suppression:</strong> Both FFmpeg instances
+write logs and progress metrics to <code>stderr</code> by default. These
+do not interfere with the video stream flowing through
+<code>stdout</code>. However, if you want cleaner terminal output, add
+<code>-loglevel error</code> to one or both instances.</li>
+<li><strong>CPU and Memory Limits:</strong> Both commands execute
+simultaneously. Ensure your system has sufficient CPU cores and memory
+bandwidth to run two transcode processes in parallel without causing
+buffer underruns.</li>
+</ul></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Use FFmpeg Crossfeed Filter for Headphones - ffmpeg</title>
+    <meta name="description" content="Listening to stereo mixes on headphones can cause acoustic fatigue due to extreme stereo separation, where sounds panned entirely to one channel never reach the opposite ear. The FFmpeg crossfeed audio filter resolves this issue by subtly blending low-fr">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/how-to-use-f-fmpeg-crossfeed-filter-for-headphones">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Use FFmpeg Crossfeed Filter for Headphones - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/how-to-use-f-fmpeg-crossfeed-filter-for-headphones" />
+    <meta property="og:image" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Listening to stereo mixes on headphones can cause acoustic fatigue due to extreme stereo separation, where sounds panned entirely to one channel never reach the opposite ear. The FFmpeg crossfeed audio filter resolves this issue by subtly blending low-fr" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-to-use-ffmpeg-crossfeed-filter-for-headphones">How to Use
+FFmpeg Crossfeed Filter for Headphones</h1>
+<p>Listening to stereo mixes on headphones can cause acoustic fatigue
+due to extreme stereo separation, where sounds panned entirely to one
+channel never reach the opposite ear. The FFmpeg <code>crossfeed</code>
+audio filter resolves this issue by subtly blending low-frequency
+signals between the left and right channels to emulate how natural room
+acoustics and head-related transfer functions work. This guide explains
+how the <code>crossfeed</code> filter functions, breaks down its core
+parameters, and provides practical FFmpeg commands for both file
+processing and real-time audio playback.</p>
+<h3 id="why-headphone-fatigue-occurs">Why Headphone Fatigue Occurs</h3>
+<p>Traditional stereo mixes are mastered for loudspeakers. When
+listening to speakers, sound from the left speaker reaches the left ear
+first, then crosses around your head with a slight delay and altered
+frequency response to reach your right ear, and vice versa.</p>
+<p>Headphones isolate each channel to an individual ear. Hard-panned
+instruments—common in classic rock, jazz, and poorly normalized stereo
+recordings—sound unnatural and cause the brain to work harder to
+interpret spatial placement, resulting in listening fatigue and
+headaches over time.</p>
+<h3 id="understanding-the-ffmpeg-crossfeed-filter">Understanding the
+FFmpeg Crossfeed Filter</h3>
+<p>The <code>crossfeed</code> filter blends a configurable amount of the
+left channel into the right channel and the right channel into the left
+channel, focusing primarily on lower frequencies to replicate natural
+interaural crosstalk.</p>
+<p>The filter accepts the following key parameters:</p>
+<ul>
+<li><strong><code>strength</code></strong>: Controls how much crossfeed
+is applied. Values range from <code>0.0</code> (no effect) to
+<code>1.0</code> (maximum crossfeed). The default value is
+<code>0.333</code>.</li>
+<li><strong><code>range</code></strong>: Determines the frequency range
+limit for the crosstalk. Higher values allow higher frequencies to bleed
+across channels, narrowing the soundstage. Values range from
+<code>0.0</code> to <code>1.0</code>. The default is
+<code>0.5</code>.</li>
+<li><strong><code>level_in</code></strong>: Adjusts the input signal
+volume to prevent digital clipping when mixing channels together. Values
+range from <code>0.0</code> to <code>1.0</code>. The default is
+<code>0.9</code>.</li>
+<li><strong><code>level_out</code></strong>: Adjusts the output signal
+volume. Values range from <code>0.0</code> to <code>1.0</code>. The
+default is <code>1.0</code>.</li>
+</ul>
+<h3 id="real-time-playback-using-ffplay">Real-Time Playback Using
+FFplay</h3>
+<p>To listen to an audio track or stream immediately with crossfeed
+applied, use the <code>ffplay</code> utility:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffplay</span> <span class="at">-af</span> <span class="st">&quot;crossfeed=strength=0.333:range=0.5&quot;</span> input.mp3</span></code></pre></div>
+<p>This applies the standard default settings, which are sufficient for
+most genres without noticeably collapsing the stereo image.</p>
+<h3 id="processing-and-exporting-audio-files">Processing and Exporting
+Audio Files</h3>
+<p>To permanently apply the crossfeed filter when encoding or converting
+a file, pass the filter into the <code>-af</code> flag in your standard
+FFmpeg command:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.flac <span class="at">-af</span> <span class="st">&quot;crossfeed=strength=0.4:range=0.5:level_in=0.85:level_out=1.0&quot;</span> <span class="at">-c:a</span> flac output.flac</span></code></pre></div>
+<p>For lossy outputs, such as MP3 or AAC:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.wav <span class="at">-af</span> <span class="st">&quot;crossfeed=strength=0.35:range=0.45&quot;</span> <span class="at">-c:a</span> libmp3lame <span class="at">-q:a</span> 2 output.mp3</span></code></pre></div>
+<h3 id="tuning-the-parameters">Tuning the Parameters</h3>
+<ul>
+<li><strong>For Classic Stereo Mixes (Hard-Panned Audio):</strong>
+Increase <code>strength</code> to <code>0.45</code> or <code>0.5</code>
+to bring isolated instruments slightly inward and reduce the sensation
+of one-sided pressure:
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">-af</span> <span class="st">&quot;crossfeed=strength=0.5:range=0.6&quot;</span></span></code></pre></div></li>
+<li><strong>For Modern Mixes:</strong> Modern tracks generally have more
+centered bass and balanced stereophony. A subtle setting is usually
+enough:
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="ex">-af</span> <span class="st">&quot;crossfeed=strength=0.2:range=0.3&quot;</span></span></code></pre></div></li>
+<li><strong>Preventing Clipping:</strong> If the resulting audio
+distorts during loud passages, reduce <code>level_in</code> slightly
+(e.g., <code>level_in=0.8</code>) or pair the filter with the
+<code>loudnorm</code> filter for uniform volume control.</li>
+</ul></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

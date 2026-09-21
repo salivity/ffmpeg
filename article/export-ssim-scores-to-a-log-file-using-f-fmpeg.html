@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Export SSIM Scores to a Log File Using FFmpeg - ffmpeg</title>
+    <meta name="description" content="This guide explains how to calculate the Structural Similarity Index (SSIM) between a reference video and a modified video using FFmpeg, exporting both frame-level measurements and global average scores into a log file. By using FFmpeg's native ssim filt">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/export-ssim-scores-to-a-log-file-using-f-fmpeg">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Export SSIM Scores to a Log File Using FFmpeg - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/export-ssim-scores-to-a-log-file-using-f-fmpeg" />
+    <meta property="og:image" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This guide explains how to calculate the Structural Similarity Index (SSIM) between a reference video and a modified video using FFmpeg, exporting both frame-level measurements and global average scores into a log file. By using FFmpeg's native ssim filt" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="export-ssim-scores-to-a-log-file-using-ffmpeg">Export SSIM
+Scores to a Log File Using FFmpeg</h1>
+<p>This guide explains how to calculate the Structural Similarity Index
+(SSIM) between a reference video and a modified video using FFmpeg,
+exporting both frame-level measurements and global average scores into a
+log file. By using FFmpeg's native <code>ssim</code> filter alongside
+standard command-line redirection, you can generate detailed visual
+quality metrics for automated testing and archival.</p>
+<h3 id="the-command">The Command</h3>
+<p>To run the SSIM comparison, write the per-frame scores to a dedicated
+text file, and capture the global average score, run the following
+command in your terminal:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> distorted.mp4 <span class="at">-i</span> reference.mp4 <span class="at">-lavfi</span> <span class="st">&quot;ssim=stats_file=ssim_frames.log&quot;</span> <span class="at">-f</span> null <span class="at">-</span> <span class="dv">2</span><span class="op">&gt;</span> ssim_global.log</span></code></pre></div>
+<p>If you want both the per-frame scores and the global output captured
+in a single command pipeline, you can redirect the process output while
+generating the frame log:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> distorted.mp4 <span class="at">-i</span> reference.mp4 <span class="at">-lavfi</span> <span class="st">&quot;ssim=stats_file=ssim_frames.log&quot;</span> <span class="at">-f</span> null <span class="at">-</span> <span class="dv">2</span><span class="op">&gt;&amp;</span><span class="dv">1</span> <span class="kw">|</span> <span class="fu">tee</span> ssim_summary.log</span></code></pre></div>
+<h3 id="parameter-breakdown">Parameter Breakdown</h3>
+<ul>
+<li><strong><code>-i distorted.mp4 -i reference.mp4</code></strong>:
+Specifies the two video files being compared. Ensure both inputs have
+identical resolutions and frame rates, or apply scaling filters before
+comparison.</li>
+<li><strong><code>-lavfi "ssim=stats_file=ssim_frames.log"</code></strong>:
+Invokes the <code>ssim</code> filter. The <code>stats_file</code>
+parameter tells FFmpeg to write frame-by-frame SSIM scores directly to
+<code>ssim_frames.log</code>.</li>
+<li><strong><code>-f null -</code></strong>: Discards the decoded video
+output instead of re-encoding or saving it, ensuring the test runs as
+fast as possible without wasting disk space.</li>
+<li><strong><code>2&gt; ssim_global.log</code></strong>: Redirects the
+standard error (stderr) stream to a file. FFmpeg prints operational
+statistics and the final global SSIM score to stderr upon
+completion.</li>
+</ul>
+<h3 id="reading-the-frame-level-log">Reading the Frame-Level Log</h3>
+<p>Open <code>ssim_frames.log</code> in any text editor. Each line
+corresponds to an evaluated video frame and follows this format:</p>
+<pre class="text"><code>n:1 Y:0.982145 U:0.991204 V:0.990812 All:0.985432 (18.365412)
+n:2 Y:0.978921 U:0.989943 V:0.988710 All:0.982109 (17.473521)</code></pre>
+<ul>
+<li><strong><code>n</code></strong>: The frame index number (starting at
+1).</li>
+<li><strong><code>Y</code>, <code>U</code>, <code>V</code></strong>: The
+SSIM score for the luma and chroma channels separately (ranging from
+-1.0 to 1.0, where 1.0 indicates an exact match).</li>
+<li><strong><code>All</code></strong>: The combined SSIM score across
+all channels for that specific frame.</li>
+<li><strong><code>(dB)</code></strong>: The SSIM score expressed in
+decibels inside the parentheses.</li>
+</ul>
+<h3 id="extracting-the-global-score">Extracting the Global Score</h3>
+<p>FFmpeg outputs the final average score at the end of the process. In
+<code>ssim_global.log</code> (or your terminal output), locate the final
+<code>Parsed_ssim_0</code> summary line:</p>
+<pre class="text"><code>[Parsed_ssim_0 @ 0x7f9a8b404d80] SSIM Y:0.974211 (15.885142) U:0.988412 (19.360124) V:0.987510 (19.034190) All:0.978912 (16.759410)</code></pre>
+<p>The value following <strong><code>All:</code></strong> represents the
+global SSIM score across the entire duration of the video.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

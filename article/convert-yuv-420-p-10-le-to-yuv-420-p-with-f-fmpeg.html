@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Convert yuv420p10le to yuv420p with FFmpeg - ffmpeg</title>
+    <meta name="description" content="This article provides a quick, step-by-step guide on how to convert a video's pixel format from 10-bit (yuv420p10le) to standard 8-bit (yuv420p) using FFmpeg. Converting to yuv420p is a common solution for resolving playback compatibility issues on older">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/convert-yuv-420-p-10-le-to-yuv-420-p-with-f-fmpeg">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Convert yuv420p10le to yuv420p with FFmpeg - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/convert-yuv-420-p-10-le-to-yuv-420-p-with-f-fmpeg" />
+    <meta property="og:image" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article provides a quick, step-by-step guide on how to convert a video's pixel format from 10-bit (yuv420p10le) to standard 8-bit (yuv420p) using FFmpeg. Converting to yuv420p is a common solution for resolving playback compatibility issues on older" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="convert-yuv420p10le-to-yuv420p-with-ffmpeg">Convert yuv420p10le
+to yuv420p with FFmpeg</h1>
+<p>This article provides a quick, step-by-step guide on how to convert a
+video's pixel format from 10-bit (<code>yuv420p10le</code>) to standard
+8-bit (<code>yuv420p</code>) using FFmpeg. Converting to
+<code>yuv420p</code> is a common solution for resolving playback
+compatibility issues on older devices, web browsers, and media players
+that do not support high-bitrate 10-bit color spaces.</p>
+<h3 id="the-basic-conversion-command">The Basic Conversion Command</h3>
+<p>To change the pixel format of a video, you need to use the
+<code>-pix_fmt</code> flag in FFmpeg. Run the following command in your
+terminal:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-pix_fmt</span> yuv420p output.mp4</span></code></pre></div>
+<h3 id="command-breakdown">Command Breakdown</h3>
+<ul>
+<li><strong><code>ffmpeg</code></strong>: Calls the FFmpeg program.</li>
+<li><strong><code>-i input.mp4</code></strong>: Specifies the path to
+your original 10-bit video file.</li>
+<li><strong><code>-pix_fmt yuv420p</code></strong>: Instructs FFmpeg to
+convert the pixel format to 8-bit YUV 4:2:0.</li>
+<li><strong><code>output.mp4</code></strong>: The name and format of
+your newly generated video file.</li>
+</ul>
+<h3 id="recommended-command-for-best-quality">Recommended Command for
+Best Quality</h3>
+<p>Because changing the pixel format requires re-encoding the video, it
+is best to specify a video codec and a quality target (using Constant
+Rate Factor, or CRF) to ensure your output video looks sharp and does
+not have unnecessarily large file sizes.</p>
+<p>Use this command for standard H.264 video encoding:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-c:v</span> libx264 <span class="at">-crf</span> 20 <span class="at">-pix_fmt</span> yuv420p <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<ul>
+<li><strong><code>-c:v libx264</code></strong>: Encodes the video using
+the H.264 codec, which is highly compatible with almost all
+devices.</li>
+<li><strong><code>-crf 20</code></strong>: Controls the video quality.
+Scale ranges from 0 (lossless) to 51 (worst). A value between 18 and 23
+offers an excellent balance of quality and file size.</li>
+<li><strong><code>-c:a copy</code></strong>: Copies the original audio
+stream directly without re-encoding it, saving time and preserving audio
+quality.</li>
+</ul></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

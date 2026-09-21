@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Batch Transcode Videos with Find, Xargs, and FFmpeg - ffmpeg</title>
+    <meta name="description" content="Transcoding large collections of video files can be automated efficiently in Unix-like operating systems using a combination of find, xargs, and ffmpeg. This guide provides a direct, practical method for locating video files across nested directories, pa">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/batch-transcode-videos-with-find-xargs-and-f-fmpeg">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Batch Transcode Videos with Find, Xargs, and FFmpeg - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/batch-transcode-videos-with-find-xargs-and-f-fmpeg" />
+    <meta property="og:image" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Transcoding large collections of video files can be automated efficiently in Unix-like operating systems using a combination of find, xargs, and ffmpeg. This guide provides a direct, practical method for locating video files across nested directories, pa" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="batch-transcode-videos-with-find-xargs-and-ffmpeg">Batch
+Transcode Videos with Find, Xargs, and FFmpeg</h1>
+<p>Transcoding large collections of video files can be automated
+efficiently in Unix-like operating systems using a combination of
+<code>find</code>, <code>xargs</code>, and <code>ffmpeg</code>. This
+guide provides a direct, practical method for locating video files
+across nested directories, passing them safely to <code>xargs</code>,
+and batch processing them with <code>ffmpeg</code> while handling spaces
+in filenames and controlling parallel execution.</p>
+<h3 id="the-complete-batch-transcoding-command">The Complete Batch
+Transcoding Command</h3>
+<p>Run the following command in your terminal, replacing the directory
+path, file extension, and ffmpeg encoding parameters to fit your
+requirements:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">find</span> /path/to/videos <span class="at">-type</span> f <span class="at">-name</span> <span class="st">&quot;*.mkv&quot;</span> <span class="at">-print0</span> <span class="kw">|</span> <span class="fu">xargs</span> <span class="at">-0</span> <span class="at">-n</span> 1 <span class="at">-P</span> 2 <span class="at">-I</span> {} bash <span class="at">-c</span> <span class="st">&#39;</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="st">  input=&quot;$1&quot;</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="st">  output=&quot;${input%.*}.mp4&quot;</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="st">  ffmpeg -nostdin -y -i &quot;$input&quot; -c:v libx264 -crf 23 -preset medium -c:a aac -b:a 128k &quot;$output&quot;</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="st">&#39;</span> _ {}</span></code></pre></div>
+<h3 id="breakdown-of-the-command">Breakdown of the Command</h3>
+<h4 id="1-locating-files-with-find">1. Locating Files with
+<code>find</code></h4>
+<ul>
+<li><code>/path/to/videos</code>: The target directory where
+<code>find</code> will search recursively.</li>
+<li><code>-type f</code>: Restricts search results exclusively to files,
+ignoring directories.</li>
+<li><code>-name "*.mkv"</code>: Filters for files ending with the
+specified extension. You can match multiple extensions using
+<code>-name "*.mkv" -o -name "*.mov"</code>.</li>
+<li><code>-print0</code>: Separates results with a null character
+(<code>\0</code>) rather than a newline. This ensures file paths
+containing spaces, single quotes, or newlines are parsed without
+breaking downstream commands.</li>
+</ul>
+<h4 id="2-managing-the-pipeline-with-xargs">2. Managing the Pipeline
+with <code>xargs</code></h4>
+<ul>
+<li><code>-0</code>: Instructs <code>xargs</code> to expect
+null-terminated items, directly matching the <code>-print0</code> flag
+from <code>find</code>.</li>
+<li><code>-n 1</code>: Passes one file at a time to the execution
+command.</li>
+<li><code>-P 2</code>: Controls concurrency by setting the maximum
+number of parallel processes. Adjust this number according to your CPU
+core count and GPU capabilities. A value of <code>1</code> processes
+videos sequentially.</li>
+<li><code>-I {}</code>: Defines <code>{}</code> as a placeholder for the
+file path passed to the shell.</li>
+</ul>
+<h4 id="3-execution-and-naming-with-bash-and-ffmpeg">3. Execution and
+Naming with <code>bash</code> and <code>ffmpeg</code></h4>
+<ul>
+<li><code>bash -c '...' _ {}</code>: Executes a subshell where
+<code>$1</code> is assigned the current file path represented by
+<code>{}</code>.</li>
+<li><code>output="${input%.*}.mp4"</code>: Uses POSIX shell parameter
+expansion to strip the original file extension and append the new
+desired extension (<code>.mp4</code>).</li>
+<li><code>-nostdin</code>: Prevents <code>ffmpeg</code> from consuming
+input from standard input, which would otherwise disrupt the
+<code>xargs</code> execution loop.</li>
+<li><code>-y</code>: Automatically overwrites existing output files with
+the same name. Remove this flag if you want <code>ffmpeg</code> to skip
+or prompt before overwriting.</li>
+<li><code>-c:v libx264 -crf 23 -preset medium</code>: Encodes the video
+stream to H.264 using standard constant rate factor and speed
+settings.</li>
+<li><code>-c:a aac -b:a 128k</code>: Encodes the audio stream to AAC at
+a 128 kbps bitrate.</li>
+</ul>
+<h3 id="preserving-or-deleting-the-original-files">Preserving or
+Deleting the Original Files</h3>
+<p>By default, the script creates a new transcoded file in the same
+directory alongside the original. If you want to automatically delete
+the source file after a successful conversion, append
+<code>&amp;&amp; rm "$input"</code> directly after the
+<code>ffmpeg</code> command inside the subshell:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">find</span> /path/to/videos <span class="at">-type</span> f <span class="at">-name</span> <span class="st">&quot;*.mkv&quot;</span> <span class="at">-print0</span> <span class="kw">|</span> <span class="fu">xargs</span> <span class="at">-0</span> <span class="at">-n</span> 1 <span class="at">-P</span> 2 <span class="at">-I</span> {} bash <span class="at">-c</span> <span class="st">&#39;</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="st">  input=&quot;$1&quot;</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="st">  output=&quot;${input%.*}.mp4&quot;</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="st">  ffmpeg -nostdin -y -i &quot;$input&quot; -c:v libx264 -crf 23 -c:a aac &quot;$output&quot; &amp;&amp; rm &quot;$input&quot;</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="st">&#39;</span> _ {}</span></code></pre></div>
+<p>Using <code>&amp;&amp;</code> ensures that the original file is only
+removed if <code>ffmpeg</code> returns an exit status of <code>0</code>,
+protecting your source media against removal in the event of an encoding
+failure.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

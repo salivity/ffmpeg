@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FFmpeg afir Filter Guitar Cabinet Simulation Guide - ffmpeg</title>
+    <meta name="description" content="Applying a speaker cabinet impulse response (IR) to a direct-input (DI) electric guitar recording is essential for eliminating harsh frequencies and shaping a realistic, full-bodied guitar tone. This guide demonstrates how to apply a cabinet impulse resp">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/f-fmpeg-afir-filter-guitar-cabinet-simulation-guide">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="FFmpeg afir Filter Guitar Cabinet Simulation Guide - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/f-fmpeg-afir-filter-guitar-cabinet-simulation-guide" />
+    <meta property="og:image" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Applying a speaker cabinet impulse response (IR) to a direct-input (DI) electric guitar recording is essential for eliminating harsh frequencies and shaping a realistic, full-bodied guitar tone. This guide demonstrates how to apply a cabinet impulse resp" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="ffmpeg-afir-filter-guitar-cabinet-simulation-guide">FFmpeg afir
+Filter Guitar Cabinet Simulation Guide</h1>
+<p>Applying a speaker cabinet impulse response (IR) to a direct-input
+(DI) electric guitar recording is essential for eliminating harsh
+frequencies and shaping a realistic, full-bodied guitar tone. This guide
+demonstrates how to apply a cabinet impulse response directly to your
+audio tracks using FFmpeg's built-in <code>afir</code> (Audio Finite
+Impulse Response) filter without opening a Digital Audio Workstation
+(DAW).</p>
+<h3 id="prerequisites">Prerequisites</h3>
+<p>To perform cabinet simulation via FFmpeg, you need two audio
+files:</p>
+<ol type="1">
+<li><strong>The Source Audio:</strong> A raw preamped or distorted
+guitar track (typically a WAV or FLAC file) lacking cabinet
+emulation.</li>
+<li><strong>The Impulse Response (IR):</strong> A standard cabinet IR
+file, which is an uncompressed WAV file containing the acoustic profile
+of a guitar speaker cabinet and microphone setup.</li>
+</ol>
+<h3 id="basic-cabinet-simulation-command">Basic Cabinet Simulation
+Command</h3>
+<p>The <code>afir</code> filter takes two audio inputs: the primary
+audio track and the impulse response file. It performs mathematical
+convolution between the two signals.</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> guitar_input.wav <span class="at">-i</span> cabinet_ir.wav <span class="at">-filter_complex</span> <span class="st">&quot;[0:a][1:a]afir=dry=0:wet=1[out]&quot;</span> <span class="at">-map</span> <span class="st">&quot;[out]&quot;</span> output_cab.wav</span></code></pre></div>
+<h3 id="command-breakdown">Command Breakdown</h3>
+<ul>
+<li><code>-i guitar_input.wav</code>: Specifies your original guitar
+recording as input <code>0</code>.</li>
+<li><code>-i cabinet_ir.wav</code>: Specifies the cabinet impulse
+response as input <code>1</code>.</li>
+<li><code>-filter_complex "[0:a][1:a]afir=dry=0:wet=1[out]"</code>:
+<ul>
+<li><code>[0:a][1:a]</code>: Feeds the audio streams of both inputs into
+the <code>afir</code> filter.</li>
+<li><code>dry=0</code>: Mutes the direct, unprocessed guitar signal
+completely.</li>
+<li><code>wet=1</code>: Sets the processed cabinet-convolved signal to
+full volume (standard behavior for guitar cabinet simulation).</li>
+<li><code>[out]</code>: Labels the output stream.</li>
+</ul></li>
+<li><code>-map "[out]"</code>: Ensures the output file contains the
+convolved audio stream.</li>
+<li><code>output_cab.wav</code>: The resulting audio file with the
+simulated cabinet applied.</li>
+</ul>
+<h3 id="preventing-digital-clipping-with-gain-adjustment">Preventing
+Digital Clipping with Gain Adjustment</h3>
+<p>Convolution often dramatically increases the overall peak volume of
+the audio signal. To prevent digital distortion or clipping, apply gain
+reduction either within the <code>afir</code> filter or by chaining a
+<code>volume</code> filter.</p>
+<p>Using the <code>irgain</code> parameter inside <code>afir</code>:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> guitar_input.wav <span class="at">-i</span> cabinet_ir.wav <span class="at">-filter_complex</span> <span class="st">&quot;[0:a][1:a]afir=dry=0:wet=1:irgain=0.5[out]&quot;</span> <span class="at">-map</span> <span class="st">&quot;[out]&quot;</span> output_cab.wav</span></code></pre></div>
+<p>Alternatively, chain the <code>volume</code> filter after
+convolution:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> guitar_input.wav <span class="at">-i</span> cabinet_ir.wav <span class="at">-filter_complex</span> <span class="st">&quot;[0:a][1:a]afir=dry=0:wet=1[cab];[cab]volume=-6dB[out]&quot;</span> <span class="at">-map</span> <span class="st">&quot;[out]&quot;</span> output_cab.wav</span></code></pre></div>
+<h3 id="handling-mono-and-stereo-configurations">Handling Mono and
+Stereo Configurations</h3>
+<p>Guitar DI tracks are generally mono, while cabinet IRs may be mono or
+stereo. The <code>afir</code> filter automatically matches channel
+layouts, but if you want to apply a stereo IR to a mono guitar track to
+create a wider stereo image, convert the mono track to stereo prior to
+convolution:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> mono_guitar.wav <span class="at">-i</span> stereo_ir.wav <span class="at">-filter_complex</span> <span class="st">&quot;[0:a]aformat=channel_layouts=stereo[guitar_stereo];[guitar_stereo][1:a]afir=dry=0:wet=1[out]&quot;</span> <span class="at">-map</span> <span class="st">&quot;[out]&quot;</span> output_stereo_cab.wav</span></code></pre></div></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

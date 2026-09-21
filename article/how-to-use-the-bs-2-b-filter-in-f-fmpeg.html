@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Use the bs2b Filter in FFmpeg - ffmpeg</title>
+    <meta name="description" content="This guide explains how to use the Bauer Stereophonic-to-Binaural (bs2b) DSP filter in FFmpeg to improve headphone listening experiences. You will learn what the filter does, how to verify that your FFmpeg build supports it, and how to apply built-in cro">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/how-to-use-the-bs-2-b-filter-in-f-fmpeg">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Use the bs2b Filter in FFmpeg - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/how-to-use-the-bs-2-b-filter-in-f-fmpeg" />
+    <meta property="og:image" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This guide explains how to use the Bauer Stereophonic-to-Binaural (bs2b) DSP filter in FFmpeg to improve headphone listening experiences. You will learn what the filter does, how to verify that your FFmpeg build supports it, and how to apply built-in cro" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-to-use-the-bs2b-filter-in-ffmpeg">How to Use the bs2b Filter
+in FFmpeg</h1>
+<p>This guide explains how to use the Bauer Stereophonic-to-Binaural
+(<code>bs2b</code>) DSP filter in FFmpeg to improve headphone listening
+experiences. You will learn what the filter does, how to verify that
+your FFmpeg build supports it, and how to apply built-in crossfeed
+presets or custom parameters to your audio and video files.</p>
+<h3 id="what-is-the-bs2b-filter">What is the bs2b Filter?</h3>
+<p>Standard stereo tracks are typically mixed for playback on
+loudspeakers, where the listener's left ear naturally hears sound from
+the right speaker and vice versa. When listening through headphones,
+total channel isolation can cause listening fatigue and an unnatural
+"super-stereo" effect inside the head.</p>
+<p>The <code>bs2b</code> filter blends low-frequency information between
+the left and right channels with subtle delay and attenuation,
+simulating speaker playback in a physical room for a much more
+comfortable headphone experience.</p>
+<h3 id="prerequisites">Prerequisites</h3>
+<p>To use this filter, your FFmpeg build must be compiled with the
+<code>--enable-libbs2b</code> flag. Verify that your installation
+supports it by running:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-filters</span> <span class="kw">|</span> <span class="fu">grep</span> bs2b</span></code></pre></div>
+<p>If <code>bs2b</code> appears in the output, your installation is
+ready.</p>
+<h3 id="basic-syntax-and-presets">Basic Syntax and Presets</h3>
+<p>The <code>bs2b</code> filter can be applied directly using the audio
+filter flag (<code>-af</code>). The simplest implementation uses the
+default settings:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.wav <span class="at">-af</span> <span class="st">&quot;bs2b&quot;</span> output.mp3</span></code></pre></div>
+<p>FFmpeg supports built-in profiles designed around popular hardware
+crossfeed designs:</p>
+<ul>
+<li><strong>default</strong>: Standard Bauer setting (700 Hz cutoff, 4.5
+dB crossfeed).</li>
+<li><strong>cmoy</strong>: Chu Moy crossfeed design (700 Hz cutoff, 6.0
+dB crossfeed).</li>
+<li><strong>jmeier</strong>: Jan Meier crossfeed design (650 Hz cutoff,
+9.5 dB crossfeed).</li>
+</ul>
+<p>To use the Chu Moy preset:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.flac <span class="at">-af</span> <span class="st">&quot;bs2b=profile=cmoy&quot;</span> output.flac</span></code></pre></div>
+<p>To use the Jan Meier preset:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp3 <span class="at">-af</span> <span class="st">&quot;bs2b=profile=jmeier&quot;</span> output.mp3</span></code></pre></div>
+<h3 id="custom-crossfeed-settings">Custom Crossfeed Settings</h3>
+<p>If you prefer to tailor the crossfeed balance manually, omit the
+<code>profile</code> parameter and define custom values for
+<code>fcut</code> and <code>feed</code>:</p>
+<ul>
+<li><strong>fcut</strong>: Sets the low-pass filter cutoff frequency in
+Hertz. Valid range is <code>300</code> to <code>2000</code> Hz.</li>
+<li><strong>feed</strong>: Sets the crossfeed level in tenths of a
+decibel. Valid range is <code>10</code> to <code>150</code>
+(representing 1.0 dB to 15.0 dB).</li>
+</ul>
+<p>Example with a 750 Hz cutoff and 5.0 dB (value <code>50</code>) of
+crossfeed:</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.wav <span class="at">-af</span> <span class="st">&quot;bs2b=fcut=750:feed=50&quot;</span> output.wav</span></code></pre></div>
+<h3 id="processing-audio-within-a-video-file">Processing Audio Within a
+Video File</h3>
+<p>To apply the <code>bs2b</code> filter to the audio track of a video
+without re-encoding the video stream, copy the video codec and re-encode
+only the audio:</p>
+<div class="sourceCode" id="cb6"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-c:v</span> copy <span class="at">-af</span> <span class="st">&quot;bs2b=profile=cmoy&quot;</span> <span class="at">-c:a</span> aac <span class="at">-b:a</span> 256k output.mp4</span></code></pre></div></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

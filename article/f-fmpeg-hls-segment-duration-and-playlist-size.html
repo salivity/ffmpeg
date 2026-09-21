@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FFmpeg HLS Segment Duration and Playlist Size - ffmpeg</title>
+    <meta name="description" content="This guide explains how to configure HTTP Live Streaming (HLS) segment duration and manage the maximum segment count in a rolling live playlist using FFmpeg. By combining the -hlstime and -hlslistsize flags with proper keyframe alignment, you can control">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/f-fmpeg-hls-segment-duration-and-playlist-size">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="FFmpeg HLS Segment Duration and Playlist Size - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/f-fmpeg-hls-segment-duration-and-playlist-size" />
+    <meta property="og:image" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This guide explains how to configure HTTP Live Streaming (HLS) segment duration and manage the maximum segment count in a rolling live playlist using FFmpeg. By combining the -hlstime and -hlslistsize flags with proper keyframe alignment, you can control" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="ffmpeg-hls-segment-duration-and-playlist-size">FFmpeg HLS
+Segment Duration and Playlist Size</h1>
+<p>This guide explains how to configure HTTP Live Streaming (HLS)
+segment duration and manage the maximum segment count in a rolling live
+playlist using FFmpeg. By combining the <code>-hls_time</code> and
+<code>-hls_list_size</code> flags with proper keyframe alignment, you
+can control playback latency, maintain a fixed-length live window, and
+prevent disk storage exhaustion.</p>
+<h3 id="essential-ffmpeg-hls-parameters">Essential FFmpeg HLS
+Parameters</h3>
+<p>To create a rolling live HLS playlist, FFmpeg relies on three primary
+options:</p>
+<ul>
+<li><strong><code>-hls_time &lt;seconds&gt;</code></strong>: Sets the
+target segment duration. FFmpeg will try to split segments at this
+interval.</li>
+<li><strong><code>-hls_list_size &lt;number&gt;</code></strong>: Defines
+the maximum number of segments displayed in the <code>.m3u8</code>
+playlist file. Setting this to a positive integer creates a
+sliding/rolling window. Setting it to <code>0</code> saves all segments
+(used for Video on Demand).</li>
+<li><strong><code>-hls_flags delete_segments</code></strong>:
+Automatically deletes older video segments (<code>.ts</code> files) from
+disk as they fall off the rolling playlist.</li>
+</ul>
+<h3 id="the-keyframe-alignment-requirement">The Keyframe Alignment
+Requirement</h3>
+<p>HLS segments can only split on video keyframes (I-frames). If your
+video's Group of Pictures (GOP) size does not align with your target
+segment duration, FFmpeg will not be able to cut segments at the exact
+duration specified by <code>-hls_time</code>.</p>
+<p>To guarantee accurate segment cuts, set the GOP size using
+<code>-g</code> to match your frame rate multiplied by the desired
+segment duration, and force fixed keyframe intervals using
+<code>-keyint_min</code> and <code>-sc_threshold 0</code>.</p>
+<h3 id="complete-example-command">Complete Example Command</h3>
+<p>The following command takes an input stream, transcodes it to H.264
+video at 30 frames per second, and creates a rolling HLS playlist with
+4-second segments and a maximum of 5 segments in the playlist:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="dt">\</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">-c:v</span> libx264 <span class="at">-preset</span> veryfast <span class="at">-r</span> 30 <span class="at">-g</span> 120 <span class="at">-keyint_min</span> 120 <span class="at">-sc_threshold</span> 0 <span class="dt">\</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">-c:a</span> aac <span class="at">-b:a</span> 128k <span class="dt">\</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">-f</span> hls <span class="dt">\</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">-hls_time</span> 4 <span class="dt">\</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">-hls_list_size</span> 5 <span class="dt">\</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">-hls_flags</span> delete_segments <span class="dt">\</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>  <span class="at">-hls_segment_filename</span> <span class="st">&quot;segment_%03d.ts&quot;</span> <span class="dt">\</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>  playlist.m3u8</span></code></pre></div>
+<h3 id="breakdown-of-the-command">Breakdown of the Command</h3>
+<ol type="1">
+<li><strong><code>-r 30</code></strong>: Sets the output video frame
+rate to 30 frames per second.</li>
+<li><strong><code>-g 120</code> and
+<code>-keyint_min 120</code></strong>: Places a keyframe every 120
+frames. At 30 fps, 120 frames equal exactly 4 seconds, matching the
+<code>-hls_time 4</code> value.</li>
+<li><strong><code>-sc_threshold 0</code></strong>: Disables scene-change
+detection to prevent FFmpeg from generating extra, unplanned keyframes
+that would result in irregular segment lengths.</li>
+<li><strong><code>-hls_time 4</code></strong>: Sets the target segment
+length to 4 seconds.</li>
+<li><strong><code>-hls_list_size 5</code></strong>: Limits the
+<code>.m3u8</code> playlist to a rolling window of the 5 most recent
+segments (a 20-second live buffer).</li>
+<li><strong><code>-hls_flags delete_segments</code></strong>: Removes
+expired <code>.ts</code> segments from local storage once they are no
+longer listed in the rolling playlist.</li>
+<li><strong><code>-hls_segment_filename "segment_%03d.ts"</code></strong>:
+Defines the naming pattern for generated segment files.</li>
+</ol></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

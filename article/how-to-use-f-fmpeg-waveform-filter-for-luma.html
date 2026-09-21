@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Use FFmpeg Waveform Filter for Luma - ffmpeg</title>
+    <meta name="description" content="FFmpeg includes a built-in waveform filter that generates a video scope to analyze pixel intensity distributions across an image. This guide explains how to isolate and monitor luminance (luma) values using the waveform filter, configure display paramete">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/how-to-use-f-fmpeg-waveform-filter-for-luma">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Use FFmpeg Waveform Filter for Luma - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/how-to-use-f-fmpeg-waveform-filter-for-luma" />
+    <meta property="og:image" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="FFmpeg includes a built-in waveform filter that generates a video scope to analyze pixel intensity distributions across an image. This guide explains how to isolate and monitor luminance (luma) values using the waveform filter, configure display paramete" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-to-use-ffmpeg-waveform-filter-for-luma">How to Use FFmpeg
+Waveform Filter for Luma</h1>
+<p>FFmpeg includes a built-in <code>waveform</code> filter that
+generates a video scope to analyze pixel intensity distributions across
+an image. This guide explains how to isolate and monitor luminance
+(luma) values using the waveform filter, configure display parameters
+such as component selection and intensity, and preview the waveform in
+real time alongside your source footage using both <code>ffmpeg</code>
+and <code>ffplay</code>.</p>
+<h3 id="understanding-the-waveform-filter-for-luma">Understanding the
+Waveform Filter for Luma</h3>
+<p>In YUV color spaces, luminance is represented by the <span
+class="math inline">\(Y\)</span> plane, while <span
+class="math inline">\(U\)</span> and <span
+class="math inline">\(V\)</span> represent chrominance. By default, the
+FFmpeg <code>waveform</code> filter displays all color components. To
+inspect exposure levels, contrast, clipping, and black-crush accurately,
+you must restrict the scope to display only the luma component
+(Component 1).</p>
+<h3 id="basic-syntax-for-luma-analysis">Basic Syntax for Luma
+Analysis</h3>
+<p>To generate a waveform containing only the luma component, pass
+<code>c=1</code> (or <code>components=1</code>) into the filter
+parameters.</p>
+<p>Run the following command to export a video with the luma
+waveform:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;waveform=c=1&quot;</span> <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<h3 id="essential-parameters-for-luma-waveforms">Essential Parameters
+for Luma Waveforms</h3>
+<p>You can customize the appearance and behavior of the luma waveform
+using these parameters:</p>
+<ul>
+<li><strong><code>components</code> (<code>c</code>)</strong>: Specifies
+which planes to render. Setting <code>c=1</code> analyzes solely the
+<span class="math inline">\(Y\)</span> (luma) channel.</li>
+<li><strong><code>mode</code> (<code>m</code>)</strong>: Sets the
+layout. The default is <code>row</code> (horizontal trace). Use
+<code>column</code> (vertical trace) to align the scope horizontally
+with the video frame's width: <code>waveform=c=1:m=column</code>.</li>
+<li><strong><code>intensity</code> (<code>i</code>)</strong>: Adjusts
+the brightness of the waveform trace. The default value is
+<code>0.04</code>. Increasing this (e.g., <code>i=0.1</code>) makes
+faint pixels more visible.</li>
+<li><strong><code>filter</code> (<code>e</code>)</strong>: Changes the
+smoothing filter. Setting <code>e=lowpass</code> reduces noise, making
+large exposure shifts easier to interpret.</li>
+<li><strong><code>flags</code> (<code>f</code>)</strong>: Controls
+overlay options. Set <code>f=dots</code> to draw individual samples, or
+<code>f=flat</code> to draw solid traces.</li>
+</ul>
+<p>Example with customized intensity and column layout:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;waveform=c=1:m=column:i=0.1:f=lowpass&quot;</span> output.mp4</span></code></pre></div>
+<h3 id="viewing-waveform-and-video-side-by-side">Viewing Waveform and
+Video Side-by-Side</h3>
+<p>To monitor luma values alongside the original video, use FFmpeg's
+<code>split</code> and <code>hstack</code> filters within a
+<code>-filter_complex</code> graph:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-filter_complex</span> <span class="st">&quot;[0:v]split=2[orig][to_scope];[to_scope]waveform=c=1:m=column[scope];[orig][scope]hstack&quot;</span> <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<p>This splits the incoming video stream, generates a column-based luma
+waveform on the second stream, and stacks both streams horizontally.</p>
+<h3 id="real-time-playback-with-ffplay">Real-Time Playback with
+FFplay</h3>
+<p>To preview the luma waveform immediately without re-encoding to an
+output file, use <code>ffplay</code>:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffplay</span> <span class="at">-vf</span> <span class="st">&quot;waveform=c=1:m=column&quot;</span> input.mp4</span></code></pre></div>
+<p>For a live side-by-side view in <code>ffplay</code>:</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffplay</span> <span class="at">-vf</span> <span class="st">&quot;split=2[v][s];[s]waveform=c=1:m=column[wf];[v][wf]hstack&quot;</span> input.mp4</span></code></pre></div></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

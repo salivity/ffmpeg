@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Get Chapter Durations with FFprobe - ffmpeg</title>
+    <meta name="description" content="This article explains how to extract and calculate the duration of individual chapters in video or audio files using FFprobe. Because FFprobe stores chapter boundaries as start and end timestamps rather than pre-calculated lengths, getting each chapter's">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/how-to-get-chapter-durations-with-f-fprobe">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Get Chapter Durations with FFprobe - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/how-to-get-chapter-durations-with-f-fprobe" />
+    <meta property="og:image" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article explains how to extract and calculate the duration of individual chapters in video or audio files using FFprobe. Because FFprobe stores chapter boundaries as start and end timestamps rather than pre-calculated lengths, getting each chapter's" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-to-get-chapter-durations-with-ffprobe">How to Get Chapter
+Durations with FFprobe</h1>
+<p>This article explains how to extract and calculate the duration of
+individual chapters in video or audio files using FFprobe. Because
+FFprobe stores chapter boundaries as start and end timestamps rather
+than pre-calculated lengths, getting each chapter's duration requires
+extracting these timestamps and subtracting the start time from the end
+time. Below are the most efficient commands to list each chapter
+alongside its calculated duration using standard command-line tools.</p>
+<h2 id="extracting-chapter-durations-using-ffprobe-and-jq">Extracting
+Chapter Durations Using FFprobe and <code>jq</code></h2>
+<p>The cleanest way to parse and calculate chapter lengths is by
+exporting FFprobe's data in JSON format and piping it into
+<code>jq</code>.</p>
+<p>Run the following command:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffprobe</span> <span class="at">-v</span> error <span class="at">-show_chapters</span> <span class="at">-print_format</span> json input.mkv <span class="kw">|</span> <span class="ex">jq</span> <span class="at">-r</span> <span class="st">&#39;</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="st">  .chapters[] | </span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="st">  &quot;Chapter: \(.tags.title // .id) | Duration: \((.end_time | tonumber) - (.start_time | tonumber)) seconds&quot;</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="st">&#39;</span></span></code></pre></div>
+<h3 id="how-it-works">How It Works:</h3>
+<ul>
+<li><code>-v error</code>: Suppresses unnecessary diagnostic output and
+banners.</li>
+<li><code>-show_chapters</code>: Instructs FFprobe to read the chapter
+metadata.</li>
+<li><code>-print_format json</code>: Formats the output as structured
+JSON.</li>
+<li><code>jq -r</code>: Parses each chapter entry, pulls the chapter
+title (or ID if no title exists), and subtracts <code>.start_time</code>
+from <code>.end_time</code> to output the exact duration in
+seconds.</li>
+</ul>
+<h2 id="extracting-chapter-durations-using-csv-and-awk">Extracting
+Chapter Durations Using CSV and <code>awk</code></h2>
+<p>If you do not have <code>jq</code> installed, you can use FFprobe's
+built-in CSV writer and calculate the difference using
+<code>awk</code>.</p>
+<p>Run the following command:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffprobe</span> <span class="at">-v</span> error <span class="at">-show_entries</span> chapter=id,start_time,end_time:chapter_tags=title <span class="at">-of</span> csv=p=0 input.mkv <span class="kw">|</span> <span class="fu">awk</span> <span class="at">-F</span><span class="st">&#39;,&#39;</span> <span class="st">&#39;{duration = $3 - $2; printf &quot;Chapter ID %s (%s): %.3f seconds\n&quot;, $1, $4, duration}&#39;</span></span></code></pre></div>
+<h3 id="how-it-works-1">How It Works:</h3>
+<ul>
+<li><code>-show_entries chapter=id,start_time,end_time:chapter_tags=title</code>:
+Extracts only the essential chapter fields.</li>
+<li><code>-of csv=p=0</code>: Outputs the data as comma-separated values
+without the column prefix tags (<code>p=0</code>).</li>
+<li><code>awk -F','</code>: Sets the delimiter to a comma, computes
+<code>duration = $3 - $2</code> (<code>end_time - start_time</code>),
+and prints the formatted result.</li>
+</ul>
+<h2 id="displaying-durations-in-hhmmss-format">Displaying Durations in
+HH:MM:SS Format</h2>
+<p>If you prefer human-readable timestamps instead of total seconds, you
+can format the output using a Python one-liner combined with
+FFprobe:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffprobe</span> <span class="at">-v</span> error <span class="at">-show_chapters</span> <span class="at">-print_format</span> json input.mkv <span class="kw">|</span> <span class="ex">python3</span> <span class="at">-c</span> <span class="st">&#39;</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="st">import sys, json, datetime</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="st">data = json.load(sys.stdin)</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="st">for ch in data.get(&quot;chapters&quot;, []):</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a><span class="st">    title = ch.get(&quot;tags&quot;, {}).get(&quot;title&quot;, f&quot;Chapter {ch[\&quot;id\&quot;]}&quot;)</span></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a><span class="st">    duration = float(ch[&quot;end_time&quot;]) - float(ch[&quot;start_time&quot;])</span></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a><span class="st">    formatted = str(datetime.timedelta(seconds=round(duration)))</span></span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a><span class="st">    print(f&quot;{title}: {formatted} ({duration:.2f}s)&quot;)</span></span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a><span class="st">&#39;</span></span></code></pre></div>
+<p>This processes the metadata and returns each chapter title followed
+by its duration formatted as hours, minutes, and seconds.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

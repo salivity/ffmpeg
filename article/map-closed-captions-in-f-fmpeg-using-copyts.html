@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Map Closed Captions in FFmpeg Using Copyts - ffmpeg</title>
+    <meta name="description" content="This guide explains how to properly map and preserve closed caption streams in FFmpeg while stream copying codecs (-c copy) and preserving original presentation timestamps using the -copyts flag. When working with broadcast formats like MPEG-TS or MXF, m">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/map-closed-captions-in-f-fmpeg-using-copyts">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Map Closed Captions in FFmpeg Using Copyts - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/map-closed-captions-in-f-fmpeg-using-copyts" />
+    <meta property="og:image" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This guide explains how to properly map and preserve closed caption streams in FFmpeg while stream copying codecs (-c copy) and preserving original presentation timestamps using the -copyts flag. When working with broadcast formats like MPEG-TS or MXF, m" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="map-closed-captions-in-ffmpeg-using-copyts">Map Closed Captions
+in FFmpeg Using Copyts</h1>
+<p>This guide explains how to properly map and preserve closed caption
+streams in FFmpeg while stream copying codecs (<code>-c copy</code>) and
+preserving original presentation timestamps using the
+<code>-copyts</code> flag. When working with broadcast formats like
+MPEG-TS or MXF, maintaining synchronization between video, audio, and
+embedded or external closed captions requires explicit stream mapping
+alongside timestamp preservation commands.</p>
+<h3 id="understanding-closed-captions-in-ffmpeg">Understanding Closed
+Captions in FFmpeg</h3>
+<p>Closed captions typically exist in one of two formats within media
+files:</p>
+<ol type="1">
+<li><strong>Embedded Video User Data (CEA-608 / CEA-708):</strong>
+Stored inside the video bitstream's SEI (Supplemental Enhancement
+Information) NAL units or MPEG-2 user data. When you use
+<code>-c:v copy</code>, these embedded captions are automatically
+preserved because the video bitstream is copied without decoding.</li>
+<li><strong>Dedicated Data or Subtitle Streams:</strong> Stored as
+independent tracks within the container (common in MXF, ATSC MPEG-TS, or
+MP4 files). These must be explicitly mapped to the output container
+using FFmpeg's <code>-map</code> option.</li>
+</ol>
+<h3 id="the-command-syntax">The Command Syntax</h3>
+<p>To preserve all streams (including dedicated subtitle and data
+streams), retain original timestamps, and avoid re-encoding, use the
+following command structure:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-copyts</span> <span class="at">-i</span> input.ts <span class="at">-map</span> 0 <span class="at">-c</span> copy <span class="at">-muxdelay</span> 0 <span class="at">-muxpreload</span> 0 output.ts</span></code></pre></div>
+<h3 id="targeted-stream-mapping">Targeted Stream Mapping</h3>
+<p>If the input file contains unwanted tracks (such as multiple
+languages or metadata tracks you wish to exclude), you should explicitly
+map the video, audio, and caption streams rather than mapping the entire
+file with <code>-map 0</code>.</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-copyts</span> <span class="at">-i</span> input.mxf <span class="dt">\</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">-map</span> 0:v:0 <span class="dt">\</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">-map</span> 0:a <span class="dt">\</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">-map</span> 0:s<span class="pp">?</span> <span class="dt">\</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">-map</span> 0:d<span class="pp">?</span> <span class="dt">\</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">-c</span> copy <span class="dt">\</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>  output.mxf</span></code></pre></div>
+<h4 id="explanation-of-options">Explanation of Options:</h4>
+<ul>
+<li><strong><code>-copyts</code></strong>: Directs FFmpeg not to reset
+timestamps to zero, preserving original presentation timestamps (PTS)
+and decoding timestamps (DTS). This prevents out-of-sync captions.</li>
+<li><strong><code>-map 0:v:0</code></strong>: Selects the primary video
+stream. If captions are embedded in the video bitstream (A/53 /
+CEA-708), copying this stream copies the captions.</li>
+<li><strong><code>-map 0:a</code></strong>: Selects all audio
+streams.</li>
+<li><strong><code>-map 0:s?</code></strong>: Maps all subtitle streams
+if they exist. The trailing <code>?</code> prevents the command from
+failing if no subtitle streams are present.</li>
+<li><strong><code>-map 0:d?</code></strong>: Maps all data streams. Some
+containers (like MXF) carry closed captions as SMPTE 436M data streams
+rather than traditional subtitle tracks.</li>
+<li><strong><code>-c copy</code></strong>: Ensures all selected streams
+are copied without re-encoding, preserving caption integrity.</li>
+</ul>
+<h3 id="handling-timestamp-offsets-with--start_at_zero">Handling
+Timestamp Offsets with <code>-start_at_zero</code></h3>
+<p>When using <code>-copyts</code>, containers may experience playback
+issues if the source timestamps start with a massive offset (common in
+live broadcast captures). To shift the timeline so the initial packet
+starts at timestamp 0 while maintaining the internal offsets between
+video and caption streams, add <code>-start_at_zero</code>:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-copyts</span> <span class="at">-start_at_zero</span> <span class="at">-i</span> input.ts <span class="at">-map</span> 0:v <span class="at">-map</span> 0:a <span class="at">-map</span> 0:s<span class="pp">?</span> <span class="at">-c</span> copy output.ts</span></code></pre></div>
+<h3 id="verification">Verification</h3>
+<p>After processing, verify that the caption streams and their packet
+counts were successfully transferred to the output container:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffprobe</span> <span class="at">-v</span> error <span class="at">-show_streams</span> <span class="at">-select_streams</span> s output.ts</span></code></pre></div>
+<p>For embedded bitstream captions, verify CEA-608/708 presence using
+the <code>eia608</code> or <code>readvitc</code> filter:</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> output.ts <span class="at">-f</span> lavfi <span class="at">-i</span> <span class="st">&quot;movie=output.ts[out0];[out0]select=&#39;eq(pict_type,I)&#39;,showinfo&quot;</span> <span class="at">-f</span> null <span class="at">-</span></span></code></pre></div></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

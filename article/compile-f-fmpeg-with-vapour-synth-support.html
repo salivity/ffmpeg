@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Compile FFmpeg with VapourSynth Support - ffmpeg</title>
+    <meta name="description" content="Compiling FFmpeg with VapourSynth support allows you to feed high-performance Python-based video processing scripts directly into FFmpeg for encoding without intermediate raw video files. This guide walks you through the essential prerequisites, dependen">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/compile-f-fmpeg-with-vapour-synth-support">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Compile FFmpeg with VapourSynth Support - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/compile-f-fmpeg-with-vapour-synth-support" />
+    <meta property="og:image" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Compiling FFmpeg with VapourSynth support allows you to feed high-performance Python-based video processing scripts directly into FFmpeg for encoding without intermediate raw video files. This guide walks you through the essential prerequisites, dependen" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="compile-ffmpeg-with-vapoursynth-support">Compile FFmpeg with
+VapourSynth Support</h1>
+<p>Compiling FFmpeg with VapourSynth support allows you to feed
+high-performance Python-based video processing scripts directly into
+FFmpeg for encoding without intermediate raw video files. This guide
+walks you through the essential prerequisites, dependency management,
+configuration flags, and build commands required to compile an FFmpeg
+binary capable of reading and processing VapourSynth scripts
+(<code>.vpy</code>).</p>
+<h3 id="step-1-install-build-tools-and-dependencies">Step 1: Install
+Build Tools and Dependencies</h3>
+<p>On a Debian or Ubuntu-based system, update your package repositories
+and install the foundational development tools:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> apt update</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> apt install <span class="at">-y</span> build-essential yasm nasm pkg-config git</span></code></pre></div>
+<h3 id="step-2-install-vapoursynth-and-headers">Step 2: Install
+VapourSynth and Headers</h3>
+<p>FFmpeg requires the VapourSynth development headers and
+<code>pkg-config</code> files to compile the demuxer correctly.</p>
+<p>If using a package manager:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> apt install <span class="at">-y</span> vapoursynth-dev libvapoursynth-script0</span></code></pre></div>
+<p>Verify that <code>pkg-config</code> can locate your VapourSynth
+installation:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">pkg-config</span> <span class="at">--modversion</span> vapoursynth</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="ex">pkg-config</span> <span class="at">--modversion</span> vapoursynth-script</span></code></pre></div>
+<p>If these commands do not return a version number, set your
+<code>PKG_CONFIG_PATH</code> environment variable to the directory
+containing <code>vapoursynth.pc</code> (commonly
+<code>/usr/local/lib/pkgconfig</code> or
+<code>/usr/lib/pkgconfig</code>):</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="bu">export</span> <span class="va">PKG_CONFIG_PATH</span><span class="op">=</span><span class="st">&quot;/usr/local/lib/pkgconfig:</span><span class="va">$PKG_CONFIG_PATH</span><span class="st">&quot;</span></span></code></pre></div>
+<h3 id="step-3-clone-the-ffmpeg-source-code">Step 3: Clone the FFmpeg
+Source Code</h3>
+<p>Download the latest stable release or clone the current Git
+repository:</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="fu">git</span> clone https://git.ffmpeg.org/ffmpeg.git ffmpeg</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="bu">cd</span> ffmpeg</span></code></pre></div>
+<h3 id="step-4-configure-the-build">Step 4: Configure the Build</h3>
+<p>Run the <code>./configure</code> script with the
+<code>--enable-vapoursynth</code> flag. Include other standard encoders
+(such as <code>libx264</code> or <code>libx265</code>) if needed:</p>
+<div class="sourceCode" id="cb6"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="ex">./configure</span> <span class="dt">\</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">--enable-vapoursynth</span> <span class="dt">\</span></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">--enable-gpl</span> <span class="dt">\</span></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">--enable-libx264</span> <span class="dt">\</span></span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">--enable-nonfree</span></span></code></pre></div>
+<p>If the configuration script finishes without error, VapourSynth
+support is verified. If it fails, check <code>ffbuild/config.log</code>
+to ensure the VapourSynth libraries and headers are in your system's
+library paths.</p>
+<h3 id="step-5-compile-and-install">Step 5: Compile and Install</h3>
+<p>Compile the source code using multiple cores, then install the
+binary:</p>
+<div class="sourceCode" id="cb7"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="fu">make</span> <span class="at">-j</span><span class="va">$(</span><span class="fu">nproc</span><span class="va">)</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> make install</span></code></pre></div>
+<h3 id="step-6-verify-the-installation">Step 6: Verify the
+Installation</h3>
+<p>Ensure the newly compiled binary includes VapourSynth support:</p>
+<div class="sourceCode" id="cb8"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-version</span></span></code></pre></div>
+<p>Look for <code>--enable-vapoursynth</code> in the configuration
+banner. You can also verify that the VapourSynth demuxer is active:</p>
+<div class="sourceCode" id="cb9"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-demuxers</span> <span class="kw">|</span> <span class="fu">grep</span> <span class="at">-i</span> vapoursynth</span></code></pre></div>
+<p>To encode directly from a VapourSynth script, run:</p>
+<div class="sourceCode" id="cb10"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.vpy <span class="at">-c:v</span> libx264 <span class="at">-crf</span> 18 output.mp4</span></code></pre></div></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Embed SRT Subtitles into MP4 via FFmpeg on Linux - ffmpeg</title>
+    <meta name="description" content="Embedding SRT subtitles directly into an MP4 file on Linux allows you to combine your video and text tracks into a single, highly compatible file. This process can be done either by soft-coding the subtitles (adding them as a togglable track that can be">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/embed-srt-subtitles-into-mp-4-via-f-fmpeg-on-linux">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Embed SRT Subtitles into MP4 via FFmpeg on Linux - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/embed-srt-subtitles-into-mp-4-via-f-fmpeg-on-linux" />
+    <meta property="og:image" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Embedding SRT subtitles directly into an MP4 file on Linux allows you to combine your video and text tracks into a single, highly compatible file. This process can be done either by soft-coding the subtitles (adding them as a togglable track that can be" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="embed-srt-subtitles-into-mp4-via-ffmpeg-on-linux">Embed SRT
+Subtitles into MP4 via FFmpeg on Linux</h1>
+<p>Embedding SRT subtitles directly into an MP4 file on Linux allows you
+to combine your video and text tracks into a single, highly compatible
+file. This process can be done either by <strong>soft-coding</strong>
+the subtitles (adding them as a togglable track that can be turned on or
+off) or <strong>hard-coding</strong> them (burning them permanently into
+the video frames). Using the powerful command-line tool FFmpeg, you can
+achieve both results quickly with just a single line of terminal
+command, depending on whether you want to preserve the original video
+quality or ensure universal playback across all media players.</p>
+<h3 id="soft-coding-subtitles-togglable-track">Soft-Coding Subtitles
+(Togglable Track)</h3>
+<p>Soft-coding is the preferred method if you want to keep the process
+fast and avoid re-encoding the video. It adds the SRT file as a separate
+data stream inside the MP4 container, allowing viewers to turn the
+subtitles on or off in players like VLC or MPV. Because it copies the
+original video and audio streams without altering them, this execution
+takes only a few seconds.</p>
+<p>To soft-code your subtitles, open your Linux terminal and run the
+following command:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-i</span> subtitles.srt <span class="at">-c</span> copy <span class="at">-c:s</span> mov_text output.mp4</span></code></pre></div>
+<p>In this command, <code>-i input.mp4</code> and
+<code>-i subtitles.srt</code> specify your source files. The
+<code>-c copy</code> flag tells FFmpeg to stream-copy the video and
+audio without re-encoding them, which preserves the exact original
+quality. Crucially, <code>-c:s mov_text</code> converts the SRT subtitle
+format into <code>mov_text</code>, which is the standard, officially
+supported subtitle format for the MP4 container.</p>
+<h3 id="hard-coding-subtitles-burned-in-text">Hard-Coding Subtitles
+(Burned-In Text)</h3>
+<p>Hard-coding is necessary when you need the subtitles to appear on
+absolutely any device or platform, including older hardware or social
+media sites that do not support subtitle tracks. This method permanently
+"burns" the text into the video pixels. Because FFmpeg has to modify the
+actual image frames, the entire video must be re-encoded, which will
+take longer and use more CPU power.</p>
+<p>To hard-code your subtitles, use the video filter flag in your
+terminal:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;subtitles=subtitles.srt&quot;</span> <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<p>Here, the <code>-vf "subtitles=subtitles.srt"</code> argument invokes
+FFmpeg's video filter graph to overlay the text directly onto the video
+stream. Because the video is being modified, FFmpeg automatically
+re-encodes it using the default H.264 codec. The <code>-c:a copy</code>
+flag ensures that the audio stream is still copied directly without
+re-encoding, saving processing time and maintaining original audio
+fidelity.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

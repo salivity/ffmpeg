@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Write a Custom FATE Test in FFmpeg - ffmpeg</title>
+    <meta name="description" content="This guide explains how to create, configure, and generate reference files for a custom FFmpeg Automated Testing Environment (FATE) test when adding a new audio or video filter. By registering your test target within FFmpeg's Makefiles, declaring appropr">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/how-to-write-a-custom-fate-test-in-f-fmpeg">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Write a Custom FATE Test in FFmpeg - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/how-to-write-a-custom-fate-test-in-f-fmpeg" />
+    <meta property="og:image" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This guide explains how to create, configure, and generate reference files for a custom FFmpeg Automated Testing Environment (FATE) test when adding a new audio or video filter. By registering your test target within FFmpeg's Makefiles, declaring appropr" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-to-write-a-custom-fate-test-in-ffmpeg">How to Write a Custom
+FATE Test in FFmpeg</h1>
+<p>This guide explains how to create, configure, and generate reference
+files for a custom FFmpeg Automated Testing Environment (FATE) test when
+adding a new audio or video filter. By registering your test target
+within FFmpeg's Makefiles, declaring appropriate dependencies,
+generating a deterministic reference output (typically a
+<code>framecrc</code>), and running the test suite, you ensure your new
+filter maintains output integrity and prevents future regressions.</p>
+<h3 id="1-identify-the-correct-test-makefile">1. Identify the Correct
+Test Makefile</h3>
+<p>FATE filter tests are located inside the <code>tests/fate/</code>
+directory. Depending on the type of filter you created, open the
+corresponding Makefile:</p>
+<ul>
+<li><strong>Video filters:</strong>
+<code>tests/fate/filter-video.mak</code></li>
+<li><strong>Audio filters:</strong>
+<code>tests/fate/filter-audio.mak</code></li>
+</ul>
+<h3 id="2-declare-dependencies-and-test-targets">2. Declare Dependencies
+and Test Targets</h3>
+<p>FFmpeg uses conditional variables based on build configuration to
+ensure tests only run when the required filters, demuxers, and protocols
+are compiled.</p>
+<p>Add your test to the appropriate Makefile using the
+<code>ALLYES</code> macro to guard the test case:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode makefile"><code class="sourceCode makefile"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>FATE_MYFILTER-<span class="ch">$(</span><span class="kw">call</span><span class="st"> ALLYES</span><span class="kw">,</span><span class="st"> MYFILTER_FILTER TESTSRC_FILTER</span><span class="ch">)</span> += fate-filter-myfilter</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="dt">FATE_FILTER_VIDEO</span> <span class="ch">+=</span><span class="st"> </span><span class="ch">$(</span><span class="dt">FATE_MYFILTER-yes</span><span class="ch">)</span></span></code></pre></div>
+<p>In this example, <code>MYFILTER_FILTER</code> represents your newly
+implemented filter, and <code>TESTSRC_FILTER</code> is a synthetic video
+source used as the test input.</p>
+<h3 id="3-define-the-command-execution-rule">3. Define the Command
+Execution Rule</h3>
+<p>Next, define the execution command (<code>CMD</code>) for your test.
+Most filter tests use <code>framecrc</code> to output checksums of the
+processed frames, which provides a compact, deterministic output without
+storing large raw media files.</p>
+<p>Below the target definition, declare the command:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode makefile"><code class="sourceCode makefile"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="dv">fate-filter-myfilter:</span><span class="dt"> CMD</span> <span class="ch">=</span><span class="st"> framecrc -lavfi &quot;testsrc=duration=1:size=320x240:rate=25,myfilter=param1=value1&quot;</span></span></code></pre></div>
+<p>If your test relies on existing media samples rather than a generated
+synthetic source like <code>testsrc</code>, reference the sample file
+via <code>$(TARGET_SAMPLES)</code>:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode makefile"><code class="sourceCode makefile"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="dv">fate-filter-myfilter:</span><span class="dt"> CMD</span> <span class="ch">=</span><span class="st"> framecrc -auto_conversion_filters -i </span><span class="ch">$(</span><span class="dt">TARGET_SAMPLES</span><span class="ch">)</span><span class="st">/path/to/sample.ext -vf &quot;myfilter&quot;</span></span></code></pre></div>
+<p>Ensure any external input samples specified are already available in
+the FATE sample suite.</p>
+<h3 id="4-generate-the-reference-output">4. Generate the Reference
+Output</h3>
+<p>FATE verifies correctness by comparing the command's standard output
+against a committed reference file stored in
+<code>tests/ref/fate/</code>.</p>
+<p>Run <code>make</code> with the <code>GEN=1</code> flag targeting your
+specific test to create the baseline file:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="fu">make</span> fate-filter-myfilter GEN=1</span></code></pre></div>
+<p>This command generates
+<code>tests/ref/fate/fate-filter-myfilter</code>. Open this generated
+file in a text editor to verify that the frame timestamps, channel
+layouts, pixel formats, and CRC checksums accurately represent the
+intended behavior of your filter.</p>
+<h3 id="5-validate-the-test">5. Validate the Test</h3>
+<p>Once the reference file exists, run the test without generation flags
+to confirm that it executes and passes:</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="fu">make</span> fate-filter-myfilter</span></code></pre></div>
+<p>If the filter runs and the calculated checksums match the reference
+file, the terminal will display <code>TEST filter-myfilter</code>
+followed by a success state. You can also run the broader filter test
+category to confirm no unintended side-effects occurred:</p>
+<div class="sourceCode" id="cb6"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="fu">make</span> fate-filter-video</span></code></pre></div>
+<p>Commit both the modified Makefile
+(<code>tests/fate/filter-video.mak</code>) and the newly generated
+reference file (<code>tests/ref/fate/fate-filter-myfilter</code>)
+alongside your filter implementation.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

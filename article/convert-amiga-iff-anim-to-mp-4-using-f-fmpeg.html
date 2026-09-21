@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Convert Amiga IFF ANIM to MP4 Using FFmpeg - ffmpeg</title>
+    <meta name="description" content="This guide explains how to convert classic Commodore Amiga IFF (Interchange File Format) animation files—commonly stored with .anim or .iff extensions—into standard modern video formats like MP4 using FFmpeg. You will learn the essential commands to">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/convert-amiga-iff-anim-to-mp-4-using-f-fmpeg">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Convert Amiga IFF ANIM to MP4 Using FFmpeg - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/convert-amiga-iff-anim-to-mp-4-using-f-fmpeg" />
+    <meta property="og:image" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This guide explains how to convert classic Commodore Amiga IFF (Interchange File Format) animation files—commonly stored with .anim or .iff extensions—into standard modern video formats like MP4 using FFmpeg. You will learn the essential commands to" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="convert-amiga-iff-anim-to-mp4-using-ffmpeg">Convert Amiga IFF
+ANIM to MP4 Using FFmpeg</h1>
+<p>This guide explains how to convert classic Commodore Amiga IFF
+(Interchange File Format) animation files—commonly stored with
+<code>.anim</code> or <code>.iff</code> extensions—into standard modern
+video formats like MP4 using FFmpeg. You will learn the essential
+commands to decode the original Amiga ILBM/ANIM frames, fix common
+framerate issues, correct non-square pixel aspect ratios, and export a
+clean video compatible with modern media players.</p>
+<h3 id="prerequisites">Prerequisites</h3>
+<p>Ensure you have a recent build of FFmpeg installed and accessible
+from your terminal or command prompt. FFmpeg includes native support for
+the Amiga IFF demuxer and its underlying graphical formats (such as ILBM
+and ByteRun1).</p>
+<h3 id="step-1-basic-conversion-command">Step 1: Basic Conversion
+Command</h3>
+<p>If your IFF file contains standard timing metadata, you can convert
+it directly to an H.264 MP4 file using the following command:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.anim <span class="at">-c:v</span> libx264 <span class="at">-pix_fmt</span> yuv420p output.mp4</span></code></pre></div>
+<ul>
+<li><code>-i input.anim</code>: Specifies your source Amiga file.</li>
+<li><code>-c:v libx264</code>: Encodes the video stream to H.264.</li>
+<li><code>-pix_fmt yuv420p</code>: Converts the Amiga color palette into
+a standard YUV 4:2:0 pixel format required by modern players like
+QuickTime, web browsers, and standard media devices.</li>
+</ul>
+<h3 id="step-2-fixing-framerate-issues">Step 2: Fixing Framerate
+Issues</h3>
+<p>Many Amiga animations did not store fixed frame rates, or they relied
+on vertical blank interrupts (such as 50 Hz for PAL or 60 Hz for NTSC)
+or custom delay counters. If your converted video plays too quickly or
+slowly, explicitly declare the framerate:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-framerate</span> 15 <span class="at">-i</span> input.anim <span class="at">-c:v</span> libx264 <span class="at">-pix_fmt</span> yuv420p output.mp4</span></code></pre></div>
+<p>Adjust the <code>-framerate</code> value (typically between
+<code>10</code> and <code>30</code> for standard Amiga computer
+animations) to match the intended playback speed of the original
+creation.</p>
+<h3 id="step-3-correcting-aspect-ratio-non-square-pixels">Step 3:
+Correcting Aspect Ratio (Non-Square Pixels)</h3>
+<p>Classic Amiga screen modes often used rectangular pixels. For
+example, Low-Res PAL (320x256) or NTSC (320x200) modes were designed to
+fill 4:3 CRT monitors. If your output looks squashed or stretched, apply
+scaling filters to scale the output to modern square pixels:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-framerate</span> 15 <span class="at">-i</span> input.anim <span class="at">-vf</span> <span class="st">&quot;scale=iw*4:ih*4:flags=neighbor,setdar=4/3&quot;</span> <span class="at">-c:v</span> libx264 <span class="at">-pix_fmt</span> yuv420p output.mp4</span></code></pre></div>
+<ul>
+<li><code>scale=iw*4:ih*4:flags=neighbor</code>: Upscales the
+low-resolution video four times using nearest-neighbor scaling to
+preserve crisp, retro pixel art without introducing blurriness.</li>
+<li><code>setdar=4/3</code>: Forces the display aspect ratio to standard
+4:3.</li>
+</ul>
+<h3 id="step-4-converting-to-animated-gif">Step 4: Converting to
+Animated GIF</h3>
+<p>If you prefer an animated GIF over a modern video file, use FFmpeg's
+palettegen and paletteuse filters to maintain accurate Amiga colors:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-framerate</span> 15 <span class="at">-i</span> input.anim <span class="at">-vf</span> <span class="st">&quot;split[s0][s1];[s0]palettegen[p];[s1][p]paletteuse&quot;</span> output.gif</span></code></pre></div></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

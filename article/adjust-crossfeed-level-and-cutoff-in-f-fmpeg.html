@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Adjust Crossfeed Level and Cutoff in FFmpeg - ffmpeg</title>
+    <meta name="description" content="The FFmpeg crossfeed audio filter reduces channel separation on headphone listening by feeding low frequencies from one channel to the other, creating a more natural speaker-like soundstage. This article covers how to configure the crossfeed amount and f">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/adjust-crossfeed-level-and-cutoff-in-f-fmpeg">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Adjust Crossfeed Level and Cutoff in FFmpeg - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/adjust-crossfeed-level-and-cutoff-in-f-fmpeg" />
+    <meta property="og:image" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="The FFmpeg crossfeed audio filter reduces channel separation on headphone listening by feeding low frequencies from one channel to the other, creating a more natural speaker-like soundstage. This article covers how to configure the crossfeed amount and f" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="adjust-crossfeed-level-and-cutoff-in-ffmpeg">Adjust Crossfeed
+Level and Cutoff in FFmpeg</h1>
+<p>The FFmpeg <code>crossfeed</code> audio filter reduces channel
+separation on headphone listening by feeding low frequencies from one
+channel to the other, creating a more natural speaker-like soundstage.
+This article covers how to configure the crossfeed amount and frequency
+range using the native <code>crossfeed</code> filter parameters, as well
+as using the alternative <code>bs2b</code> filter when explicit
+frequency values in Hertz are required.</p>
+<h3 id="understanding-the-crossfeed-parameters">Understanding the
+<code>crossfeed</code> Parameters</h3>
+<p>FFmpeg's built-in <code>crossfeed</code> filter controls crossfeed
+intensity and frequency filtering using two primary floating-point
+options that range from <code>0.0</code> to <code>1.0</code>:</p>
+<ul>
+<li><strong><code>strength</code> (or <code>s</code>):</strong> Controls
+the crossfeed mixing level. Setting this to <code>0.0</code> disables
+crossfeed, while <code>1.0</code> produces maximum blending across
+channels. The default value is <code>0.5</code>.</li>
+<li><strong><code>range</code> (or <code>r</code>):</strong> Adjusts the
+frequency cutoff and soundstage range. Lower values allow higher
+frequencies to bleed through to the opposite channel, whereas higher
+values restrict the crossfeed strictly to lower bass frequencies. The
+default value is <code>0.5</code>.</li>
+</ul>
+<p>Additional optional parameters include <code>level_in</code> (input
+gain, default <code>0.9</code>) and <code>level_out</code> (output gain,
+default <code>1.0</code>) to help prevent clipping caused by channel
+summing.</p>
+<h3 id="basic-command-syntax">Basic Command Syntax</h3>
+<p>To apply the <code>crossfeed</code> filter with specific values, use
+the <code>-af</code> (audio filter) flag:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.wav <span class="at">-af</span> <span class="st">&quot;crossfeed=strength=0.6:range=0.4&quot;</span> output.wav</span></code></pre></div>
+<p>You can also use positional arguments instead of naming the
+parameters:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.wav <span class="at">-af</span> <span class="st">&quot;crossfeed=0.6:0.4&quot;</span> output.wav</span></code></pre></div>
+<p>In this example, the crossfeed strength is set to <code>0.6</code>
+and the frequency cutoff range is set to <code>0.4</code>.</p>
+<h3 id="using-specific-cutoff-frequencies-with-the-bs2b-filter">Using
+Specific Cutoff Frequencies with the <code>bs2b</code> Filter</h3>
+<p>The native <code>crossfeed</code> filter abstracts frequency values
+into the <code>range</code> scale (<code>0.0</code> to
+<code>1.0</code>). If your workflow requires setting a specific cutoff
+frequency in Hertz (Hz) alongside a defined decibel feed level, use
+FFmpeg's <code>bs2b</code> (Bauer stereophonic-to-binaural) filter
+instead:</p>
+<ul>
+<li><strong><code>fcut</code>:</strong> Cutoff frequency in Hz
+(typically between 300 and 2000 Hz; default is 700 Hz).</li>
+<li><strong><code>feed</code>:</strong> Feed level in tenths of a
+decibel (dB) (typically between 10 and 150; default is 45, which equals
+4.5 dB).</li>
+</ul>
+<p>Example using exact frequency and feed values:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.wav <span class="at">-af</span> <span class="st">&quot;bs2b=fcut=650:feed=60&quot;</span> output.wav</span></code></pre></div>
+<p>This sets the low-pass cutoff directly at 650 Hz with a 6.0 dB
+crossfeed level.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

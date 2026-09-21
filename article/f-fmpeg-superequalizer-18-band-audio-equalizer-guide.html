@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FFmpeg superequalizer: 18-Band Audio Equalizer Guide - ffmpeg</title>
+    <meta name="description" content="The FFmpeg superequalizer filter is an 18-band graphic equalizer based on a classic analog design that allows precise spectral shaping of audio streams. This guide covers the structure of the filter, the specific center frequencies for each of the 18 ban">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/f-fmpeg-superequalizer-18-band-audio-equalizer-guide">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="FFmpeg superequalizer: 18-Band Audio Equalizer Guide - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/f-fmpeg-superequalizer-18-band-audio-equalizer-guide" />
+    <meta property="og:image" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="The FFmpeg superequalizer filter is an 18-band graphic equalizer based on a classic analog design that allows precise spectral shaping of audio streams. This guide covers the structure of the filter, the specific center frequencies for each of the 18 ban" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="ffmpeg-superequalizer-18-band-audio-equalizer-guide">FFmpeg
+superequalizer: 18-Band Audio Equalizer Guide</h1>
+<p>The FFmpeg <code>superequalizer</code> filter is an 18-band graphic
+equalizer based on a classic analog design that allows precise spectral
+shaping of audio streams. This guide covers the structure of the filter,
+the specific center frequencies for each of the 18 bands, how the gain
+scale functions, and practical command-line examples for common audio
+adjustments.</p>
+<h2 id="how-the-superequalizer-filter-works">How the superequalizer
+Filter Works</h2>
+<p>Unlike parametric equalizers that allow you to specify arbitrary
+frequencies and bandwidths (Q factors), <code>superequalizer</code> uses
+18 fixed frequency bands spaced across the audible human hearing
+range.</p>
+<p>Each band is addressed using the parameters <code>1b</code> through
+<code>18b</code>.</p>
+<h3 id="gain-values">Gain Values</h3>
+<ul>
+<li><strong>Range:</strong> <code>0.0</code> to <code>20.0</code></li>
+<li><strong>Neutral (no change):</strong> <code>1.0</code></li>
+<li><strong>Cut (attenuation):</strong> Values between <code>0.0</code>
+and <code>1.0</code> (with <code>0.0</code> representing maximum
+cut/silence)</li>
+<li><strong>Boost (amplification):</strong> Values between
+<code>1.0</code> and <code>20.0</code></li>
+</ul>
+<p>Any band omitted from the filter argument defaults to
+<code>1.0</code>.</p>
+<h2 id="the-18-frequency-bands">The 18 Frequency Bands</h2>
+<p>The center frequencies for the bands in <code>superequalizer</code>
+are predetermined:</p>
+<ul>
+<li><strong>1b:</strong> 65 Hz (Sub-bass)</li>
+<li><strong>2b:</strong> 92 Hz (Bass)</li>
+<li><strong>3b:</strong> 131 Hz (Bass)</li>
+<li><strong>4b:</strong> 185 Hz (Upper bass)</li>
+<li><strong>5b:</strong> 262 Hz (Low midrange)</li>
+<li><strong>6b:</strong> 370 Hz (Midrange)</li>
+<li><strong>7b:</strong> 523 Hz (Midrange)</li>
+<li><strong>8b:</strong> 740 Hz (Midrange)</li>
+<li><strong>9b:</strong> 1047 Hz (Midrange)</li>
+<li><strong>10b:</strong> 1480 Hz (Upper midrange)</li>
+<li><strong>11b:</strong> 2093 Hz (Upper midrange)</li>
+<li><strong>12b:</strong> 2960 Hz (Presence)</li>
+<li><strong>13b:</strong> 4186 Hz (Presence)</li>
+<li><strong>14b:</strong> 5920 Hz (Highs)</li>
+<li><strong>15b:</strong> 8372 Hz (Highs)</li>
+<li><strong>16b:</strong> 11840 Hz (Brilliance)</li>
+<li><strong>17b:</strong> 16744 Hz (Air)</li>
+<li><strong>18b:</strong> 20000 Hz (Ultra-high air)</li>
+</ul>
+<h2 id="basic-syntax">Basic Syntax</h2>
+<p>The filter is applied using the <code>-af</code> (audio filter)
+flag:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.wav <span class="at">-af</span> <span class="st">&quot;superequalizer=1b=1.0:2b=1.0:...:18b=1.0&quot;</span> <span class="at">-c:a</span> pcm_s16le output.wav</span></code></pre></div>
+<h2 id="practical-examples">Practical Examples</h2>
+<h3 id="1-bass-boost">1. Bass Boost</h3>
+<p>To boost low-end punch while leaving higher frequencies untouched,
+increase the values of bands 1 through 4:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp3 <span class="at">-af</span> <span class="st">&quot;superequalizer=1b=2.5:2b=2.0:3b=1.6:4b=1.2&quot;</span> output.mp3</span></code></pre></div>
+<h3 id="2-high-frequency-taming-de-essing--warmth">2. High-Frequency
+Taming (De-Essing / Warmth)</h3>
+<p>To reduce harshness and sibilance, attenuate the bands between 4 kHz
+and 12 kHz:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.wav <span class="at">-af</span> <span class="st">&quot;superequalizer=13b=0.7:14b=0.5:15b=0.5:16b=0.6&quot;</span> output.wav</span></code></pre></div>
+<h3 id="3-vocal-clarity-and-midrange-lift">3. Vocal Clarity and Midrange
+Lift</h3>
+<p>To improve vocal intelligibility in speech or podcasts, roll off deep
+sub-bass rumble, boost the core vocal presence, and add top-end
+clarity:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> vocal.wav <span class="at">-af</span> <span class="st">&quot;superequalizer=1b=0.2:2b=0.5:8b=1.3:9b=1.5:10b=1.5:11b=1.4:14b=1.2&quot;</span> vocal_enhanced.wav</span></code></pre></div>
+<h3 id="4-v-shape-loudness-contour">4. V-Shape (Loudness Contour)</h3>
+<p>A common preset for music that enhances both low-end weight and
+high-end air while scooping the midrange:</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> track.flac <span class="at">-af</span> <span class="st">&quot;superequalizer=1b=2.0:2b=1.7:3b=1.4:7b=0.8:8b=0.7:9b=0.8:14b=1.3:15b=1.6:16b=1.8&quot;</span> track_eq.flac</span></code></pre></div>
+<h2 id="preventing-clipping">Preventing Clipping</h2>
+<p>Boosting bands significantly can push output levels beyond 0 dBFS,
+resulting in digital distortion. To avoid clipping, add the
+<code>volume</code> or <code>alimiter</code> filter directly after
+<code>superequalizer</code>:</p>
+<div class="sourceCode" id="cb6"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.wav <span class="at">-af</span> <span class="st">&quot;superequalizer=1b=3.0:2b=2.5,volume=0.7&quot;</span> output.wav</span></code></pre></div></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

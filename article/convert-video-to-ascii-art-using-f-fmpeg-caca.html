@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Convert Video to ASCII Art Using FFmpeg CACA - ffmpeg</title>
+    <meta name="description" content="This guide demonstrates how to convert and render standard video files into animated ASCII art using FFmpeg's integrated caca (Color AsCii Art) output device. You will learn the requirements for libcaca support, the exact commands needed to play ASCII vi">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/convert-video-to-ascii-art-using-f-fmpeg-caca">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Convert Video to ASCII Art Using FFmpeg CACA - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/convert-video-to-ascii-art-using-f-fmpeg-caca" />
+    <meta property="og:image" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This guide demonstrates how to convert and render standard video files into animated ASCII art using FFmpeg's integrated caca (Color AsCii Art) output device. You will learn the requirements for libcaca support, the exact commands needed to play ASCII vi" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="convert-video-to-ascii-art-using-ffmpeg-caca">Convert Video to
+ASCII Art Using FFmpeg CACA</h1>
+<p>This guide demonstrates how to convert and render standard video
+files into animated ASCII art using FFmpeg's integrated
+<code>caca</code> (Color AsCii Art) output device. You will learn the
+requirements for libcaca support, the exact commands needed to play
+ASCII video directly in your terminal, and how to export or adjust the
+ASCII visual presentation.</p>
+<h2 id="prerequisites">Prerequisites</h2>
+<p>To use the <code>caca</code> output device, your FFmpeg build must be
+compiled with <code>libcaca</code> support. You can verify that your
+FFmpeg installation includes the device by running:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-devices</span></span></code></pre></div>
+<p>Look for <code>caca</code> under the output devices list. If it is
+missing, you must install <code>libcaca</code> (e.g.,
+<code>sudo apt install libcaca-dev</code> on Debian/Ubuntu) and compile
+FFmpeg with the <code>--enable-libcaca</code> configuration flag, or use
+a precompiled binary package that includes it.</p>
+<h2 id="real-time-ascii-playback-in-the-terminal">Real-Time ASCII
+Playback in the Terminal</h2>
+<p>To play a video file as ASCII art directly in the terminal, specify
+<code>caca</code> as the output format using the <code>-f</code> flag
+and direct the output to standard output (<code>-</code>):</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-pix_fmt</span> rgb24 <span class="at">-f</span> caca <span class="at">-</span></span></code></pre></div>
+<h3 id="explanation-of-arguments">Explanation of Arguments:</h3>
+<ul>
+<li><code>-i input.mp4</code>: Specifies the input video file.</li>
+<li><code>-pix_fmt rgb24</code>: Sets the pixel format to 24-bit RGB,
+which is the native color format required by libcaca.</li>
+<li><code>-f caca</code>: Selects the libcaca output device.</li>
+<li><code>-</code>: Routes the output stream to the terminal
+console.</li>
+</ul>
+<h2 id="controlling-resolution-and-aspect-ratio">Controlling Resolution
+and Aspect Ratio</h2>
+<p>Terminal dimensions often distort video aspect ratios if left
+unmanaged. You can constrain the resolution to fit standard terminal
+sizes using FFmpeg's scale filter:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;scale=80:40&quot;</span> <span class="at">-pix_fmt</span> rgb24 <span class="at">-f</span> caca <span class="at">-</span></span></code></pre></div>
+<p>Adjust the <code>80:40</code> value to match the column and row
+dimensions of your terminal window.</p>
+<h2 id="customizing-caca-output-via-environment-variables">Customizing
+CACA Output via Environment Variables</h2>
+<p>The <code>libcaca</code> library is configured primarily through
+environment variables rather than direct FFmpeg command-line flags.</p>
+<h3 id="1-change-the-display-driver">1. Change the Display Driver</h3>
+<p>You can specify which backend driver libcaca uses by setting
+<code>CACA_DRIVER</code>. Available options include
+<code>ncurses</code>, <code>slang</code>, <code>x11</code>,
+<code>raw</code>, and <code>default</code>.</p>
+<p>To force output inside an ncurses terminal:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="va">CACA_DRIVER</span><span class="op">=</span>ncurses <span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-pix_fmt</span> rgb24 <span class="at">-f</span> caca <span class="at">-</span></span></code></pre></div>
+<h3 id="2-exporting-to-formats-like-html">2. Exporting to Formats like
+HTML</h3>
+<p>You can record or export the ASCII playback into animated HTML by
+setting the driver to <code>html</code> and redirecting output to a
+file:</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="va">CACA_DRIVER</span><span class="op">=</span>html <span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-pix_fmt</span> rgb24 <span class="at">-f</span> caca output.html</span></code></pre></div>
+<h3 id="3-adjusting-dithering">3. Adjusting Dithering</h3>
+<p>Change how color gradients are translated into ASCII characters by
+setting the <code>CACA_DITHER</code> variable:</p>
+<div class="sourceCode" id="cb6"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="va">CACA_DITHER</span><span class="op">=</span>fser <span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-pix_fmt</span> rgb24 <span class="at">-f</span> caca <span class="at">-</span></span></code></pre></div>
+<p>Common dithering algorithms include:</p>
+<ul>
+<li><code>none</code>: Disables dithering.</li>
+<li><code>ordered2</code>, <code>ordered4</code>, <code>ordered8</code>:
+Bayer ordered dithering matrices.</li>
+<li><code>fser</code>: Floyd-Steinberg error diffusion algorithm (best
+for smooth color transitions).</li>
+</ul></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

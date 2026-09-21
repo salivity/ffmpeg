@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Real-Time Video Waveform Analysis in FFplay - ffmpeg</title>
+    <meta name="description" content="This guide demonstrates how to use ffplay, the lightweight media player included with FFmpeg, to monitor media with real-time visual waveform analysis. You will learn the exact terminal commands required to display both video luminance/color waveforms (v">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/real-time-video-waveform-analysis-in-f-fplay">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Real-Time Video Waveform Analysis in FFplay - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/real-time-video-waveform-analysis-in-f-fplay" />
+    <meta property="og:image" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This guide demonstrates how to use ffplay, the lightweight media player included with FFmpeg, to monitor media with real-time visual waveform analysis. You will learn the exact terminal commands required to display both video luminance/color waveforms (v" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="real-time-video-waveform-analysis-in-ffplay">Real-Time Video
+Waveform Analysis in FFplay</h1>
+<p>This guide demonstrates how to use <code>ffplay</code>, the
+lightweight media player included with FFmpeg, to monitor media with
+real-time visual waveform analysis. You will learn the exact terminal
+commands required to display both video luminance/color waveforms (video
+scopes) and live audio waveforms directly alongside or on top of your
+video during playback.</p>
+<hr />
+<h3 id="real-time-video-waveform-exposure--color-analysis">Real-Time
+Video Waveform (Exposure &amp; Color Analysis)</h3>
+<p>In video production, a waveform monitor displays signal levels such
+as luminance and chrominance across the frame, helping you assess
+exposure, clipping, and color balance.</p>
+<h4 id="1-display-waveform-only">1. Display Waveform Only</h4>
+<p>To replace the standard video display entirely with a real-time
+waveform monitor:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffplay</span> <span class="at">-vf</span> <span class="st">&quot;waveform&quot;</span> input.mp4</span></code></pre></div>
+<h4 id="2-display-original-video-and-waveform-side-by-side">2. Display
+Original Video and Waveform Side by Side</h4>
+<p>To view your video alongside its real-time waveform analysis, use the
+<code>split</code> and <code>hstack</code> (horizontal stack)
+filters:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffplay</span> <span class="at">-vf</span> <span class="st">&quot;split=2[orig][temp];[temp]waveform=m=column:c=7[wf];[orig][wf]hstack&quot;</span> input.mp4</span></code></pre></div>
+<ul>
+<li><strong><code>split=2[orig][temp]</code></strong>: Duplicates the
+video stream into two paths.</li>
+<li><strong><code>waveform=m=column:c=7[wf]</code></strong>: Converts
+the second stream into a column-mode waveform with colored components
+(<code>c=7</code> displays RGB parades or YUV depending on input).</li>
+<li><strong><code>hstack</code></strong>: Places the original frame and
+the waveform side by side.</li>
+</ul>
+<hr />
+<h3 id="real-time-audio-waveform-analysis">Real-Time Audio Waveform
+Analysis</h3>
+<p>If you need to analyze the sound frequency or amplitude of a video
+track in real time, you can render an audio waveform alongside the
+video.</p>
+<h4 id="1-audio-waveform-stacked-underneath-video">1. Audio Waveform
+Stacked Underneath Video</h4>
+<p>To stack a live oscilloscope-style waveform below the video:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffplay</span> <span class="at">-filter_complex</span> <span class="st">&quot;[0:v]null[v];[0:a]showwaves=s=1280x240:mode=line[w];[v][w]vstack&quot;</span> input.mp4</span></code></pre></div>
+<ul>
+<li><strong><code>showwaves</code></strong>: Converts the incoming audio
+track into a visual waveform.</li>
+<li><strong><code>s=1280x240</code></strong>: Sets the resolution of the
+audio display (adjust width to match your video).</li>
+<li><strong><code>mode=line</code></strong>: Renders the wave as a
+continuous line (other options include <code>point</code>,
+<code>p2p</code>, and <code>cline</code>).</li>
+<li><strong><code>vstack</code></strong>: Stacks the video on top and
+the audio waveform on the bottom.</li>
+</ul>
+<h4 id="2-audio-waveform-overlaid-on-the-video">2. Audio Waveform
+Overlaid on the Video</h4>
+<p>To overlay a semi-transparent audio waveform directly on top of the
+video playback:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffplay</span> <span class="at">-filter_complex</span> <span class="st">&quot;[0:a]showwaves=s=640x120:mode=line:colors=cyan[wave];[0:v][wave]overlay=x=10:y=H-h-10&quot;</span> input.mp4</span></code></pre></div>
+<ul>
+<li><strong><code>colors=cyan</code></strong>: Sets the waveform
+color.</li>
+<li><strong><code>overlay=x=10:y=H-h-10</code></strong>: Anchors the
+waveform to the bottom-left corner with a 10-pixel margin.</li>
+</ul>
+<hr />
+<h3 id="useful-shortcuts-during-playback">Useful Shortcuts During
+Playback</h3>
+<p>While <code>ffplay</code> is running your waveform analysis, you can
+control playback directly:</p>
+<ul>
+<li><strong><code>Space</code></strong>: Pause or resume playback.</li>
+<li><strong><code>Left / Right Arrow</code></strong>: Seek backward or
+forward by 10 seconds.</li>
+<li><strong><code>Up / Down Arrow</code></strong>: Seek backward or
+forward by 1 minute.</li>
+<li><strong><code>s</code></strong>: Step forward a single frame (useful
+for examining exposure or audio spikes frame-by-frame).</li>
+<li><strong><code>f</code></strong>: Toggle fullscreen mode.</li>
+<li><strong><code>q</code> or <code>Esc</code></strong>: Exit
+playback.</li>
+</ul></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

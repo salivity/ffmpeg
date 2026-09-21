@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FFmpeg Perspective Filter: Skew and Tilt Video - ffmpeg</title>
+    <meta name="description" content="This guide explains how to use the FFmpeg perspective filter to skew, tilt, and distort video perspective. By adjusting the coordinate points of a video's four corners, you can create 3D angling effects, correct camera keystoning, or tilt the horizon of">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/f-fmpeg-perspective-filter-skew-and-tilt-video">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="FFmpeg Perspective Filter: Skew and Tilt Video - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/f-fmpeg-perspective-filter-skew-and-tilt-video" />
+    <meta property="og:image" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This guide explains how to use the FFmpeg perspective filter to skew, tilt, and distort video perspective. By adjusting the coordinate points of a video's four corners, you can create 3D angling effects, correct camera keystoning, or tilt the horizon of" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="ffmpeg-perspective-filter-skew-and-tilt-video">FFmpeg
+Perspective Filter: Skew and Tilt Video</h1>
+<p>This guide explains how to use the FFmpeg <code>perspective</code>
+filter to skew, tilt, and distort video perspective. By adjusting the
+coordinate points of a video's four corners, you can create 3D angling
+effects, correct camera keystoning, or tilt the horizon of your footage.
+Below, you will find the syntax explanation, coordinate mapping logic,
+and practical command-line examples to apply these transformations.</p>
+<h2 id="understanding-the-perspective-filter-syntax">Understanding the
+Perspective Filter Syntax</h2>
+<p>The <code>perspective</code> filter works by mapping the original
+four corners of a video to new coordinate destinations.</p>
+<p>The basic syntax for the filter is:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="va">perspective</span><span class="op">=</span>x0:y0:x1:y1:x2:y2:x3:y3<span class="pp">[</span><span class="ss">:sense</span><span class="pp">][</span><span class="ss">:eval</span><span class="pp">]</span></span></code></pre></div>
+<p>The parameters <code>x0</code> through <code>y3</code> represent the
+new coordinate pairs <span class="math inline">\((x, y)\)</span> for the
+four corners of the output video, ordered as follows:</p>
+<ul>
+<li><strong>Top-Left Corner:</strong> <code>x0</code> and
+<code>y0</code></li>
+<li><strong>Top-Right Corner:</strong> <code>x1</code> and
+<code>y1</code></li>
+<li><strong>Bottom-Left Corner:</strong> <code>x2</code> and
+<code>y2</code></li>
+<li><strong>Bottom-Right Corner:</strong> <code>x3</code> and
+<code>y3</code></li>
+</ul>
+<p>To make formulas resolution-independent, FFmpeg allows you to use
+variables representing the input frame's dimensions:</p>
+<ul>
+<li><code>W</code> or <code>w</code>: Width of the input video</li>
+<li><code>H</code> or <code>h</code>: Height of the input video</li>
+</ul>
+<h2 id="practical-examples">Practical Examples</h2>
+<h3 id="1-tilting-a-video-backward-keystone-effect">1. Tilting a Video
+Backward (Keystone Effect)</h3>
+<p>To tilt a video backward so that the top appears further away, you
+must pull the top-left and top-right corners inward toward the center,
+while leaving the bottom corners at their original boundaries.</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;perspective=0.15*W:0.15*H:0.85*W:0.15*H:0:H:W:H&quot;</span> <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<p>In this command:</p>
+<ul>
+<li>The top-left corner is moved to 15% of the width and height
+(<code>0.15*W:0.15*H</code>).</li>
+<li>The top-right corner is moved to 85% of the width and 15% of the
+height (<code>0.85*W:0.15*H</code>).</li>
+<li>The bottom corners remain at their default positions
+(<code>0:H</code> and <code>W:H</code>).</li>
+</ul>
+<h3 id="2-skewing-a-video-to-the-left-side-angle-view">2. Skewing a
+Video to the Left (Side Angle View)</h3>
+<p>To make the video look like it is being viewed from an angle on the
+right, you can compress the left side vertically and stretch/shift the
+perspective.</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;perspective=0:0.1*H:W:0:0:0.9*H:W:H&quot;</span> <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<p>In this command:</p>
+<ul>
+<li>The left side is squeezed toward the vertical center
+(<code>y0</code> is shifted down to <code>0.1*H</code>, and
+<code>y2</code> is shifted up to <code>0.9*H</code>).</li>
+<li>The right side remains mapped to the absolute top and bottom edges
+of the frame (<code>y1</code> is <code>0</code>, and <code>y3</code> is
+<code>H</code>).</li>
+</ul>
+<h3 id="3-creating-a-simple-horizon-tilt-rotation">3. Creating a Simple
+Horizon Tilt (Rotation)</h3>
+<p>If you want to tilt the entire frame slightly to fix an uneven
+horizon, you can offset the corners in a rotational pattern:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;perspective=0:0.05*H:W:0:0:H:W:0.95*H&quot;</span> <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<p>This offsets the top-left and bottom-right corners down, creating a
+subtle clockwise tilt.</p>
+<h2 id="fine-tuning-parameters">Fine-Tuning Parameters</h2>
+<ul>
+<li><strong>Sense (<code>sense</code>):</strong> Set to <code>0</code>
+(default) for source-to-destination mapping, which tells FFmpeg where
+the original corners should move to in the output. Set to <code>1</code>
+for destination-to-source mapping, which defines what coordinates in the
+input frame should fill the output frame's corners.</li>
+<li><strong>Interpolation (<code>eval</code>):</strong> Use
+<code>eval=init</code> to calculate the coordinates once at the start of
+the video (highly recommended for performance), or
+<code>eval=frame</code> if you are using dynamic expressions to animate
+the perspective change over time.</li>
+</ul></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

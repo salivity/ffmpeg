@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stop FFmpeg Encoding at Longest Audio Stream - ffmpeg</title>
+    <meta name="description" content="By default, FFmpeg’s -shortest parameter forces output encoding to stop as soon as the shortest input stream ends. If you are combining a looped or extended video with multiple audio tracks of varying lengths, -shortest will prematurely cut off when th">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/stop-f-fmpeg-encoding-at-longest-audio-stream">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Stop FFmpeg Encoding at Longest Audio Stream - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/stop-f-fmpeg-encoding-at-longest-audio-stream" />
+    <meta property="og:image" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="By default, FFmpeg’s -shortest parameter forces output encoding to stop as soon as the shortest input stream ends. If you are combining a looped or extended video with multiple audio tracks of varying lengths, -shortest will prematurely cut off when th" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="stop-ffmpeg-encoding-at-longest-audio-stream">Stop FFmpeg
+Encoding at Longest Audio Stream</h1>
+<p>By default, FFmpeg’s <code>-shortest</code> parameter forces output
+encoding to stop as soon as the shortest input stream ends. If you are
+combining a looped or extended video with multiple audio tracks of
+varying lengths, <code>-shortest</code> will prematurely cut off when
+the <em>first</em> (shortest) audio track finishes. This article
+demonstrates how to configure FFmpeg to stop encoding only when the
+longest audio stream finishes, either by mixing streams with
+<code>amix</code> or by calculating the maximum duration for separate
+tracks.</p>
+<hr />
+<h3 id="the-limitation-of--shortest">The Limitation of
+<code>-shortest</code></h3>
+<p>The <code>-shortest</code> flag monitors all active input streams and
+sends an end-of-file (EOF) signal to the encoder as soon as any single
+stream reaches its end. If you have a video stream and two audio streams
+(e.g., 3 minutes and 5 minutes), <code>-shortest</code> stops processing
+at 3 minutes.</p>
+<p>Because <code>-shortest</code> cannot natively evaluate conditional
+"maximum" lengths among multiple streams, you must use one of the
+solutions below depending on whether you want a single mixed audio track
+or multiple separate audio tracks.</p>
+<hr />
+<h3 id="method-1-mix-audio-tracks-using-amix-durationlongest">Method 1:
+Mix Audio Tracks Using <code>amix</code>
+(<code>duration=longest</code>)</h3>
+<p>If you want to merge your audio inputs into a single playback track,
+use the <code>amix</code> audio filter. By default, <code>amix</code>
+sets its duration to <code>longest</code>, keeping the stream alive
+until the final audio input finishes.</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-stream_loop</span> <span class="at">-1</span> <span class="at">-i</span> video.mp4 <span class="at">-i</span> audio1.mp3 <span class="at">-i</span> audio2.mp3 <span class="at">-filter_complex</span> <span class="st">&quot;[1:a][2:a]amix=inputs=2:duration=longest[aout]&quot;</span> <span class="at">-map</span> 0:v <span class="at">-map</span> <span class="st">&quot;[aout]&quot;</span> <span class="at">-shortest</span> <span class="at">-c:v</span> copy output.mp4</span></code></pre></div>
+<ul>
+<li><strong><code>-stream_loop -1 -i video.mp4</code></strong>: Loops
+the video indefinitely so it is guaranteed to be longer than any audio
+track.</li>
+<li><strong><code>amix=inputs=2:duration=longest</code></strong>: Blends
+the two audio inputs and pads the shorter track with silence until the
+longest one ends.</li>
+<li><strong><code>-shortest</code></strong>: Halts encoding as soon as
+the mixed audio stream finishes, cutting off the infinite video
+loop.</li>
+</ul>
+<hr />
+<h3
+id="method-2-retain-separate-audio-streams-using-ffprobe-and--t">Method
+2: Retain Separate Audio Streams Using <code>ffprobe</code> and
+<code>-t</code></h3>
+<p>If your output file requires multiple separate audio streams (such as
+multi-language tracks or commentary tracks), <code>amix</code> cannot be
+used. Because <code>-shortest</code> will always exit on the first track
+to finish, the standard approach is to extract the duration of the
+longest audio track using <code>ffprobe</code> and supply it to
+<code>-t</code> instead of using <code>-shortest</code>.</p>
+<h4 id="step-1-find-the-duration-of-each-audio-file">Step 1: Find the
+duration of each audio file</h4>
+<p>Run <code>ffprobe</code> to determine the length (in seconds) of each
+audio track:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffprobe</span> <span class="at">-v</span> error <span class="at">-show_entries</span> format=duration <span class="at">-of</span> default=noprint_wrappers=1:nokey=1 audio1.mp3</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="ex">ffprobe</span> <span class="at">-v</span> error <span class="at">-show_entries</span> format=duration <span class="at">-of</span> default=noprint_wrappers=1:nokey=1 audio2.mp3</span></code></pre></div>
+<h4 id="step-2-encode-using-the-largest-duration-value">Step 2: Encode
+using the largest duration value</h4>
+<p>Take the larger of the two values (for example, <code>324.5</code>
+seconds) and use it with the <code>-t</code> option while looping the
+video:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-stream_loop</span> <span class="at">-1</span> <span class="at">-i</span> video.mp4 <span class="at">-i</span> audio1.mp3 <span class="at">-i</span> audio2.mp3 <span class="at">-map</span> 0:v <span class="at">-map</span> 1:a <span class="at">-map</span> 2:a <span class="at">-t</span> 324.5 <span class="at">-c:v</span> copy output.mp4</span></code></pre></div>
+<ul>
+<li><strong><code>-t 324.5</code></strong>: Instructs FFmpeg to encode
+exactly up to the end of the longest audio stream.</li>
+<li>The shorter audio stream will simply finish and remain silent for
+the remainder of the timeline, preserving both tracks without truncating
+the file early.</li>
+</ul>
+<hr />
+<h3 id="method-3-pad-the-shorter-audio-stream-apad">Method 3: Pad the
+Shorter Audio Stream (<code>apad</code>)</h3>
+<p>If you must use <code>-shortest</code> without pre-calculating the
+duration, you can pad the shorter audio stream with silence so that it
+does not trigger <code>-shortest</code> early.</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-stream_loop</span> <span class="at">-1</span> <span class="at">-i</span> video.mp4 <span class="at">-i</span> audio_short.mp3 <span class="at">-i</span> audio_long.mp3 <span class="at">-filter_complex</span> <span class="st">&quot;[1:a]apad[padded_a]&quot;</span> <span class="at">-map</span> 0:v <span class="at">-map</span> <span class="st">&quot;[padded_a]&quot;</span> <span class="at">-map</span> 2:a <span class="at">-shortest</span> <span class="at">-c:v</span> copy output.mp4</span></code></pre></div>
+<ul>
+<li><strong><code>[1:a]apad[padded_a]</code></strong>: Extends the
+shorter audio stream indefinitely with silence.</li>
+<li><strong><code>-shortest</code></strong>: Because the video is
+infinite and the short audio is now infinite,
+<code>audio_long.mp3</code> becomes the only stream with a finite end.
+FFmpeg stops encoding the moment <code>audio_long.mp3</code>
+finishes.</li>
+</ul></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

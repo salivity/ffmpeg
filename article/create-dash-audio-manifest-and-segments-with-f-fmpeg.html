@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create DASH Audio Manifest and Segments with FFmpeg - ffmpeg</title>
+    <meta name="description" content="This article provides a practical guide on using FFmpeg to encode and package audio files for Dynamic Adaptive Streaming over HTTP (DASH). You will learn how to generate an XML-based Media Presentation Description (.mpd) manifest alongside fragmented aud">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/create-dash-audio-manifest-and-segments-with-f-fmpeg">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Create DASH Audio Manifest and Segments with FFmpeg - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/create-dash-audio-manifest-and-segments-with-f-fmpeg" />
+    <meta property="og:image" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article provides a practical guide on using FFmpeg to encode and package audio files for Dynamic Adaptive Streaming over HTTP (DASH). You will learn how to generate an XML-based Media Presentation Description (.mpd) manifest alongside fragmented aud" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="create-dash-audio-manifest-and-segments-with-ffmpeg">Create DASH
+Audio Manifest and Segments with FFmpeg</h1>
+<p>This article provides a practical guide on using FFmpeg to encode and
+package audio files for Dynamic Adaptive Streaming over HTTP (DASH). You
+will learn how to generate an XML-based Media Presentation Description
+(<code>.mpd</code>) manifest alongside fragmented audio segments,
+covering both single-bitrate packaging and multi-bitrate adaptive audio
+configurations for video-on-demand (VOD) streaming.</p>
+<h2 id="basic-single-bitrate-dash-audio-generation">Basic Single-Bitrate
+DASH Audio Generation</h2>
+<p>To convert an audio file into DASH segments with a manifest, use
+FFmpeg's native <code>dash</code> muxer. The following command encodes
+an input audio file to AAC at 128 kbps and packages it into DASH:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.wav <span class="at">-c:a</span> aac <span class="at">-b:a</span> 128k <span class="at">-f</span> dash manifest.mpd</span></code></pre></div>
+<p>By default, this command generates:</p>
+<ul>
+<li><code>manifest.mpd</code>: The XML manifest file consumed by DASH
+players (such as Shaka Player or dash.js).</li>
+<li><code>init-stream0.m4s</code>: The initialization segment containing
+codec and track headers.</li>
+<li><code>chunk-stream0-00001.m4s</code>,
+<code>chunk-stream0-00002.m4s</code>, etc.: The individual media
+segments.</li>
+</ul>
+<h2 id="multi-bitrate-adaptive-audio-packaging">Multi-Bitrate Adaptive
+Audio Packaging</h2>
+<p>For true adaptive streaming, you should provide multiple quality
+levels so the client player can switch bitrates based on available
+network bandwidth. You can map the same audio stream multiple times to
+different bitrates within a single FFmpeg execution:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.wav <span class="dt">\</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">-map</span> 0:a <span class="at">-c:a:0</span> aac <span class="at">-b:a:0</span> 64k <span class="dt">\</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">-map</span> 0:a <span class="at">-c:a:1</span> aac <span class="at">-b:a:1</span> 128k <span class="dt">\</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">-map</span> 0:a <span class="at">-c:a:2</span> aac <span class="at">-b:a:2</span> 192k <span class="dt">\</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">-adaptation_sets</span> <span class="st">&quot;id=0,streams=a&quot;</span> <span class="dt">\</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">-f</span> dash manifest.mpd</span></code></pre></div>
+<h3 id="key-parameters-explained">Key Parameters Explained:</h3>
+<ul>
+<li><code>-map 0:a</code>: Selects the audio stream from the first input
+file. Repeating this creates multiple output streams.</li>
+<li><code>-b:a:X</code>: Specifies the bitrate for stream index
+<code>X</code>.</li>
+<li><code>-adaptation_sets "id=0,streams=a"</code>: Groups all audio
+streams into a single DASH <code>AdaptationSet</code>, signaling to
+players that these streams represent the same content at different
+qualities.</li>
+</ul>
+<h2 id="customizing-segment-duration-and-file-templates">Customizing
+Segment Duration and File Templates</h2>
+<p>For production environments, configuring segment naming patterns and
+durations is standard practice.</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.wav <span class="dt">\</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">-c:a</span> aac <span class="at">-b:a</span> 128k <span class="dt">\</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">-seg_duration</span> 4 <span class="dt">\</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">-use_template</span> 1 <span class="dt">\</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">-use_timeline</span> 1 <span class="dt">\</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">-init_seg_name</span> <span class="st">&#39;audio_init_$RepresentationID$.m4s&#39;</span> <span class="dt">\</span></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">-media_seg_name</span> <span class="st">&#39;audio_chunk_$RepresentationID$_$Number%05d$.m4s&#39;</span> <span class="dt">\</span></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>  <span class="at">-f</span> dash manifest.mpd</span></code></pre></div>
+<h3 id="essential-dash-flags">Essential DASH Flags:</h3>
+<ul>
+<li><code>-seg_duration 4</code>: Sets the target duration for each
+segment to 4 seconds.</li>
+<li><code>-use_template 1</code>: Utilizes a
+<code>SegmentTemplate</code> inside the manifest instead of listing
+every segment individually, keeping the <code>.mpd</code> file size
+small.</li>
+<li><code>-use_timeline 1</code>: Adds a <code>SegmentTimeline</code>
+inside the template to ensure precise segment durations and timestamps,
+preventing playback drift.</li>
+<li><code>-init_seg_name</code>: Defines the pattern for initialization
+segments. <code>$RepresentationID$</code> dynamically inserts the stream
+index or bandwidth identifier.</li>
+<li><code>-media_seg_name</code>: Defines the pattern for chunk files.
+<code>$Number%05d$</code> formats the segment number with zero-padding
+(e.g., <code>00001</code>).</li>
+</ul></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

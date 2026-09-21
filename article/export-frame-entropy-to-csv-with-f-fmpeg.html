@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Export Frame Entropy to CSV with FFmpeg - ffmpeg</title>
+    <meta name="description" content="This guide explains how to calculate frame-by-frame visual entropy in a video and export those metrics directly into a CSV file using FFmpeg and FFprobe. By chaining the entropy multimedia filter with FFprobe's structured output formatting, you can gener">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/export-frame-entropy-to-csv-with-f-fmpeg">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Export Frame Entropy to CSV with FFmpeg - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/export-frame-entropy-to-csv-with-f-fmpeg" />
+    <meta property="og:image" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This guide explains how to calculate frame-by-frame visual entropy in a video and export those metrics directly into a CSV file using FFmpeg and FFprobe. By chaining the entropy multimedia filter with FFprobe's structured output formatting, you can gener" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="export-frame-entropy-to-csv-with-ffmpeg">Export Frame Entropy to
+CSV with FFmpeg</h1>
+<p>This guide explains how to calculate frame-by-frame visual entropy in
+a video and export those metrics directly into a CSV file using FFmpeg
+and FFprobe. By chaining the <code>entropy</code> multimedia filter with
+FFprobe's structured output formatting, you can generate per-frame
+complexity measurements for luminance and chrominance channels for video
+analysis, research, or machine learning pipelines.</p>
+<h3 id="the-standard-ffprobe-command">The Standard FFprobe Command</h3>
+<p>The most direct way to generate a clean CSV file containing per-frame
+entropy values is using <code>ffprobe</code> with the <code>lavfi</code>
+(Libavfilter) virtual input device.</p>
+<p>Run the following command in your terminal:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffprobe</span> <span class="at">-v</span> error <span class="at">-f</span> lavfi <span class="at">-i</span> <span class="st">&quot;movie=input.mp4,entropy=mode=normal&quot;</span> <span class="dt">\</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>-show_entries frame=pkt_pts_time:frame_tags=lavfi.entropy.entropy.normal.Y <span class="dt">\</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>-of csv=p=0 <span class="op">&gt;</span> entropy.csv</span></code></pre></div>
+<h3 id="how-the-command-works">How the Command Works</h3>
+<ul>
+<li><strong><code>-v error</code></strong>: Suppresses non-essential log
+outputs, preventing debugging logs from polluting your terminal or file
+redirects.</li>
+<li><strong><code>-f lavfi</code></strong>: Directs FFprobe to read from
+the Libavfilter virtual input device rather than demuxing the file
+directly.</li>
+<li><strong><code>-i "movie=input.mp4,entropy=mode=normal"</code></strong>:
+Loads the source file (<code>input.mp4</code>) through the
+<code>movie</code> source filter and passes it through the
+<code>entropy</code> filter. The <code>mode=normal</code> parameter
+calculates standard Shannon entropy across pixel intensities.</li>
+<li><strong><code>-show_entries</code></strong>: Limits the output to
+only the necessary metadata.
+<ul>
+<li><code>frame=pkt_pts_time</code>: Includes the presentation timestamp
+of each frame.</li>
+<li><code>frame_tags=lavfi.entropy.entropy.normal.Y</code>: Extracts the
+calculated entropy metric for the Y (luminance) channel.</li>
+</ul></li>
+<li><strong><code>-of csv=p=0</code></strong>: Sets the output format to
+CSV. The <code>p=0</code> flag removes the default prefixes (such as
+<code>frame,</code> or <code>tag:</code>), yielding clean,
+comma-separated values.</li>
+<li><strong><code>&gt; entropy.csv</code></strong>: Redirects standard
+output to a CSV file.</li>
+</ul>
+<h3 id="exporting-all-color-channels-y-u-and-v">Exporting All Color
+Channels (Y, U, and V)</h3>
+<p>To export the entropy values for the luminance channel alongside both
+chrominance channels, expand the <code>frame_tags</code> field:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffprobe</span> <span class="at">-v</span> error <span class="at">-f</span> lavfi <span class="at">-i</span> <span class="st">&quot;movie=input.mp4,entropy=mode=normal&quot;</span> <span class="dt">\</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>-show_entries frame=pkt_pts_time:frame_tags=lavfi.entropy.entropy.normal.Y,lavfi.entropy.entropy.normal.U,lavfi.entropy.entropy.normal.V <span class="dt">\</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>-of csv=p=0 <span class="op">&gt;</span> entropy_all_channels.csv</span></code></pre></div>
+<h3 id="adding-a-csv-header-row">Adding a CSV Header Row</h3>
+<p>Because <code>-of csv=p=0</code> removes all metadata labels, the
+resulting CSV file will contain raw values without a header. You can add
+a header manually by prepending it before running the command:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="bu">echo</span> <span class="st">&quot;timestamp,entropy_y,entropy_u,entropy_v&quot;</span> <span class="op">&gt;</span> entropy_final.csv</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="ex">ffprobe</span> <span class="at">-v</span> error <span class="at">-f</span> lavfi <span class="at">-i</span> <span class="st">&quot;movie=input.mp4,entropy=mode=normal&quot;</span> <span class="dt">\</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>-show_entries frame=pkt_pts_time:frame_tags=lavfi.entropy.entropy.normal.Y,lavfi.entropy.entropy.normal.U,lavfi.entropy.entropy.normal.V <span class="dt">\</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>-of csv=p=0 <span class="op">&gt;&gt;</span> entropy_final.csv</span></code></pre></div>
+<h3 id="alternative-using-the-ffmpeg-metadata-filter">Alternative: Using
+the FFmpeg Metadata Filter</h3>
+<p>If you must use <code>ffmpeg</code> rather than <code>ffprobe</code>,
+use the <code>metadata</code> filter to print values directly to a text
+file:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;entropy=mode=normal,metadata=print:key=lavfi.entropy.entropy.normal.Y:file=entropy_raw.txt&quot;</span> <span class="at">-f</span> null <span class="at">-</span></span></code></pre></div>
+<p>This generates a structured text file containing lines in the format
+<code>lavfi.entropy.entropy.normal.Y=value</code>, which can be
+converted to standard CSV using basic text processing tools such as
+<code>awk</code>, <code>sed</code>, or Python.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

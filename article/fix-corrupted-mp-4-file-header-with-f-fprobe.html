@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fix Corrupted MP4 File Header with FFprobe - ffmpeg</title>
+    <meta name="description" content="A corrupted MP4 file header prevents media players from reading audio and video streams, rendering the entire video unplayable. This guide explains how to diagnose corrupted MP4 headers using ffprobe, extract critical stream parameters from healthy refer">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/fix-corrupted-mp-4-file-header-with-f-fprobe">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Fix Corrupted MP4 File Header with FFprobe - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/fix-corrupted-mp-4-file-header-with-f-fprobe" />
+    <meta property="og:image" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="A corrupted MP4 file header prevents media players from reading audio and video streams, rendering the entire video unplayable. This guide explains how to diagnose corrupted MP4 headers using ffprobe, extract critical stream parameters from healthy refer" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="fix-corrupted-mp4-file-header-with-ffprobe">Fix Corrupted MP4
+File Header with FFprobe</h1>
+<p>A corrupted MP4 file header prevents media players from reading audio
+and video streams, rendering the entire video unplayable. This guide
+explains how to diagnose corrupted MP4 headers using
+<code>ffprobe</code>, extract critical stream parameters from healthy
+reference files, and rebuild the missing container structure using
+FFmpeg tools to restore your video.</p>
+<hr />
+<h3 id="understanding-the-role-of-ffprobe">Understanding the Role of
+FFprobe</h3>
+<p>While <code>ffprobe</code> is a diagnostic and stream-analysis tool
+rather than a file editor, it is critical for repairing damaged headers.
+An MP4 header relies on index data—primarily the <code>moov</code>
+atom—which contains the codec details, timestamps, and layout of the
+audio and video streams.</p>
+<p>You use <code>ffprobe</code> to:</p>
+<ol type="1">
+<li>Identify the exact failure point in the damaged file.</li>
+<li>Analyze a working reference file recorded on the same device to
+extract missing container parameters.</li>
+<li>Validate the repaired file to ensure the new header is compliant and
+readable.</li>
+</ol>
+<hr />
+<h3 id="step-1-diagnose-the-corrupted-mp4-header">Step 1: Diagnose the
+Corrupted MP4 Header</h3>
+<p>Run <code>ffprobe</code> against your damaged file to determine
+whether the header is missing, misplaced, or completely unreadable.</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffprobe</span> <span class="at">-v</span> error <span class="at">-show_format</span> <span class="at">-show_streams</span> corrupted.mp4</span></code></pre></div>
+<ul>
+<li><strong>Output Analysis:</strong>
+<ul>
+<li><strong>"moov atom not found"</strong>: The video recording was
+interrupted before the index header was written to the disk.</li>
+<li><strong>"Invalid data found when processing input"</strong>: The
+header exists but contains corrupted metadata bytes.</li>
+</ul></li>
+</ul>
+<hr />
+<h3 id="step-2-analyze-a-working-reference-file">Step 2: Analyze a
+Working Reference File</h3>
+<p>If the <code>moov</code> atom is missing, you must supply the
+container structure from a healthy video recorded with the exact same
+device, app, resolution, and frame rate.</p>
+<p>Use <code>ffprobe</code> to inspect the technical parameters of the
+reference file:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffprobe</span> <span class="at">-v</span> error <span class="at">-select_streams</span> v:0 <span class="at">-show_entries</span> stream=codec_name,width,height,pix_fmt,r_frame_rate reference.mp4</span></code></pre></div>
+<p>Note the output values for:</p>
+<ul>
+<li><code>codec_name</code> (e.g., <code>h264</code>,
+<code>hevc</code>)</li>
+<li><code>width</code> and <code>height</code> (e.g.,
+<code>1920x1080</code>)</li>
+<li><code>pix_fmt</code> (e.g., <code>yuv420p</code>)</li>
+</ul>
+<hr />
+<h3 id="step-3-repair-the-corrupted-header">Step 3: Repair the Corrupted
+Header</h3>
+<p>Depending on the diagnosis from Step 1, use one of the following
+methods to rebuild the header.</p>
+<h4
+id="method-a-relocate-and-rebuild-the-header-minor-corruption">Method A:
+Relocate and Rebuild the Header (Minor Corruption)</h4>
+<p>If <code>ffprobe</code> detects stream data but fails on random
+access, the header may simply be located at the end of the file or
+contain fragmented indices. Re-mux the file using FFmpeg with the
+<code>faststart</code> flag:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-err_detect</span> ignore_err <span class="at">-i</span> corrupted.mp4 <span class="at">-c</span> copy <span class="at">-movflags</span> faststart repaired.mp4</span></code></pre></div>
+<ul>
+<li><code>-err_detect ignore_err</code>: Forces the demuxer to bypass
+minor syntax errors in the header.</li>
+<li><code>-c copy</code>: Copies the raw video and audio streams without
+re-encoding, preserving 100% quality.</li>
+<li><code>-movflags faststart</code>: Moves the <code>moov</code> atom
+to the very beginning of the MP4 file.</li>
+</ul>
+<h4 id="method-b-reconstruct-a-missing-moov-atom">Method B: Reconstruct
+a Missing <code>moov</code> Atom</h4>
+<p>If <code>ffprobe</code> returns <code>moov atom not found</code>, the
+file contains raw media packets without an index. Use the open-source
+utility <code>untrunc</code> alongside <code>ffprobe</code> to graft the
+reference header onto the broken stream:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">untrunc</span> reference.mp4 corrupted.mp4</span></code></pre></div>
+<p><code>untrunc</code> uses the stream layout analyzed from
+<code>reference.mp4</code> to parse the raw byte stream inside
+<code>corrupted.mp4</code> and synthesize a new, fully indexed
+header.</p>
+<hr />
+<h3 id="step-4-verify-the-repaired-header-with-ffprobe">Step 4: Verify
+the Repaired Header with FFprobe</h3>
+<p>Once the repair process completes, verify that the MP4 header is
+valid and that both streams are correctly recognized:</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffprobe</span> <span class="at">-v</span> error <span class="at">-show_entries</span> format=duration,size,bit_rate <span class="at">-show_streams</span> repaired.mp4</span></code></pre></div>
+<p>If the command executes without printing errors and displays the
+duration, video dimensions, and audio tracks, the header has been
+successfully restored.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

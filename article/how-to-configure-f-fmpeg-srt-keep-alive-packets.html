@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Configure FFmpeg SRT Keep-Alive Packets - ffmpeg</title>
+    <meta name="description" content="This article explains how to configure keep-alive behavior and manage connection timeouts when streaming via Secure Reliable Transport (SRT) using FFmpeg. You will learn how SRT handles heartbeat packets natively over UDP, which FFmpeg URL parameters gov">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/how-to-configure-f-fmpeg-srt-keep-alive-packets">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Configure FFmpeg SRT Keep-Alive Packets - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/how-to-configure-f-fmpeg-srt-keep-alive-packets" />
+    <meta property="og:image" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article explains how to configure keep-alive behavior and manage connection timeouts when streaming via Secure Reliable Transport (SRT) using FFmpeg. You will learn how SRT handles heartbeat packets natively over UDP, which FFmpeg URL parameters gov" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-to-configure-ffmpeg-srt-keep-alive-packets">How to Configure
+FFmpeg SRT Keep-Alive Packets</h1>
+<p>This article explains how to configure keep-alive behavior and manage
+connection timeouts when streaming via Secure Reliable Transport (SRT)
+using FFmpeg. You will learn how SRT handles heartbeat packets natively
+over UDP, which FFmpeg URL parameters govern connection persistence, and
+how to structure your streaming commands to prevent drops across NATs
+and stateful firewalls.</p>
+<h3 id="how-srt-handles-keep-alive-packets">How SRT Handles Keep-Alive
+Packets</h3>
+<p>Unlike TCP, which relies on standard TCP keep-alive probes, SRT
+operates over UDP and includes an integrated control messaging layer.
+When an SRT connection is established, the sender and receiver
+continuously exchange control signals (such as ACKs, NAKs, and heartbeat
+packets). If no media payload is currently being transmitted, SRT
+automatically transmits internal control packets at regular intervals
+(typically every 1,000 milliseconds) to verify the link and keep
+stateful NAT firewalls from terminating the UDP mapping.</p>
+<p>In FFmpeg, these settings are not passed via generic
+<code>-keepalive</code> flags; instead, they are configured as query
+parameters appended directly to the SRT destination URL.</p>
+<h3 id="key-parameters-for-srt-keep-alive-and-connection-management">Key
+Parameters for SRT Keep-Alive and Connection Management</h3>
+<p>When sending an SRT stream with FFmpeg, use the following parameters
+to adjust keep-alive thresholds, timeouts, and idle peer detection:</p>
+<ul>
+<li><strong><code>peeridle</code></strong>: Sets the peer idle timeout
+in milliseconds. If the endpoint receives no packets—neither media data
+nor SRT control/keep-alive packets—for this duration, the connection is
+marked as broken and closed. The default is <code>5000</code> (5
+seconds). Setting this to a higher value (such as <code>10000</code> or
+<code>15000</code>) prevents premature disconnects during intermittent
+network stalls.</li>
+<li><strong><code>conntimeo</code></strong>: Sets the connection timeout
+in milliseconds for the initial handshake before aborting. The default
+is typically <code>3000</code> ms for caller mode.</li>
+<li><strong><code>timeout</code></strong>: Sets the I/O operation
+timeout in microseconds. If data reading or writing blocks for longer
+than this duration, FFmpeg will exit.</li>
+</ul>
+<h3 id="configuring-the-ffmpeg-command">Configuring the FFmpeg
+Command</h3>
+<p>To apply keep-alive and idle-detection settings, append the
+parameters as standard query parameters to the SRT URI. Always wrap the
+entire output URL in quotes to prevent shell interpretation of the
+<code>&amp;</code> character.</p>
+<h4 id="caller-mode-broadcasting-to-a-remote-ingest">Caller Mode
+(Broadcasting to a Remote Ingest)</h4>
+<p>Use this configuration when pushing a stream to a remote server or
+media gateway:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-re</span> <span class="at">-i</span> input.mp4 <span class="at">-c:v</span> libx264 <span class="at">-preset</span> veryfast <span class="at">-c:a</span> aac <span class="at">-f</span> mpegts <span class="dt">\</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  <span class="st">&quot;srt://target-server.com:9000?mode=caller&amp;peeridle=10000&amp;conntimeo=5000&quot;</span></span></code></pre></div>
+<p>In this command:</p>
+<ul>
+<li><code>mode=caller</code> directs FFmpeg to initiate the
+connection.</li>
+<li><code>peeridle=10000</code> instructs SRT to wait 10 seconds without
+any inbound data or keep-alive packets before declaring the peer
+dead.</li>
+<li><code>conntimeo=5000</code> gives the connection handshake 5 seconds
+to complete.</li>
+</ul>
+<h4 id="listener-mode-waiting-for-an-inbound-connection">Listener Mode
+(Waiting for an Inbound Connection)</h4>
+<p>If FFmpeg is running as an ingest listener waiting for an incoming
+SRT feed, set the mode to <code>listener</code>:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> <span class="st">&quot;srt://0.0.0.0:9000?mode=listener&amp;peeridle=10000&quot;</span> <span class="dt">\</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">-c</span> copy <span class="at">-f</span> mpegts output.ts</span></code></pre></div>
+<h3 id="keeping-state-across-aggressive-firewalls">Keeping State Across
+Aggressive Firewalls</h3>
+<p>While SRT sends automated heartbeat packets when idle, some
+aggressive network firewalls or cloud NAT gateways close inactive UDP
+states rapidly if bandwidth drops to zero. If you experience
+disconnections during periods where no video is being encoded:</p>
+<ol type="1">
+<li><strong>Lower latency buffers if necessary</strong>: Match
+<code>latency</code> values across sender and receiver to avoid buffer
+underruns misinterpreted as idle disconnects (e.g.,
+<code>&amp;latency=200000</code> for 200ms).</li>
+<li><strong>Ensure uninterrupted transport</strong>: Use constant
+bitrate (CBR) encoding with fixed GOP structures
+(<code>-g 60 -keyint_min 60</code>) to maintain a steady flow of payload
+packets alongside SRT's internal control packets.</li>
+</ol></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

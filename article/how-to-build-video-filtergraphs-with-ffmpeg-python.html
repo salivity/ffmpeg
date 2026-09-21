@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Build Video Filtergraphs with ffmpeg-python - ffmpeg</title>
+    <meta name="description" content="This article provides a practical guide on constructing simple and complex video filtergraphs using the ffmpeg-python library. You will learn the core concepts of chaining operations, handling multiple video and audio streams, applying common transformat">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/how-to-build-video-filtergraphs-with-ffmpeg-python">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Build Video Filtergraphs with ffmpeg-python - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/how-to-build-video-filtergraphs-with-ffmpeg-python" />
+    <meta property="og:image" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article provides a practical guide on constructing simple and complex video filtergraphs using the ffmpeg-python library. You will learn the core concepts of chaining operations, handling multiple video and audio streams, applying common transformat" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-to-build-video-filtergraphs-with-ffmpeg-python">How to Build
+Video Filtergraphs with ffmpeg-python</h1>
+<p>This article provides a practical guide on constructing simple and
+complex video filtergraphs using the <code>ffmpeg-python</code> library.
+You will learn the core concepts of chaining operations, handling
+multiple video and audio streams, applying common transformations like
+scaling and cropping, and combining streams using complex filters such
+as overlays.</p>
+<h3 id="understanding-the-basics">Understanding the Basics</h3>
+<p>The <code>ffmpeg-python</code> library provides Python bindings for
+FFmpeg, allowing you to build complex command-line arguments using a
+fluent, node-based API. In FFmpeg, a filtergraph is a directed graph of
+connected filters. In <code>ffmpeg-python</code>, each filter function
+takes an incoming stream node as an input and returns a new stream
+node.</p>
+<p>Before starting, ensure that both the FFmpeg binary is installed on
+your system and the Python package is installed:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">pip</span> install ffmpeg-python</span></code></pre></div>
+<h3 id="creating-a-simple-linear-filtergraph">Creating a Simple Linear
+Filtergraph</h3>
+<p>A linear filtergraph applies a sequence of filters to a single input
+stream, passing the result from one filter directly into the next.</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> ffmpeg</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Define the input</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>input_stream <span class="op">=</span> ffmpeg.<span class="bu">input</span>(<span class="st">&#39;input.mp4&#39;</span>)</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a><span class="co"># Build a linear filter chain: trim -&gt; scale -&gt; set presentation timestamp</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>video <span class="op">=</span> (</span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>    input_stream.video</span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>    .trim(start<span class="op">=</span><span class="dv">5</span>, end<span class="op">=</span><span class="dv">15</span>)</span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>    .setpts(<span class="st">&#39;PTS-STARTPTS&#39;</span>)</span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>    .<span class="bu">filter</span>(<span class="st">&#39;scale&#39;</span>, <span class="dv">1280</span>, <span class="dv">720</span>)</span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a>    .<span class="bu">filter</span>(<span class="st">&#39;fps&#39;</span>, fps<span class="op">=</span><span class="dv">30</span>)</span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a><span class="co"># Extract and trim the corresponding audio</span></span>
+<span id="cb2-16"><a href="#cb2-16" aria-hidden="true" tabindex="-1"></a>audio <span class="op">=</span> (</span>
+<span id="cb2-17"><a href="#cb2-17" aria-hidden="true" tabindex="-1"></a>    input_stream.audio</span>
+<span id="cb2-18"><a href="#cb2-18" aria-hidden="true" tabindex="-1"></a>    .<span class="bu">filter</span>(<span class="st">&#39;atrim&#39;</span>, start<span class="op">=</span><span class="dv">5</span>, end<span class="op">=</span><span class="dv">15</span>)</span>
+<span id="cb2-19"><a href="#cb2-19" aria-hidden="true" tabindex="-1"></a>    .<span class="bu">filter</span>(<span class="st">&#39;asetpts&#39;</span>, <span class="st">&#39;PTS-STARTPTS&#39;</span>)</span>
+<span id="cb2-20"><a href="#cb2-20" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb2-21"><a href="#cb2-21" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-22"><a href="#cb2-22" aria-hidden="true" tabindex="-1"></a><span class="co"># Combine video and audio into an output node and run</span></span>
+<span id="cb2-23"><a href="#cb2-23" aria-hidden="true" tabindex="-1"></a>output <span class="op">=</span> ffmpeg.output(video, audio, <span class="st">&#39;output_linear.mp4&#39;</span>)</span>
+<span id="cb2-24"><a href="#cb2-24" aria-hidden="true" tabindex="-1"></a>ffmpeg.run(output)</span></code></pre></div>
+<h3 id="building-complex-filtergraphs-with-multiple-inputs">Building
+Complex Filtergraphs with Multiple Inputs</h3>
+<p>Complex filtergraphs involve multiple inputs, outputs, or branching
+paths. A common use case is creating a picture-in-picture (PiP) effect
+using the <code>overlay</code> filter.</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> ffmpeg</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Load primary and overlay inputs</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>main_video <span class="op">=</span> ffmpeg.<span class="bu">input</span>(<span class="st">&#39;main_background.mp4&#39;</span>)</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>pip_video <span class="op">=</span> ffmpeg.<span class="bu">input</span>(<span class="st">&#39;secondary_camera.mp4&#39;</span>)</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Scale down the overlay stream</span></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>pip_scaled <span class="op">=</span> pip_video.<span class="bu">filter</span>(<span class="st">&#39;scale&#39;</span>, <span class="dv">320</span>, <span class="dv">240</span>)</span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a><span class="co"># Apply the overlay filter: place secondary stream at coordinates (x=50, y=50)</span></span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>composed_video <span class="op">=</span> ffmpeg.<span class="bu">filter</span>(</span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>    [main_video.video, pip_scaled],</span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>    <span class="st">&#39;overlay&#39;</span>,</span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a>    x<span class="op">=</span><span class="dv">50</span>,</span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a>    y<span class="op">=</span><span class="dv">50</span></span>
+<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-18"><a href="#cb3-18" aria-hidden="true" tabindex="-1"></a><span class="co"># Render the output using the processed video and the main audio</span></span>
+<span id="cb3-19"><a href="#cb3-19" aria-hidden="true" tabindex="-1"></a>output <span class="op">=</span> ffmpeg.output(</span>
+<span id="cb3-20"><a href="#cb3-20" aria-hidden="true" tabindex="-1"></a>    composed_video,</span>
+<span id="cb3-21"><a href="#cb3-21" aria-hidden="true" tabindex="-1"></a>    main_video.audio,</span>
+<span id="cb3-22"><a href="#cb3-22" aria-hidden="true" tabindex="-1"></a>    <span class="st">&#39;output_pip.mp4&#39;</span>,</span>
+<span id="cb3-23"><a href="#cb3-23" aria-hidden="true" tabindex="-1"></a>    vcodec<span class="op">=</span><span class="st">&#39;libx264&#39;</span>,</span>
+<span id="cb3-24"><a href="#cb3-24" aria-hidden="true" tabindex="-1"></a>    acodec<span class="op">=</span><span class="st">&#39;aac&#39;</span></span>
+<span id="cb3-25"><a href="#cb3-25" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb3-26"><a href="#cb3-26" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-27"><a href="#cb3-27" aria-hidden="true" tabindex="-1"></a>ffmpeg.run(output)</span></code></pre></div>
+<h3 id="splitting-and-branching-streams">Splitting and Branching
+Streams</h3>
+<p>You can use the <code>.split()</code> filter to route a single video
+stream into multiple parallel filter paths, for example, to create a
+side-by-side comparison or multiple outputs.</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> ffmpeg</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>input_stream <span class="op">=</span> ffmpeg.<span class="bu">input</span>(<span class="st">&#39;sample.mp4&#39;</span>)</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a><span class="co"># Split the video stream into two identical branches</span></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>split <span class="op">=</span> input_stream.video.split()</span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>branch1 <span class="op">=</span> split[<span class="dv">0</span>]</span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>branch2 <span class="op">=</span> split[<span class="dv">1</span>]</span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a><span class="co"># Apply distinct filters to each branch</span></span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a>original_styled <span class="op">=</span> branch1.<span class="bu">filter</span>(<span class="st">&#39;scale&#39;</span>, <span class="dv">640</span>, <span class="dv">480</span>)</span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a>grayscale_styled <span class="op">=</span> branch2.<span class="bu">filter</span>(<span class="st">&#39;scale&#39;</span>, <span class="dv">640</span>, <span class="dv">480</span>).<span class="bu">filter</span>(<span class="st">&#39;hue&#39;</span>, s<span class="op">=</span><span class="dv">0</span>)</span>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a><span class="co"># Concatenate or stack them horizontally using hstack</span></span>
+<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a>stacked <span class="op">=</span> ffmpeg.<span class="bu">filter</span>([original_styled, grayscale_styled], <span class="st">&#39;hstack&#39;</span>)</span>
+<span id="cb4-16"><a href="#cb4-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-17"><a href="#cb4-17" aria-hidden="true" tabindex="-1"></a><span class="co"># Output the result</span></span>
+<span id="cb4-18"><a href="#cb4-18" aria-hidden="true" tabindex="-1"></a>output <span class="op">=</span> ffmpeg.output(stacked, input_stream.audio, <span class="st">&#39;side_by_side.mp4&#39;</span>)</span>
+<span id="cb4-19"><a href="#cb4-19" aria-hidden="true" tabindex="-1"></a>ffmpeg.run(output)</span></code></pre></div>
+<h3 id="inspecting-the-generated-command">Inspecting the Generated
+Command</h3>
+<p>To debug a filtergraph without running the process, you can compile
+the node graph into an argument list:</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>args <span class="op">=</span> ffmpeg.<span class="bu">compile</span>(output)</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">&quot; &quot;</span>.join(args))</span></code></pre></div>
+<p>This prints the raw <code>ffmpeg</code> command, allowing you to
+inspect the <code>-filter_complex</code> arguments generated by
+<code>ffmpeg-python</code> to verify connection routing and
+parameters.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

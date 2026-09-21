@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Troubleshooting FFmpeg Memory Leaks in Live Streams - ffmpeg</title>
+    <meta name="description" content="Long-running FFmpeg processes used for 24/7 live streaming can occasionally suffer from unbounded memory growth, leading to system crashes or killed processes. This guide provides a direct, step-by-step approach to diagnosing and resolving memory leaks i">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/troubleshooting-f-fmpeg-memory-leaks-in-live-streams">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Troubleshooting FFmpeg Memory Leaks in Live Streams - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/troubleshooting-f-fmpeg-memory-leaks-in-live-streams" />
+    <meta property="og:image" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Long-running FFmpeg processes used for 24/7 live streaming can occasionally suffer from unbounded memory growth, leading to system crashes or killed processes. This guide provides a direct, step-by-step approach to diagnosing and resolving memory leaks i" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1
+id="troubleshooting-ffmpeg-memory-leaks-in-live-streams">Troubleshooting
+FFmpeg Memory Leaks in Live Streams</h1>
+<p>Long-running FFmpeg processes used for 24/7 live streaming can
+occasionally suffer from unbounded memory growth, leading to system
+crashes or killed processes. This guide provides a direct, step-by-step
+approach to diagnosing and resolving memory leaks in FFmpeg, covering
+differentiation between true leaks and buffer accumulation,
+configuration tuning, filtergraph analysis, and native profiling
+tools.</p>
+<h2 id="1-differentiate-true-leaks-from-buffer-accumulation">1.
+Differentiate True Leaks from Buffer Accumulation</h2>
+<p>Before debugging C-level memory leaks, determine if FFmpeg is simply
+caching frames due to network latency, mismatched timestamps, or
+internal queue buildup.</p>
+<ul>
+<li><strong>Check Audio/Video Sync Drift:</strong> If the audio and
+video timestamps diverge, FFmpeg buffers packets in memory while waiting
+to interleave them properly. Look for warnings like
+<code>Past duration ... too large</code> or
+<code>Non-monotonic DTS</code> in your logs.</li>
+<li><strong>Inspect Protocol Buffers:</strong> In protocols like RTMP,
+SRT, or UDP, network congestion can cause output buffers to back up into
+system RAM.</li>
+<li><strong>Monitor Resident Set Size (RSS):</strong> Track RSS using
+<code>ps -o rss,vsz -p &lt;PID&gt;</code> over hours. An unbounded,
+linear climb that never plateaus indicates either a memory leak or an
+unconstrained queue.</li>
+</ul>
+<h2 id="2-tune-ffmpeg-command-line-options">2. Tune FFmpeg Command-Line
+Options</h2>
+<p>Misconfigured demuxers, muxers, and thread counts are the most
+frequent causes of runaway memory usage in continuous streams.</p>
+<h3 id="constrain-muxing-queues">Constrain Muxing Queues</h3>
+<p>By default, recent versions of FFmpeg allocate a large muxing queue
+to prevent dropped frames. In unstable streams, this queue grows
+indefinitely. Cap it explicitly:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">-max_muxing_queue_size</span> 1024</span></code></pre></div>
+<h3 id="eliminate-frame-queuing">Eliminate Frame Queuing</h3>
+<p>For live network inputs (RTSP, RTMP, WebRTC), minimize internal
+buffering with:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">-fflags</span> +nobuffer <span class="at">-flags</span> low_delay</span></code></pre></div>
+<h3 id="limit-thread-allocations">Limit Thread Allocations</h3>
+<p>Auto-threading (<code>-threads 0</code>) can allocate excessive frame
+buffers, especially when running software encoders like
+<code>libx264</code> alongside complex filter pipelines. Explicitly set
+thread counts:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">-threads</span> 4 <span class="at">-filter_threads</span> 2</span></code></pre></div>
+<h2 id="3-audit-complex-filtergraphs">3. Audit Complex Filtergraphs</h2>
+<p>Complex filter chains (such as <code>overlay</code>,
+<code>concat</code>, <code>interlace</code>, or <code>fps</code>) store
+frames in memory queues until all inputs have matching timestamps.</p>
+<ul>
+<li><strong>Fix Overlay Mismatches:</strong> If using
+<code>-filter_complex overlay</code>, ensure both input streams share
+identical, synchronized framerates. If one stream stops or stutters, the
+overlay filter buffers the other indefinitely. Use
+<code>shortest=1</code> or configure <code>fps</code> filters on all
+inputs prior to merging.</li>
+<li><strong>Check Memory Usage Without Filters:</strong> Temporarily
+route raw input directly to the encoder using
+<code>-c:v copy -c:a copy</code> to test if the filtergraph is
+responsible for the memory increase.</li>
+</ul>
+<h2 id="4-identify-buggy-third-party-libraries">4. Identify Buggy
+Third-Party Libraries</h2>
+<p>FFmpeg delegates encoding, decoding, and networking to external
+libraries. Memory leaks rarely originate in the FFmpeg core; they are
+commonly found in hardware acceleration drivers or external
+dependencies.</p>
+<ul>
+<li><strong>Hardware Encoders (NVENC, QSV, VAAPI):</strong> Outdated GPU
+drivers or memory leaks in vendor SDKs often cause system or VRAM
+exhaustion. Update your graphics drivers to the latest stable
+release.</li>
+<li><strong>External Codecs:</strong> Libraries like
+<code>libvpx</code>, <code>libaom</code>, and <code>libass</code>
+frequently release patches for memory leaks. Compile FFmpeg against the
+newest stable releases of these external libraries rather than relying
+on stale distribution packages.</li>
+</ul>
+<h2 id="5-profile-with-memory-analysis-tools">5. Profile with Memory
+Analysis Tools</h2>
+<p>If configuration changes do not stop memory growth, capture the
+allocation trace using native diagnostic tools.</p>
+<h3 id="addresssanitizer-asan">AddressSanitizer (ASan)</h3>
+<p>Compile a debug build of FFmpeg with ASan enabled. This introduces
+minimal overhead compared to Valgrind and can run against a real live
+stream:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">./configure</span> <span class="at">--enable-debug</span><span class="op">=</span>3 <span class="at">--disable-optimizations</span> <span class="at">--extra-cflags</span><span class="op">=</span><span class="st">&quot;-fsanitize=address&quot;</span> <span class="at">--extra-ldflags</span><span class="op">=</span><span class="st">&quot;-fsanitize=address&quot;</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="fu">make</span> <span class="at">-j</span><span class="va">$(</span><span class="fu">nproc</span><span class="va">)</span></span></code></pre></div>
+<p>Run your stream. Upon stopping the process or when memory spikes
+occur, ASan prints a detailed stack trace showing leaked memory
+blocks.</p>
+<h3 id="valgrind-massif">Valgrind Massif</h3>
+<p>To inspect high-water mark memory consumption over time, use the
+Massif tool:</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="fu">valgrind</span> <span class="at">--tool</span><span class="op">=</span>massif <span class="at">--pages-as-heap</span><span class="op">=</span>yes ffmpeg <span class="pp">[</span><span class="ss">your</span><span class="pp">-</span><span class="ss">stream</span><span class="pp">-</span><span class="ss">arguments</span><span class="pp">]</span></span></code></pre></div>
+<p>Analyze the resulting <code>massif.out.&lt;pid&gt;</code> file with
+<code>ms_print</code> to see exact function calls that failed to
+deallocate memory.</p>
+<h2 id="6-implement-production-safeguards">6. Implement Production
+Safeguards</h2>
+<p>When debugging production environments where stream interruption must
+be mitigated immediately:</p>
+<ul>
+<li><strong>Enforce Memory Limits:</strong> Wrap the FFmpeg process in a
+systemd unit file with <code>MemoryMax=</code> or run inside a Docker
+container with <code>--memory</code>.</li>
+<li><strong>Graceful Handoffs:</strong> Use an orchestration script or
+process manager to spin up a parallel instance and switch RTMP/SRT
+output targets seamlessly every 24 to 48 hours to clear process
+memory.</li>
+</ul></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

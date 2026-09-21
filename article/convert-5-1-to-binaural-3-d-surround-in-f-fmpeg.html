@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Convert 5.1 to Binaural 3D Surround in FFmpeg - ffmpeg</title>
+    <meta name="description" content="This guide explains how to convert a standard 5.1 surround sound audio track into a virtual 3D binaural headphone mix using FFmpeg. By applying Head-Related Impulse Responses (HRIR) through FFmpeg's binaural processing engine—specifically the headphone">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/convert-5-1-to-binaural-3-d-surround-in-f-fmpeg">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Convert 5.1 to Binaural 3D Surround in FFmpeg - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/convert-5-1-to-binaural-3-d-surround-in-f-fmpeg" />
+    <meta property="og:image" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This guide explains how to convert a standard 5.1 surround sound audio track into a virtual 3D binaural headphone mix using FFmpeg. By applying Head-Related Impulse Responses (HRIR) through FFmpeg's binaural processing engine—specifically the headphone" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="convert-51-to-binaural-3d-surround-in-ffmpeg">Convert 5.1 to
+Binaural 3D Surround in FFmpeg</h1>
+<p>This guide explains how to convert a standard 5.1 surround sound
+audio track into a virtual 3D binaural headphone mix using FFmpeg. By
+applying Head-Related Impulse Responses (HRIR) through FFmpeg's binaural
+processing engine—specifically the <code>headphone</code> and
+<code>sofalizer</code> audio filters—you can simulate multi-speaker
+spatial acoustics accurately over any standard pair of stereo
+headphones.</p>
+<h3 id="prerequisites">Prerequisites</h3>
+<p>Binaural filtering relies on HRIR data to position speakers in 3D
+space around the listener's head. Before running the conversion, you
+need an HRIR file:</p>
+<ul>
+<li><strong>Multi-channel HRIR WAV file</strong>: A multi-channel WAV
+containing impulse responses for each speaker position (Left, Right,
+Center, LFE, Left Surround, Right Surround). The MIT KEMAR dataset or
+IRCAM impulse response packs are standard choices.</li>
+<li><strong>SOFA file (Alternative)</strong>: A standard
+<code>.sofa</code> format file designed for spatial audio.</li>
+</ul>
+<hr />
+<h3 id="method-1-using-the-headphone-filter">Method 1: Using the
+<code>headphone</code> Filter</h3>
+<p>The <code>headphone</code> filter is FFmpeg's native tool for
+binaural convolution. It takes the multi-channel 5.1 stream as the
+primary input and an HRIR audio file as the secondary input to position
+each channel in 3D space.</p>
+<h4 id="command">Command:</h4>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input_5.1.mp4 <span class="at">-i</span> hrir_5.1.wav <span class="at">-filter_complex</span> <span class="dt">\</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="st">&quot;[0:a][1:a]headphone=map=FL|FR|FC|LFE|BL|BR:gain=0[aout]&quot;</span> <span class="dt">\</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>-map 0:v<span class="pp">?</span> <span class="at">-c:v</span> copy <span class="at">-map</span> <span class="st">&quot;[aout]&quot;</span> <span class="at">-c:a</span> aac <span class="at">-b:a</span> 256k output_binaural.mp4</span></code></pre></div>
+<h4 id="breakdown-of-options">Breakdown of Options:</h4>
+<ul>
+<li><code>-i input_5.1.mp4</code>: The source file containing the 5.1
+surround stream.</li>
+<li><code>-i hrir_5.1.wav</code>: The multi-channel impulse response
+containing matching spatial profiles.</li>
+<li><code>[0:a][1:a]</code>: Feeds both the 5.1 audio stream and the
+HRIR stream into the filter.</li>
+<li><code>map=FL|FR|FC|LFE|BL|BR</code>: Maps specific spatial positions
+to the corresponding channels in the HRIR file.</li>
+<li><code>gain=0</code>: Adjusts overall output amplitude in dB to
+prevent digital clipping resulting from convolution.</li>
+<li><code>-map 0:v? -c:v copy</code>: Copies video streams directly
+without re-encoding, if present.</li>
+</ul>
+<hr />
+<h3 id="method-2-using-the-sofalizer-filter">Method 2: Using the
+<code>sofalizer</code> Filter</h3>
+<p>If you have an HRTF profile in the Spatially Oriented Format for
+Acoustics (<code>.sofa</code>), you can use the <code>sofalizer</code>
+filter directly without manually converting the HRIR to a multi-channel
+WAV.</p>
+<h4 id="command-1">Command:</h4>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input_5.1.mp4 <span class="at">-af</span> <span class="dt">\</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="st">&quot;sofalizer=sofa=/path/to/club_kemar.sofa:type=binaural:speakers=FL 30 0|FR 330 0|FC 0 0|LFE 0 -30|BL 110 0|BR 250 0&quot;</span> <span class="dt">\</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>-c:v copy <span class="at">-c:a</span> aac <span class="at">-b:a</span> 256k output_sofa.mp4</span></code></pre></div>
+<h4 id="breakdown-of-options-1">Breakdown of Options:</h4>
+<ul>
+<li><code>sofa=...</code>: Path to your <code>.sofa</code> measurement
+file.</li>
+<li><code>type=binaural</code>: Enforces binaural rendering for
+headphones.</li>
+<li><code>speakers=...</code>: Sets azimuth and elevation coordinates
+for each channel in degrees:
+<ul>
+<li>Front Left (<code>FL</code>): 30° azimuth, 0° elevation.</li>
+<li>Front Right (<code>FR</code>): 330° (-30°) azimuth, 0°
+elevation.</li>
+<li>Front Center (<code>FC</code>): 0° azimuth, 0° elevation.</li>
+<li>Low Frequency Effects (<code>LFE</code>): Centered below horizontal
+plane (0° azimuth, -30° elevation).</li>
+<li>Back/Surround Left (<code>BL</code>): 110° azimuth, 0°
+elevation.</li>
+<li>Back/Surround Right (<code>BR</code>): 250° azimuth, 0°
+elevation.</li>
+</ul></li>
+</ul>
+<hr />
+<h3 id="verifying-and-preventing-clipping">Verifying and Preventing
+Clipping</h3>
+<p>Convolving multiple channels together increases cumulative audio
+energy, which can lead to distortion. You can normalize the output
+dynamically or lower the input gain by appending a volume limiter to the
+filter chain:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input_5.1.mp4 <span class="at">-i</span> hrir_5.1.wav <span class="at">-filter_complex</span> <span class="dt">\</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="st">&quot;[0:a][1:a]headphone=map=FL|FR|FC|LFE|BL|BR:gain=-3,loudnorm[aout]&quot;</span> <span class="dt">\</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>-map 0:v<span class="pp">?</span> <span class="at">-c:v</span> copy <span class="at">-map</span> <span class="st">&quot;[aout]&quot;</span> <span class="at">-c:a</span> aac <span class="at">-b:a</span> 256k output_normalized.mp4</span></code></pre></div>
+<p>This ensures that the final stereo file complies with standard
+broadcast loudness targets while preserving full 3D spatial depth.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

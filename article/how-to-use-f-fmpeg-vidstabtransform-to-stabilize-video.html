@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Use FFmpeg vidstabtransform to Stabilize Video - ffmpeg</title>
+    <meta name="description" content="This guide provides a straightforward tutorial on stabilizing shaky footage using the vidstabtransform filter in FFmpeg. You will learn the required two-pass workflow—first generating camera motion vectors with vidstabdetect and then transforming the f">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/how-to-use-f-fmpeg-vidstabtransform-to-stabilize-video">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Use FFmpeg vidstabtransform to Stabilize Video - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/how-to-use-f-fmpeg-vidstabtransform-to-stabilize-video" />
+    <meta property="og:image" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This guide provides a straightforward tutorial on stabilizing shaky footage using the vidstabtransform filter in FFmpeg. You will learn the required two-pass workflow—first generating camera motion vectors with vidstabdetect and then transforming the f" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-to-use-ffmpeg-vidstabtransform-to-stabilize-video">How to
+Use FFmpeg vidstabtransform to Stabilize Video</h1>
+<p>This guide provides a straightforward tutorial on stabilizing shaky
+footage using the <code>vidstabtransform</code> filter in FFmpeg. You
+will learn the required two-pass workflow—first generating camera motion
+vectors with <code>vidstabdetect</code> and then transforming the frames
+with <code>vidstabtransform</code>—along with optimal command examples
+and key settings to fine-tune your results.</p>
+<h2 id="the-two-step-stabilization-process">The Two-Step Stabilization
+Process</h2>
+<p>Video stabilization with the <code>vid.stab</code> library in FFmpeg
+cannot be done in a single isolated step because the software must first
+analyze the entire video to map camera movement before applying
+corrections.</p>
+<ol type="1">
+<li><strong>Analysis Pass (<code>vidstabdetect</code>):</strong> Scans
+the input video, calculates camera shake, and writes translation and
+rotation data to a file (typically named
+<code>transforms.trf</code>).</li>
+<li><strong>Transformation Pass
+(<code>vidstabtransform</code>):</strong> Reads the generated
+<code>.trf</code> file, applies corrective transformations to counteract
+the motion, and outputs the stabilized video.</li>
+</ol>
+<h2 id="step-1-generate-the-motion-analysis-file">Step 1: Generate the
+Motion Analysis File</h2>
+<p>Before running <code>vidstabtransform</code>, run the
+<code>vidstabdetect</code> filter to create the transform file.</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> vidstabdetect=stepsize=6:shakiness=8:accuracy=15:result=<span class="st">&quot;transforms.trf&quot;</span> <span class="at">-f</span> null <span class="at">-</span></span></code></pre></div>
+<ul>
+<li><code>shakiness=8</code>: Sets how shaky the original video is on a
+scale from 1 (mild) to 10 (extreme).</li>
+<li><code>accuracy=15</code>: Determines the precision of the analysis
+(1 to 15, where 15 is highest precision).</li>
+<li><code>stepsize=6</code>: The step size of the search grid. Lower
+values are slower but more accurate.</li>
+<li><code>result="transforms.trf"</code>: The path where the motion
+vector data will be saved.</li>
+<li><code>-f null -</code>: Discards the visual output to speed up the
+analysis phase.</li>
+</ul>
+<h2 id="step-2-apply-the-stabilization-with-vidstabtransform">Step 2:
+Apply the Stabilization with <code>vidstabtransform</code></h2>
+<p>Once <code>transforms.trf</code> is generated, run the second pass
+using the <code>vidstabtransform</code> filter to produce the final,
+stabilized video.</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> vidstabtransform=input=<span class="st">&quot;transforms.trf&quot;</span>:smoothing=30:zoom=5:optzoom=1 <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<ul>
+<li><code>input="transforms.trf"</code>: Specifies the motion data file
+created in Step 1.</li>
+<li><code>smoothing=30</code>: Number of frames used for smoothing
+camera movement. Higher values result in smoother, slower camera
+panning; lower values preserve quick, deliberate pans.</li>
+<li><code>optzoom=1</code>: Automatically determines the optimal zoom
+level to hide the black borders caused by shifting frames.</li>
+<li><code>zoom=5</code>: Adds an additional percentage of digital zoom
+(0 to 5%) to crop out residual border artifacts.</li>
+<li><code>-c:a copy</code>: Copies the audio stream without re-encoding
+to preserve quality and save processing time.</li>
+</ul>
+<h2 id="advanced-settings-for-vidstabtransform">Advanced Settings for
+<code>vidstabtransform</code></h2>
+<p>You can customize the filter further depending on your footage
+requirements:</p>
+<ul>
+<li><strong>Tripod Mode (<code>tripod=1</code>):</strong> Simulates a
+stationary camera mounted on a tripod. Useful for shots where the camera
+was intended to be completely still.
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="va">vidstabtransform</span><span class="op">=</span>input=<span class="st">&quot;transforms.trf&quot;</span>:tripod=1</span></code></pre></div></li>
+<li><strong>Interpolation (<code>interpol=bicubic</code>):</strong> Sets
+the image interpolation method used during pixel shifting. Options
+include <code>no</code> (nearest neighbor), <code>linear</code>,
+<code>bicubic</code> (default), or <code>bilinear</code>.</li>
+<li><strong>Border Handling (<code>crop=black</code> vs
+<code>crop=keep</code>):</strong> Determines how edges are handled if
+zoom does not cover empty areas. Setting <code>crop=black</code> fills
+edges with black borders, while <code>crop=keep</code> stretches or
+retains pixel edges.</li>
+</ul>
+<h2 id="full-combined-script">Full Combined Script</h2>
+<p>To execute both passes consecutively in a single command chain:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> vidstabdetect=shakiness=7:result=<span class="st">&quot;transforms.trf&quot;</span> <span class="at">-f</span> null <span class="at">-</span> <span class="kw">&amp;&amp;</span> <span class="dt">\</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> vidstabtransform=input=<span class="st">&quot;transforms.trf&quot;</span>:smoothing=25:optzoom=1 <span class="at">-c:v</span> libx264 <span class="at">-crf</span> 18 <span class="at">-c:a</span> copy output_stabilized.mp4 <span class="kw">&amp;&amp;</span> <span class="dt">\</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="fu">rm</span> transforms.trf</span></code></pre></div>
+<p>This sequence generates the motion data, applies the
+<code>vidstabtransform</code> filter using visually lossless H.264
+encoding (<code>-crf 18</code>), and cleans up the temporary
+<code>.trf</code> file upon completion.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

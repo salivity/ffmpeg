@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FFmpeg Extract Luma Plane with extractplanes - ffmpeg</title>
+    <meta name="description" content="Extracting the luma component from a YUV video isolates the brightness information, effectively converting the stream into pure grayscale while discarding chrominance. This guide explains how to use FFmpeg's built-in extractplanes bitstream video filter">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/f-fmpeg-extract-luma-plane-with-extractplanes">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="FFmpeg Extract Luma Plane with extractplanes - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/f-fmpeg-extract-luma-plane-with-extractplanes" />
+    <meta property="og:image" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Extracting the luma component from a YUV video isolates the brightness information, effectively converting the stream into pure grayscale while discarding chrominance. This guide explains how to use FFmpeg's built-in extractplanes bitstream video filter" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="ffmpeg-extract-luma-plane-with-extractplanes">FFmpeg Extract
+Luma Plane with extractplanes</h1>
+<p>Extracting the luma component from a YUV video isolates the
+brightness information, effectively converting the stream into pure
+grayscale while discarding chrominance. This guide explains how to use
+FFmpeg's built-in <code>extractplanes</code> bitstream video filter to
+separate and output only the Y (luma) plane from any standard
+YUV-encoded media file.</p>
+<h3 id="the-basic-command">The Basic Command</h3>
+<p>To extract the luma plane, invoke the <code>extractplanes</code>
+filter using the <code>-vf</code> flag and specify <code>y</code> as the
+target plane:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;extractplanes=y&quot;</span> output_luma.mp4</span></code></pre></div>
+<h3 id="how-it-works">How It Works</h3>
+<ul>
+<li><strong><code>-i input.mp4</code></strong>: Specifies the source
+video file containing YUV color data (such as <code>yuv420p</code>,
+<code>yuv422p</code>, or <code>yuv444p</code>).</li>
+<li><strong><code>-vf "extractplanes=y"</code></strong>: Instructs
+FFmpeg to discard the U (Cb) and V (Cr) chroma planes and output only
+the Y plane. The resulting stream is output as a raw grayscale format
+(<code>gray</code> pixel format).</li>
+<li><strong><code>output_luma.mp4</code></strong>: The destination
+container. FFmpeg will automatically choose an appropriate encoder that
+supports grayscale.</li>
+</ul>
+<h3 id="ensuring-player-compatibility">Ensuring Player
+Compatibility</h3>
+<p>Many standard media players and hardware decoders struggle to play
+native single-plane grayscale pixel formats like <code>gray</code>
+inside an MP4 container. To ensure wide playback compatibility while
+maintaining a grayscale image, convert the output pixel format back to a
+widely supported YUV format such as <code>yuv420p</code>:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;extractplanes=y,format=yuv420p&quot;</span> <span class="at">-c:v</span> libx264 <span class="at">-crf</span> 18 output_compatible.mp4</span></code></pre></div>
+<p>In this command, <code>format=yuv420p</code> takes the extracted
+monochrome luma data and assigns neutral (blank) chroma values,
+producing a standard H.264 video that displays as black and white across
+all devices.</p>
+<h3 id="extracting-luma-as-image-files">Extracting Luma as Image
+Files</h3>
+<p>To extract the luma plane into individual image frames (such as PNG
+or JPEG), provide an image sequence output pattern:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;extractplanes=y&quot;</span> frame_%04d.png</span></code></pre></div>
+<p>This writes each frame's Y channel as an 8-bit single-channel
+grayscale PNG image.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

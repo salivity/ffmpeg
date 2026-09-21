@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Use FFmpeg Waveform to Inspect Luma and Chroma - ffmpeg</title>
+    <meta name="description" content="The waveform video filter in FFmpeg allows you to visually inspect the luminance (luma) and chrominance (chroma) levels of a video stream, operating similarly to an oscilloscope or hardware waveform monitor used in professional broadcast environments. Th">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/how-to-use-f-fmpeg-waveform-to-inspect-luma-and-chroma">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Use FFmpeg Waveform to Inspect Luma and Chroma - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/how-to-use-f-fmpeg-waveform-to-inspect-luma-and-chroma" />
+    <meta property="og:image" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="The waveform video filter in FFmpeg allows you to visually inspect the luminance (luma) and chrominance (chroma) levels of a video stream, operating similarly to an oscilloscope or hardware waveform monitor used in professional broadcast environments. Th" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-to-use-ffmpeg-waveform-to-inspect-luma-and-chroma">How to
+Use FFmpeg Waveform to Inspect Luma and Chroma</h1>
+<p>The <code>waveform</code> video filter in FFmpeg allows you to
+visually inspect the luminance (luma) and chrominance (chroma) levels of
+a video stream, operating similarly to an oscilloscope or hardware
+waveform monitor used in professional broadcast environments. This guide
+explains the mechanics of the <code>waveform</code> filter, breaks down
+its essential parameters, and provides ready-to-use commands to inspect
+luma levels, analyze individual chroma planes, generate multi-channel
+parade displays, and overlay scopes directly onto your source
+footage.</p>
+<h2 id="understanding-the-waveform-filter">Understanding the Waveform
+Filter</h2>
+<p>The <code>waveform</code> filter plots the intensity values of video
+pixels along vertical or horizontal axes. By default, the horizontal
+axis represents the spatial position across the frame, while the
+vertical axis represents the signal amplitude (from 0 to 255 for 8-bit
+video, or 0 to 1023 for 10-bit video).</p>
+<p>Key parameters include:</p>
+<ul>
+<li><code>mode</code> (<code>m</code>): Determines layout. Options
+include <code>row</code>, <code>column</code>, <code>parade</code>, and
+<code>stack</code>.</li>
+<li><code>components</code> (<code>c</code>): Bitmask specifying which
+color components to display (e.g., 1 for Luma/Y, 2 and 4 for Chroma/U
+and V, or 7 for all three).</li>
+<li><code>filter</code> (<code>f</code>): Visual appearance of the trace
+(<code>lowpass</code>, <code>flat</code>, <code>xflat</code>,
+<code>aflat</code>).</li>
+<li><code>intensity</code> (<code>i</code>): Brightness of the plotted
+waveform.</li>
+<li><code>graticule</code> (<code>g</code>): Draws reference grid lines
+for measuring signal bounds.</li>
+</ul>
+<h2 id="inspecting-luma-brightness-distribution">Inspecting Luma
+(Brightness Distribution)</h2>
+<p>To measure exposure, detect crushed blacks, and identify blown-out
+highlights, isolate the luma (Y) channel.</p>
+<p>Using <code>ffplay</code> to view the luma waveform in real time:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffplay</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;waveform=mode=column:components=1:filter=lowpass:graticule=green:flags=numbers&quot;</span></span></code></pre></div>
+<ul>
+<li><code>components=1</code> limits the analysis to the first plane
+(Y/Luma).</li>
+<li><code>filter=lowpass</code> blends the signal traces for a
+traditional analog monitor look.</li>
+<li><code>flags=numbers</code> prints numerical scale markers along the
+graticule.</li>
+</ul>
+<p>If data clusters touch the bottom threshold (0), shadows are
+clipping. If data reaches the top threshold (255 for 8-bit), highlights
+are clipping.</p>
+<h2 id="inspecting-chroma-color-distribution">Inspecting Chroma (Color
+Distribution)</h2>
+<p>To check color balance and saturation limits, view the chroma
+channels (U and V for YUV video) either individually or side by
+side.</p>
+<p>To inspect only the chroma planes:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffplay</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;waveform=mode=column:components=6:filter=flat:graticule=dots&quot;</span></span></code></pre></div>
+<p>Setting <code>components=6</code> activates planes 2 and 3 (<span
+class="math inline">\(2 + 4 = 6\)</span>), which isolates U and V while
+hiding the luma trace.</p>
+<h2 id="generating-a-waveform-parade">Generating a Waveform Parade</h2>
+<p>A parade splits the video components into distinct, adjacent graphs,
+enabling direct comparison of color levels side-by-side.</p>
+<h3 id="yuv-parade">YUV Parade</h3>
+<p>To view Luma (Y), Chroma Blue (U), and Chroma Red (V)
+side-by-side:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffplay</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;waveform=mode=parade:components=7:filter=lowpass:graticule=green&quot;</span></span></code></pre></div>
+<h3 id="rgb-parade">RGB Parade</h3>
+<p>To assess color cast and tonal balance across Red, Green, and Blue
+channels, convert the pixel format to RGB before passing it to the
+waveform filter:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffplay</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;format=gbrp,waveform=mode=parade:components=7:filter=lowpass:graticule=green&quot;</span></span></code></pre></div>
+<p>In an RGB parade, neutral whites and grays display equal signal
+heights across all three columns. If the Red column sits higher than
+Green and Blue in the upper registers, the image has a warm highlight
+cast.</p>
+<h2 id="displaying-video-and-waveform-side-by-side">Displaying Video and
+Waveform Side-by-Side</h2>
+<p>To monitor how visual adjustments impact the waveform simultaneously,
+combine the original video and the waveform display side-by-side using
+the <code>hstack</code> filter:</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffplay</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;split=2[vid][scope]; [scope]waveform=mode=column:components=1:filter=lowpass:scale=digital[wave]; [vid][wave]scale2ref=iw:ih[v][w]; [v][w]hstack&quot;</span></span></code></pre></div>
+<p>This pipeline duplicates the source stream, processes one copy into a
+luma waveform scaled to match the original video dimensions, and tiles
+them horizontally for real-time comparative inspection.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

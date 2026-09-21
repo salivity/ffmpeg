@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Adjust Speaker Positions in FFmpeg Binaural Filter - ffmpeg</title>
+    <meta name="description" content="This article provides a practical guide on adjusting virtual speaker positions in FFmpeg using the sofalizer audio filter. By utilizing custom azimuth and elevation coordinates alongside a SOFA (Spatially Oriented Format for Acoustics) impulse response f">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/adjust-speaker-positions-in-f-fmpeg-binaural-filter">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Adjust Speaker Positions in FFmpeg Binaural Filter - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/adjust-speaker-positions-in-f-fmpeg-binaural-filter" />
+    <meta property="og:image" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article provides a practical guide on adjusting virtual speaker positions in FFmpeg using the sofalizer audio filter. By utilizing custom azimuth and elevation coordinates alongside a SOFA (Spatially Oriented Format for Acoustics) impulse response f" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="adjust-speaker-positions-in-ffmpeg-binaural-filter">Adjust
+Speaker Positions in FFmpeg Binaural Filter</h1>
+<p>This article provides a practical guide on adjusting virtual speaker
+positions in FFmpeg using the <code>sofalizer</code> audio filter. By
+utilizing custom azimuth and elevation coordinates alongside a SOFA
+(Spatially Oriented Format for Acoustics) impulse response file, you can
+precisely control the spatial placement of audio channels in a binaural
+mix to create an immersive 3D listening experience over headphones.</p>
+<h3 id="prerequisites">Prerequisites</h3>
+<p>To place virtual speakers in 3D space, FFmpeg requires a SOFA
+database file containing Head-Related Transfer Functions (HRTF). You can
+download standardized <code>.sofa</code> files freely from sources like
+the SOFA Acoustics website (for example, the Club Fritz or ARI
+databases).</p>
+<h3 id="the-sofalizer-filter-coordinate-system">The
+<code>sofalizer</code> Filter Coordinate System</h3>
+<p>Speaker coordinates in the <code>sofalizer</code> filter are
+expressed using a spherical coordinate system:</p>
+<ul>
+<li><strong>Azimuth:</strong> The horizontal angle in degrees.
+<code>0</code> is directly in front of the listener, positive values (up
+to <code>180</code>) rotate to the left, and negative values (down to
+<code>-180</code>) rotate to the right. Alternatively, positive values
+from <code>0</code> to <code>360</code> can be used
+counter-clockwise.</li>
+<li><strong>Elevation:</strong> The vertical angle in degrees.
+<code>0</code> is at ear level, positive values (up to <code>90</code>)
+move up towards the ceiling, and negative values (down to
+<code>-90</code>) move down toward the floor.</li>
+<li><strong>Distance:</strong> The distance from the listener's head in
+meters (default is typically embedded in the SOFA file).</li>
+</ul>
+<h3 id="adjusting-speaker-positions-with-the-speakers-option">Adjusting
+Speaker Positions with the <code>speakers</code> Option</h3>
+<p>The <code>speakers</code> parameter lets you define the exact
+coordinates for each input channel. The syntax takes channel position
+definitions separated by a vertical bar (<code>|</code>), where each
+entry specifies the azimuth and elevation:</p>
+<pre class="text"><code>speakers=CH_NAME AZIMUTH ELEVATION|CH_NAME AZIMUTH ELEVATION|...</code></pre>
+<p>Common channel names include: <code>FL</code> (Front Left),
+<code>FR</code> (Front Right), <code>FC</code> (Front Center),
+<code>LFE</code> (Low Frequency Effects), <code>BL</code> (Back Left),
+<code>BR</code> (Back Right), <code>SL</code> (Surround Left), and
+<code>SR</code> (Surround Right).</p>
+<h3 id="example-adjusting-a-51-surround-setup">Example: Adjusting a 5.1
+Surround Setup</h3>
+<p>By default, standard 5.1 placement positions the front speakers at
+±30 degrees and surround speakers at ±110 degrees. If you want to widen
+the front stage, elevate the center channel, and push the surround
+channels directly to the sides at ear level, define custom angles like
+this:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> surround_input.wav <span class="at">-af</span> <span class="st">&quot;sofalizer=sofa=/path/to/file.sofa:speakers=FL 45 0|FR -45 0|FC 0 15|LFE 0 -20|BL 90 0|BR -90 0&quot;</span> output_binaural.wav</span></code></pre></div>
+<p>In this command:</p>
+<ul>
+<li><code>FL 45 0</code>: Front Left is placed 45° to the left at ear
+level.</li>
+<li><code>FR -45 0</code>: Front Right is placed 45° to the right at ear
+level.</li>
+<li><code>FC 0 15</code>: Front Center is placed directly ahead, angled
+15° upwards.</li>
+<li><code>LFE 0 -20</code>: Subwoofer audio is placed directly ahead,
+angled 20° downwards.</li>
+<li><code>BL 90 0</code>: Back Left is moved directly to the left side
+(90°).</li>
+<li><code>BR -90 0</code>: Back Right is moved directly to the right
+side (-90°).</li>
+</ul>
+<h3 id="adjusting-global-rotation-with-rotation-and-elevation">Adjusting
+Global Rotation with <code>rotation</code> and
+<code>elevation</code></h3>
+<p>If you want to maintain default speaker layouts but reorient the
+entire sound field (for example, head tracking simulation or creating an
+elevated mix), adjust the overall soundstage orientation using the
+<code>rotation</code> and <code>elevation</code> parameters:</p>
+<ul>
+<li><strong><code>rotation</code></strong>: Rotates the virtual
+listener's head horizontally (yaw).</li>
+<li><strong><code>elevation</code></strong>: Tilts the virtual
+listener's head vertically (pitch).</li>
+</ul>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> surround_input.wav <span class="at">-af</span> <span class="st">&quot;sofalizer=sofa=/path/to/file.sofa:rotation=15:elevation=5&quot;</span> output_binaural.wav</span></code></pre></div>
+<p>This tilts the entire virtual speaker rig 15 degrees horizontally and
+5 degrees upwards relative to the listener.</p>
+<h3 id="key-parameter-tuning-tips">Key Parameter Tuning Tips</h3>
+<ul>
+<li><strong>Interpolation (<code>type</code>):</strong> If the custom
+coordinates do not exist precisely in your SOFA file's measurement grid,
+enable bilinear interpolation using <code>type=b</code> to avoid spatial
+artifacts.</li>
+<li><strong>Gain adjustment (<code>gain</code>):</strong> Summing
+multiple spatial channels into binaural stereo can cause clipping. Add
+<code>gain=-3</code> (or lower) inside the filter argument to maintain
+dynamic headroom.</li>
+</ul></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Secure FFmpeg SRT Stream with Passphrase and Key Length - ffmpeg</title>
+    <meta name="description" content="This article provides a straightforward guide on how to secure Secure Reliable Transport (SRT) streams using FFmpeg. You will learn how to configure AES encryption by applying the passphrase and pbkeylen (crypto key length) parameters directly within you">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/secure-f-fmpeg-srt-stream-with-passphrase-and-key-length">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Secure FFmpeg SRT Stream with Passphrase and Key Length - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/secure-f-fmpeg-srt-stream-with-passphrase-and-key-length" />
+    <meta property="og:image" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article provides a straightforward guide on how to secure Secure Reliable Transport (SRT) streams using FFmpeg. You will learn how to configure AES encryption by applying the passphrase and pbkeylen (crypto key length) parameters directly within you" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="secure-ffmpeg-srt-stream-with-passphrase-and-key-length">Secure
+FFmpeg SRT Stream with Passphrase and Key Length</h1>
+<p>This article provides a straightforward guide on how to secure Secure
+Reliable Transport (SRT) streams using FFmpeg. You will learn how to
+configure AES encryption by applying the <code>passphrase</code> and
+<code>pbkeylen</code> (crypto key length) parameters directly within
+your FFmpeg command-line arguments to protect your live video broadcasts
+from unauthorized access.</p>
+<h2 id="understanding-srt-encryption-parameters">Understanding SRT
+Encryption Parameters</h2>
+<p>To secure an SRT stream in FFmpeg, you must append specific
+encryption parameters to the SRT destination or source URL. SRT utilizes
+Advanced Encryption Standard (AES) to encrypt the payload.</p>
+<p>Two primary parameters control this encryption:</p>
+<ul>
+<li><strong><code>passphrase</code></strong>: The secret password used
+to encrypt and decrypt the stream. It must be between 10 and 79
+characters long.</li>
+<li><strong><code>pbkeylen</code></strong>: The crypto key length in
+bytes. This determines the strength of the AES encryption. The accepted
+values are:
+<ul>
+<li><code>16</code> for AES-128 encryption</li>
+<li><code>24</code> for AES-192 encryption</li>
+<li><code>32</code> for AES-256 encryption</li>
+</ul></li>
+</ul>
+<p>For encryption to work, both the sending FFmpeg instance and the
+receiving instance must use the exact same <code>passphrase</code> and
+<code>pbkeylen</code> values.</p>
+<hr />
+<h2 id="how-to-configure-the-ffmpeg-command">How to Configure the FFmpeg
+Command</h2>
+<p>To secure your stream, format your SRT URL in the FFmpeg command
+using query parameters.</p>
+<h3 id="1-sending-an-encrypted-srt-stream-caller-mode">1. Sending an
+Encrypted SRT Stream (Caller Mode)</h3>
+<p>When sending a stream to an SRT receiver, append the
+<code>passphrase</code> and <code>pbkeylen</code> to your output
+URL.</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-re</span> <span class="at">-i</span> input.mp4 <span class="at">-c:v</span> libx264 <span class="at">-preset</span> veryfast <span class="at">-c:a</span> aac <span class="at">-f</span> mpegts <span class="st">&quot;srt://192.168.1.100:9000?mode=caller&amp;passphrase=MySecurePassword123&amp;pbkeylen=32&quot;</span></span></code></pre></div>
+<p>In this example:</p>
+<ul>
+<li><code>passphrase=MySecurePassword123</code> sets the encryption
+password.</li>
+<li><code>pbkeylen=32</code> enforces AES-256 encryption, the strongest
+available standard.</li>
+</ul>
+<h3 id="2-receiving-an-encrypted-srt-stream-listener-mode">2. Receiving
+an Encrypted SRT Stream (Listener Mode)</h3>
+<p>To receive and decrypt the stream, the receiver must run a command
+with matching parameters.</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> <span class="st">&quot;srt://0.0.0.0:9000?mode=listener&amp;passphrase=MySecurePassword123&amp;pbkeylen=32&quot;</span> <span class="at">-c</span> copy output.mp4</span></code></pre></div>
+<hr />
+<h2 id="important-considerations">Important Considerations</h2>
+<ul>
+<li><strong>Passphrase Length:</strong> If your passphrase is shorter
+than 10 characters, FFmpeg will reject the connection or fail to
+initiate encryption.</li>
+<li><strong>Special Characters:</strong> If your passphrase contains
+special characters (like <code>&amp;</code>, <code>?</code>, or
+<code>=</code>), you must URL-encode them or wrap the entire SRT URL in
+double quotes to prevent your command line shell from misinterpreting
+the syntax.</li>
+<li><strong>Performance:</strong> AES-256 (<code>pbkeylen=32</code>)
+offers the highest security but requires slightly more CPU processing
+power than AES-128 (<code>pbkeylen=16</code>). If you are streaming from
+a resource-constrained hardware device, AES-128 may be preferred.</li>
+</ul></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

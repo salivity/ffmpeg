@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FFmpeg RTMPS Streaming with Client Certificates - ffmpeg</title>
+    <meta name="description" content="Streaming securely over RTMPS with mutual TLS (mTLS) requires passing client-side certificates and keys to FFmpeg to authenticate your stream against the destination server. This guide details how to verify your FFmpeg build for TLS support, format your">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/f-fmpeg-rtmps-streaming-with-client-certificates">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="FFmpeg RTMPS Streaming with Client Certificates - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/f-fmpeg-rtmps-streaming-with-client-certificates" />
+    <meta property="og:image" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Streaming securely over RTMPS with mutual TLS (mTLS) requires passing client-side certificates and keys to FFmpeg to authenticate your stream against the destination server. This guide details how to verify your FFmpeg build for TLS support, format your" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="ffmpeg-rtmps-streaming-with-client-certificates">FFmpeg RTMPS
+Streaming with Client Certificates</h1>
+<p>Streaming securely over RTMPS with mutual TLS (mTLS) requires passing
+client-side certificates and keys to FFmpeg to authenticate your stream
+against the destination server. This guide details how to verify your
+FFmpeg build for TLS support, format your authentication certificates,
+and execute the exact FFmpeg command needed to establish a secure RTMPS
+broadcast with client certificate authentication.</p>
+<h3 id="1-verify-ffmpeg-build-requirements">1. Verify FFmpeg Build
+Requirements</h3>
+<p>FFmpeg must be compiled with SSL/TLS support to handle encrypted
+RTMPS connections and mutual authentication. Run the following command
+to check your FFmpeg build configuration:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-version</span></span></code></pre></div>
+<p>Look for <code>--enable-openssl</code> or
+<code>--enable-gnutls</code> in the configuration output. If your build
+uses OpenSSL or GnuTLS, it supports the required TLS flags. If neither
+is present, you must install or compile an FFmpeg build that includes
+TLS support.</p>
+<h3 id="2-prepare-certificate-and-key-files">2. Prepare Certificate and
+Key Files</h3>
+<p>The server requires your identity in PEM format. Ensure you have the
+following files accessible on your local system:</p>
+<ul>
+<li><strong>Client Certificate:</strong> <code>client.crt</code> or
+<code>client.pem</code> (public certificate)</li>
+<li><strong>Client Private Key:</strong> <code>client.key</code>
+(decrypted RSA or ECC private key)</li>
+<li><strong>CA Certificate (Optional/Recommended):</strong>
+<code>ca.crt</code> (the Certificate Authority that signed the server's
+certificate, required if using self-signed or private enterprise
+certificates)</li>
+</ul>
+<p>Ensure the client private key is not encrypted with a passphrase, as
+FFmpeg cannot interactively prompt for a password during headless
+execution. To remove a passphrase from an RSA private key using
+OpenSSL:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">openssl</span> rsa <span class="at">-in</span> encrypted_client.key <span class="at">-out</span> client.key</span></code></pre></div>
+<p>Set appropriate file permissions so FFmpeg can read the files:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="fu">chmod</span> 600 client.key</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="fu">chmod</span> 644 client.crt</span></code></pre></div>
+<h3 id="3-configure-and-run-the-ffmpeg-command">3. Configure and Run the
+FFmpeg Command</h3>
+<p>FFmpeg passes TLS options down to the underlying socket layer using
+either command-line options or query parameters appended to the RTMPS
+URL.</p>
+<h4 id="method-a-command-line-tls-flags-recommended">Method A:
+Command-Line TLS Flags (Recommended)</h4>
+<p>Place the TLS options directly before the output URL:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-re</span> <span class="at">-i</span> input.mp4 <span class="dt">\</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">-c:v</span> libx264 <span class="at">-preset</span> veryfast <span class="at">-b:v</span> 3000k <span class="at">-maxrate</span> 3000k <span class="at">-bufsize</span> 6000k <span class="dt">\</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">-c:a</span> aac <span class="at">-b:a</span> 128k <span class="at">-ar</span> 44100 <span class="dt">\</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">-f</span> flv <span class="dt">\</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">-tls_cert</span> <span class="st">&quot;/path/to/client.crt&quot;</span> <span class="dt">\</span></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">-tls_key</span> <span class="st">&quot;/path/to/client.key&quot;</span> <span class="dt">\</span></span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">-ca_file</span> <span class="st">&quot;/path/to/ca.crt&quot;</span> <span class="dt">\</span></span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>  <span class="at">-tls_verify</span> 1 <span class="dt">\</span></span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>  <span class="st">&quot;rtmps://rtmps.example.com:443/live/streamkey&quot;</span></span></code></pre></div>
+<ul>
+<li><code>-tls_cert</code>: Path to the client's public
+certificate.</li>
+<li><code>-tls_key</code>: Path to the client's private key.</li>
+<li><code>-ca_file</code>: Path to the trusted Certificate Authority
+file to validate the server.</li>
+<li><code>-tls_verify 1</code>: Enforces validation of the server
+certificate chain. Set to <code>0</code> only for debugging if
+certificate verification fails due to hostname mismatches.</li>
+</ul>
+<h4 id="method-b-url-query-parameters">Method B: URL Query
+Parameters</h4>
+<p>If your specific FFmpeg build does not parse the
+<code>-tls_cert</code> and <code>-tls_key</code> flags before the output
+format, pass them as URL-encoded query parameters within the RTMPS
+destination URL:</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-re</span> <span class="at">-i</span> input.mp4 <span class="dt">\</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">-c:v</span> copy <span class="at">-c:a</span> aac <span class="dt">\</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">-f</span> flv <span class="dt">\</span></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>  <span class="st">&quot;rtmps://rtmps.example.com:443/live/streamkey?tls_cert=/path/to/client.crt&amp;tls_key=/path/to/client.key&amp;ca_file=/path/to/ca.crt&amp;tls_verify=1&quot;</span></span></code></pre></div>
+<h3 id="4-troubleshooting-common-issues">4. Troubleshooting Common
+Issues</h3>
+<ul>
+<li><strong>Handshake Failure / <code>unknown error</code>:</strong> If
+the handshake terminates before data transmission, check FFmpeg’s
+verbose logs by adding <code>-loglevel debug</code> to your command.
+This will output the exact point of TLS failure.</li>
+<li><strong>Key/Certificate Mismatch:</strong> Verify that your public
+certificate matches your private key using OpenSSL:
+<div class="sourceCode" id="cb6"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="ex">openssl</span> x509 <span class="at">-noout</span> <span class="at">-modulus</span> <span class="at">-in</span> client.crt <span class="kw">|</span> <span class="ex">openssl</span> md5</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="ex">openssl</span> rsa <span class="at">-noout</span> <span class="at">-modulus</span> <span class="at">-in</span> client.key <span class="kw">|</span> <span class="ex">openssl</span> md5</span></code></pre></div>
+The output hashes must be identical.</li>
+<li><strong>Port Numbers:</strong> Ensure the destination URL explicitly
+uses port 443 (<code>rtmps://example.com:443/...</code>) if the server
+expects TLS traffic on standard HTTPS/RTMPS ports rather than the
+default plain RTMP port 1935.</li>
+</ul></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

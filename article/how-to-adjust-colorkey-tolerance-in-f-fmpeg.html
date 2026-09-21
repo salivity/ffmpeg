@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Adjust Colorkey Tolerance in FFmpeg - ffmpeg</title>
+    <meta name="description" content="Adjusting the tolerance of the colorkey filter in FFmpeg allows you to control how strictly or loosely a specific color is keyed out for transparency. This article explains how the filter’s parameters work, specifically highlighting the similarity sett">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/how-to-adjust-colorkey-tolerance-in-f-fmpeg">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Adjust Colorkey Tolerance in FFmpeg - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/how-to-adjust-colorkey-tolerance-in-f-fmpeg" />
+    <meta property="og:image" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Adjusting the tolerance of the colorkey filter in FFmpeg allows you to control how strictly or loosely a specific color is keyed out for transparency. This article explains how the filter’s parameters work, specifically highlighting the similarity sett" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-to-adjust-colorkey-tolerance-in-ffmpeg">How to Adjust
+Colorkey Tolerance in FFmpeg</h1>
+<p>Adjusting the tolerance of the <code>colorkey</code> filter in FFmpeg
+allows you to control how strictly or loosely a specific color is keyed
+out for transparency. This article explains how the filter’s parameters
+work, specifically highlighting the <code>similarity</code> setting
+which acts as the tolerance threshold, and provides practical
+command-line examples to help you achieve clean chroma keying.</p>
+<h2 id="the-colorkey-filter-syntax">The Colorkey Filter Syntax</h2>
+<p>The basic syntax for the <code>colorkey</code> filter is:</p>
+<pre class="text"><code>colorkey=color:similarity:blend</code></pre>
+<ul>
+<li><strong><code>color</code></strong>: The target color to key out.
+This can be specified as a color name (such as <code>green</code>,
+<code>black</code>, <code>white</code>) or a hexadecimal value (such as
+<code>0x00FF00</code>).</li>
+<li><strong><code>similarity</code></strong>: This is the
+<strong>tolerance</strong> parameter. It accepts a float value ranging
+from <code>0.01</code> to <code>1.0</code>.
+<ul>
+<li><code>0.01</code> is the default and only matches the exact color
+specified.</li>
+<li>Increasing this value expands the color range that will be
+considered a match and keyed out.</li>
+<li>A value of <code>1.0</code> matches all colors, making the entire
+frame transparent.</li>
+</ul></li>
+<li><strong><code>blend</code></strong>: Controls edge softness and
+feathering. It accepts a float value from <code>0.0</code> (sharp
+cutoff) to <code>1.0</code> (maximum gradual blending). The default is
+<code>0.0</code>.</li>
+</ul>
+<h2 id="adjusting-tolerance-in-practice">Adjusting Tolerance in
+Practice</h2>
+<p>To increase the tolerance, set the second parameter
+(<code>similarity</code>) to a higher number. For most green-screen or
+single-color background situations, values between <code>0.1</code> and
+<code>0.4</code> work best depending on lighting consistency.</p>
+<h3 id="basic-tolerance-adjustment">Basic Tolerance Adjustment</h3>
+<p>The following command keys out a green background
+(<code>0x00FF00</code>) with a tolerance of <code>0.3</code> and a
+slight edge blend of <code>0.1</code>:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;colorkey=0x00FF00:0.3:0.1&quot;</span> <span class="at">-c:a</span> copy output.mov</span></code></pre></div>
+<p><em>Note: Output formats like ProRes 4444 (<code>.mov</code>) or VP9
+(<code>.webm</code>) support the alpha channel generated by the
+filter.</em></p>
+<h3 id="composing-with-a-background-video">Composing with a Background
+Video</h3>
+<p>When placing your keyed video over a new background, use
+<code>filter_complex</code> with the <code>overlay</code> filter:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> background.mp4 <span class="at">-i</span> foreground.mp4 <span class="at">-filter_complex</span> <span class="st">&quot;[1:v]colorkey=0x00FF00:0.25:0.05[keyed];[0:v][keyed]overlay[outv]&quot;</span> <span class="at">-map</span> <span class="st">&quot;[outv]&quot;</span> <span class="at">-map</span> 0:a<span class="pp">?</span> output.mp4</span></code></pre></div>
+<p>In this command:</p>
+<ul>
+<li><code>0x00FF00</code> specifies the green key color.</li>
+<li><code>0.25</code> is the tolerance threshold
+(<code>similarity</code>).</li>
+<li><code>0.05</code> softens the boundary pixels
+(<code>blend</code>).</li>
+</ul>
+<h2 id="fine-tuning-steps">Fine-Tuning Steps</h2>
+<ol type="1">
+<li><strong>Start Low</strong>: Begin with a <code>similarity</code>
+value around <code>0.15</code> to see how much of the target color is
+removed.</li>
+<li><strong>Increase Incrementally</strong>: Raise the value in steps of
+<code>0.05</code> until all background artifacts disappear without
+cutting into the foreground subject.</li>
+<li><strong>Adjust Edge Softness</strong>: If the edges appear harsh or
+pixelated, introduce a small <code>blend</code> value between
+<code>0.02</code> and <code>0.1</code> to smooth out transitions.</li>
+</ol></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

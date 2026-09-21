@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Use FFmpeg Shape Adaptive Blur Filter - ffmpeg</title>
+    <meta name="description" content="The FFmpeg sab (Shape Adaptive Blur) filter is an edge-preserving smoothing filter designed to reduce noise and soften flat surfaces without blurring distinct contours and edges. This guide provides a direct, comprehensive explanation of the sab filter,">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/how-to-use-f-fmpeg-shape-adaptive-blur-filter">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Use FFmpeg Shape Adaptive Blur Filter - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/how-to-use-f-fmpeg-shape-adaptive-blur-filter" />
+    <meta property="og:image" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="The FFmpeg sab (Shape Adaptive Blur) filter is an edge-preserving smoothing filter designed to reduce noise and soften flat surfaces without blurring distinct contours and edges. This guide provides a direct, comprehensive explanation of the sab filter," />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-to-use-ffmpeg-shape-adaptive-blur-filter">How to Use FFmpeg
+Shape Adaptive Blur Filter</h1>
+<p>The FFmpeg <code>sab</code> (Shape Adaptive Blur) filter is an
+edge-preserving smoothing filter designed to reduce noise and soften
+flat surfaces without blurring distinct contours and edges. This guide
+provides a direct, comprehensive explanation of the <code>sab</code>
+filter, detailing its core syntax, key parameters, and practical
+command-line examples for video processing.</p>
+<h3 id="what-is-the-sab-filter">What is the <code>sab</code>
+Filter?</h3>
+<p>Shape Adaptive Blur works similarly to bilateral filtering. Instead
+of uniformly blurring every pixel in an image, it analyzes the
+neighborhood of each pixel and restricts the blurring effect to areas of
+low contrast. This makes it ideal for digital noise reduction, digital
+makeup/skin smoothing, and stylizing video while keeping outlines
+crisp.</p>
+<h3 id="syntax-and-parameters">Syntax and Parameters</h3>
+<p>The standard syntax for the <code>sab</code> filter is:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">-vf</span> <span class="st">&quot;sab=luma_radius:luma_pre_filter_radius:luma_strength[:chroma_radius:chroma_pre_filter_radius:chroma_strength]&quot;</span></span></code></pre></div>
+<p>You can set parameters positionally or by their explicit names:</p>
+<ul>
+<li><strong><code>luma_radius</code> (<code>lr</code>)</strong>: Defines
+the blur radius for the luma (brightness) plane. Allowed values range
+from <code>0.1</code> to <code>4.0</code>. The default is
+<code>1.0</code>.</li>
+<li><strong><code>luma_pre_filter_radius</code>
+(<code>lpfr</code>)</strong>: Defines the radius of the pre-filter
+applied to the luma plane before edge detection. Allowed values range
+from <code>0.1</code> to <code>2.0</code>. The default is
+<code>1.0</code>.</li>
+<li><strong><code>luma_strength</code> (<code>ls</code>)</strong>: Sets
+the maximum difference threshold between pixels to allow blurring.
+Higher values blur across stronger edges; lower values protect more
+edges. Allowed values range from <code>0.1</code> to <code>100.0</code>.
+The default is <code>1.0</code>.</li>
+<li><strong><code>chroma_radius</code> (<code>cr</code>)</strong>:
+Radius for color planes. If omitted, it defaults to the
+<code>luma_radius</code> value.</li>
+<li><strong><code>chroma_pre_filter_radius</code>
+(<code>cpfr</code>)</strong>: Pre-filter radius for color planes. If
+omitted, it defaults to the <code>luma_pre_filter_radius</code>
+value.</li>
+<li><strong><code>chroma_strength</code> (<code>cs</code>)</strong>:
+Edge threshold for color planes. If omitted, it defaults to the
+<code>luma_strength</code> value.</li>
+</ul>
+<h3 id="practical-examples">Practical Examples</h3>
+<h4 id="1-subtle-denoising-preserving-sharpness">1. Subtle Denoising
+(Preserving Sharpness)</h4>
+<p>To clean up low-light digital grain while keeping objects sharp,
+apply small radius and moderate strength values:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;sab=lr=1.5:lpfr=1.0:ls=3.0&quot;</span> <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<h4 id="2-pronounced-skin-smoothing--flat-area-softening">2. Pronounced
+Skin Smoothing / Flat Area Softening</h4>
+<p>To create a stronger smoothing effect on faces and backgrounds
+without losing facial features and outlines:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;sab=lr=3.0:lpfr=1.5:ls=10.0&quot;</span> <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<h4 id="3-separate-luma-and-chroma-controls">3. Separate Luma and Chroma
+Controls</h4>
+<p>To smooth compression artifacts in color channels more aggressively
+than the brightness channel:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;sab=lr=1.0:lpfr=1.0:ls=2.0:cr=2.5:cpfr=1.5:cs=8.0&quot;</span> <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<h3 id="performance-considerations">Performance Considerations</h3>
+<p>The <code>sab</code> filter is computationally intensive because it
+dynamically checks pixel differences in every neighborhood. To optimize
+processing times:</p>
+<ul>
+<li>Keep <code>lr</code> and <code>lpfr</code> values as low as needed
+to achieve the desired effect.</li>
+<li>If combined with resizing filters, place <code>sab</code> after
+scaling down (or before scaling up) to reduce the total pixel count
+being processed.</li>
+</ul></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

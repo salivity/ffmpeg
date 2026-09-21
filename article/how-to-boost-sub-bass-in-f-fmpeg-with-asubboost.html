@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Boost Sub-Bass in FFmpeg with asubboost - ffmpeg</title>
+    <meta name="description" content="The asubboost filter in FFmpeg allows you to isolate, synthesize, and enhance deep low-end frequencies in an audio track. This guide explains how to use the filter to amplify sub-bass, details its core configuration parameters—such as cutoff frequency,">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/how-to-boost-sub-bass-in-f-fmpeg-with-asubboost">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Boost Sub-Bass in FFmpeg with asubboost - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/how-to-boost-sub-bass-in-f-fmpeg-with-asubboost" />
+    <meta property="og:image" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="The asubboost filter in FFmpeg allows you to isolate, synthesize, and enhance deep low-end frequencies in an audio track. This guide explains how to use the filter to amplify sub-bass, details its core configuration parameters—such as cutoff frequency," />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-to-boost-sub-bass-in-ffmpeg-with-asubboost">How to Boost
+Sub-Bass in FFmpeg with asubboost</h1>
+<p>The <code>asubboost</code> filter in FFmpeg allows you to isolate,
+synthesize, and enhance deep low-end frequencies in an audio track. This
+guide explains how to use the filter to amplify sub-bass, details its
+core configuration parameters—such as cutoff frequency, wet/dry mix, and
+feedback—and provides command-line examples to achieve clean, punchy low
+frequencies without audio clipping.</p>
+<h3 id="understanding-the-asubboost-filter">Understanding the asubboost
+Filter</h3>
+<p>The <code>asubboost</code> filter operates by filtering out low-end
+audio below a specified frequency, processing that isolated signal to
+add resonance, sustain, or volume, and then blending it back with the
+original audio.</p>
+<p>The filter accepts several key parameters:</p>
+<ul>
+<li><strong><code>cutoff</code></strong>: Sets the cutoff frequency in
+Hertz (Hz) below which the bass will be boosted. The valid range is 2 to
+300 Hz (default is <code>100</code>).</li>
+<li><strong><code>wet</code></strong>: Sets the volume factor for the
+boosted sub-bass signal. The range is 0 to 1 (default is
+<code>1</code>).</li>
+<li><strong><code>dry</code></strong>: Sets the volume factor for the
+original, unprocessed signal. The range is 0 to 1 (default is
+<code>1</code>).</li>
+<li><strong><code>decay</code></strong>: Controls the decay rate of the
+boosted signal, determining how long the sub-bass sustains. The range is
+0 to 1 (default is <code>0</code>).</li>
+<li><strong><code>feedback</code></strong>: Controls the resonance or
+amount of signal fed back into the filter. The range is 0 to 1 (default
+is <code>0.9</code>).</li>
+<li><strong><code>delay</code></strong>: Sets the delay time in
+milliseconds for the resonance effect. The range is 1 to 100 ms (default
+is <code>20</code>).</li>
+<li><strong><code>slope</code></strong>: Sets the filter slope
+steepness. The range is 0.0001 to 1 (default is <code>0.5</code>).</li>
+</ul>
+<h3 id="basic-usage-example">Basic Usage Example</h3>
+<p>To apply the filter with default settings to an audio file:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp3 <span class="at">-af</span> <span class="st">&quot;asubboost&quot;</span> <span class="at">-c:a</span> libmp3lame <span class="at">-q:a</span> 2 output.mp3</span></code></pre></div>
+<h3 id="customizing-sub-bass-parameters">Customizing Sub-Bass
+Parameters</h3>
+<p>In many cases, the default settings may sound too boomy or cause
+distortion. You can customize the parameters by chaining key-value pairs
+separated by colons.</p>
+<p>For example, to focus strictly on sub-bass below 80 Hz, lower the
+feedback to prevent excessive ringing, and balance the wet signal:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.wav <span class="at">-af</span> <span class="st">&quot;asubboost=cutoff=80:feedback=0.5:wet=0.7:dry=1.0&quot;</span> output.wav</span></code></pre></div>
+<h3 id="preventing-clipping-and-distortion">Preventing Clipping and
+Distortion</h3>
+<p>Boosting sub-bass frequencies increases overall signal amplitude,
+often leading to digital clipping. To maintain clear sound, pair
+<code>asubboost</code> with a limiter like <code>alimiter</code> or
+slightly reduce the input volume:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.wav <span class="at">-af</span> <span class="st">&quot;asubboost=cutoff=60:wet=0.8,alimiter=limit=0.95&quot;</span> output.wav</span></code></pre></div>
+<p>In this command:</p>
+<ol type="1">
+<li><code>asubboost</code> isolates and enhances frequencies below 60
+Hz.</li>
+<li><code>alimiter</code> catches any peaks exceeding -0.45 dB (0.95),
+preventing distortion on playback systems.</li>
+</ol></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

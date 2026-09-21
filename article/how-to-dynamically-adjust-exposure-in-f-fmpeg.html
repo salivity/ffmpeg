@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Dynamically Adjust Exposure in FFmpeg - ffmpeg</title>
+    <meta name="description" content="This guide explains how to dynamically adjust video exposure using FFmpeg's exposure filter. Because the filter accepts constant floating-point values for exposure stops (-3.0 to 3.0 EV), dynamic variations across playback are achieved by using timeline">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/how-to-dynamically-adjust-exposure-in-f-fmpeg">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Dynamically Adjust Exposure in FFmpeg - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/how-to-dynamically-adjust-exposure-in-f-fmpeg" />
+    <meta property="og:image" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This guide explains how to dynamically adjust video exposure using FFmpeg's exposure filter. Because the filter accepts constant floating-point values for exposure stops (-3.0 to 3.0 EV), dynamic variations across playback are achieved by using timeline" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-to-dynamically-adjust-exposure-in-ffmpeg">How to Dynamically
+Adjust Exposure in FFmpeg</h1>
+<p>This guide explains how to dynamically adjust video exposure using
+FFmpeg's <code>exposure</code> filter. Because the filter accepts
+constant floating-point values for exposure stops (-3.0 to 3.0 EV),
+dynamic variations across playback are achieved by using timeline
+expressions via the <code>enable</code> option, chaining staged filters,
+or interpolating between streams using the <code>blend</code> filter.
+Below are the precise syntax rules and command examples for time-based
+triggers, stepped exposure changes, and smooth continuous exposure
+transitions.</p>
+<hr />
+<h3 id="the-exposure-filter-syntax">The <code>exposure</code> Filter
+Syntax</h3>
+<p>The <code>exposure</code> filter modifies the exposure and black
+level of a video stream:</p>
+<ul>
+<li><strong><code>exposure</code></strong>: Sets the exposure correction
+in EV (exposure value) stops. The valid range is from <code>-3.0</code>
+to <code>3.0</code>. Default is <code>0.0</code>.</li>
+<li><strong><code>black</code></strong>: Sets the black level
+correction. The valid range is from <code>-1.0</code> to
+<code>1.0</code>. Default is <code>0.0</code>.</li>
+</ul>
+<p>Because the <code>exposure</code> parameter accepts a fixed float
+rather than an evaluated mathematical string expression per frame,
+dynamic adjustments rely on FFmpeg's timeline evaluation or frame
+blending.</p>
+<hr />
+<h3 id="method-1-time-based-activation-using-enable">Method 1:
+Time-Based Activation Using <code>enable</code></h3>
+<p>FFmpeg filters support the common <code>enable</code> option, which
+evaluates expressions on every frame. You can use standard timeline
+variables like <code>t</code> (current timestamp in seconds) or
+<code>n</code> (frame number) to turn an exposure adjustment on or off
+at specific timestamps.</p>
+<h4
+id="example-apply-exposure-correction-for-a-specific-interval">Example:
+Apply Exposure Correction for a Specific Interval</h4>
+<p>To boost exposure by <code>1.5</code> EV between second 3 and second
+8:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;exposure=exposure=1.5:enable=&#39;between(t,3,8)&#39;&quot;</span> <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<hr />
+<h3 id="method-2-stepped-exposure-transitions">Method 2: Stepped
+Exposure Transitions</h3>
+<p>To create stepped adjustments across multiple sections of a video,
+chain multiple instances of the <code>exposure</code> filter, each
+constrained to a different time window using <code>enable</code>.</p>
+<h4 id="example-multi-stage-brightness-adjustment">Example: Multi-Stage
+Brightness Adjustment</h4>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;</span><span class="dt">\</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="st">exposure=exposure=0.5:enable=&#39;between(t,2,4)&#39;,</span><span class="dt">\</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="st">exposure=exposure=1.0:enable=&#39;between(t,4,6)&#39;,</span><span class="dt">\</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="st">exposure=exposure=1.5:enable=&#39;between(t,6,8)&#39;&quot;</span> <span class="dt">\</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>-c:a copy output.mp4</span></code></pre></div>
+<p>In this command:</p>
+<ul>
+<li>From 0 to 2 seconds: Original exposure (0 EV).</li>
+<li>From 2 to 4 seconds: Exposure increases by +0.5 EV.</li>
+<li>From 4 to 6 seconds: Exposure increases by +1.0 EV.</li>
+<li>From 6 to 8 seconds: Exposure increases by +1.5 EV.</li>
+<li>After 8 seconds: Reverts to original exposure.</li>
+</ul>
+<hr />
+<h3 id="method-3-smooth-continuous-exposure-ramps">Method 3: Smooth,
+Continuous Exposure Ramps</h3>
+<p>To smoothly ramp exposure up or down over time rather than jumping
+abruptly, split the video into two streams, apply the target exposure to
+one stream, and use the <code>blend</code> filter with a time-based
+expression to interpolate between them.</p>
+<h4 id="example-linear-exposure-ramp-over-5-seconds">Example: Linear
+Exposure Ramp Over 5 Seconds</h4>
+<p>To smoothly transition from standard exposure (0 EV) to +2.0 EV over
+the first 5 seconds:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-filter_complex</span> <span class="st">&quot;</span><span class="dt">\</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="st">[0:v]split=2[base][target]; </span><span class="dt">\</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="st">[target]exposure=exposure=2.0[bright]; </span><span class="dt">\</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="st">[base][bright]blend=all_expr=&#39;if(lte(T,5), A*(1-T/5)+B*(T/5), B)&#39;[v]&quot;</span> <span class="dt">\</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>-map <span class="st">&quot;[v]&quot;</span> <span class="at">-map</span> 0:a<span class="pp">?</span> <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<p>How this works:</p>
+<ul>
+<li><code>split=2</code> duplicates the source video into
+<code>[base]</code> and <code>[target]</code>.</li>
+<li><code>exposure=exposure=2.0</code> elevates the exposure of
+<code>[target]</code> by 2 stops.</li>
+<li><code>blend=all_expr=...</code> uses <code>T</code> (current time in
+seconds). For the first 5 seconds (<code>lte(T,5)</code>), it calculates
+a linear interpolation between stream <code>A</code> (original) and
+stream <code>B</code> (exposed). After 5 seconds, it holds stream
+<code>B</code> completely.</li>
+</ul>
+<h4 id="example-pulsing-exposure-oscillation">Example: Pulsing Exposure
+(Oscillation)</h4>
+<p>To make the exposure continuously oscillate between normal and +1.5
+EV using a sine wave:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-filter_complex</span> <span class="st">&quot;</span><span class="dt">\</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="st">[0:v]split=2[base][target]; </span><span class="dt">\</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="st">[target]exposure=exposure=1.5[bright]; </span><span class="dt">\</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a><span class="st">[base][bright]blend=all_expr=&#39;A*(0.5+0.5*cos(2*PI*T/3))+B*(0.5-0.5*cos(2*PI*T/3))&#39;[v]&quot;</span> <span class="dt">\</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>-map <span class="st">&quot;[v]&quot;</span> <span class="at">-map</span> 0:a<span class="pp">?</span> <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<p>This configuration completes a full exposure pulse cycle every 3
+seconds.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

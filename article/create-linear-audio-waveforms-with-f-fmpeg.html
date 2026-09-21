@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Linear Audio Waveforms with FFmpeg - ffmpeg</title>
+    <meta name="description" content="This guide explains how to convert an audio file into a linear waveform visualization using FFmpeg. By leveraging FFmpeg's built-in audio visualization filters, you can generate both animated video waveforms that sync directly with your track and static">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/create-linear-audio-waveforms-with-f-fmpeg">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Create Linear Audio Waveforms with FFmpeg - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/create-linear-audio-waveforms-with-f-fmpeg" />
+    <meta property="og:image" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This guide explains how to convert an audio file into a linear waveform visualization using FFmpeg. By leveraging FFmpeg's built-in audio visualization filters, you can generate both animated video waveforms that sync directly with your track and static" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="create-linear-audio-waveforms-with-ffmpeg">Create Linear Audio
+Waveforms with FFmpeg</h1>
+<p>This guide explains how to convert an audio file into a linear
+waveform visualization using FFmpeg. By leveraging FFmpeg's built-in
+audio visualization filters, you can generate both animated video
+waveforms that sync directly with your track and static waveform images.
+Below, you will find direct command-line examples, parameter breakdowns,
+and styling options to customize the appearance and resolution of your
+waveform.</p>
+<h3 id="real-time-animated-linear-waveform">Real-Time Animated Linear
+Waveform</h3>
+<p>To render an MP4 video where the waveform draws dynamically as the
+audio plays, use the <code>showwaves</code> filter.</p>
+<p>Run the following command:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp3 <span class="at">-filter_complex</span> <span class="st">&quot;[0:a]showwaves=s=1920x1080:mode=line:r=30:colors=white[v]&quot;</span> <span class="at">-map</span> <span class="st">&quot;[v]&quot;</span> <span class="at">-map</span> 0:a <span class="at">-c:v</span> libx264 <span class="at">-pix_fmt</span> yuv420p <span class="at">-c:a</span> aac output.mp4</span></code></pre></div>
+<h4 id="breakdown-of-parameters">Breakdown of Parameters:</h4>
+<ul>
+<li><code>-i input.mp3</code>: Specifies your source audio track.</li>
+<li><code>-filter_complex</code>: Invokes the filtergraph.</li>
+<li><code>showwaves</code>: The filter responsible for transforming
+audio into video frames.</li>
+<li><code>s=1920x1080</code>: Defines the output video resolution (Width
+x Height).</li>
+<li><code>mode=line</code>: Sets the visualization mode. The
+<code>line</code> value draws continuous vertical lines for each
+sample.</li>
+<li><code>r=30</code>: Specifies the frame rate (30 fps).</li>
+<li><code>colors=white</code>: Sets the waveform color. Hex codes can
+also be used (e.g., <code>0x00FFAA</code>).</li>
+<li><code>[v]</code>: Labels the processed video output.</li>
+<li><code>-map "[v]" -map 0:a</code>: Combines the generated visual
+stream with the original audio stream.</li>
+<li><code>-c:v libx264 -pix_fmt yuv420p</code>: Encodes the video stream
+to H.264 format with maximum player compatibility.</li>
+<li><code>-c:a aac</code>: Encodes the audio stream to AAC.</li>
+</ul>
+<h3 id="centered-waveform-variation">Centered Waveform Variation</h3>
+<p>If you want a balanced waveform extending evenly from the horizontal
+center line, change the <code>mode</code> parameter to
+<code>cline</code>:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp3 <span class="at">-filter_complex</span> <span class="st">&quot;[0:a]showwaves=s=1920x1080:mode=cline:colors=0x00FFCC:scale=sqrt[v]&quot;</span> <span class="at">-map</span> <span class="st">&quot;[v]&quot;</span> <span class="at">-map</span> 0:a <span class="at">-c:v</span> libx264 <span class="at">-pix_fmt</span> yuv420p <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<ul>
+<li><code>mode=cline</code>: Centers the audio samples along the middle
+of the frame.</li>
+<li><code>scale=sqrt</code>: Applies a square root scale to the
+amplitude, which boosts quieter parts of the audio visually so the
+waveform remains visible during lower volumes. Other options include
+<code>lin</code> (linear, default) and <code>log</code>
+(logarithmic).</li>
+<li><code>-c:a copy</code>: Copies the source audio directly into the
+output container without re-encoding.</li>
+</ul>
+<h3 id="static-waveform-image">Static Waveform Image</h3>
+<p>If you only need a single static image representing the entire audio
+file from start to finish, use the <code>showwavespic</code> filter
+instead:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp3 <span class="at">-filter_complex</span> <span class="st">&quot;showwavespic=s=1920x1080:colors=#FF5500&quot;</span> <span class="at">-frames:v</span> 1 waveform.png</span></code></pre></div>
+<ul>
+<li><code>showwavespic</code>: Analyzes the entire audio file and
+renders the complete waveform into a single image frame.</li>
+<li><code>-frames:v 1</code>: Stops processing after generating the
+first frame, saving the result directly to an image file.</li>
+</ul></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

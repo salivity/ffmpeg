@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Create a 5x5 Video Thumbnail Grid with FFmpeg - ffmpeg</title>
+    <meta name="description" content="Creating a 5x5 thumbnail grid (often called a contact sheet) from a 2-hour movie is a quick way to preview and index video content using FFmpeg. This guide provides the exact command-line syntax required to extract 25 evenly spaced frames across a 120-mi">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/how-to-create-a-5-x-5-video-thumbnail-grid-with-f-fmpeg">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Create a 5x5 Video Thumbnail Grid with FFmpeg - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/how-to-create-a-5-x-5-video-thumbnail-grid-with-f-fmpeg" />
+    <meta property="og:image" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Creating a 5x5 thumbnail grid (often called a contact sheet) from a 2-hour movie is a quick way to preview and index video content using FFmpeg. This guide provides the exact command-line syntax required to extract 25 evenly spaced frames across a 120-mi" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-to-create-a-5x5-video-thumbnail-grid-with-ffmpeg">How to
+Create a 5x5 Video Thumbnail Grid with FFmpeg</h1>
+<p>Creating a 5x5 thumbnail grid (often called a contact sheet) from a
+2-hour movie is a quick way to preview and index video content using
+FFmpeg. This guide provides the exact command-line syntax required to
+extract 25 evenly spaced frames across a 120-minute video, scale them to
+a manageable size, and assemble them into a single 5x5 image using
+FFmpeg’s <code>fps</code>, <code>scale</code>, and <code>tile</code>
+video filters.</p>
+<h3 id="the-command">The Command</h3>
+<p>To generate a 5x5 thumbnail grid from a 2-hour (7,200-second) movie,
+open your terminal and run:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;fps=1/288,scale=320:-1,tile=5x5&quot;</span> <span class="at">-frames:v</span> 1 output.jpg</span></code></pre></div>
+<h3 id="how-the-calculation-works">How the Calculation Works</h3>
+<p>A 5x5 grid requires exactly 25 individual frames (<span
+class="math inline">\(5 \times 5 = 25\)</span>).</p>
+<p>To distribute these 25 frames evenly across a 2-hour movie:</p>
+<ol type="1">
+<li>Convert the duration to seconds: <span class="math inline">\(2
+\text{ hours} \times 60 \text{ minutes} \times 60 \text{ seconds} =
+7,200 \text{ seconds}\)</span>.</li>
+<li>Divide the total duration by the number of desired frames: <span
+class="math inline">\(7,200 / 25 = 288 \text{ seconds}\)</span>.</li>
+</ol>
+<p>Setting the frame rate filter to <code>fps=1/288</code> extracts one
+frame every 288 seconds (4 minutes and 48 seconds).</p>
+<h3 id="command-breakdown">Command Breakdown</h3>
+<ul>
+<li><strong><code>-i input.mp4</code></strong>: Defines the path to your
+source video file.</li>
+<li><strong><code>-vf "..."</code></strong>: Applies the video filter
+chain:
+<ul>
+<li><strong><code>fps=1/288</code></strong>: Samples one frame every 288
+seconds to obtain 25 frames over the 2-hour runtime.</li>
+<li><strong><code>scale=320:-1</code></strong>: Resizes each individual
+thumbnail to 320 pixels wide while automatically maintaining the
+original aspect ratio for the height. Scaling down is recommended to
+prevent creating an excessively large output image.</li>
+<li><strong><code>tile=5x5</code></strong>: Arranges the captured frames
+into a grid of 5 columns and 5 rows.</li>
+</ul></li>
+<li><strong><code>-frames:v 1</code></strong>: Stops FFmpeg after
+rendering the first completed tiled sheet.</li>
+<li><strong><code>output.jpg</code></strong>: The filename and format
+for the final thumbnail sheet.</li>
+</ul>
+<h3 id="adding-margins-and-padding-optional">Adding Margins and Padding
+(Optional)</h3>
+<p>To improve readability, you can add borders between the thumbnails
+and background colors using the extended parameters of the
+<code>tile</code> filter:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;fps=1/288,scale=320:-1,tile=5x5:padding=4:margin=4:color=black&quot;</span> <span class="at">-frames:v</span> 1 output.jpg</span></code></pre></div>
+<ul>
+<li><strong><code>padding=4</code></strong>: Adds a 4-pixel space
+between adjacent thumbnails.</li>
+<li><strong><code>margin=4</code></strong>: Adds a 4-pixel border around
+the outer edges of the grid.</li>
+<li><strong><code>color=black</code></strong>: Sets the color of the
+padding and margins (supports common color names or hex codes like
+<code>0x000000</code>).</li>
+</ul></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

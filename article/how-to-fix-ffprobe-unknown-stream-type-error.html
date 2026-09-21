@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Fix ffprobe Unknown Stream Type Error - ffmpeg</title>
+    <meta name="description" content="The "Unknown stream type" error in ffprobe occurs when the utility encounters a stream or data track inside a container that it cannot identify, decode, or parse. This issue is typically caused by outdated software versions, non-standard data or telemetr">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/how-to-fix-ffprobe-unknown-stream-type-error">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Fix ffprobe Unknown Stream Type Error - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/how-to-fix-ffprobe-unknown-stream-type-error" />
+    <meta property="og:image" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="The "Unknown stream type" error in ffprobe occurs when the utility encounters a stream or data track inside a container that it cannot identify, decode, or parse. This issue is typically caused by outdated software versions, non-standard data or telemetr" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-to-fix-ffprobe-unknown-stream-type-error">How to Fix ffprobe
+Unknown Stream Type Error</h1>
+<p>The "Unknown stream type" error in ffprobe occurs when the utility
+encounters a stream or data track inside a container that it cannot
+identify, decode, or parse. This issue is typically caused by outdated
+software versions, non-standard data or telemetry streams, missing
+container metadata, or file corruption. This guide explains the primary
+causes of this error and provides direct, actionable solutions to fix or
+bypass it.</p>
+<h3 id="1-update-ffmpeg-and-ffprobe">1. Update FFmpeg and ffprobe</h3>
+<p>Outdated builds of <code>ffprobe</code> frequently lack definitions
+for newer codecs, metadata tracks, or proprietary auxiliary streams
+(such as camera telemetry or closed-caption formats).</p>
+<p>Check your current version:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffprobe</span> <span class="at">-version</span></span></code></pre></div>
+<p>If your build is more than a year old or provided by a minimal
+distribution repository, upgrade to the latest static build containing
+complete codec support. On Linux, switch to a comprehensive static
+build. On macOS, update via <code>brew upgrade ffmpeg</code>. On
+Windows, download the latest "full" release from official
+distributors.</p>
+<h3 id="2-filter-out-data-and-auxiliary-streams">2. Filter Out Data and
+Auxiliary Streams</h3>
+<p>Containers like MP4, MKV, and MOV often contain non-media
+streams—such as GPS tracks, timecodes, or proprietary attachments—that
+trigger the "Unknown stream type" warning. If you only need video or
+audio metadata, restrict <code>ffprobe</code> to scan specific stream
+types.</p>
+<p>To probe only video streams:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffprobe</span> <span class="at">-v</span> error <span class="at">-select_streams</span> v <span class="at">-show_entries</span> stream=codec_name,width,height <span class="at">-of</span> default=noprint_wrappers=1 input.mp4</span></code></pre></div>
+<p>To probe only audio streams:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffprobe</span> <span class="at">-v</span> error <span class="at">-select_streams</span> a <span class="at">-show_entries</span> stream=codec_name,sample_rate,channels <span class="at">-of</span> default=noprint_wrappers=1 input.mp4</span></code></pre></div>
+<p>Using the <code>-select_streams</code> flag bypasses unreadable
+tracks and prevents the command from halting.</p>
+<h3 id="3-force-the-input-demuxer">3. Force the Input Demuxer</h3>
+<p>If the container header is malformed or uses an unusual wrapper,
+<code>ffprobe</code> may misinterpret the underlying stream
+architecture. You can manually force the correct demuxer using the
+<code>-f</code> flag.</p>
+<p>For example, to force reading a raw H.264 or MPEG-TS stream:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffprobe</span> <span class="at">-f</span> mpegts <span class="at">-i</span> input.ts</span></code></pre></div>
+<p>To list all demuxers supported by your build to find the appropriate
+format:</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-demuxers</span></span></code></pre></div>
+<h3 id="4-increase-probing-size-and-analyzeduration">4. Increase Probing
+Size and Analyzeduration</h3>
+<p>By default, <code>ffprobe</code> only reads a limited segment of the
+file's header to detect stream configurations. If the stream markers
+appear later in the file, it will label the stream as unknown.</p>
+<p>Increase the analysis thresholds:</p>
+<div class="sourceCode" id="cb6"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffprobe</span> <span class="at">-analyzeduration</span> 100M <span class="at">-probesize</span> 100M <span class="at">-i</span> input.mkv</span></code></pre></div>
+<p>Setting both <code>-analyzeduration</code> and
+<code>-probesize</code> to higher values forces <code>ffprobe</code> to
+scan deeper into the payload to detect stream definitions.</p>
+<h3 id="5-remux-to-sanitize-the-container">5. Remux to Sanitize the
+Container</h3>
+<p>If the container index is corrupted or improperly interleaved, use
+<code>ffmpeg</code> to remux the valid streams into a clean container
+without re-encoding:</p>
+<div class="sourceCode" id="cb7"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-err_detect</span> ignore_err <span class="at">-i</span> input.mp4 <span class="at">-c</span> copy <span class="at">-map</span> 0:v<span class="pp">?</span> <span class="at">-map</span> 0:a<span class="pp">?</span> output.mp4</span></code></pre></div>
+<ul>
+<li><code>-err_detect ignore_err</code> forces the parser through
+corrupted header segments.</li>
+<li><code>-map 0:v?</code> and <code>-map 0:a?</code> copy only valid
+video and audio tracks while dropping problematic or unrecognized
+streams.</li>
+</ul>
+<p>Once the remuxing process finishes, run <code>ffprobe</code> against
+<code>output.mp4</code> to inspect the clean streams.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

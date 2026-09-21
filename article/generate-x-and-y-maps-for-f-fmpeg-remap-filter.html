@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generate X and Y Maps for FFmpeg Remap Filter - ffmpeg</title>
+    <meta name="description" content="The FFmpeg remap filter allows you to perform custom spatial transformations and geometric distortions on video by mapping source coordinates to destination coordinates. This article covers how coordinate mapping works in FFmpeg, provides a Python script">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/generate-x-and-y-maps-for-f-fmpeg-remap-filter">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Generate X and Y Maps for FFmpeg Remap Filter - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/generate-x-and-y-maps-for-f-fmpeg-remap-filter" />
+    <meta property="og:image" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="The FFmpeg remap filter allows you to perform custom spatial transformations and geometric distortions on video by mapping source coordinates to destination coordinates. This article covers how coordinate mapping works in FFmpeg, provides a Python script" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="generate-x-and-y-maps-for-ffmpeg-remap-filter">Generate X and Y
+Maps for FFmpeg Remap Filter</h1>
+<p>The FFmpeg <code>remap</code> filter allows you to perform custom
+spatial transformations and geometric distortions on video by mapping
+source coordinates to destination coordinates. This article covers how
+coordinate mapping works in FFmpeg, provides a Python script using NumPy
+to generate the required binary X and Y map files, and demonstrates the
+exact FFmpeg command required to process your video with these maps.</p>
+<h3 id="understanding-map-file-requirements">Understanding Map File
+Requirements</h3>
+<p>The <code>remap</code> filter requires three inputs: the source
+video, an X-coordinate map, and a Y-coordinate map.</p>
+<ul>
+<li><strong>Dimensions:</strong> Both map files must have the exact
+resolution (width and height) of the intended <em>output</em>
+video.</li>
+<li><strong>Format:</strong> The map files are typically raw 16-bit
+uncompressed grayscale video streams (<code>gray16le</code>).</li>
+<li><strong>Values:</strong> Each pixel in the X-map stores the source
+horizontal pixel index (ranging from <code>0</code> to
+<code>source_width - 1</code>). Each pixel in the Y-map stores the
+source vertical pixel index (ranging from <code>0</code> to
+<code>source_height - 1</code>). Values are stored as little-endian
+unsigned 16-bit integers (<code>uint16</code>).</li>
+</ul>
+<h3 id="generating-the-maps-with-python-and-numpy">Generating the Maps
+with Python and NumPy</h3>
+<p>Using Python with NumPy is the most efficient way to generate the
+required <code>gray16le</code> binary files. The following script
+creates an output resolution of 1920x1080 and applies a horizontal flip
+as a practical example:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Output video dimensions</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>out_width <span class="op">=</span> <span class="dv">1920</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>out_height <span class="op">=</span> <span class="dv">1080</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Source video dimensions</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>src_width <span class="op">=</span> <span class="dv">1920</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>src_height <span class="op">=</span> <span class="dv">1080</span></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a><span class="co"># Create coordinate grids</span></span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a><span class="co"># x_indices will shape (1080, 1920)</span></span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a><span class="co"># y_indices will shape (1080, 1920)</span></span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>x_indices, y_indices <span class="op">=</span> np.meshgrid(np.arange(out_width), np.arange(out_height))</span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a><span class="co"># Define your transformation logic:</span></span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a><span class="co"># Example: Horizontal mirror (flip across the X-axis)</span></span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a>x_map <span class="op">=</span> (src_width <span class="op">-</span> <span class="dv">1</span>) <span class="op">-</span> x_indices</span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a>y_map <span class="op">=</span> y_indices</span>
+<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a><span class="co"># Ensure values stay within valid input ranges</span></span>
+<span id="cb1-22"><a href="#cb1-22" aria-hidden="true" tabindex="-1"></a>x_map <span class="op">=</span> np.clip(x_map, <span class="dv">0</span>, src_width <span class="op">-</span> <span class="dv">1</span>).astype(np.uint16)</span>
+<span id="cb1-23"><a href="#cb1-23" aria-hidden="true" tabindex="-1"></a>y_map <span class="op">=</span> np.clip(y_map, <span class="dv">0</span>, src_height <span class="op">-</span> <span class="dv">1</span>).astype(np.uint16)</span>
+<span id="cb1-24"><a href="#cb1-24" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-25"><a href="#cb1-25" aria-hidden="true" tabindex="-1"></a><span class="co"># Save the arrays as raw binary files</span></span>
+<span id="cb1-26"><a href="#cb1-26" aria-hidden="true" tabindex="-1"></a>x_map.tofile(<span class="st">&quot;xmap.raw&quot;</span>)</span>
+<span id="cb1-27"><a href="#cb1-27" aria-hidden="true" tabindex="-1"></a>y_map.tofile(<span class="st">&quot;ymap.raw&quot;</span>)</span>
+<span id="cb1-28"><a href="#cb1-28" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-29"><a href="#cb1-29" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">&quot;Successfully generated xmap.raw and ymap.raw&quot;</span>)</span></code></pre></div>
+<h3 id="applying-custom-transformations">Applying Custom
+Transformations</h3>
+<p>To generate arbitrary geometric distortions (such as lens correction,
+fisheye, polar unwarping, or perspective shifts), modify the
+<code>x_map</code> and <code>y_map</code> formulas:</p>
+<ul>
+<li><strong>Identity Mapping (No change):</strong> Set
+<code>x_map = x_indices</code> and <code>y_map = y_indices</code>.</li>
+<li><strong>Cropping / Offset:</strong> Add an integer offset to shift
+the frame (e.g., <code>x_map = x_indices + 100</code>).</li>
+<li><strong>Non-linear Functions:</strong> Use standard trigonometric or
+polynomial equations to calculate the source coordinates for every
+destination pixel <code>(x, y)</code>.</li>
+</ul>
+<h3 id="running-ffmpeg-with-the-remap-filter">Running FFmpeg with the
+Remap Filter</h3>
+<p>Once <code>xmap.raw</code> and <code>ymap.raw</code> are created,
+pass them into FFmpeg as raw video inputs alongside your source
+video:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="dt">\</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">-f</span> rawvideo <span class="at">-pix_fmt</span> gray16le <span class="at">-s</span> 1920x1080 <span class="at">-i</span> xmap.raw <span class="dt">\</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">-f</span> rawvideo <span class="at">-pix_fmt</span> gray16le <span class="at">-s</span> 1920x1080 <span class="at">-i</span> ymap.raw <span class="dt">\</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">-filter_complex</span> <span class="st">&quot;[0:v][1:v][2:v]remap&quot;</span> <span class="dt">\</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<h3 id="technical-considerations">Technical Considerations</h3>
+<ul>
+<li><strong>Interpolation:</strong> The <code>remap</code> filter
+defaults to nearest-neighbor interpolation. For smoother
+transformations, specify bilinear interpolation using
+<code>-filter_complex "[0:v][1:v][2:v]remap=interp=bilinear"</code>.</li>
+<li><strong>Out-of-Bounds Handling:</strong> If your transformation
+points to coordinates outside the source frame dimensions, FFmpeg will
+clamp the edges or output black pixels depending on the
+<code>fill</code> parameter.</li>
+<li><strong>File Size:</strong> Raw 16-bit maps take up significant disk
+space (width × height × 2 bytes per frame). For static transformations,
+generating a single-frame raw file is sufficient, as FFmpeg will loop or
+hold the static map across the entire duration of the video.</li>
+</ul></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

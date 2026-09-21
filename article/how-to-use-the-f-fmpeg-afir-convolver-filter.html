@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Use the FFmpeg afir Convolver Filter - ffmpeg</title>
+    <meta name="description" content="This article explains how to apply audio convolution using the FFmpeg afir filter to process an audio stream with an Impulse Response (IR). Convolution allows you to replicate physical acoustic spaces, simulate guitar cabinets, or apply precise frequency">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/how-to-use-the-f-fmpeg-afir-convolver-filter">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Use the FFmpeg afir Convolver Filter - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/how-to-use-the-f-fmpeg-afir-convolver-filter" />
+    <meta property="og:image" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article explains how to apply audio convolution using the FFmpeg afir filter to process an audio stream with an Impulse Response (IR). Convolution allows you to replicate physical acoustic spaces, simulate guitar cabinets, or apply precise frequency" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-to-use-the-ffmpeg-afir-convolver-filter">How to Use the
+FFmpeg afir Convolver Filter</h1>
+<p>This article explains how to apply audio convolution using the FFmpeg
+<code>afir</code> filter to process an audio stream with an Impulse
+Response (IR). Convolution allows you to replicate physical acoustic
+spaces, simulate guitar cabinets, or apply precise frequency filtering
+by convolving a primary audio signal with an IR audio file. Below, you
+will find the fundamental command syntax, essential parameters, and
+practical examples for integrating <code>afir</code> into your audio
+processing workflow.</p>
+<h3 id="understanding-the-basic-syntax">Understanding the Basic
+Syntax</h3>
+<p>The <code>afir</code> filter requires at least two audio inputs: the
+primary audio stream (input 0) and the impulse response stream (input
+1). Because it accepts multiple inputs, it must be invoked using
+<code>-filter_complex</code>.</p>
+<p>The minimal command structure is:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.wav <span class="at">-i</span> impulse_response.wav <span class="at">-filter_complex</span> <span class="st">&quot;[0:a][1:a]afir[out]&quot;</span> <span class="at">-map</span> <span class="st">&quot;[out]&quot;</span> output.wav</span></code></pre></div>
+<p>In this command:</p>
+<ul>
+<li><code>-i input.wav</code>: The dry audio signal to be
+processed.</li>
+<li><code>-i impulse_response.wav</code>: The impulse response file
+(e.g., a room reverb or speaker cabinet profile).</li>
+<li><code>[0:a][1:a]afir[out]</code>: Feeds both streams into the
+<code>afir</code> filter and outputs a labeled stream
+<code>[out]</code>.</li>
+<li><code>-map "[out]"</code>: Directs the processed filter output to
+the final file.</li>
+</ul>
+<h3 id="key-parameters-of-the-afir-filter">Key Parameters of the
+<code>afir</code> Filter</h3>
+<p>You can customize the behavior of the convolution using parameter
+pairs separated by colons:</p>
+<ul>
+<li><code>dry</code>: Sets the gain level for the original, unprocessed
+signal (default is <code>1</code>).</li>
+<li><code>wet</code>: Sets the gain level for the convolved signal
+(default is <code>1</code>).</li>
+<li><code>length</code>: Defines the maximum percentage of the impulse
+response to use (range <code>0.0</code> to <code>1.0</code>, default is
+<code>1.0</code>).</li>
+<li><code>irnorm</code>: Automatically normalizes the impulse response
+to prevent excessive clipping (default is <code>1</code>). Set to
+<code>0</code> to disable.</li>
+<li><code>irgain</code>: Sets an additional gain multiplier for the
+impulse response.</li>
+<li><code>irfmt</code>: Specifies channel handling between input and
+impulse response. Options include <code>mono</code> (applies a single IR
+channel to all input channels) or <code>input</code> (matches input
+channels with corresponding IR channels).</li>
+</ul>
+<h3 id="practical-examples">Practical Examples</h3>
+<h4 id="1-wetdry-balance-for-reverb">1. Wet/Dry Balance for Reverb</h4>
+<p>When applying room reverb, you often want a blend of both the
+original audio and the reverberated sound:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> speech.wav <span class="at">-i</span> room_ir.wav <span class="at">-filter_complex</span> <span class="st">&quot;[0:a][1:a]afir=dry=1.0:wet=0.3[out]&quot;</span> <span class="at">-map</span> <span class="st">&quot;[out]&quot;</span> speech_reverb.wav</span></code></pre></div>
+<h4 id="2-full-wet-convolution-cabinet-simulation-or-eq">2. Full Wet
+Convolution (Cabinet Simulation or EQ)</h4>
+<p>For speaker cabinet emulation or custom EQ curves, the direct signal
+must be completely replaced by the filtered signal:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> guitar_di.wav <span class="at">-i</span> cab_ir.wav <span class="at">-filter_complex</span> <span class="st">&quot;[0:a][1:a]afir=dry=0:wet=1.0[out]&quot;</span> <span class="at">-map</span> <span class="st">&quot;[out]&quot;</span> guitar_amped.wav</span></code></pre></div>
+<h4 id="3-preventing-volume-surges-with-ir-normalization">3. Preventing
+Volume Surges with IR Normalization</h4>
+<p>Long or uncalibrated impulse responses can significantly boost audio
+levels. Ensure <code>irnorm</code> is active and optionally lower the
+<code>irgain</code>:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp3 <span class="at">-i</span> hall_ir.wav <span class="at">-filter_complex</span> <span class="st">&quot;[0:a][1:a]afir=dry=0.8:wet=0.5:irnorm=1:irgain=0.8[a]&quot;</span> <span class="at">-map</span> <span class="st">&quot;[a]&quot;</span> output.mp3</span></code></pre></div>
+<h4 id="4-applying-a-mono-impulse-response-to-a-stereo-track">4.
+Applying a Mono Impulse Response to a Stereo Track</h4>
+<p>If your impulse response is mono but the target track is stereo, set
+<code>irfmt=mono</code> so the filter duplicates the impulse response
+across all channels:</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> stereo_track.wav <span class="at">-i</span> mono_ir.wav <span class="at">-filter_complex</span> <span class="st">&quot;[0:a][1:a]afir=irfmt=mono[out]&quot;</span> <span class="at">-map</span> <span class="st">&quot;[out]&quot;</span> stereo_convolved.wav</span></code></pre></div></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

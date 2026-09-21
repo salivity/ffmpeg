@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VideoToolbox Bitrate Control in FFmpeg - ffmpeg</title>
+    <meta name="description" content="Apple's VideoToolbox framework provides hardware-accelerated video encoding on macOS and iOS, accessible in FFmpeg primarily through the h264videotoolbox and hevcvideotoolbox encoders. Controlling the output bitrate requires specific FFmpeg flags that ma">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/video-toolbox-bitrate-control-in-f-fmpeg">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="VideoToolbox Bitrate Control in FFmpeg - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/video-toolbox-bitrate-control-in-f-fmpeg" />
+    <meta property="og:image" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Apple's VideoToolbox framework provides hardware-accelerated video encoding on macOS and iOS, accessible in FFmpeg primarily through the h264videotoolbox and hevcvideotoolbox encoders. Controlling the output bitrate requires specific FFmpeg flags that ma" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="videotoolbox-bitrate-control-in-ffmpeg">VideoToolbox Bitrate
+Control in FFmpeg</h1>
+<p>Apple's VideoToolbox framework provides hardware-accelerated video
+encoding on macOS and iOS, accessible in FFmpeg primarily through the
+<code>h264_videotoolbox</code> and <code>hevc_videotoolbox</code>
+encoders. Controlling the output bitrate requires specific FFmpeg flags
+that map directly to Apple's underlying compression session properties.
+This guide outlines the essential parameters available for configuring
+Average Bitrate (ABR), Constrained Bitrate, and Variable Bitrate (VBR)
+or Constant Quality modes when encoding with VideoToolbox.</p>
+<h3 id="core-bitrate-control-parameters">Core Bitrate Control
+Parameters</h3>
+<ul>
+<li><p><strong><code>-b:v</code> (Target Bitrate):</strong> Sets the
+target average video bitrate. When used alone, VideoToolbox operates in
+an Average Bitrate (ABR) mode, attempting to keep the overall file size
+aligned with this value while dynamically adjusting complex scenes.</p>
+<ul>
+<li><em>Example:</em> <code>-b:v 5M</code> (targets 5 Mbps)</li>
+</ul></li>
+<li><p><strong><code>-maxrate</code> (Maximum Bitrate):</strong> Defines
+the upper limit for the bitrate buffer. When paired with
+<code>-b:v</code>, it restricts bandwidth spikes, which is critical for
+HTTP Live Streaming (HLS) or hardware decoders with strict bandwidth
+limits.</p>
+<ul>
+<li><em>Example:</em> <code>-b:v 4M -maxrate 5M</code></li>
+</ul></li>
+<li><p><strong><code>-q:v</code> or <code>-global_quality</code>
+(Quality-Based VBR):</strong> Configures quality-targeted variable
+bitrate encoding. VideoToolbox maps this to the
+<code>kVTCompressionPropertyKey_Quality</code> property. In FFmpeg, this
+takes an integer typically ranging from <code>1</code> (lowest quality)
+to <code>100</code> (highest quality). Setting <code>-q:v</code>
+disables average bitrate targeting in favor of perceptual quality
+preservation.</p>
+<ul>
+<li><em>Example:</em> <code>-q:v 65</code></li>
+</ul></li>
+</ul>
+<h3 id="advanced-rate-control-flags">Advanced Rate Control Flags</h3>
+<ul>
+<li><p><strong><code>-spatial_aq</code> (Spatial Adaptive
+Quantization):</strong> A boolean parameter (<code>1</code> to enable,
+<code>0</code> to disable) that instructs the encoder to allocate more
+bits to perceptually important areas, such as detailed textures or human
+faces, and fewer bits to flat or noisy areas.</p>
+<ul>
+<li><em>Example:</em> <code>-spatial_aq 1</code></li>
+</ul></li>
+<li><p><strong><code>-realtime</code> (Realtime Encoding):</strong> A
+boolean flag (<code>1</code> or <code>0</code>) that configures the
+encoder for low-latency live scenarios. When enabled, the rate control
+algorithm prioritizes meeting frame-rate deadlines over strict bitrate
+accuracy or compression efficiency.</p>
+<ul>
+<li><em>Example:</em> <code>-realtime 1</code></li>
+</ul></li>
+<li><p><strong><code>-priors</code> / Frame Dependencies:</strong> While
+not directly setting a bit budget, properties such as <code>-bf</code>
+(B-frames) and <code>-g</code> (GOP size/keyframe interval) heavily
+influence rate distribution efficiency. VideoToolbox adjusts macroblock
+quantizers based on the distance between I-frames defined by
+<code>-g</code>.</p></li>
+</ul>
+<h3 id="common-implementation-patterns">Common Implementation
+Patterns</h3>
+<p><strong>Constant Quality (VBR):</strong> To prioritize visual
+fidelity without a strict size limit, omit <code>-b:v</code> and specify
+quality:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-c:v</span> h264_videotoolbox <span class="at">-q:v</span> 70 output.mp4</span></code></pre></div>
+<p><strong>Constrained Variable Bitrate (CVBR):</strong> To achieve an
+average target while capping maximum data bursts:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-c:v</span> hevc_videotoolbox <span class="at">-b:v</span> 6M <span class="at">-maxrate</span> 8M <span class="at">-spatial_aq</span> 1 output.mp4</span></code></pre></div>
+<p><strong>Low-Latency Streaming:</strong> For live delivery where
+consistent network throughput is mandatory:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-c:v</span> h264_videotoolbox <span class="at">-b:v</span> 3M <span class="at">-maxrate</span> 3.5M <span class="at">-realtime</span> 1 output.mp4</span></code></pre></div></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

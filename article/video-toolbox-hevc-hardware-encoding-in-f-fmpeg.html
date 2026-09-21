@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VideoToolbox HEVC Hardware Encoding in FFmpeg - ffmpeg</title>
+    <meta name="description" content="This article provides a practical guide on utilizing Apple's VideoToolbox framework to achieve fast, hardware-accelerated HEVC (H.265) video encoding using FFmpeg on macOS. It covers verifying system support, fundamental encoding commands, managing video">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/video-toolbox-hevc-hardware-encoding-in-f-fmpeg">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="VideoToolbox HEVC Hardware Encoding in FFmpeg - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/video-toolbox-hevc-hardware-encoding-in-f-fmpeg" />
+    <meta property="og:image" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article provides a practical guide on utilizing Apple's VideoToolbox framework to achieve fast, hardware-accelerated HEVC (H.265) video encoding using FFmpeg on macOS. It covers verifying system support, fundamental encoding commands, managing video" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="videotoolbox-hevc-hardware-encoding-in-ffmpeg">VideoToolbox HEVC
+Hardware Encoding in FFmpeg</h1>
+<p>This article provides a practical guide on utilizing Apple's
+VideoToolbox framework to achieve fast, hardware-accelerated HEVC
+(H.265) video encoding using FFmpeg on macOS. It covers verifying system
+support, fundamental encoding commands, managing video quality and
+bitrates, enabling 10-bit color, and ensuring compatibility with Apple
+ecosystem players like QuickTime.</p>
+<h3 id="verifying-videotoolbox-support">Verifying VideoToolbox
+Support</h3>
+<p>Before encoding, verify that your FFmpeg build includes VideoToolbox
+support. Run the following command in Terminal:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-encoders</span> <span class="kw">|</span> <span class="fu">grep</span> videotoolbox</span></code></pre></div>
+<p>Look for <code>hevc_videotoolbox</code> in the output. If it appears,
+your installation is ready to use hardware acceleration on your Apple
+Silicon or supported Intel Mac.</p>
+<h3 id="basic-hevc-encoding-command">Basic HEVC Encoding Command</h3>
+<p>To encode a video to HEVC using the hardware encoder, set the video
+codec flag (<code>-c:v</code>) to <code>hevc_videotoolbox</code>.</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-c:v</span> hevc_videotoolbox <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<p>This command copies the audio stream without re-encoding and
+compresses the video stream using the default VideoToolbox HEVC
+settings.</p>
+<h3 id="controlling-output-quality-and-bitrate">Controlling Output
+Quality and Bitrate</h3>
+<p>VideoToolbox handles rate control differently than software encoders
+like <code>libx265</code>. Traditional Constant Rate Factor (CRF) is not
+supported; instead, you use quality-based variable bitrate or target
+bitrates.</p>
+<h4 id="variable-bitrate-via-quality-scale--qv">Variable Bitrate via
+Quality Scale (<code>-q:v</code>)</h4>
+<p>You can set a quality target using a scale from 1 to 100, where
+higher values yield better visual quality at the expense of larger file
+sizes:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-c:v</span> hevc_videotoolbox <span class="at">-q:v</span> 65 <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<p>A value between 50 and 75 is typically suitable for general video
+preservation and web sharing.</p>
+<h4 id="target-bitrate--bv">Target Bitrate (<code>-b:v</code>)</h4>
+<p>If you need to hit a specific file size or bandwidth limit, specify
+an explicit average bitrate:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-c:v</span> hevc_videotoolbox <span class="at">-b:v</span> 4M <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<h3 id="apple-ecosystem-compatibility--tagv-hvc1">Apple Ecosystem
+Compatibility (<code>-tag:v hvc1</code>)</h3>
+<p>By default, FFmpeg may tag HEVC streams as <code>hev1</code>, which
+causes playback issues in Apple QuickTime, Finder preview, and iOS
+devices. Always append <code>-tag:v hvc1</code> when encoding for Apple
+devices:</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-c:v</span> hevc_videotoolbox <span class="at">-q:v</span> 65 <span class="at">-tag:v</span> hvc1 <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<h3 id="10-bit-color-encoding">10-Bit Color Encoding</h3>
+<p>Hardware-accelerated 10-bit encoding reduces color banding in
+gradients and is required for HDR workflows. Specify the 10-bit pixel
+format (<code>p010le</code>):</p>
+<div class="sourceCode" id="cb6"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-c:v</span> hevc_videotoolbox <span class="at">-pix_fmt</span> p010le <span class="at">-q:v</span> 70 <span class="at">-tag:v</span> hvc1 <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<h3 id="performance-profiles">Performance Profiles</h3>
+<p>VideoToolbox provides profiles to optimize for specific use
+cases:</p>
+<ul>
+<li><strong>Main Profile (8-bit default):</strong>
+<code>-profile:v main</code></li>
+<li><strong>Main 10 Profile (10-bit):</strong>
+<code>-profile:v main10</code></li>
+</ul>
+<p>Additionally, you can toggle <code>-realtime true</code> if you are
+streaming live content, though omitting it yields better compression
+efficiency for offline file encoding.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

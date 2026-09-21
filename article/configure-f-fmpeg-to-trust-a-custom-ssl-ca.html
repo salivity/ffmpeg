@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Configure FFmpeg to Trust a Custom SSL CA - ffmpeg</title>
+    <meta name="description" content="When streaming media over HTTPS using FFmpeg, private environments and internal networks often rely on custom or self-signed Certificate Authorities (CAs). By default, FFmpeg will reject these connections to prevent man-in-the-middle attacks, resulting i">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/configure-f-fmpeg-to-trust-a-custom-ssl-ca">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Configure FFmpeg to Trust a Custom SSL CA - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/configure-f-fmpeg-to-trust-a-custom-ssl-ca" />
+    <meta property="og:image" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="When streaming media over HTTPS using FFmpeg, private environments and internal networks often rely on custom or self-signed Certificate Authorities (CAs). By default, FFmpeg will reject these connections to prevent man-in-the-middle attacks, resulting i" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="configure-ffmpeg-to-trust-a-custom-ssl-ca">Configure FFmpeg to
+Trust a Custom SSL CA</h1>
+<p>When streaming media over HTTPS using FFmpeg, private environments
+and internal networks often rely on custom or self-signed Certificate
+Authorities (CAs). By default, FFmpeg will reject these connections to
+prevent man-in-the-middle attacks, resulting in TLS handshake failures.
+This guide explains how to configure FFmpeg to trust a custom CA
+certificate directly via command-line flags, environment variables, or
+operating system trust stores.</p>
+<h3 id="method-1-use-the--ca_file-flag">Method 1: Use the
+<code>-ca_file</code> Flag</h3>
+<p>FFmpeg provides a built-in TLS option called <code>-ca_file</code>
+(or <code>-cafile</code>) to specify the path to a PEM-formatted CA
+certificate.</p>
+<p>Because FFmpeg evaluates options in order, the <code>-ca_file</code>
+parameter must be placed <strong>before</strong> the HTTPS URL it
+applies to.</p>
+<h4 id="for-https-input-streams">For HTTPS Input Streams:</h4>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-ca_file</span> /path/to/custom-ca.pem <span class="at">-i</span> https://internal-server.local/live/stream.m3u8 <span class="at">-c</span> copy output.mp4</span></code></pre></div>
+<h4 id="for-https-output-streams">For HTTPS Output Streams:</h4>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-ca_file</span> /path/to/custom-ca.pem <span class="at">-f</span> flv https://internal-server.local/live/endpoint</span></code></pre></div>
+<p><em>Note: Ensure the certificate file is encoded in Base64 PEM format
+(typically ending in <code>.pem</code> or <code>.crt</code>).</em></p>
+<hr />
+<h3 id="method-2-set-the-ssl_cert_file-environment-variable">Method 2:
+Set the <code>SSL_CERT_FILE</code> Environment Variable</h3>
+<p>Most pre-compiled FFmpeg binaries are linked against OpenSSL. OpenSSL
+natively respects the <code>SSL_CERT_FILE</code> environment variable,
+which tells the underlying network library where to locate your trusted
+CA bundle without modifying your FFmpeg command directly.</p>
+<h4 id="on-linux-and-macos">On Linux and macOS:</h4>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="bu">export</span> <span class="va">SSL_CERT_FILE</span><span class="op">=</span><span class="st">&quot;/path/to/custom-ca.pem&quot;</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> https://internal-server.local/live/stream.m3u8 <span class="at">-c</span> copy output.mp4</span></code></pre></div>
+<h4 id="on-windows-powershell">On Windows (PowerShell):</h4>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode powershell"><code class="sourceCode powershell"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="va">$env</span><span class="op">:</span><span class="va">SSL_CERT_FILE</span><span class="op">=</span><span class="st">&quot;C:\path\to\custom-ca.pem&quot;</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>ffmpeg <span class="op">-</span>i https<span class="op">://</span>internal-server<span class="op">.</span><span class="fu">local</span><span class="op">/</span>live<span class="op">/</span>stream<span class="op">.</span><span class="fu">m3u8</span> <span class="op">-</span>c <span class="fu">copy</span> output<span class="op">.</span><span class="fu">mp4</span></span></code></pre></div>
+<hr />
+<h3 id="method-3-install-the-ca-into-the-system-trust-store">Method 3:
+Install the CA into the System Trust Store</h3>
+<p>If FFmpeg is running as part of an automated pipeline or service, the
+most robust solution is to install the custom CA directly into the host
+operating system's trusted root store. FFmpeg will automatically trust
+certificates recognized by the OS.</p>
+<h4 id="ubuntu--debian">Ubuntu / Debian:</h4>
+<ol type="1">
+<li>Copy the certificate to the CA directory:
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> cp custom-ca.crt /usr/local/share/ca-certificates/</span></code></pre></div></li>
+<li>Update the store:
+<div class="sourceCode" id="cb6"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> update-ca-certificates</span></code></pre></div></li>
+</ol>
+<h4 id="rhel--centos--rocky-linux">RHEL / CentOS / Rocky Linux:</h4>
+<ol type="1">
+<li>Copy the certificate:
+<div class="sourceCode" id="cb7"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> cp custom-ca.crt /etc/pki/ca-trust/source/anchors/</span></code></pre></div></li>
+<li>Update the store:
+<div class="sourceCode" id="cb8"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> update-ca-trust</span></code></pre></div></li>
+</ol>
+<hr />
+<h3 id="insecure-fallback-disabling-verification">Insecure Fallback:
+Disabling Verification</h3>
+<p>If testing in a non-production environment where strict validation is
+temporarily not required, you can disable TLS certificate verification
+entirely using the <code>-tls_verify 0</code> option:</p>
+<div class="sourceCode" id="cb9"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-tls_verify</span> 0 <span class="at">-i</span> https://internal-server.local/live/stream.m3u8 <span class="at">-c</span> copy output.mp4</span></code></pre></div>
+<p><em>Warning: Disabling TLS verification leaves the connection
+vulnerable to interception and should never be used in
+production.</em></p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

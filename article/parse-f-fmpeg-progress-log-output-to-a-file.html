@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Parse FFmpeg Progress Log Output to a File - ffmpeg</title>
+    <meta name="description" content="Tracking the progress of an FFmpeg encoding task is essential for building responsive user interfaces, automating workflows, and calculating accurate completion percentages. FFmpeg natively supports streaming machine-readable metrics directly to a file u">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/parse-f-fmpeg-progress-log-output-to-a-file">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Parse FFmpeg Progress Log Output to a File - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/parse-f-fmpeg-progress-log-output-to-a-file" />
+    <meta property="og:image" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Tracking the progress of an FFmpeg encoding task is essential for building responsive user interfaces, automating workflows, and calculating accurate completion percentages. FFmpeg natively supports streaming machine-readable metrics directly to a file u" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="parse-ffmpeg-progress-log-output-to-a-file">Parse FFmpeg
+Progress Log Output to a File</h1>
+<p>Tracking the progress of an FFmpeg encoding task is essential for
+building responsive user interfaces, automating workflows, and
+calculating accurate completion percentages. FFmpeg natively supports
+streaming machine-readable metrics directly to a file using the
+<code>-progress</code> flag. This article explains how to write
+real-time progress data to a local file, understand the generated
+key-value metrics, and parse that file using a lightweight Python
+script.</p>
+<hr />
+<h3 id="step-1-directing-ffmpeg-progress-to-a-local-file">Step 1:
+Directing FFmpeg Progress to a Local File</h3>
+<p>To output progress to a file instead of <code>stderr</code>, append
+the <code>-progress</code> flag followed by the target file path. Add
+the <code>-nostats</code> flag to suppress the default terminal output
+to keep the console clean.</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-progress</span> progress.log <span class="at">-nostats</span> output.mp4</span></code></pre></div>
+<p>FFmpeg will continuously append blocks of key-value pairs to
+<code>progress.log</code>. Each update block looks like this:</p>
+<pre class="text"><code>frame=142
+fps=35.50
+stream_0_0_q=29.0
+bitrate=   8.2kbits/s
+total_size=48
+out_time_us=4733333
+out_time_ms=4733333
+out_time=00:00:04.733333
+dup_frames=0
+drop_frames=0
+speed=1.18x
+progress=continue</code></pre>
+<p>Every block terminates with either <code>progress=continue</code>
+during processing or <code>progress=end</code> when the operation
+completes.</p>
+<hr />
+<h3 id="step-2-key-metrics-to-track">Step 2: Key Metrics to Track</h3>
+<p>The most useful keys generated in the output include:</p>
+<ul>
+<li><strong><code>out_time_us</code></strong>: Processed time in
+microseconds. Divide by <code>1,000,000</code> to get processed seconds.
+This is the most reliable metric for calculating completion
+percentage.</li>
+<li><strong><code>frame</code></strong>: Total number of video frames
+encoded so far.</li>
+<li><strong><code>fps</code></strong>: Current encoding speed in frames
+per second.</li>
+<li><strong><code>speed</code></strong>: Encoding speed relative to
+playback speed (e.g., <code>2.0x</code> means twice as fast as
+real-time).</li>
+<li><strong><code>progress</code></strong>: Emits <code>continue</code>
+while running and <code>end</code> when finished.</li>
+</ul>
+<hr />
+<h3 id="step-3-parsing-the-progress-file-in-python">Step 3: Parsing the
+Progress File in Python</h3>
+<p>Because FFmpeg continuously appends to the log, your parser needs to
+read the file sequentially or monitor it until <code>progress=end</code>
+is encountered.</p>
+<p>Below is a Python script that reads the file line-by-line, groups
+lines into a key-value dictionary, and calculates the overall percentage
+against a known total duration:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> time</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> os</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> parse_ffmpeg_progress(file_path, total_duration_seconds):</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>    current_data <span class="op">=</span> {}</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Wait for the file to be created</span></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>    <span class="cf">while</span> <span class="kw">not</span> os.path.exists(file_path):</span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>        time.sleep(<span class="fl">0.1</span>)</span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>    <span class="cf">with</span> <span class="bu">open</span>(file_path, <span class="st">&quot;r&quot;</span>) <span class="im">as</span> f:</span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>        <span class="cf">while</span> <span class="va">True</span>:</span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>            line <span class="op">=</span> f.readline()</span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a>            <span class="cf">if</span> <span class="kw">not</span> line:</span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a>                time.sleep(<span class="fl">0.1</span>)</span>
+<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a>                <span class="cf">continue</span></span>
+<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a>            </span>
+<span id="cb3-18"><a href="#cb3-18" aria-hidden="true" tabindex="-1"></a>            line <span class="op">=</span> line.strip()</span>
+<span id="cb3-19"><a href="#cb3-19" aria-hidden="true" tabindex="-1"></a>            <span class="cf">if</span> <span class="st">&quot;=&quot;</span> <span class="kw">in</span> line:</span>
+<span id="cb3-20"><a href="#cb3-20" aria-hidden="true" tabindex="-1"></a>                key, value <span class="op">=</span> line.split(<span class="st">&quot;=&quot;</span>, <span class="dv">1</span>)</span>
+<span id="cb3-21"><a href="#cb3-21" aria-hidden="true" tabindex="-1"></a>                current_data[key.strip()] <span class="op">=</span> value.strip()</span>
+<span id="cb3-22"><a href="#cb3-22" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-23"><a href="#cb3-23" aria-hidden="true" tabindex="-1"></a>            <span class="co"># Process the current block when a progress state is reached</span></span>
+<span id="cb3-24"><a href="#cb3-24" aria-hidden="true" tabindex="-1"></a>            <span class="cf">if</span> line.startswith(<span class="st">&quot;progress=&quot;</span>):</span>
+<span id="cb3-25"><a href="#cb3-25" aria-hidden="true" tabindex="-1"></a>                state <span class="op">=</span> current_data.get(<span class="st">&quot;progress&quot;</span>)</span>
+<span id="cb3-26"><a href="#cb3-26" aria-hidden="true" tabindex="-1"></a>                </span>
+<span id="cb3-27"><a href="#cb3-27" aria-hidden="true" tabindex="-1"></a>                <span class="cf">if</span> <span class="st">&quot;out_time_us&quot;</span> <span class="kw">in</span> current_data:</span>
+<span id="cb3-28"><a href="#cb3-28" aria-hidden="true" tabindex="-1"></a>                    current_us <span class="op">=</span> <span class="bu">int</span>(current_data[<span class="st">&quot;out_time_us&quot;</span>])</span>
+<span id="cb3-29"><a href="#cb3-29" aria-hidden="true" tabindex="-1"></a>                    current_seconds <span class="op">=</span> current_us <span class="op">/</span> <span class="dv">1_000_000</span></span>
+<span id="cb3-30"><a href="#cb3-30" aria-hidden="true" tabindex="-1"></a>                    percentage <span class="op">=</span> (current_seconds <span class="op">/</span> total_duration_seconds) <span class="op">*</span> <span class="dv">100</span></span>
+<span id="cb3-31"><a href="#cb3-31" aria-hidden="true" tabindex="-1"></a>                    </span>
+<span id="cb3-32"><a href="#cb3-32" aria-hidden="true" tabindex="-1"></a>                    <span class="bu">print</span>(<span class="ss">f&quot;Status: </span><span class="sc">{</span>percentage<span class="sc">:.2f}</span><span class="ss">% | &quot;</span></span>
+<span id="cb3-33"><a href="#cb3-33" aria-hidden="true" tabindex="-1"></a>                          <span class="ss">f&quot;FPS: </span><span class="sc">{</span>current_data<span class="sc">.</span>get(<span class="st">&#39;fps&#39;</span>, <span class="st">&#39;N/A&#39;</span>)<span class="sc">}</span><span class="ss"> | &quot;</span></span>
+<span id="cb3-34"><a href="#cb3-34" aria-hidden="true" tabindex="-1"></a>                          <span class="ss">f&quot;Speed: </span><span class="sc">{</span>current_data<span class="sc">.</span>get(<span class="st">&#39;speed&#39;</span>, <span class="st">&#39;N/A&#39;</span>)<span class="sc">}</span><span class="ss">&quot;</span>)</span>
+<span id="cb3-35"><a href="#cb3-35" aria-hidden="true" tabindex="-1"></a>                </span>
+<span id="cb3-36"><a href="#cb3-36" aria-hidden="true" tabindex="-1"></a>                <span class="cf">if</span> state <span class="op">==</span> <span class="st">&quot;end&quot;</span>:</span>
+<span id="cb3-37"><a href="#cb3-37" aria-hidden="true" tabindex="-1"></a>                    <span class="bu">print</span>(<span class="st">&quot;Processing complete.&quot;</span>)</span>
+<span id="cb3-38"><a href="#cb3-38" aria-hidden="true" tabindex="-1"></a>                    <span class="cf">break</span></span>
+<span id="cb3-39"><a href="#cb3-39" aria-hidden="true" tabindex="-1"></a>                </span>
+<span id="cb3-40"><a href="#cb3-40" aria-hidden="true" tabindex="-1"></a>                <span class="co"># Clear buffer for next update block</span></span>
+<span id="cb3-41"><a href="#cb3-41" aria-hidden="true" tabindex="-1"></a>                current_data.clear()</span>
+<span id="cb3-42"><a href="#cb3-42" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-43"><a href="#cb3-43" aria-hidden="true" tabindex="-1"></a><span class="co"># Example usage (Total duration in seconds: 120)</span></span>
+<span id="cb3-44"><a href="#cb3-44" aria-hidden="true" tabindex="-1"></a>parse_ffmpeg_progress(<span class="st">&quot;progress.log&quot;</span>, total_duration_seconds<span class="op">=</span><span class="dv">120</span>)</span></code></pre></div>
+<hr />
+<h3 id="best-practices">Best Practices</h3>
+<ul>
+<li><strong>Pre-determine Video Duration:</strong> FFmpeg's
+<code>-progress</code> log does not report the total input duration.
+Retrieve the input duration first using <code>ffprobe</code> to compute
+accurate percentage values:
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffprobe</span> <span class="at">-v</span> error <span class="at">-show_entries</span> format=duration <span class="at">-of</span> default=noprint_wrappers=1:nokey=1 input.mp4</span></code></pre></div></li>
+<li><strong>Prevent File Locking Issues:</strong> If the processing
+script and FFmpeg run on separate threads or processes, open the
+progress log in read-only mode (<code>"r"</code>) to avoid file access
+conflicts.</li>
+<li><strong>File Cleanup:</strong> Ensure your application removes or
+truncates the <code>progress.log</code> file between different FFmpeg
+runs to prevent parsing outdated data from previous tasks.</li>
+</ul></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

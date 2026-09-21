@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FFmpeg WebP Compression Quality and Loop Count - ffmpeg</title>
+    <meta name="description" content="This guide explains how to control output file size and playback behavior when encoding WebP images and animations using FFmpeg. By adjusting specific encoder flags, you can toggle between lossy and lossless compression, fine-tune the quality level, and">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/f-fmpeg-web-p-compression-quality-and-loop-count">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="FFmpeg WebP Compression Quality and Loop Count - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/f-fmpeg-web-p-compression-quality-and-loop-count" />
+    <meta property="og:image" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This guide explains how to control output file size and playback behavior when encoding WebP images and animations using FFmpeg. By adjusting specific encoder flags, you can toggle between lossy and lossless compression, fine-tune the quality level, and" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="ffmpeg-webp-compression-quality-and-loop-count">FFmpeg WebP
+Compression Quality and Loop Count</h1>
+<p>This guide explains how to control output file size and playback
+behavior when encoding WebP images and animations using FFmpeg. By
+adjusting specific encoder flags, you can toggle between lossy and
+lossless compression, fine-tune the quality level, and define whether an
+animated WebP loops infinitely, loops a set number of times, or plays
+only once.</p>
+<h2 id="setting-webp-compression-quality">Setting WebP Compression
+Quality</h2>
+<p>FFmpeg uses the <code>libwebp</code> encoder to generate WebP files.
+You can control quality using either lossy or lossless compression
+modes.</p>
+<h3 id="lossy-compression">Lossy Compression</h3>
+<p>For standard lossy encoding, use the <code>-q:v</code> (or
+<code>-quality</code>) flag followed by a value from <code>0</code> to
+<code>100</code>. Lower values yield smaller file sizes at the cost of
+visual fidelity, while higher values preserve more detail. The default
+value is typically <code>75</code>.</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-c:v</span> libwebp <span class="at">-q:v</span> 80 output.webp</span></code></pre></div>
+<p>You can also adjust the encoding effort using the
+<code>-compression_level</code> flag, which takes an integer from
+<code>0</code> (fastest encoding, larger file) to <code>6</code>
+(slowest encoding, best compression ratio). The default value is
+<code>4</code>.</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-c:v</span> libwebp <span class="at">-q:v</span> 80 <span class="at">-compression_level</span> 6 output.webp</span></code></pre></div>
+<h3 id="lossless-compression">Lossless Compression</h3>
+<p>To enable true lossless compression, set the <code>-lossless</code>
+flag to <code>1</code>. In lossless mode, visual quality is completely
+preserved, and the <code>-q:v</code> parameter dictates the amount of
+effort spent compressing the file rather than the visual quality.</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-c:v</span> libwebp <span class="at">-lossless</span> 1 output.webp</span></code></pre></div>
+<h2 id="configuring-loop-count">Configuring Loop Count</h2>
+<p>The repetition behavior of animated WebP files is controlled using
+the <code>-loop</code> flag.</p>
+<ul>
+<li><strong><code>0</code></strong>: Loops infinitely.</li>
+<li><strong><code>N</code> (positive integer)</strong>: Loops the
+animation <code>N</code> additional times after the initial
+playback.</li>
+<li><strong><code>-1</code></strong>: Plays once without looping.</li>
+</ul>
+<p>To create an animated WebP that loops continuously:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-c:v</span> libwebp <span class="at">-loop</span> 0 output.webp</span></code></pre></div>
+<p>To create an animation that plays once and stops:</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-c:v</span> libwebp <span class="at">-loop</span> <span class="at">-1</span> output.webp</span></code></pre></div>
+<h2 id="complete-command-example">Complete Command Example</h2>
+<p>To combine both quality tuning and loop control for an optimized,
+continuously looping animation at 15 frames per second:</p>
+<div class="sourceCode" id="cb6"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;fps=15,scale=640:-1:flags=lanczos&quot;</span> <span class="at">-c:v</span> libwebp <span class="at">-q:v</span> 75 <span class="at">-compression_level</span> 5 <span class="at">-loop</span> 0 output.webp</span></code></pre></div></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generate Moving Dot Test Pattern with FFmpeg - ffmpeg</title>
+    <meta name="description" content="Generating a moving dot test pattern in FFmpeg is a reliable method to test display refresh rates, detect frame drops, and measure motion judder across video playback pipelines. While the standard testsrc filter creates a static color bar grid with a scr">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/generate-moving-dot-test-pattern-with-f-fmpeg">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Generate Moving Dot Test Pattern with FFmpeg - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/generate-moving-dot-test-pattern-with-f-fmpeg" />
+    <meta property="og:image" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Generating a moving dot test pattern in FFmpeg is a reliable method to test display refresh rates, detect frame drops, and measure motion judder across video playback pipelines. While the standard testsrc filter creates a static color bar grid with a scr" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="generate-moving-dot-test-pattern-with-ffmpeg">Generate Moving
+Dot Test Pattern with FFmpeg</h1>
+<p>Generating a moving dot test pattern in FFmpeg is a reliable method
+to test display refresh rates, detect frame drops, and measure motion
+judder across video playback pipelines. While the standard
+<code>testsrc</code> filter creates a static color bar grid with a
+scrolling gradient and timecode, pairing it with the
+<code>drawbox</code> filter allows you to render a moving dot or shape
+with mathematically controlled motion. This guide demonstrates how to
+generate a moving dot over a <code>testsrc</code> background, configure
+its movement paths, and utilize FFmpeg's built-in motion test
+alternatives.</p>
+<h3 id="overlaying-a-moving-dot-on-testsrc">Overlaying a Moving Dot on
+<code>testsrc</code></h3>
+<p>To create a moving dot directly on the standard <code>testsrc</code>
+pattern, use the <code>drawbox</code> video filter to draw a solid
+square or dot whose <code>x</code> and <code>y</code> coordinates update
+dynamically based on the current timestamp variable <code>t</code>.</p>
+<p>Run the following command to generate a circular or orbital moving
+dot:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-f</span> lavfi <span class="at">-i</span> testsrc=size=1920x1080:rate=60:duration=10 <span class="at">-vf</span> <span class="st">&quot;drawbox=x=&#39;(w-40)/2 + cos(t*3)*(w/4)&#39;:y=&#39;(h-40)/2 + sin(t*3)*(h/4)&#39;:w=40:h=40:color=white:t=fill&quot;</span> <span class="at">-c:v</span> libx264 <span class="at">-pix_fmt</span> yuv420p moving_dot_orbital.mp4</span></code></pre></div>
+<p>In this command:</p>
+<ul>
+<li><code>testsrc=size=1920x1080:rate=60:duration=10</code> creates a
+1080p canvas running at 60 frames per second for 10 seconds.</li>
+<li><code>drawbox</code> draws a 40x40 pixel white square
+(<code>w=40:h=40:color=white:t=fill</code>).</li>
+<li><code>cos(t*3)</code> and <code>sin(t*3)</code> use trigonometry
+relative to timestamp <code>t</code> to orbit the dot smoothly around
+the center of the frame.</li>
+<li><code>-pix_fmt yuv420p</code> ensures broad compatibility with media
+players.</li>
+</ul>
+<h3 id="creating-a-linear-sweeping-dot">Creating a Linear Sweeping
+Dot</h3>
+<p>If you need a dot that sweeps horizontally across the screen to test
+linear frame pacing and tearing, use the modulo operator
+<code>mod()</code>:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-f</span> lavfi <span class="at">-i</span> testsrc=size=1280x720:rate=60:duration=10 <span class="at">-vf</span> <span class="st">&quot;drawbox=x=&#39;mod(t*400, w)&#39;:y=&#39;(h-30)/2&#39;:w=30:h=30:color=red:t=fill&quot;</span> <span class="at">-c:v</span> libx264 <span class="at">-pix_fmt</span> yuv420p moving_dot_linear.mp4</span></code></pre></div>
+<ul>
+<li><code>x='mod(t*400, w)'</code> moves the dot across the screen at
+400 pixels per second, wrapping back to the left edge when it reaches
+the canvas width <code>w</code>.</li>
+<li><code>y='(h-30)/2'</code> keeps the dot vertically centered.</li>
+</ul>
+<h3 id="using-the-built-in-testsrc2-motion-pattern">Using the Built-In
+<code>testsrc2</code> Motion Pattern</h3>
+<p>If you do not require custom motion paths and simply need an
+out-of-the-box motion test pattern, FFmpeg includes an updated variant
+called <code>testsrc2</code>. This filter natively includes a moving
+element that travels across the frame without requiring additional
+filters:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-f</span> lavfi <span class="at">-i</span> testsrc2=size=1920x1080:rate=60:duration=10 <span class="at">-c:v</span> libx264 <span class="at">-pix_fmt</span> yuv420p testsrc2_motion.mp4</span></code></pre></div>
+<p>The <code>testsrc2</code> pattern generates color bars alongside an
+animated block designed specifically to verify smooth motion rendering
+and detect frame tearing.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

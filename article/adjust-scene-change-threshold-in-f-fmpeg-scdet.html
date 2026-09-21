@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Adjust Scene Change Threshold in FFmpeg scdet - ffmpeg</title>
+    <meta name="description" content="The FFmpeg scdet (scene detection) filter allows you to detect cut points and scene transitions within a video stream by analyzing differences between consecutive frames. By adjusting the detection threshold parameter, you can control the sensitivity of">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/adjust-scene-change-threshold-in-f-fmpeg-scdet">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Adjust Scene Change Threshold in FFmpeg scdet - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/adjust-scene-change-threshold-in-f-fmpeg-scdet" />
+    <meta property="og:image" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="The FFmpeg scdet (scene detection) filter allows you to detect cut points and scene transitions within a video stream by analyzing differences between consecutive frames. By adjusting the detection threshold parameter, you can control the sensitivity of" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="adjust-scene-change-threshold-in-ffmpeg-scdet">Adjust Scene
+Change Threshold in FFmpeg scdet</h1>
+<p>The FFmpeg <code>scdet</code> (scene detection) filter allows you to
+detect cut points and scene transitions within a video stream by
+analyzing differences between consecutive frames. By adjusting the
+detection threshold parameter, you can control the sensitivity of the
+filter, allowing you to catch subtle transitions or restrict detection
+to only drastic scene changes. This guide explains the threshold
+parameter syntax, how its values affect detection, and how to implement
+it in practical FFmpeg commands.</p>
+<h3 id="the-threshold-parameter">The <code>threshold</code>
+Parameter</h3>
+<p>The <code>scdet</code> filter relies on a single primary option to
+govern sensitivity: <code>threshold</code> (or its short alias
+<code>t</code>).</p>
+<ul>
+<li><strong>Option Name:</strong> <code>threshold</code> or
+<code>t</code></li>
+<li><strong>Value Range:</strong> <code>0.0</code> to
+<code>100.0</code></li>
+<li><strong>Default Value:</strong> <code>10.0</code></li>
+</ul>
+<p>The threshold represents the percentage of change required between
+consecutive frames to trigger a scene change event.</p>
+<ul>
+<li><strong>Lower values (e.g., 5.0):</strong> Increase sensitivity. The
+filter flags more subtle movements or lighting variations as new scenes,
+which may lead to false positives.</li>
+<li><strong>Higher values (e.g., 25.0):</strong> Decrease sensitivity.
+The filter requires significant visual differences to register a cut,
+reducing false positives but potentially missing soft cuts.</li>
+</ul>
+<h3 id="basic-syntax-and-usage">Basic Syntax and Usage</h3>
+<p>To specify a custom threshold, pass the <code>threshold</code> option
+into the <code>-vf</code> (video filter) argument:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;scdet=threshold=15.0&quot;</span> <span class="at">-f</span> null <span class="at">-</span></span></code></pre></div>
+<p>Using the shorthand parameter alias produces the same result:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;scdet=t=15.0&quot;</span> <span class="at">-f</span> null <span class="at">-</span></span></code></pre></div>
+<h3 id="logging-scene-changes">Logging Scene Changes</h3>
+<p>By default, <code>scdet</code> prints detection details to standard
+error. You can run the filter and filter the log output to inspect
+timestamps where scene changes occurred:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;scdet=threshold=12.0&quot;</span> <span class="at">-f</span> null <span class="at">-</span> <span class="dv">2</span><span class="op">&gt;&amp;</span><span class="dv">1</span> <span class="kw">|</span> <span class="fu">grep</span> <span class="st">&quot;lavfi.scd.score&quot;</span></span></code></pre></div>
+<p>When a frame surpasses the threshold, FFmpeg generates metadata logs
+indicating the frame number, timestamp, and the calculated score
+(percentage change).</p>
+<h3 id="practical-applications">Practical Applications</h3>
+<h4 id="1-exporting-timestamps-to-a-text-file">1. Exporting Timestamps
+to a Text File</h4>
+<p>You can combine <code>scdet</code> with the <code>metadata</code>
+filter to log scene changes directly to a file:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;scdet=threshold=10.0,metadata=print:file=scene_cuts.txt:key=lavfi.scd.score&quot;</span> <span class="at">-f</span> null <span class="at">-</span></span></code></pre></div>
+<h4 id="2-creating-keyframes-at-scene-cuts">2. Creating Keyframes at
+Scene Cuts</h4>
+<p>To force keyframe creation at detected cut points using a custom
+threshold:</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;scdet=threshold=8.0&quot;</span> <span class="at">-c:v</span> libx264 <span class="at">-force_key_frames</span> <span class="st">&quot;expr:gte(t,n_forced*1)&quot;</span> output.mp4</span></code></pre></div>
+<p>Adjust the threshold incrementally based on your specific video
+content; fast-paced action or high-grain footage typically requires a
+higher threshold to avoid false detections, while static scenes benefit
+from a lower threshold.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

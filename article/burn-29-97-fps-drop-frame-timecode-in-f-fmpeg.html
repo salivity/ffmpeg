@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Burn 29.97 FPS Drop-Frame Timecode in FFmpeg - ffmpeg</title>
+    <meta name="description" content="This article explains how to burn a dynamic SMPTE drop-frame timecode overlay into a 29.97 frames-per-second video using FFmpeg's drawtext video filter. It covers the precise command-line syntax required to ensure proper drop-frame synchronization, expla">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/burn-29-97-fps-drop-frame-timecode-in-f-fmpeg">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Burn 29.97 FPS Drop-Frame Timecode in FFmpeg - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/burn-29-97-fps-drop-frame-timecode-in-f-fmpeg" />
+    <meta property="og:image" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article explains how to burn a dynamic SMPTE drop-frame timecode overlay into a 29.97 frames-per-second video using FFmpeg's drawtext video filter. It covers the precise command-line syntax required to ensure proper drop-frame synchronization, expla" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="burn-2997-fps-drop-frame-timecode-in-ffmpeg">Burn 29.97 FPS
+Drop-Frame Timecode in FFmpeg</h1>
+<p>This article explains how to burn a dynamic SMPTE drop-frame timecode
+overlay into a 29.97 frames-per-second video using FFmpeg's
+<code>drawtext</code> video filter. It covers the precise command-line
+syntax required to ensure proper drop-frame synchronization, explains
+the essential parameters, and shows how to customize the visual
+appearance and placement of the overlay on your output file.</p>
+<h3 id="the-basic-command">The Basic Command</h3>
+<p>To burn a drop-frame timecode starting at <code>01:00:00;00</code>,
+run the following command:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;drawtext=fontfile=/path/to/font.ttf:timecode=&#39;01\:00\:00\;00&#39;:rate=30000/1001:x=(w-text_w)/2:y=h-th-50:fontsize=48:fontcolor=white:box=1:boxcolor=black@0.6:boxborderw=5&quot;</span> <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<h3 id="key-parameters-explained">Key Parameters Explained</h3>
+<ol type="1">
+<li><p><strong>Drop-Frame Semicolon Syntax
+(<code>timecode='01\:00\:00\;00'</code>)</strong> In SMPTE standard
+notation, a semicolon (<code>;</code>) or period (<code>.</code>)
+preceding the frame number denotes drop-frame timecode. FFmpeg detects
+the semicolon delimiter to trigger drop-frame counting logic, where
+frame numbers 00 and 01 are skipped at the start of every minute, except
+every tenth minute. Colons and semicolons inside the filter must be
+escaped with a backslash (<code>\</code>) to avoid parsing
+errors.</p></li>
+<li><p><strong>Accurate Frame Rate
+(<code>rate=30000/1001</code>)</strong> Always define the exact
+fractional rate <code>30000/1001</code> instead of using the rounded
+value <code>29.97</code>. Using <code>29.97</code> can introduce drift
+over long runtimes because true NTSC frame rates are mathematically
+fractional.</p></li>
+<li><p><strong>Font Specification
+(<code>fontfile=/path/to/font.ttf</code>)</strong> FFmpeg requires a
+valid TrueType or OpenType font to generate the text. Replace
+<code>/path/to/font.ttf</code> with an actual path on your system (e.g.,
+<code>/Windows/Fonts/arial.ttf</code> on Windows or
+<code>/System/Library/Fonts/Helvetica.ttc</code> on macOS). For
+timecodes, monospaced fonts such as Courier or Roboto Mono are
+recommended to prevent horizontal jitter as numbers change.</p></li>
+<li><p><strong>Positioning (<code>x</code> and
+<code>y</code>)</strong></p>
+<ul>
+<li><code>x=(w-text_w)/2</code>: Horizontally centers the overlay.</li>
+<li><code>y=h-th-50</code>: Positions the timecode 50 pixels from the
+bottom of the video frame.</li>
+</ul></li>
+<li><p><strong>Background Box (<code>box</code>, <code>boxcolor</code>,
+<code>boxborderw</code>)</strong></p>
+<ul>
+<li><code>box=1</code>: Enables a rectangular background behind the
+timecode to ensure legibility against bright backgrounds.</li>
+<li><code>boxcolor=black@0.6</code>: Sets the background to black with
+60% opacity.</li>
+<li><code>boxborderw=5</code>: Adds 5 pixels of padding around the
+text.</li>
+</ul></li>
+</ol>
+<h3 id="reading-timecode-from-source-metadata">Reading Timecode from
+Source Metadata</h3>
+<p>If your source file already contains an embedded SMPTE timecode track
+and you want to display that original value rather than a manually typed
+starting point, use the <code>timecode_rate</code> parameter combined
+with the internal metadata reader:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mov <span class="at">-vf</span> <span class="st">&quot;drawtext=fontfile=/path/to/font.ttf:text=&#39;%{pts\:hms}&#39;:rate=30000/1001:x=(w-text_w)/2:y=h-th-50:fontsize=48:fontcolor=white:box=1:boxcolor=black@0.6&quot;</span> <span class="at">-c:a</span> copy output.mov</span></code></pre></div>
+<p>Alternatively, if you want to pull the native metadata timecode tag
+into the <code>drawtext</code> filter directly:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mov <span class="at">-vf</span> <span class="st">&quot;drawtext=fontfile=/path/to/font.ttf:timecode=&#39;00\:00\:00\;00&#39;:rate=30000/1001:x=50:y=50:fontsize=36:fontcolor=yellow&quot;</span> <span class="at">-c:v</span> libx264 <span class="at">-crf</span> 18 <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<h3 id="encoding-considerations">Encoding Considerations</h3>
+<ul>
+<li><strong>Re-encoding:</strong> Burning visual text onto video frames
+requires re-encoding the video stream (<code>-c:v libx264</code> or
+another supported encoder). It cannot be done using
+<code>-c:v copy</code>.</li>
+<li><strong>Audio Preservation:</strong> Use <code>-c:a copy</code> to
+pass through the existing audio stream without re-encoding or
+introducing audio-sync offsets.</li>
+</ul></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Real-Time Room Correction in FFmpeg Using afir - ffmpeg</title>
+    <meta name="description" content="This article explains how to apply real-time acoustic room correction to a live audio stream using FFmpeg's afir (Audio Finite Impulse Response) filter. By convolving an incoming live audio feed with a pre-measured Room Impulse Response (RIR) file, you c">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/real-time-room-correction-in-f-fmpeg-using-afir">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Real-Time Room Correction in FFmpeg Using afir - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/real-time-room-correction-in-f-fmpeg-using-afir" />
+    <meta property="og:image" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article explains how to apply real-time acoustic room correction to a live audio stream using FFmpeg's afir (Audio Finite Impulse Response) filter. By convolving an incoming live audio feed with a pre-measured Room Impulse Response (RIR) file, you c" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="real-time-room-correction-in-ffmpeg-using-afir">Real-Time Room
+Correction in FFmpeg Using afir</h1>
+<p>This article explains how to apply real-time acoustic room correction
+to a live audio stream using FFmpeg's <code>afir</code> (Audio Finite
+Impulse Response) filter. By convolving an incoming live audio feed with
+a pre-measured Room Impulse Response (RIR) file, you can neutralize room
+resonances, flatten frequency response, and correct phase anomalies on
+the fly. You will learn the required prerequisites, the syntax for the
+<code>afir</code> filter graph, and a complete command configured for
+low-latency streaming.</p>
+<h3 id="prerequisites">Prerequisites</h3>
+<p>To perform real-time room correction, you need:</p>
+<ol type="1">
+<li><strong>A Room Impulse Response (RIR) file:</strong> A standard
+stereo or mono WAV file generated using acoustic measurement software
+such as Room EQ Wizard (REW). The sample rate of the IR file must match
+the sample rate of your audio stream to avoid processing artifacts or
+pitch shifts.</li>
+<li><strong>FFmpeg:</strong> A modern build with libavfilter
+enabled.</li>
+<li><strong>A low-latency audio subsystem:</strong> ALSA or
+PulseAudio/PipeWire on Linux, CoreAudio on macOS, or DirectShow/WASAPI
+on Windows.</li>
+</ol>
+<h3 id="how-the-afir-filter-works">How the afir Filter Works</h3>
+<p>The <code>afir</code> filter applies an impulse response to an audio
+signal via convolution. It requires two input streams:</p>
+<ul>
+<li><strong>Stream 0:</strong> The live audio stream that needs
+correction.</li>
+<li><strong>Stream 1:</strong> The correction impulse response
+file.</li>
+</ul>
+<p>By default, the filter convolves corresponding channels (e.g., Left
+with Left IR, Right with Right IR).</p>
+<h3 id="basic-command-structure">Basic Command Structure</h3>
+<p>Below is an example using Linux's PulseAudio input and output
+devices. It reads audio from the default input monitor (or capture
+device), convolves it with <code>room_ir.wav</code>, and outputs the
+corrected stream to the default audio output:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-fflags</span> nobuffer <span class="at">-flags</span> low_delay <span class="dt">\</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">-f</span> pulse <span class="at">-i</span> default <span class="dt">\</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">-i</span> room_ir.wav <span class="dt">\</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">-filter_complex</span> <span class="st">&quot;[0:a][1:a]afir=gtype=gn:irnorm=1[out]&quot;</span> <span class="dt">\</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">-map</span> <span class="st">&quot;[out]&quot;</span> <span class="dt">\</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">-f</span> pulse default</span></code></pre></div>
+<h3 id="command-breakdown-and-key-parameters">Command Breakdown and Key
+Parameters</h3>
+<ul>
+<li><code>-fflags nobuffer</code> and <code>-flags low_delay</code>:
+Reduces internal buffering in FFmpeg to keep real-time latency as low as
+possible.</li>
+<li><code>-f pulse -i default</code>: Captures the real-time audio
+stream from your system's default input or virtual sink monitor.</li>
+<li><code>-i room_ir.wav</code>: Loads the impulse response
+measurement.</li>
+<li><code>-filter_complex "[0:a][1:a]afir=...[out]"</code>:
+<ul>
+<li><code>gtype=gn</code>: Applies auto-gain normalization to prevent
+the convolved signal from clipping.</li>
+<li><code>irnorm=1</code>: Normalizes the IR gain based on its energy
+level.</li>
+<li><code>dry=0:wet=1</code>: Ensures 100% of the output is the
+corrected signal (default behavior).</li>
+</ul></li>
+<li><code>-map "[out]"</code>: Routes the filtered audio output directly
+to the output device.</li>
+<li><code>-f pulse default</code>: Sends the corrected audio to your
+output device or DAC.</li>
+</ul>
+<h3 id="platform-specific-inputoutput-adjustments">Platform-Specific
+Input/Output Adjustments</h3>
+<p>To adapt the command to different operating systems, change the input
+(<code>-f ... -i ...</code>) and output formats:</p>
+<h4 id="windows-wasapi--directshow">Windows (WASAPI / DirectShow)</h4>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode cmd"><code class="sourceCode dosbat"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>ffmpeg <span class="at">-fflags</span> nobuffer <span class="at">-flags</span> low_delay ^</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  -f dshow <span class="at">-i</span> audio=<span class="st">&quot;Microphone (Realtek Audio)&quot;</span> ^</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  -i room_ir.wav ^</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>  -filter_complex <span class="st">&quot;[0:a][1:a]afir=gtype=gn:irnorm=1[out]&quot;</span> ^</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>  -map <span class="st">&quot;[out]&quot;</span> ^</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>  -f wasapi default</span></code></pre></div>
+<h4 id="macos-avfoundation--coreaudio">macOS (AVFoundation /
+CoreAudio)</h4>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-fflags</span> nobuffer <span class="at">-flags</span> low_delay <span class="dt">\</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">-f</span> avfoundation <span class="at">-i</span> <span class="st">&quot;:0&quot;</span> <span class="dt">\</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">-i</span> room_ir.wav <span class="dt">\</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">-filter_complex</span> <span class="st">&quot;[0:a][1:a]afir=gtype=gn:irnorm=1[out]&quot;</span> <span class="dt">\</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">-map</span> <span class="st">&quot;[out]&quot;</span> <span class="dt">\</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">-f</span> coreaudio default</span></code></pre></div>
+<h3 id="optimizing-latency-and-performance">Optimizing Latency and
+Performance</h3>
+<p>Real-time convolution is computationally heavy. To prevent buffer
+underruns, crackling, or high latency:</p>
+<ol type="1">
+<li><strong>Truncate the Impulse Response:</strong> Keep the length of
+<code>room_ir.wav</code> reasonably short (typically 100ms to 500ms).
+While longer IR files capture low-frequency room modes better, they
+introduce higher computational overhead.</li>
+<li><strong>Match Sample Rates Explicitly:</strong> Force both the input
+stream and the filter to run at the exact sample rate of the IR file
+using the <code>aresample</code> filter or the <code>-ar</code> flag:
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-ar</span> 48000 <span class="at">-f</span> pulse <span class="at">-i</span> default <span class="at">-i</span> room_ir_48k.wav <span class="at">-filter_complex</span> <span class="st">&quot;[0:a]aresample=48000[a0];[a0][1:a]afir=gtype=gn[out]&quot;</span> <span class="at">-map</span> <span class="st">&quot;[out]&quot;</span> <span class="at">-f</span> pulse default</span></code></pre></div></li>
+<li><strong>Partitioned Convolution:</strong> The <code>afir</code>
+filter handles partitioning automatically, but minimizing background
+processes will ensure uninterrupted audio processing.</li>
+</ol></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

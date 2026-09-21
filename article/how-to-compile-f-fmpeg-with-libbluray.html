@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Compile FFmpeg with Libbluray - ffmpeg</title>
+    <meta name="description" content="Compiling FFmpeg with libbluray allows you to directly read, decode, and convert unencrypted Blu-ray discs or decrypted BDMV folder structures. This guide walks you through the step-by-step process of preparing your build environment, installing the nece">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/how-to-compile-f-fmpeg-with-libbluray">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Compile FFmpeg with Libbluray - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/how-to-compile-f-fmpeg-with-libbluray" />
+    <meta property="og:image" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Compiling FFmpeg with libbluray allows you to directly read, decode, and convert unencrypted Blu-ray discs or decrypted BDMV folder structures. This guide walks you through the step-by-step process of preparing your build environment, installing the nece" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-to-compile-ffmpeg-with-libbluray">How to Compile FFmpeg with
+Libbluray</h1>
+<p>Compiling FFmpeg with <code>libbluray</code> allows you to directly
+read, decode, and convert unencrypted Blu-ray discs or decrypted BDMV
+folder structures. This guide walks you through the step-by-step process
+of preparing your build environment, installing the necessary
+<code>libbluray</code> development libraries, configuring FFmpeg with
+the appropriate build flags, compiling the binaries, and verifying the
+installation for disc playback.</p>
+<h3 id="1-install-prerequisites-and-dependencies">1. Install
+Prerequisites and Dependencies</h3>
+<p>Before compiling, update your package manager and install the core
+build tools alongside the <code>libbluray</code> development headers. On
+Debian or Ubuntu-based distributions, run:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> apt update</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> apt install <span class="at">-y</span> build-essential pkg-config yasm nasm git libbluray-dev libbluray2</span></code></pre></div>
+<p>For Fedora, RHEL, or CentOS systems, use:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> dnf install <span class="at">-y</span> gcc gcc-c++ make pkgconfig yasm nasm git libbluray-devel</span></code></pre></div>
+<h3 id="2-clone-the-ffmpeg-source-code">2. Clone the FFmpeg Source
+Code</h3>
+<p>Retrieve the latest source code from the official FFmpeg Git
+repository:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="fu">git</span> clone https://git.ffmpeg.org/ffmpeg.git ffmpeg-source</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="bu">cd</span> ffmpeg-source</span></code></pre></div>
+<p>If you prefer a stable release over the cutting-edge master branch,
+check out a specific release tag:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="fu">git</span> checkout release/6.1</span></code></pre></div>
+<h3 id="3-configure-the-build">3. Configure the Build</h3>
+<p>Run the <code>./configure</code> script to prepare the build files.
+Include the <code>--enable-libbluray</code> flag to enable Blu-ray
+reading capabilities, along with <code>--enable-gpl</code> which is
+required by FFmpeg for certain features and dependencies.</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="ex">./configure</span> <span class="at">--prefix</span><span class="op">=</span>/usr/local <span class="at">--enable-gpl</span> <span class="at">--enable-libbluray</span> <span class="at">--enable-nonfree</span></span></code></pre></div>
+<p><em>Note: You can add other optional libraries here as needed (such
+as <code>--enable-libx264</code> or
+<code>--enable-libx265</code>).</em></p>
+<p>Ensure that the configure script completes without errors. If
+<code>libbluray</code> is not detected, verify that
+<code>pkg-config</code> can locate it by running
+<code>pkg-config --modversion libbluray</code>.</p>
+<h3 id="4-compile-and-install">4. Compile and Install</h3>
+<p>Compile the source code using <code>make</code>. You can accelerate
+the process by utilizing all available CPU cores with the
+<code>-j</code> flag:</p>
+<div class="sourceCode" id="cb6"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="fu">make</span> <span class="at">-j</span><span class="va">$(</span><span class="fu">nproc</span><span class="va">)</span></span></code></pre></div>
+<p>Once the compilation finishes successfully, install the newly built
+binaries:</p>
+<div class="sourceCode" id="cb7"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> make install</span></code></pre></div>
+<p>Update your system's shared library cache:</p>
+<div class="sourceCode" id="cb8"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> ldconfig</span></code></pre></div>
+<h3 id="5-verify-the-installation">5. Verify the Installation</h3>
+<p>Confirm that the newly compiled binary includes
+<code>libbluray</code> support by checking the configuration output:</p>
+<div class="sourceCode" id="cb9"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-version</span></span></code></pre></div>
+<p>Look for <code>--enable-libbluray</code> in the configuration lines
+printed in the terminal.</p>
+<h3 id="6-accessing-blu-ray-media">6. Accessing Blu-ray Media</h3>
+<p>With FFmpeg compiled, you can now stream, inspect, or transcode
+Blu-ray content using the <code>bluray:</code> protocol:</p>
+<ul>
+<li><p><strong>Inspect disc details or structure:</strong></p>
+<div class="sourceCode" id="cb10"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffprobe</span> bluray:/path/to/disc/or/directory</span></code></pre></div></li>
+<li><p><strong>Transcode the main title to MP4:</strong></p>
+<div class="sourceCode" id="cb11"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> bluray:/path/to/disc/or/directory <span class="at">-c:v</span> libx264 <span class="at">-crf</span> 20 <span class="at">-c:a</span> aac output.mp4</span></code></pre></div></li>
+</ul>
+<p><em>Note: Commercial Blu-ray discs protected with AACS or BD+
+encryption require external decryption keys (such as
+<code>KEYDB.cfg</code>) placed in <code>~/.config/aacs/</code> to allow
+<code>libbluray</code> to read the encrypted content.</em></p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

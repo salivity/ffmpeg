@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Configure Scaling Algorithm in FFmpeg scale_cuda - ffmpeg</title>
+    <meta name="description" content="This guide demonstrates how to configure scaling and interpolation algorithms when using the hardware-accelerated scalecuda filter in FFmpeg. By leveraging the interpalgo parameter, you can adjust output image sharpness and scaling quality using algorith">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/configure-scaling-algorithm-in-f-fmpeg-scale-cuda">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Configure Scaling Algorithm in FFmpeg scale_cuda - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/configure-scaling-algorithm-in-f-fmpeg-scale-cuda" />
+    <meta property="og:image" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This guide demonstrates how to configure scaling and interpolation algorithms when using the hardware-accelerated scalecuda filter in FFmpeg. By leveraging the interpalgo parameter, you can adjust output image sharpness and scaling quality using algorith" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="configure-scaling-algorithm-in-ffmpeg-scale_cuda">Configure
+Scaling Algorithm in FFmpeg scale_cuda</h1>
+<p>This guide demonstrates how to configure scaling and interpolation
+algorithms when using the hardware-accelerated <code>scale_cuda</code>
+filter in FFmpeg. By leveraging the <code>interp_algo</code> parameter,
+you can adjust output image sharpness and scaling quality using
+algorithms such as nearest neighbor, bilinear, bicubic, or Lanczos
+directly on NVIDIA GPUs.</p>
+<h3 id="the-interp_algo-option">The <code>interp_algo</code> Option</h3>
+<p>The <code>scale_cuda</code> filter controls its interpolation method
+through the <code>interp_algo</code> option. If left unspecified, FFmpeg
+defaults to <code>bilinear</code>.</p>
+<p>The supported algorithm values are:</p>
+<ul>
+<li><strong><code>nearest</code></strong>: Nearest neighbor
+interpolation. Fastest processing speed with the lowest visual quality;
+best for pixel art or low-resource testing.</li>
+<li><strong><code>bilinear</code></strong>: Bilinear interpolation.
+Balanced performance and acceptable quality; suitable for fast encoding
+pipelines.</li>
+<li><strong><code>bicubic</code></strong>: Bicubic interpolation.
+Produces smoother transitions and better clarity than bilinear; ideal
+for general upscaling and downscaling.</li>
+<li><strong><code>lanczos</code></strong>: Lanczos resampling. Delivers
+the highest sharpness and detail preservation at the expense of higher
+GPU compute load.</li>
+</ul>
+<h3 id="syntax-and-filter-usage">Syntax and Filter Usage</h3>
+<p>The basic syntax assigns your chosen algorithm directly to
+<code>interp_algo</code> inside the filter chain:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="va">scale_cuda</span><span class="op">=</span>w=WIDTH:h=HEIGHT:interp_algo=ALGORITHM</span></code></pre></div>
+<p>You can also use positional arguments:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="va">scale_cuda</span><span class="op">=</span>1920:1080:interp_algo=bicubic</span></code></pre></div>
+<h3 id="complete-command-examples">Complete Command Examples</h3>
+<h4 id="1-full-gpu-pipeline-with-bicubic-scaling">1. Full GPU Pipeline
+with Bicubic Scaling</h4>
+<p>To keep video frames in GPU memory from decode to encode, combine
+CUDA hardware acceleration with <code>scale_cuda</code>:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-hwaccel</span> cuda <span class="at">-hwaccel_output_format</span> cuda <span class="at">-i</span> input.mp4 <span class="dt">\</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>-vf <span class="st">&quot;scale_cuda=1920:1080:interp_algo=bicubic&quot;</span> <span class="dt">\</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>-c:v h264_nvenc <span class="at">-preset</span> p4 <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<h4 id="2-cpu-decoding-with-lanczos-scaling">2. CPU Decoding with
+Lanczos Scaling</h4>
+<p>If the input file is decoded on the CPU, upload the frames to GPU
+memory using <code>hwupload_cuda</code> before applying the scaling
+algorithm:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="dt">\</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>-vf <span class="st">&quot;hwupload_cuda,scale_cuda=1280:720:interp_algo=lanczos&quot;</span> <span class="dt">\</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>-c:v hevc_nvenc output.mp4</span></code></pre></div>
+<h3 id="choosing-the-right-algorithm">Choosing the Right Algorithm</h3>
+<ul>
+<li>For real-time streaming and high-framerate transcode sessions,
+choose <strong><code>bilinear</code></strong> to minimize GPU
+latency.</li>
+<li>For standard offline video encoding where quality is prioritized,
+choose <strong><code>bicubic</code></strong> or
+<strong><code>lanczos</code></strong> to avoid ringing artifacts and
+preserve fine edges during resolution changes.</li>
+</ul></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

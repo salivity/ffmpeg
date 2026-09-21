@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Use FFmpeg setpts to Fix Timestamps - ffmpeg</title>
+    <meta name="description" content="When you extract or drop specific frames using FFmpeg's select filter, the surviving frames retain their original Presentation Timestamps (PTS). This creates gaps in the timeline, causing media players to freeze, stutter, or display inaccurate durations.">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/how-to-use-f-fmpeg-setpts-to-fix-timestamps">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Use FFmpeg setpts to Fix Timestamps - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/how-to-use-f-fmpeg-setpts-to-fix-timestamps" />
+    <meta property="og:image" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="When you extract or drop specific frames using FFmpeg's select filter, the surviving frames retain their original Presentation Timestamps (PTS). This creates gaps in the timeline, causing media players to freeze, stutter, or display inaccurate durations." />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-to-use-ffmpeg-setpts-to-fix-timestamps">How to Use FFmpeg
+setpts to Fix Timestamps</h1>
+<p>When you extract or drop specific frames using FFmpeg's
+<code>select</code> filter, the surviving frames retain their original
+Presentation Timestamps (PTS). This creates gaps in the timeline,
+causing media players to freeze, stutter, or display inaccurate
+durations. This guide demonstrates how to use the <code>setpts</code>
+filter directly after the <code>select</code> filter to rewrite
+timestamps sequentially, producing a smooth, continuous video
+stream.</p>
+<h3 id="why-timestamps-break-after-frame-selection">Why Timestamps Break
+After Frame Selection</h3>
+<p>The <code>select</code> filter evaluates an expression for each frame
+and passes only the frames that evaluate to true. However, it does not
+alter the PTS metadata. If you select frame 0, frame 50, and frame 100,
+their original timestamps remain untouched, leaving multi-second freezes
+between each rendered frame.</p>
+<p>The <code>setpts</code> (Set Presentation Timestamp) filter
+recalculates these values based on internal variables like the frame
+index (<code>N</code>), the framerate (<code>FRAME_RATE</code>), or the
+stream's time base (<code>TB</code>).</p>
+<h3 id="resetting-timestamps-for-constant-framerate-video">Resetting
+Timestamps for Constant Framerate Video</h3>
+<p>When selecting frames to create a standard, continuous video, the
+most reliable method is to recalculate timestamps based on the new frame
+count and the target framerate.</p>
+<p>Use the expression <code>setpts=N/FRAME_RATE/TB</code>:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;select=&#39;not(mod(n\,2))&#39;,setpts=N/FRAME_RATE/TB&quot;</span> <span class="at">-an</span> output.mp4</span></code></pre></div>
+<p>In this command:</p>
+<ul>
+<li><code>select='not(mod(n\,2))'</code> keeps every second frame
+(even-numbered frames).</li>
+<li><code>setpts=N/FRAME_RATE/TB</code> assigns each kept frame a new
+sequential PTS starting from 0, where <code>N</code> is the index of the
+filtered frame, <code>FRAME_RATE</code> is the input stream's frame
+rate, and <code>TB</code> is the time base.</li>
+</ul>
+<h3 id="resetting-timestamps-from-the-first-kept-frame">Resetting
+Timestamps from the First Kept Frame</h3>
+<p>If you are trimming a contiguous segment or dropping an initial set
+of frames, you can shift the timestamps so the first selected frame
+starts at time zero using <code>PTS-STARTPTS</code>:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;select=&#39;gte(t\,10)&#39;,setpts=PTS-STARTPTS&quot;</span> <span class="at">-an</span> output.mp4</span></code></pre></div>
+<ul>
+<li><code>select='gte(t\,10)'</code> drops all frames before the
+10-second mark.</li>
+<li><code>setpts=PTS-STARTPTS</code> subtracts the timestamp of the
+first output frame from all subsequent frames, resetting the beginning
+of the video to 00:00:00 without altering playback speed.</li>
+</ul>
+<h3 id="handling-synchronized-audio">Handling Synchronized Audio</h3>
+<p>If your video filter removes frames and your audio stream must remain
+synchronized, you must apply the <code>aselect</code> and
+<code>asetpts</code> filters to the audio stream:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;select=&#39;gte(t\,5)&#39;,setpts=PTS-STARTPTS&quot;</span> <span class="at">-af</span> <span class="st">&quot;aselect=&#39;gte(t\,5)&#39;,asetpts=PTS-STARTPTS&quot;</span> output.mp4</span></code></pre></div>
+<p>For expressions relying on sample counts rather than start-time
+offsets, use <code>asetpts=N/SR/TB</code>, where <code>SR</code> is the
+audio sample rate.</p>
+<h3 id="common-parameters-reference">Common Parameters Reference</h3>
+<ul>
+<li><strong><code>N</code></strong>: The sequential index of the frame
+(starts at 0 for the first frame reaching the filter).</li>
+<li><strong><code>STARTPTS</code></strong>: The PTS of the first frame
+processed.</li>
+<li><strong><code>PTS</code></strong>: The original PTS of the current
+frame.</li>
+<li><strong><code>FRAME_RATE</code></strong>: The nominal frame rate of
+the video stream.</li>
+<li><strong><code>TB</code></strong>: The time base of the stream,
+defining the unit of measurement for timestamps.</li>
+</ul></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

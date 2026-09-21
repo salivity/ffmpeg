@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FFmpeg v360: Equirectangular to Stereographic - ffmpeg</title>
+    <meta name="description" content="This guide explains how to convert standard 360-degree equirectangular video into a stereographic projection using FFmpeg's native v360 video filter. By configuring the input and output geometry, adjusting the field of view, and modifying orientation par">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/f-fmpeg-v-360-equirectangular-to-stereographic">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="FFmpeg v360: Equirectangular to Stereographic - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/f-fmpeg-v-360-equirectangular-to-stereographic" />
+    <meta property="og:image" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This guide explains how to convert standard 360-degree equirectangular video into a stereographic projection using FFmpeg's native v360 video filter. By configuring the input and output geometry, adjusting the field of view, and modifying orientation par" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="ffmpeg-v360-equirectangular-to-stereographic">FFmpeg v360:
+Equirectangular to Stereographic</h1>
+<p>This guide explains how to convert standard 360-degree
+equirectangular video into a stereographic projection using FFmpeg's
+native <code>v360</code> video filter. By configuring the input and
+output geometry, adjusting the field of view, and modifying orientation
+parameters like pitch and roll, you can generate standard conformal
+views or create dynamic "little planet" video effects directly from the
+command line.</p>
+<h2 id="basic-syntax">Basic Syntax</h2>
+<p>The <code>v360</code> filter requires specifying the input format as
+equirectangular and the output format as stereographic.</p>
+<p>The minimal command is:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;v360=in=equirect:out=stereographic&quot;</span> output.mp4</span></code></pre></div>
+<p>Short aliases can also be used: <code>e</code> for
+<code>equirect</code> and <code>sg</code> for
+<code>stereographic</code>:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;v360=e:sg&quot;</span> output.mp4</span></code></pre></div>
+<h2 id="essential-parameters">Essential Parameters</h2>
+<p>To control how the stereographic image looks, use the following
+parameters inside the filter:</p>
+<ul>
+<li><strong><code>h_fov</code> / <code>v_fov</code> /
+<code>fov</code></strong>: Sets the horizontal, vertical, or diagonal
+field of view in degrees. Stereographic projections typically require a
+wide FOV (between 180° and 280°) to capture the intended curvature.</li>
+<li><strong><code>pitch</code></strong>: Tilts the camera up or down
+(-90° to 90°). Setting <code>pitch=-90</code> looks directly at the
+ground, while <code>pitch=90</code> looks directly at the sky.</li>
+<li><strong><code>yaw</code></strong>: Rotates the camera horizontally
+(-180° to 180°).</li>
+<li><strong><code>roll</code></strong>: Tilts the camera sideways (-180°
+to 180°).</li>
+<li><strong><code>w</code> and <code>h</code></strong>: Explicitly
+defines the output width and height. A 1:1 square aspect ratio is
+standard for full stereographic spheres, though 16:9 can be used for
+landscape framing.</li>
+<li><strong><code>interp</code></strong>: Sets the pixel interpolation
+algorithm. Values include <code>linear</code>, <code>cubic</code>,
+<code>spline</code>, or <code>lanczos</code> for higher image quality at
+the cost of processing time.</li>
+</ul>
+<h2 id="creating-the-little-planet-effect">Creating the "Little Planet"
+Effect</h2>
+<p>The "little planet" (or tiny planet) effect is achieved by pointing
+the virtual camera straight down toward the ground and expanding the
+field of view:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;v360=in=equirect:out=stereographic:pitch=-90:h_fov=280:v_fov=280:w=1920:h=1920:interp=lanczos&quot;</span> <span class="at">-c:v</span> libx264 <span class="at">-crf</span> 18 output_little_planet.mp4</span></code></pre></div>
+<ul>
+<li><code>pitch=-90</code>: Points the camera downward to place the
+ground at the center of the sphere.</li>
+<li><code>h_fov=280:v_fov=280</code>: Broadens the view sufficiently to
+curve the horizon completely around the center.</li>
+<li><code>w=1920:h=1920</code>: Enforces a square resolution to keep the
+sphere symmetrical.</li>
+</ul>
+<h2 id="creating-the-rabbit-hole-sky-effect">Creating the "Rabbit Hole"
+(Sky) Effect</h2>
+<p>To create an inverted stereographic view where the sky is in the
+center and the ground forms the outer ring, invert the pitch to point
+directly upward:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;v360=in=equirect:out=stereographic:pitch=90:h_fov=280:v_fov=280:w=1920:h=1920:interp=lanczos&quot;</span> <span class="at">-c:v</span> libx264 <span class="at">-crf</span> 18 output_sky_hole.mp4</span></code></pre></div>
+<h2 id="standard-forward-facing-stereographic-view">Standard
+Forward-Facing Stereographic View</h2>
+<p>To use stereographic projection as a wide-angle, non-planet camera
+view with reduced edge distortion compared to rectilinear
+projection:</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;v360=in=equirect:out=stereographic:yaw=0:pitch=0:h_fov=160:v_fov=90:w=1920:h=1080:interp=cubic&quot;</span> <span class="at">-c:v</span> libx264 <span class="at">-crf</span> 18 output_flat.mp4</span></code></pre></div>
+<p>This configuration maintains a standard 16:9 widescreen frame while
+utilizing the conformal properties of stereographic projection to
+preserve shapes across a 160° horizontal perspective.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

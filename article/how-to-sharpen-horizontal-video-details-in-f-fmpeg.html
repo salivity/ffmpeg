@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Sharpen Horizontal Video Details in FFmpeg - ffmpeg</title>
+    <meta name="description" content="This guide explains how to use FFmpeg's native unsharp video filter to sharpen only the horizontal details of a video stream. By configuring the filter's horizontal and vertical matrix dimensions independently, you can enhance horizontal sharpness, accen">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/how-to-sharpen-horizontal-video-details-in-f-fmpeg">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Sharpen Horizontal Video Details in FFmpeg - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/how-to-sharpen-horizontal-video-details-in-f-fmpeg" />
+    <meta property="og:image" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This guide explains how to use FFmpeg's native unsharp video filter to sharpen only the horizontal details of a video stream. By configuring the filter's horizontal and vertical matrix dimensions independently, you can enhance horizontal sharpness, accen" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-to-sharpen-horizontal-video-details-in-ffmpeg">How to
+Sharpen Horizontal Video Details in FFmpeg</h1>
+<p>This guide explains how to use FFmpeg's native <code>unsharp</code>
+video filter to sharpen only the horizontal details of a video stream.
+By configuring the filter's horizontal and vertical matrix dimensions
+independently, you can enhance horizontal sharpness, accentuate vertical
+lines, and prevent unwanted vertical sharpening artifacts without
+altering color planes.</p>
+<h3 id="understanding-the-unsharp-filter-parameters">Understanding the
+Unsharp Filter Parameters</h3>
+<p>The <code>unsharp</code> filter in FFmpeg uses an unsharp masking
+algorithm that blurs an edge mask and subtracts it from the original
+image to increase local contrast. The filter accepts parameters for luma
+(brightness) and chroma (color) components using the following
+syntax:</p>
+<p><code>unsharp=lx:ly:la:cx:cy:ca</code></p>
+<ul>
+<li><strong><code>lx</code> (luma_msize_x):</strong> Horizontal matrix
+size for luma. Must be an odd integer between 3 and 63. Default is
+5.</li>
+<li><strong><code>ly</code> (luma_msize_y):</strong> Vertical matrix
+size for luma. Must be an odd integer between 3 and 63. Default is
+5.</li>
+<li><strong><code>la</code> (luma_amount):</strong> Strength of the luma
+effect. Values range from -1.5 (maximum blur) to 1.5 (maximum
+sharpening). Default is 1.0.</li>
+<li><strong><code>cx</code>, <code>cy</code>, <code>ca</code>:</strong>
+The corresponding horizontal size, vertical size, and amount for the
+chroma channels.</li>
+</ul>
+<h3 id="configuring-for-horizontal-sharpening">Configuring for
+Horizontal Sharpening</h3>
+<p>Because FFmpeg requires matrix sizes to be odd integers with a
+minimum value of 3, an unsharp mask cannot be completely set to zero on
+the vertical axis. To isolate the sharpening effect to horizontal
+details as much as possible, set the vertical matrix dimension
+(<code>ly</code>) to its lowest possible value (<code>3</code>) and
+expand the horizontal matrix dimension (<code>lx</code>) to a larger odd
+value (such as <code>7</code>, <code>9</code>, or <code>13</code>).</p>
+<p>A wider horizontal kernel samples and sharpens horizontal contrast
+transitions while minimizing vertical edge enhancement. Setting the
+chroma amount (<code>ca</code>) to <code>0</code> also prevents color
+noise and fringing.</p>
+<h3 id="ffmpeg-command-examples">FFmpeg Command Examples</h3>
+<h4 id="basic-horizontal-sharpening">Basic Horizontal Sharpening</h4>
+<p>To apply a moderate horizontal sharpen to a video while keeping
+chroma untouched:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;unsharp=lx=9:ly=3:la=1.0:cx=3:cy=3:ca=0&quot;</span> <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<p>Using the shorthand parameter syntax:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;unsharp=9:3:1.0:3:3:0&quot;</span> <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<h4 id="strong-horizontal-sharpening">Strong Horizontal Sharpening</h4>
+<p>For footage that is soft horizontally (such as anamorphic footage or
+content scaled unevenly), increase the horizontal matrix radius and
+boost the effect strength:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;unsharp=lx=13:ly=3:la=1.4:cx=3:cy=3:ca=0&quot;</span> <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<h4 id="subtle-enhancement">Subtle Enhancement</h4>
+<p>If the maximum sharpness creates halo artifacts along high-contrast
+vertical edges, reduce <code>la</code> to a lower positive value between
+<code>0.3</code> and <code>0.6</code>:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;unsharp=lx=7:ly=3:la=0.5:cx=3:cy=3:ca=0&quot;</span> <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<h3 id="parameter-recommendations">Parameter Recommendations</h3>
+<ul>
+<li><strong>Horizontal Size (<code>lx</code>):</strong> Use
+<code>7</code> for mild enhancement, <code>9</code> to <code>11</code>
+for standard sharpening, and <code>13</code> or higher for
+low-resolution or heavily blurred sources.</li>
+<li><strong>Vertical Size (<code>ly</code>):</strong> Always keep this
+at <code>3</code> to limit vertical edge enhancement.</li>
+<li><strong>Amount (<code>la</code>):</strong> Keep between
+<code>0.4</code> and <code>1.0</code> for natural-looking results.
+Exceeding <code>1.2</code> often introduces noticeable halos along
+edges.</li>
+</ul></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

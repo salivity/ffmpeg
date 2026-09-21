@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Extract Packet Timestamps and Sizes Using FFprobe - ffmpeg</title>
+    <meta name="description" content="This guide demonstrates how to use FFprobe, a versatile multimedia stream analyzer included with the FFmpeg suite, to extract granular packet data from audio and video files. By targeting packet-level streams, you can inspect individual packet sizes and">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/extract-packet-timestamps-and-sizes-using-f-fprobe">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Extract Packet Timestamps and Sizes Using FFprobe - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/extract-packet-timestamps-and-sizes-using-f-fprobe" />
+    <meta property="og:image" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This guide demonstrates how to use FFprobe, a versatile multimedia stream analyzer included with the FFmpeg suite, to extract granular packet data from audio and video files. By targeting packet-level streams, you can inspect individual packet sizes and" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="extract-packet-timestamps-and-sizes-using-ffprobe">Extract
+Packet Timestamps and Sizes Using FFprobe</h1>
+<p>This guide demonstrates how to use FFprobe, a versatile multimedia
+stream analyzer included with the FFmpeg suite, to extract granular
+packet data from audio and video files. By targeting packet-level
+streams, you can inspect individual packet sizes and decoding or
+presentation timestamps directly from the command line or export them
+into formats like CSV and JSON for downstream processing.</p>
+<h3 id="the-basic-command">The Basic Command</h3>
+<p>To read packet-level data, use the <code>-show_packets</code> flag
+combined with <code>-show_entries</code> to limit the output
+specifically to timestamp and size fields:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffprobe</span> <span class="at">-v</span> error <span class="at">-show_entries</span> packet=pts_time,dts_time,size <span class="at">-of</span> default=noprint_wrappers=1 input.mp4</span></code></pre></div>
+<h3 id="key-parameters-explained">Key Parameters Explained</h3>
+<ul>
+<li><strong><code>-v error</code></strong>: Suppresses diagnostic logs
+and banner information, ensuring only the requested data is
+printed.</li>
+<li><strong><code>-select_streams v:0</code></strong>
+<em>(Optional)</em>: Filters output to a specific stream (e.g.,
+<code>v:0</code> for the first video stream, <code>a:0</code> for the
+first audio stream).</li>
+<li><strong><code>-show_entries packet=pts_time,dts_time,size</code></strong>:
+Specifies the exact fields to retrieve:
+<ul>
+<li><code>pts_time</code>: Presentation Time Stamp in seconds (when the
+frame is displayed).</li>
+<li><code>dts_time</code>: Decoding Time Stamp in seconds (when the
+frame is decoded).</li>
+<li><code>size</code>: The size of the packet in bytes.</li>
+</ul></li>
+<li><strong><code>-of</code></strong>: Sets the output format (e.g.,
+<code>csv</code>, <code>json</code>, <code>flat</code>, or
+<code>default</code>).</li>
+</ul>
+<h3 id="output-formats">Output Formats</h3>
+<h4 id="1-exporting-as-csv">1. Exporting as CSV</h4>
+<p>To export clean, comma-separated values ideal for spreadsheets or
+statistical analysis:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffprobe</span> <span class="at">-v</span> error <span class="at">-select_streams</span> v:0 <span class="dt">\</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">-show_entries</span> packet=pts_time,dts_time,size <span class="dt">\</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">-of</span> csv=p=0 input.mp4 <span class="op">&gt;</span> packets.csv</span></code></pre></div>
+<p>Adding <code>p=0</code> removes the <code>packet,</code> prefix from
+every line, producing clean <code>pts_time,dts_time,size</code>
+rows.</p>
+<h4 id="2-exporting-as-json">2. Exporting as JSON</h4>
+<p>To parse packet metadata programmatically with Python or
+JavaScript:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffprobe</span> <span class="at">-v</span> error <span class="at">-select_streams</span> v:0 <span class="dt">\</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">-show_entries</span> packet=pts_time,dts_time,size <span class="dt">\</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">-of</span> json input.mp4 <span class="op">&gt;</span> packets.json</span></code></pre></div>
+<h3
+id="retrieving-integer-timestamps-instead-of-time-in-seconds">Retrieving
+Integer Timestamps Instead of Time in Seconds</h3>
+<p>If your analysis requires exact integer ticks based on the stream's
+timebase rather than converted seconds, substitute <code>pts_time</code>
+and <code>dts_time</code> with <code>pts</code> and
+<code>dts</code>:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffprobe</span> <span class="at">-v</span> error <span class="at">-select_streams</span> v:0 <span class="dt">\</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">-show_entries</span> packet=pts,dts,size <span class="dt">\</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">-of</span> csv=p=0 input.mp4</span></code></pre></div></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

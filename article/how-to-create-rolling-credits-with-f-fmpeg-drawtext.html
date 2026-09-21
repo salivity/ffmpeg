@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Create Rolling Credits with FFmpeg Drawtext - ffmpeg</title>
+    <meta name="description" content="This guide explains how to generate a vertical rolling credits sequence using the FFmpeg drawtext filter. You will learn how to configure the animation formulas, structure your credits in an external text file, format the text for proper alignment, and c">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/how-to-create-rolling-credits-with-f-fmpeg-drawtext">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Create Rolling Credits with FFmpeg Drawtext - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/how-to-create-rolling-credits-with-f-fmpeg-drawtext" />
+    <meta property="og:image" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This guide explains how to generate a vertical rolling credits sequence using the FFmpeg drawtext filter. You will learn how to configure the animation formulas, structure your credits in an external text file, format the text for proper alignment, and c" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-to-create-rolling-credits-with-ffmpeg-drawtext">How to
+Create Rolling Credits with FFmpeg Drawtext</h1>
+<p>This guide explains how to generate a vertical rolling credits
+sequence using the FFmpeg <code>drawtext</code> filter. You will learn
+how to configure the animation formulas, structure your credits in an
+external text file, format the text for proper alignment, and control
+the scroll speed to achieve smooth, readable playback.</p>
+<h3 id="1-prepare-the-credits-text-file">1. Prepare the Credits Text
+File</h3>
+<p>For a rolling credits sequence, putting text directly in the command
+line is impractical. Create a plain text file named
+<code>credits.txt</code> in your working directory. Ensure there are
+extra empty lines at the beginning and end to allow the text to roll
+cleanly into and out of the frame.</p>
+<p>Example <code>credits.txt</code>:</p>
+<pre class="text"><code>DIRECTED BY
+Jane Doe
+
+PRODUCED BY
+John Smith
+
+LEAD ACTORS
+Alice Johnson
+Robert Lee
+
+CINEMATOGRAPHY
+Mark Davis
+
+SPECIAL THANKS
+The Open Source Community</code></pre>
+<h3 id="2-basic-command-syntax">2. Basic Command Syntax</h3>
+<p>To generate a standalone credits video over a plain black background,
+use the <code>color</code> filter source combined with
+<code>drawtext</code>:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-f</span> lavfi <span class="at">-i</span> color=c=black:s=1920x1080:r=60:d=20 <span class="at">-vf</span> <span class="dt">\</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="st">&quot;drawtext=fontfile=/path/to/font.ttf:textfile=credits.txt:</span><span class="dt">\</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="st">fontsize=36:fontcolor=white:x=(w-text_w)/2:y=h-t*120&quot;</span> <span class="dt">\</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>-c:v libx264 <span class="at">-pix_fmt</span> yuv420p credits.mp4</span></code></pre></div>
+<p>To apply rolling credits over an existing video
+(<code>input.mp4</code>):</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="dt">\</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="st">&quot;drawtext=fontfile=/path/to/font.ttf:textfile=credits.txt:</span><span class="dt">\</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="st">fontsize=36:fontcolor=white:x=(w-text_w)/2:y=h-t*120&quot;</span> <span class="dt">\</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>-c:v libx264 <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<h3 id="3-understanding-the-coordinate-expressions">3. Understanding the
+Coordinate Expressions</h3>
+<p>The rolling effect relies on dynamic mathematical expressions for the
+<code>x</code> and <code>y</code> parameters:</p>
+<ul>
+<li><strong><code>x=(w-text_w)/2</code></strong>: Centers the text
+horizontally. <code>w</code> is the input width, and <code>text_w</code>
+is the rendered width of the longest line of text.</li>
+<li><strong><code>y=h-t*120</code></strong>: Controls the vertical
+motion.
+<ul>
+<li><code>h</code> is the video height (starting the text just off the
+bottom edge at time zero).</li>
+<li><code>t</code> represents the elapsed time in seconds.</li>
+<li><code>120</code> is the speed in pixels per second. Increasing this
+number speeds up the scroll; decreasing it slows it down.</li>
+</ul></li>
+</ul>
+<h3 id="4-dynamic-timing-across-a-specific-duration">4. Dynamic Timing
+Across a Specific Duration</h3>
+<p>If you need the credits to scroll through their entire length across
+an exact duration, use the rendered height variable
+(<code>text_h</code>):</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-f</span> lavfi <span class="at">-i</span> color=c=black:s=1920x1080:r=60:d=30 <span class="at">-vf</span> <span class="dt">\</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="st">&quot;drawtext=fontfile=/path/to/font.ttf:textfile=credits.txt:</span><span class="dt">\</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="st">fontsize=36:fontcolor=white:x=(w-text_w)/2:y=h-(h+text_h)*(t/30)&quot;</span> <span class="dt">\</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>-c:v libx264 <span class="at">-pix_fmt</span> yuv420p credits.mp4</span></code></pre></div>
+<p>In this formula:</p>
+<ul>
+<li><code>h + text_h</code> represents the total travel distance
+required for the text to enter the bottom and exit off the top.</li>
+<li><code>t/30</code> scales the movement progress across a 30-second
+duration. Replace <code>30</code> with your desired video length.</li>
+</ul>
+<h3 id="5-preventing-text-jitter">5. Preventing Text Jitter</h3>
+<p>Text can appear to stutter or jitter if the movement calculation
+lands on fractional pixel values. You can round the vertical position to
+the nearest integer to ensure stable movement:</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="va">y</span><span class="op">=</span><span class="st">&#39;round(h-(h+text_h)*(t/30))&#39;</span></span></code></pre></div>
+<p>Additionally, rendering at a higher frame rate (such as 60 fps with
+<code>:r=60</code>) significantly reduces perceived judder during
+vertical scrolling compared to standard 24 or 30 fps playback.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

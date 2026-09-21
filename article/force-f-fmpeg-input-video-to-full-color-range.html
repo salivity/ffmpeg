@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Force FFmpeg Input Video to Full Color Range - ffmpeg</title>
+    <meta name="description" content="By default, FFmpeg often assumes incoming YUV video files use limited color range (16–235 for 8-bit luma) unless metadata explicitly specifies otherwise. When an input video is recorded in full color range (0–255) without the proper container flags,">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/force-f-fmpeg-input-video-to-full-color-range">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Force FFmpeg Input Video to Full Color Range - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/force-f-fmpeg-input-video-to-full-color-range" />
+    <meta property="og:image" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="By default, FFmpeg often assumes incoming YUV video files use limited color range (16–235 for 8-bit luma) unless metadata explicitly specifies otherwise. When an input video is recorded in full color range (0–255) without the proper container flags," />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="force-ffmpeg-input-video-to-full-color-range">Force FFmpeg Input
+Video to Full Color Range</h1>
+<p>By default, FFmpeg often assumes incoming YUV video files use limited
+color range (16–235 for 8-bit luma) unless metadata explicitly specifies
+otherwise. When an input video is recorded in full color range (0–255)
+without the proper container flags, FFmpeg can process it incorrectly,
+resulting in crushed blacks, blown-out highlights, or washed-out colors.
+This guide explains how to explicitly force FFmpeg to interpret an input
+video as full color range and properly preserve or convert those color
+levels during processing.</p>
+<h3 id="the-standard-method-using-the-setparams-filter">The Standard
+Method: Using the <code>setparams</code> Filter</h3>
+<p>The most reliable way to override input color properties in modern
+FFmpeg builds is via the <code>setparams</code> video filter. This
+filter changes the internal frame metadata before any downstream
+processing (like scaling or encoding) occurs.</p>
+<p>To force FFmpeg to treat the input as full range (PC levels):</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;setparams=range=pc&quot;</span> <span class="at">-c:v</span> libx264 <span class="at">-color_range</span> pc output.mp4</span></code></pre></div>
+<ul>
+<li><code>-vf "setparams=range=pc"</code>: Instructs the filter graph to
+treat all incoming frames as full color range (<code>pc</code>). You can
+also use <code>full</code> instead of <code>pc</code>.</li>
+<li><code>-color_range pc</code>: Writes the full-range flag into the
+output video's bitstream/container so players know to decode it as full
+range.</li>
+</ul>
+<h3 id="converting-full-range-input-to-limited-range-output">Converting
+Full Range Input to Limited Range Output</h3>
+<p>If your input is full range, but you want your output encoded as
+standard broadcast limited range (TV levels), combine
+<code>setparams</code> with the <code>scale</code> filter:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;setparams=range=pc,scale=in_range=pc:out_range=tv&quot;</span> <span class="at">-c:v</span> libx264 <span class="at">-color_range</span> tv output.mp4</span></code></pre></div>
+<p>In this pipeline:</p>
+<ol type="1">
+<li><code>setparams=range=pc</code> corrects the misinterpreted input
+metadata.</li>
+<li><code>scale=in_range=pc:out_range=tv</code> maps the 0–255 range to
+standard 16–235 values without clipping.</li>
+<li><code>-color_range tv</code> tags the final output container as
+limited range.</li>
+</ol>
+<h3 id="alternative-method-the-scale-filter-alone">Alternative Method:
+The <code>scale</code> Filter Alone</h3>
+<p>If your FFmpeg build does not support <code>setparams</code>, you can
+force the input range directly inside the <code>scale</code> filter:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;scale=in_range=pc:out_range=pc&quot;</span> <span class="at">-c:v</span> libx264 <span class="at">-color_range</span> pc output.mp4</span></code></pre></div>
+<p>This ensures the scaling engine recognizes the source video as 0–255
+levels and outputs 0–255 levels accordingly.</p>
+<h3 id="verifying-the-color-range-with-ffprobe">Verifying the Color
+Range with FFprobe</h3>
+<p>To check whether FFmpeg or media players detect the color range
+correctly before and after conversion, inspect the file with
+<code>ffprobe</code>:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffprobe</span> <span class="at">-v</span> error <span class="at">-select_streams</span> v:0 <span class="at">-show_entries</span> stream=color_range input.mp4</span></code></pre></div>
+<ul>
+<li>A full-range file will return <code>color_range=pc</code>.</li>
+<li>A limited-range file will return <code>color_range=tv</code>.</li>
+</ul></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

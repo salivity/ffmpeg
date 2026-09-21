@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Flip Video Vertically Using FFmpeg vflip - ffmpeg</title>
+    <meta name="description" content="This guide explains how to flip a video vertically using the FFmpeg vflip video filter. You will learn the core command syntax, how to preserve audio and control output quality, and how to combine vertical flipping with other transformations. To flip a v">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/how-to-flip-video-vertically-using-f-fmpeg-vflip">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Flip Video Vertically Using FFmpeg vflip - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/how-to-flip-video-vertically-using-f-fmpeg-vflip" />
+    <meta property="og:image" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This guide explains how to flip a video vertically using the FFmpeg vflip video filter. You will learn the core command syntax, how to preserve audio and control output quality, and how to combine vertical flipping with other transformations. To flip a v" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-to-flip-video-vertically-using-ffmpeg-vflip">How to Flip
+Video Vertically Using FFmpeg vflip</h1>
+<p>This guide explains how to flip a video vertically using the FFmpeg
+<code>vflip</code> video filter. You will learn the core command syntax,
+how to preserve audio and control output quality, and how to combine
+vertical flipping with other transformations.</p>
+<h2 id="basic-vertical-flip-command">Basic Vertical Flip Command</h2>
+<p>To flip a video upside down (vertically), pass the <code>vflip</code>
+filter to the <code>-vf</code> (video filter) argument:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;vflip&quot;</span> output.mp4</span></code></pre></div>
+<p>In this command:</p>
+<ul>
+<li><code>-i input.mp4</code> specifies the input file.</li>
+<li><code>-vf "vflip"</code> applies the vertical flip filter.</li>
+<li><code>output.mp4</code> is the destination file.</li>
+</ul>
+<h2 id="preserving-audio-and-controlling-quality">Preserving Audio and
+Controlling Quality</h2>
+<p>Applying a video filter requires re-encoding the video stream.
+However, you can copy the original audio stream without re-encoding to
+save processing time and prevent quality loss. You can also specify
+video encoding parameters such as the H.264 codec and a Constant Rate
+Factor (CRF) for optimal quality.</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;vflip&quot;</span> <span class="at">-c:v</span> libx264 <span class="at">-crf</span> 20 <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<ul>
+<li><code>-c:v libx264</code> encodes the video using the H.264 video
+codec.</li>
+<li><code>-crf 20</code> sets the visual quality (a lower value means
+higher quality; standard ranges are 18–28).</li>
+<li><code>-c:a copy</code> copies the audio stream directly without
+re-encoding.</li>
+</ul>
+<h2 id="combining-vflip-with-other-filters">Combining <code>vflip</code>
+with Other Filters</h2>
+<p>FFmpeg allows chaining multiple filters using commas. For example, if
+you need to flip a video both vertically and horizontally (effectively a
+180-degree rotation), chain <code>vflip</code> with
+<code>hflip</code>:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;vflip,hflip&quot;</span> <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<p>You can also combine <code>vflip</code> with scaling:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;vflip,scale=1920:1080&quot;</span> <span class="at">-c:a</span> copy output.mp4</span></code></pre></div></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

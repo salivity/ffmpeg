@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Use Custom SOFA Files in FFmpeg - ffmpeg</title>
+    <meta name="description" content="FFmpeg allows users to create immersive, 3D binaural audio from multichannel sound sources using its integrated sofalizer filter. This guide covers how to locate and download custom Spatially Oriented Format for Acoustics (SOFA) database files containing">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/how-to-use-custom-sofa-files-in-f-fmpeg">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Use Custom SOFA Files in FFmpeg - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/how-to-use-custom-sofa-files-in-f-fmpeg" />
+    <meta property="og:image" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="FFmpeg allows users to create immersive, 3D binaural audio from multichannel sound sources using its integrated sofalizer filter. This guide covers how to locate and download custom Spatially Oriented Format for Acoustics (SOFA) database files containing" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-to-use-custom-sofa-files-in-ffmpeg">How to Use Custom SOFA
+Files in FFmpeg</h1>
+<p>FFmpeg allows users to create immersive, 3D binaural audio from
+multichannel sound sources using its integrated <code>sofalizer</code>
+filter. This guide covers how to locate and download custom Spatially
+Oriented Format for Acoustics (SOFA) database files containing
+personalized or standardized Head-Related Transfer Functions (HRTFs),
+verify your FFmpeg build requirements, and apply the files through
+proper command-line syntax.</p>
+<h3 id="1-verify-ffmpeg-requirements">1. Verify FFmpeg Requirements</h3>
+<p>To process custom SOFA files, FFmpeg must be compiled with the
+<code>libmysofa</code> library. Verify that your installation supports
+it by running:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-filters</span> <span class="kw">|</span> <span class="fu">grep</span> sofalizer</span></code></pre></div>
+<p>If the output lists <code>sofalizer</code>, your FFmpeg build
+supports loading custom SOFA files. If it is missing, you must install
+an FFmpeg build configured with the <code>--enable-libmysofa</code>
+flag.</p>
+<h3 id="2-download-custom-sofa-files">2. Download Custom SOFA Files</h3>
+<p>SOFA files contain measurement data that describes how sound reaches
+the eardrum from different angles, creating a 3D audio effect over
+stereo headphones. You can acquire free, scientifically validated SOFA
+files from several public databases:</p>
+<ul>
+<li><strong>SOFA Conventions Database:</strong> The official repository
+host files adhering to AES69-2015 standards, including measurements from
+various institutions.</li>
+<li><strong>ARI (Acoustics Research Institute):</strong> Offers
+high-resolution HRTF measurements for dozens of human subjects.</li>
+<li><strong>CIPIC HRTF Database:</strong> Contains individualized
+measurements across multiple human subjects and dummy heads (such as
+KEMAR).</li>
+<li><strong>SADIE II Database:</strong> High-quality studio measurements
+provided by the University of York, offering various dummy head and
+human HRTF datasets.</li>
+</ul>
+<p>Download a <code>.sofa</code> file (for example,
+<code>ClubFritz4.sofa</code> or <code>subject_003.sofa</code>) and save
+it to an accessible folder on your system.</p>
+<h3 id="3-configure-the-sofalizer-filter">3. Configure the
+<code>sofalizer</code> Filter</h3>
+<p>The <code>sofalizer</code> filter accepts multichannel input (such as
+5.1 or 7.1 surround sound) and maps the channels into virtual 3D space
+using the impulse responses from the designated SOFA file.</p>
+<p>The basic syntax to map a 5.1 audio track to binaural stereo is:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input_surround.wav <span class="at">-af</span> <span class="st">&quot;sofalizer=sofa=/path/to/database.sofa&quot;</span> output_binaural.wav</span></code></pre></div>
+<h3 id="4-advanced-filter-configuration">4. Advanced Filter
+Configuration</h3>
+<p>You can customize how the SOFA file is processed using additional
+parameters within the filter string:</p>
+<ul>
+<li><strong><code>sofa</code></strong>: Specifies the absolute or
+relative path to the <code>.sofa</code> file.</li>
+<li><strong><code>type</code></strong>: Determines the processing mode.
+Set to <code>freq</code> for frequency-domain processing (faster,
+recommended for most systems) or <code>time</code> for time-domain
+convolution (higher precision, higher CPU usage).</li>
+<li><strong><code>gain</code></strong>: Adjusts the overall gain in dB
+to prevent digital clipping resulting from the convolution process
+(typically between <code>-6</code> and <code>-18</code>).</li>
+<li><strong><code>speakers</code></strong>: Manually overrides virtual
+speaker azimuth and elevation positions using channel identifiers (e.g.,
+<code>FL|FR|FC|LFE|BL|BR</code>).</li>
+<li><strong><code>rotation</code></strong>: Rotates the virtual
+listener's head in degrees horizontally (yaw).</li>
+<li><strong><code>elevation</code></strong>: Tilts the virtual
+listener's head up or down in degrees (pitch).</li>
+</ul>
+<h3 id="example-converting-71-video-to-binaural-stereo">Example:
+Converting 7.1 Video to Binaural Stereo</h3>
+<p>To process a video file containing a 7.1 surround stream using
+frequency-domain convolution, custom speaker placements, and a
+<code>-9 dB</code> gain adjustment:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> movie_7.1.mkv <span class="at">-c:v</span> copy <span class="at">-af</span> <span class="st">&quot;sofalizer=sofa=/audio/HRTF/kemar.sofa:type=freq:gain=-9&quot;</span> <span class="at">-c:a</span> aac <span class="at">-b:a</span> 320k output_binaural.mp4</span></code></pre></div>
+<p>This configuration copies the original video stream without
+re-encoding, applies the HRTF data from <code>kemar.sofa</code>, and
+encodes the spatialized output into high-bitrate AAC stereo suitable for
+standard headphones.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

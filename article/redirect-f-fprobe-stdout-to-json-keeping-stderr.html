@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Redirect FFprobe stdout to JSON Keeping stderr - ffmpeg</title>
+    <meta name="description" content="This guide explains how to export ffprobe metadata into a JSON file by redirecting standard output (stdout) while keeping diagnostic logs and standard error (stderr) visible in your terminal console. You will learn the exact shell syntax for stream redir">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/redirect-f-fprobe-stdout-to-json-keeping-stderr">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Redirect FFprobe stdout to JSON Keeping stderr - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/redirect-f-fprobe-stdout-to-json-keeping-stderr" />
+    <meta property="og:image" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This guide explains how to export ffprobe metadata into a JSON file by redirecting standard output (stdout) while keeping diagnostic logs and standard error (stderr) visible in your terminal console. You will learn the exact shell syntax for stream redir" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="redirect-ffprobe-stdout-to-json-keeping-stderr">Redirect FFprobe
+stdout to JSON Keeping stderr</h1>
+<p>This guide explains how to export <code>ffprobe</code> metadata into
+a JSON file by redirecting standard output (<code>stdout</code>) while
+keeping diagnostic logs and standard error (<code>stderr</code>) visible
+in your terminal console. You will learn the exact shell syntax for
+stream redirection and the required <code>ffprobe</code> parameters to
+produce clean JSON files on Linux, macOS, and Windows.</p>
+<hr />
+<h3 id="understanding-the-streams-in-ffprobe">Understanding the Streams
+in FFprobe</h3>
+<p>By default, command-line shells manage output using separate data
+streams:</p>
+<ul>
+<li><strong>Standard Output (<code>stdout</code> / File Descriptor
+<code>1</code>):</strong> The stream where <code>ffprobe</code> outputs
+the requested structured data, such as JSON or XML.</li>
+<li><strong>Standard Error (<code>stderr</code> / File Descriptor
+<code>2</code>):</strong> The stream where <code>ffprobe</code> displays
+application logs, banners, warnings, and error messages.</li>
+</ul>
+<p>Because these streams are separated by default, directing standard
+output to a file does not capture or hide standard error unless you
+explicitly merge them.</p>
+<hr />
+<h3 id="the-command-syntax-linux-macos-and-windows-cmd">The Command
+Syntax (Linux, macOS, and Windows CMD)</h3>
+<p>To capture the JSON output to a file while leaving error and log
+messages in the terminal, redirect only file descriptor <code>1</code>
+using the <code>&gt;</code> operator:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffprobe</span> <span class="at">-v</span> error <span class="at">-show_format</span> <span class="at">-show_streams</span> <span class="at">-of</span> json input.mp4 <span class="op">&gt;</span> output.json</span></code></pre></div>
+<p>If you prefer to be explicit with file descriptors, specify
+<code>1&gt;</code>:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffprobe</span> <span class="at">-show_format</span> <span class="at">-show_streams</span> <span class="at">-of</span> json input.mp4 <span class="dv">1</span><span class="op">&gt;</span> output.json</span></code></pre></div>
+<h4 id="breakdown-of-arguments">Breakdown of Arguments:</h4>
+<ul>
+<li><strong><code>-of json</code></strong> (or
+<code>-print_format json</code>): Instructs <code>ffprobe</code> to
+format the requested metadata into valid JSON and write it directly to
+<code>stdout</code>.</li>
+<li><strong><code>-show_format</code></strong>: Extracts container-level
+metadata (duration, bitrate, tags).</li>
+<li><strong><code>-show_streams</code></strong>: Extracts individual
+stream metadata (codec details, resolution, audio channels).</li>
+<li><strong><code>input.mp4</code></strong>: The target media file.</li>
+<li><strong><code>&gt; output.json</code></strong>: Redirects stream
+<code>1</code> (<code>stdout</code>) to <code>output.json</code>. Stream
+<code>2</code> (<code>stderr</code>) remains attached to the terminal
+window.</li>
+</ul>
+<hr />
+<h3 id="controlling-the-verbosity-of-stderr">Controlling the Verbosity
+of stderr</h3>
+<p>If you want to maintain the <code>stderr</code> stream for monitoring
+while preventing normal program banner clutter, use the <code>-v</code>
+(verbosity) flag:</p>
+<ul>
+<li><strong>Show only critical errors:</strong>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffprobe</span> <span class="at">-v</span> error <span class="at">-show_format</span> <span class="at">-show_streams</span> <span class="at">-of</span> json input.mp4 <span class="op">&gt;</span> output.json</span></code></pre></div></li>
+<li><strong>Show warnings and errors:</strong>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffprobe</span> <span class="at">-v</span> warning <span class="at">-show_format</span> <span class="at">-show_streams</span> <span class="at">-of</span> json input.mp4 <span class="op">&gt;</span> output.json</span></code></pre></div></li>
+<li><strong>Show full diagnostic logs without the build configuration
+banner:</strong>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffprobe</span> <span class="at">-hide_banner</span> <span class="at">-v</span> info <span class="at">-show_format</span> <span class="at">-show_streams</span> <span class="at">-of</span> json input.mp4 <span class="op">&gt;</span> output.json</span></code></pre></div></li>
+</ul>
+<p>In all cases, any warning or error produced by the decoder will print
+directly to your screen, and only valid JSON will be written to
+<code>output.json</code>.</p>
+<hr />
+<h3 id="powershell-syntax-windows">PowerShell Syntax (Windows)</h3>
+<p>PowerShell handles native command redirection slightly differently.
+In PowerShell 5.1 and newer, use the explicit stream indicator:</p>
+<div class="sourceCode" id="cb6"><pre
+class="sourceCode powershell"><code class="sourceCode powershell"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>ffprobe<span class="op">.</span><span class="fu">exe</span> <span class="op">-</span>v error <span class="op">-</span>show_format <span class="op">-</span>show_streams <span class="op">-</span>of json input<span class="op">.</span><span class="fu">mp4</span> <span class="dv">1</span><span class="op">&gt;</span> output<span class="op">.</span><span class="fu">json</span></span></code></pre></div>
+<p>If you experience character encoding issues with PowerShell's
+redirection operators, use the raw byte pipeline instead:</p>
+<div class="sourceCode" id="cb7"><pre
+class="sourceCode powershell"><code class="sourceCode powershell"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>ffprobe<span class="op">.</span><span class="fu">exe</span> <span class="op">-</span>v error <span class="op">-</span>show_format <span class="op">-</span>show_streams <span class="op">-</span>of json input<span class="op">.</span><span class="fu">mp4</span> <span class="op">|</span> <span class="fu">Out-File</span> <span class="op">-</span>FilePath output<span class="op">.</span><span class="fu">json</span> <span class="op">-</span>Encoding utf8</span></code></pre></div>
+<p>Because <code>Out-File</code> only receives objects from the success
+stream (<code>stdout</code>), errors and warnings sent to
+<code>stderr</code> will continue to render directly in the PowerShell
+console.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

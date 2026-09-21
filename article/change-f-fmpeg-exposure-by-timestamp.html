@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Change FFmpeg Exposure by Timestamp - ffmpeg</title>
+    <meta name="description" content="This guide explains how to dynamically modify video exposure over time using FFmpeg's exposure filter. You will learn how to trigger exposure changes across specific time intervals using timeline expressions (enable) as well as how to schedule precise va">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/change-f-fmpeg-exposure-by-timestamp">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Change FFmpeg Exposure by Timestamp - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/change-f-fmpeg-exposure-by-timestamp" />
+    <meta property="og:image" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This guide explains how to dynamically modify video exposure over time using FFmpeg's exposure filter. You will learn how to trigger exposure changes across specific time intervals using timeline expressions (enable) as well as how to schedule precise va" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="change-ffmpeg-exposure-by-timestamp">Change FFmpeg Exposure by
+Timestamp</h1>
+<p>This guide explains how to dynamically modify video exposure over
+time using FFmpeg's <code>exposure</code> filter. You will learn how to
+trigger exposure changes across specific time intervals using timeline
+expressions (<code>enable</code>) as well as how to schedule precise
+value updates at exact timestamps using the <code>sendcmd</code>
+filter.</p>
+<p>The <code>exposure</code> filter adjusts video exposure values in EV
+(Exposure Value) steps, accepting values from <code>-3.0</code> to
+<code>3.0</code>. Because the filter accepts timeline editing and
+run-time commands, you can manipulate it according to video timestamps
+using two primary methods.</p>
+<h3 id="method-1-using-the-enable-timeline-expression">Method 1: Using
+the <code>enable</code> Timeline Expression</h3>
+<p>The timeline editing feature (<code>enable</code>) applies the
+exposure adjustment only when a timestamp condition evaluates to true.
+In timeline expressions, the variable <code>t</code> represents the
+current presentation timestamp in seconds.</p>
+<p>To apply a fixed exposure boost of <code>1.5</code> between second 3
+and second 8:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;exposure=exposure=1.5:enable=&#39;between(t,3,8)&#39;&quot;</span> <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<p>To set multiple distinct exposure adjustments at different points in
+the video, chain multiple <code>exposure</code> filters together:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;exposure=exposure=-1.0:enable=&#39;between(t,2,5)&#39;,exposure=exposure=1.2:enable=&#39;between(t,10,15)&#39;&quot;</span> <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<h3 id="method-2-dynamic-scheduling-with-sendcmd">Method 2: Dynamic
+Scheduling with <code>sendcmd</code></h3>
+<p>The <code>exposure</code> filter supports runtime commands. Using the
+<code>sendcmd</code> filter, you can reprogram the <code>exposure</code>
+parameter at exact timestamps sequentially within a single filter
+instance.</p>
+<p>The command format is:
+<code>[timestamp] exposure exposure [value]</code></p>
+<p>You can pass these instructions directly via the command line:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;sendcmd=c=&#39;0.0 exposure exposure 0; 2.5 exposure exposure 1.0; 6.0 exposure exposure -1.5; 9.0 exposure exposure 0&#39;,exposure&quot;</span> <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<p>Alternatively, you can write complex schedules to a text file named
+<code>commands.txt</code>:</p>
+<pre class="text"><code>0.0 exposure exposure 0.0;
+2.0 exposure exposure 0.5;
+4.0 exposure exposure 1.0;
+6.0 exposure exposure 1.5;
+8.0 exposure exposure 0.0;</code></pre>
+<p>Apply the command file to your input:</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;sendcmd=f=commands.txt,exposure&quot;</span> <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<h3 id="modifying-the-black-level-parameter">Modifying the Black Level
+Parameter</h3>
+<p>The <code>exposure</code> filter also includes a <code>black</code>
+level correction parameter ranging from <code>-1.0</code> to
+<code>1.0</code>. You can alter the black level alongside the exposure
+value using the same timestamp-driven approaches:</p>
+<div class="sourceCode" id="cb6"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;sendcmd=c=&#39;3.0 exposure black 0.1; 6.0 exposure black -0.05&#39;,exposure&quot;</span> <span class="at">-c:a</span> copy output.mp4</span></code></pre></div></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

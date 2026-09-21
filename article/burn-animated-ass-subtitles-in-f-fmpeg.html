@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Burn Animated ASS Subtitles in FFmpeg - ffmpeg</title>
+    <meta name="description" content="Burning Advanced SubStation Alpha (.ass) subtitles into a video while preserving complex vector animations, transformations, and custom typography requires using FFmpeg compiled with the libass library. This guide details the exact FFmpeg commands, filte">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/burn-animated-ass-subtitles-in-f-fmpeg">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Burn Animated ASS Subtitles in FFmpeg - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/burn-animated-ass-subtitles-in-f-fmpeg" />
+    <meta property="og:image" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Burning Advanced SubStation Alpha (.ass) subtitles into a video while preserving complex vector animations, transformations, and custom typography requires using FFmpeg compiled with the libass library. This guide details the exact FFmpeg commands, filte" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="burn-animated-ass-subtitles-in-ffmpeg">Burn Animated ASS
+Subtitles in FFmpeg</h1>
+<p>Burning Advanced SubStation Alpha (.ass) subtitles into a video while
+preserving complex vector animations, transformations, and custom
+typography requires using FFmpeg compiled with the <code>libass</code>
+library. This guide details the exact FFmpeg commands, filter
+configurations, and font management steps necessary to hardcode animated
+ASS scripts without losing visual fidelity, motion smoothing, or vector
+precision.</p>
+<h3 id="ensure-ffmpeg-supports-libass">Ensure FFmpeg Supports
+libass</h3>
+<p>To render complex ASS effects like vector paths, clipping masks, and
+transformations, FFmpeg must rely on <code>libass</code>. Verify your
+installation supports it by running:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-version</span></span></code></pre></div>
+<p>Look for <code>--enable-libass</code> in the output configuration.
+Most modern builds (such as those from Gyan.dev on Windows or standard
+package managers on Linux and macOS) include this by default.</p>
+<h3 id="the-basic-hardburn-command">The Basic Hardburn Command</h3>
+<p>To burn the subtitles directly onto the video stream, use the
+<code>subtitles</code> video filter rather than the older
+<code>ass</code> filter, as the <code>subtitles</code> filter provides
+better font handling and path resolution:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;subtitles=subtitles.ass&quot;</span> <span class="at">-c:v</span> libx264 <span class="at">-crf</span> 18 <span class="at">-preset</span> slow <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<p>In this command:</p>
+<ul>
+<li><code>-vf "subtitles=subtitles.ass"</code> invokes
+<code>libass</code> to rasterize the script frame-by-frame over the
+input video.</li>
+<li><code>-c:v libx264 -crf 18 -preset slow</code> re-encodes the video
+with high quality to prevent compression artifacts around sharp vector
+lines.</li>
+<li><code>-c:a copy</code> passes the audio through without re-encoding
+to save time and retain quality.</li>
+</ul>
+<h3 id="handling-custom-fonts-and-embedded-assets">Handling Custom Fonts
+and Embedded Assets</h3>
+<p>Complex ASS animations frequently depend on custom graphical fonts or
+symbol sets. If fonts are missing, the vector shapes will render as
+fallback text characters.</p>
+<p>If the fonts are installed in a local directory rather than the
+system font directory, point FFmpeg to them using the
+<code>fontsdir</code> parameter:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;subtitles=subtitles.ass:fontsdir=&#39;./fonts&#39;&quot;</span> <span class="at">-c:v</span> libx264 <span class="at">-crf</span> 18 <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<p>If your ASS file is contained inside an MKV container that already
+has the required fonts embedded as attachments, extract them first or
+specify the MKV file itself as the input for the subtitles filter:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mkv <span class="at">-vf</span> <span class="st">&quot;subtitles=input.mkv&quot;</span> <span class="at">-c:v</span> libx264 <span class="at">-crf</span> 18 <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<h3 id="preserving-animation-smoothness-and-scaling">Preserving
+Animation Smoothness and Scaling</h3>
+<p>Vector animations rely on accurate coordinates defined by the
+<code>PlayResX</code> and <code>PlayResY</code> headers in the
+<code>.ass</code> file. Discrepancies between the video dimensions and
+the script resolution can lead to misaligned shapes or distorted
+scaling.</p>
+<ol type="1">
+<li><strong>Resolution Matching:</strong> Ensure that the input video
+matches the target aspect ratio of the ASS script. If scaling is
+required, scale the video before applying the subtitles filter:
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;scale=1920:1080,subtitles=subtitles.ass&quot;</span> <span class="at">-c:v</span> libx264 <span class="at">-crf</span> 18 <span class="at">-c:a</span> copy output.mp4</span></code></pre></div></li>
+<li><strong>Frame Rate Consistency:</strong> If the animation uses
+frame-by-frame tag modifications (<code>\pos</code>, <code>\fscx</code>,
+<code>\clip</code>), burning the subtitles at a lower frame rate can
+make the movement appear choppy. Maintain the native frame rate of the
+original source, or match the frame rate targeted by the typesetter:
+<div class="sourceCode" id="cb6"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-r</span> 60 <span class="at">-vf</span> <span class="st">&quot;subtitles=subtitles.ass&quot;</span> <span class="at">-c:v</span> libx264 <span class="at">-crf</span> 18 <span class="at">-c:a</span> copy output.mp4</span></code></pre></div></li>
+</ol>
+<h3 id="recommended-production-command">Recommended Production
+Command</h3>
+<p>For optimal visual reproduction of intricate signs, karaoke effects,
+and animated vectors, use the following production-ready command:</p>
+<div class="sourceCode" id="cb7"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;subtitles=subtitles.ass:fontsdir=&#39;/path/to/fonts&#39;&quot;</span> <span class="at">-c:v</span> libx264 <span class="at">-preset</span> slow <span class="at">-crf</span> 16 <span class="at">-pix_fmt</span> yuv420p <span class="at">-c:a</span> copy output_burned.mp4</span></code></pre></div>
+<p>Setting <code>-pix_fmt yuv420p</code> guarantees wide compatibility
+across media players while preserving the high-fidelity rendering
+produced by <code>libass</code>.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

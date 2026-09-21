@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Highlight Video Differences Using FFmpeg lut2 - ffmpeg</title>
+    <meta name="description" content="This article explains how to visual inspect and highlight pixel-level differences between two similar video files using FFmpeg's powerful lut2 filter. You will learn the mechanics behind the dual-input lookup table, the command-line syntax required to co">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/highlight-video-differences-using-f-fmpeg-lut-2">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Highlight Video Differences Using FFmpeg lut2 - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/highlight-video-differences-using-f-fmpeg-lut-2" />
+    <meta property="og:image" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article explains how to visual inspect and highlight pixel-level differences between two similar video files using FFmpeg's powerful lut2 filter. You will learn the mechanics behind the dual-input lookup table, the command-line syntax required to co" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="highlight-video-differences-using-ffmpeg-lut2">Highlight Video
+Differences Using FFmpeg lut2</h1>
+<p>This article explains how to visual inspect and highlight pixel-level
+differences between two similar video files using FFmpeg's powerful
+<code>lut2</code> filter. You will learn the mechanics behind the
+dual-input lookup table, the command-line syntax required to compute
+differences, and techniques to amplify subtle compression artifacts or
+color shifts so they become clearly visible.</p>
+<hr />
+<h3 id="understanding-the-lut2-filter">Understanding the
+<code>lut2</code> Filter</h3>
+<p>The <code>lut2</code> filter takes two video inputs of the exact same
+dimensions and pixel format, evaluates an expression for each
+corresponding pixel component, and outputs a single composite video.</p>
+<p>In <code>lut2</code> expressions:</p>
+<ul>
+<li><code>x</code> represents the pixel value from the first input
+(stream 0).</li>
+<li><code>y</code> represents the pixel value from the second input
+(stream 1).</li>
+<li><code>c0</code>, <code>c1</code>, <code>c2</code>, and
+<code>c3</code> correspond to each plane of the video format (e.g., Y,
+U, V in YUV, or R, G, B in RGB).</li>
+</ul>
+<p>To highlight differences, you compute the absolute difference between
+<code>x</code> and <code>y</code> using the mathematical function
+<code>abs(x-y)</code>.</p>
+<hr />
+<h3 id="basic-difference-command-rgb-space">Basic Difference Command
+(RGB Space)</h3>
+<p>When comparing two videos in the RGB color space, calculate the
+absolute difference across all three color channels:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> original.mp4 <span class="at">-i</span> encoded.mp4 <span class="at">-filter_complex</span> <span class="dt">\</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="st">&quot;[0:v]format=rgb24[v0]; </span><span class="dt">\</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="st"> [1:v]format=rgb24[v1]; </span><span class="dt">\</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="st"> [v0][v1]lut2=c0=&#39;abs(x-y)&#39;:c1=&#39;abs(x-y)&#39;:c2=&#39;abs(x-y)&#39;&quot;</span> <span class="dt">\</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>-c:v libx264 <span class="at">-crf</span> 18 diff.mp4</span></code></pre></div>
+<p>In this output:</p>
+<ul>
+<li>Identical pixels result in <code>0</code> (completely black).</li>
+<li>Differing pixels appear brighter depending on the magnitude of the
+discrepancy.</li>
+</ul>
+<hr />
+<h3 id="amplifying-subtle-differences">Amplifying Subtle
+Differences</h3>
+<p>Compression artifacts or minor color grades often result in
+differences of only 1 to 5 values per pixel, which are almost invisible
+to the human eye on a standard monitor. To make these variations
+immediately apparent, multiply the difference by an amplification factor
+(for example, <code>10</code> or <code>20</code>):</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> original.mp4 <span class="at">-i</span> encoded.mp4 <span class="at">-filter_complex</span> <span class="dt">\</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="st">&quot;[0:v]format=rgb24[v0]; </span><span class="dt">\</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="st"> [1:v]format=rgb24[v1]; </span><span class="dt">\</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="st"> [v0][v1]lut2=c0=&#39;clip(abs(x-y)*10,0,255)&#39;:c1=&#39;clip(abs(x-y)*10,0,255)&#39;:c2=&#39;clip(abs(x-y)*10,0,255)&#39;&quot;</span> <span class="dt">\</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>-c:v libx264 <span class="at">-crf</span> 18 amplified_diff.mp4</span></code></pre></div>
+<p>The <code>clip(val, min, max)</code> function prevents values from
+overflowing beyond standard 8-bit limits (<code>0</code> to
+<code>255</code>).</p>
+<hr />
+<h3 id="highlighting-differences-in-yuv-space">Highlighting Differences
+in YUV Space</h3>
+<p>If you want to keep the process in standard YUV video format (such as
+<code>yuv420p</code>), evaluate luminance (Y) and chrominance (U/V)
+independently.</p>
+<p>For standard 8-bit YUV:</p>
+<ul>
+<li>Luma (Y / <code>c0</code>) ranges from 0 to 255.</li>
+<li>Chroma (U / <code>c1</code>, V / <code>c2</code>) centers at 128
+(neutral/gray).</li>
+</ul>
+<p>To show luma differences on a neutral gray canvas:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> original.mp4 <span class="at">-i</span> encoded.mp4 <span class="at">-filter_complex</span> <span class="dt">\</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="st">&quot;[0:v][1:v]lut2=c0=&#39;clip(abs(x-y)*10,0,255)&#39;:c1=&#39;128&#39;:c2=&#39;128&#39;&quot;</span> <span class="dt">\</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>-c:v libx264 <span class="at">-crf</span> 18 yuv_diff.mp4</span></code></pre></div>
+<hr />
+<h3 id="binary-masking-thresholding">Binary Masking (Thresholding)</h3>
+<p>If you only want to know whether a difference exists regardless of
+magnitude, apply a threshold condition:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> original.mp4 <span class="at">-i</span> encoded.mp4 <span class="at">-filter_complex</span> <span class="dt">\</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="st">&quot;[0:v]format=rgb24[v0]; </span><span class="dt">\</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="st"> [1:v]format=rgb24[v1]; </span><span class="dt">\</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a><span class="st"> [v0][v1]lut2=c0=&#39;if(gt(abs(x-y),2),255,0)&#39;:c1=&#39;if(gt(abs(x-y),2),255,0)&#39;:c2=&#39;if(gt(abs(x-y),2),255,0)&#39;&quot;</span> <span class="dt">\</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>-c:v libx264 <span class="at">-crf</span> 18 mask_diff.mp4</span></code></pre></div>
+<p>This expression evaluates whether the absolute difference between
+<code>x</code> and <code>y</code> is greater than <code>2</code>. If
+true, it outputs full white (<code>255</code>); otherwise, it outputs
+full black (<code>0</code>).</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

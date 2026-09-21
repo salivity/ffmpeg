@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Configure FFmpeg Perspective Filter Coordinates - ffmpeg</title>
+    <meta name="description" content="This article explains how to configure the eight coordinate points of the perspective filter in FFmpeg to perform perspective distortion or correction. You will learn the exact order of the input and output coordinate pairs, how to define the coordinates">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/configure-f-fmpeg-perspective-filter-coordinates">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Configure FFmpeg Perspective Filter Coordinates - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/configure-f-fmpeg-perspective-filter-coordinates" />
+    <meta property="og:image" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article explains how to configure the eight coordinate points of the perspective filter in FFmpeg to perform perspective distortion or correction. You will learn the exact order of the input and output coordinate pairs, how to define the coordinates" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="configure-ffmpeg-perspective-filter-coordinates">Configure
+FFmpeg Perspective Filter Coordinates</h1>
+<p>This article explains how to configure the eight coordinate points of
+the <code>perspective</code> filter in FFmpeg to perform perspective
+distortion or correction. You will learn the exact order of the input
+and output coordinate pairs, how to define the coordinates using
+absolute values or relative variables, and how to apply practical
+transformations such as keystone correction or angled video
+projections.</p>
+<h2 id="the-perspective-filter-syntax">The Perspective Filter
+Syntax</h2>
+<p>The FFmpeg <code>perspective</code> filter requires two sets of four
+coordinate points (eight points total, consisting of sixteen individual
+coordinate values): four source points and four destination points.</p>
+<p>The basic syntax is:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="va">perspective</span><span class="op">=</span>x0:y0:x1:y1:x2:y2:x3:y3:X0:Y0:X1:Y1:X2:Y2:X3:Y3</span></code></pre></div>
+<ul>
+<li><strong>Lowercase (<code>x0</code> to <code>y3</code>)</strong>: The
+four source points on the original video.</li>
+<li><strong>Uppercase (<code>X0</code> to <code>Y3</code>)</strong>: The
+four destination points on the resulting output frame.</li>
+</ul>
+<h2 id="the-order-of-corner-points">The Order of Corner Points</h2>
+<p>Both the source and destination points follow a strict corner
+ordering:</p>
+<ol type="1">
+<li><strong>Point 0 (<code>x0, y0</code> /
+<code>X0, Y0</code>)</strong>: Top-Left corner</li>
+<li><strong>Point 1 (<code>x1, y1</code> /
+<code>X1, Y1</code>)</strong>: Top-Right corner</li>
+<li><strong>Point 2 (<code>x2, y2</code> /
+<code>X2, Y2</code>)</strong>: Bottom-Left corner</li>
+<li><strong>Point 3 (<code>x3, y3</code> /
+<code>X3, Y3</code>)</strong>: Bottom-Right corner</li>
+</ol>
+<h2 id="coordinate-values-and-variables">Coordinate Values and
+Variables</h2>
+<p>You can specify coordinates using raw pixel numbers or built-in
+variables:</p>
+<ul>
+<li><code>W</code>: Width of the input video</li>
+<li><code>H</code>: Height of the input video</li>
+</ul>
+<p>Using expressions with <code>W</code> and <code>H</code> ensures the
+transformation adapts automatically if the input resolution changes.</p>
+<h2 id="configuration-use-cases">Configuration Use Cases</h2>
+<h3 id="1-tilting-a-flat-video-into-perspective-trapezoid-effect">1.
+Tilting a Flat Video into Perspective (Trapezoid Effect)</h3>
+<p>To make a standard rectangular video look like it recedes into the
+distance, keep the source points set to the standard four corners of the
+frame and move the top destination points inward:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;perspective=0:0:W:0:0:H:W:H:W*0.2:H*0.1:W*0.8:H*0.1:0:H:W:H&quot;</span> output.mp4</span></code></pre></div>
+<p>In this command:</p>
+<ul>
+<li><strong>Source</strong>: <code>(0, 0)</code> is top-left,
+<code>(W, 0)</code> is top-right, <code>(0, H)</code> is bottom-left,
+<code>(W, H)</code> is bottom-right.</li>
+<li><strong>Destination</strong>: The top-left corner moves to
+<code>(0.2*W, 0.1*H)</code>, the top-right corner moves to
+<code>(0.8*W, 0.1*H)</code>, while bottom-left <code>(0, H)</code> and
+bottom-right <code>(W, H)</code> remain unchanged.</li>
+</ul>
+<h3 id="2-keystone-correction-straightening-a-distorted-capture">2.
+Keystone Correction (Straightening a Distorted Capture)</h3>
+<p>If you have a video recorded from an off-center angle where the
+content is distorted into a quadrilateral, map the four corners of that
+distorted area in the source video to the full bounds of the output
+frame:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;perspective=150:80:1100:120:80:680:1180:640:0:0:W:0:0:H:W:H&quot;</span> output.mp4</span></code></pre></div>
+<p>In this command:</p>
+<ul>
+<li><strong>Source</strong>: Explicit pixel coordinates identify the
+four corners of the skewed object in the input frame:
+<ul>
+<li>Top-Left: <code>(150, 80)</code></li>
+<li>Top-Right: <code>(1100, 120)</code></li>
+<li>Bottom-Left: <code>(80, 680)</code></li>
+<li>Bottom-Right: <code>(1180, 640)</code></li>
+</ul></li>
+<li><strong>Destination</strong>: The target corners are mapped to the
+standard output boundaries <code>(0, 0)</code>, <code>(W, 0)</code>,
+<code>(0, H)</code>, and <code>(W, H)</code>, effectively flattening and
+squaring the video.</li>
+</ul>
+<h2 id="additional-parameters">Additional Parameters</h2>
+<p>You can append optional parameters after the coordinates using
+colons:</p>
+<ul>
+<li><code>interpolation</code>: Defines resampling quality. Options are
+<code>linear</code> (default) or <code>cubic</code>.</li>
+<li><code>sense</code>: Specifies the direction of the transformation.
+Set to <code>0</code> for source-to-destination mapping (default) or
+<code>1</code> for destination-to-source mapping.</li>
+</ul>
+<p>Example using cubic interpolation:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;perspective=0:0:W:0:0:H:W:H:50:50:W-50:50:0:H:W:H:interpolation=cubic&quot;</span> output.mp4</span></code></pre></div></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Write Raw Video to a Named Pipe with FFmpeg - ffmpeg</title>
+    <meta name="description" content="This guide explains how to stream uncompressed raw video frames from FFmpeg into a Unix named pipe (FIFO). Using a named pipe allows you to pass video data directly into another process—such as a custom C/C++, Python, or OpenCV program—in real time w">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/write-raw-video-to-a-named-pipe-with-f-fmpeg">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Write Raw Video to a Named Pipe with FFmpeg - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/write-raw-video-to-a-named-pipe-with-f-fmpeg" />
+    <meta property="og:image" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This guide explains how to stream uncompressed raw video frames from FFmpeg into a Unix named pipe (FIFO). Using a named pipe allows you to pass video data directly into another process—such as a custom C/C++, Python, or OpenCV program—in real time w" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="write-raw-video-to-a-named-pipe-with-ffmpeg">Write Raw Video to
+a Named Pipe with FFmpeg</h1>
+<p>This guide explains how to stream uncompressed raw video frames from
+FFmpeg into a Unix named pipe (FIFO). Using a named pipe allows you to
+pass video data directly into another process—such as a custom C/C++,
+Python, or OpenCV program—in real time without writing intermediate
+files to disk. You will learn how to create the FIFO, configure FFmpeg
+to output raw frames in a specific pixel format, and handle the data
+stream effectively.</p>
+<h3 id="1-create-the-named-pipe">1. Create the Named Pipe</h3>
+<p>In Unix-like systems, create a FIFO using the <code>mkfifo</code>
+command:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">mkfifo</span> /tmp/video_pipe</span></code></pre></div>
+<p>A named pipe acts like a regular file on the filesystem, but it
+functions entirely in memory. It blocks execution until both a reader
+and a writer have opened the pipe.</p>
+<h3 id="2-output-raw-video-with-ffmpeg">2. Output Raw Video with
+FFmpeg</h3>
+<p>To write raw, uncompressed frames into the FIFO, tell FFmpeg to use
+the <code>rawvideo</code> muxer and define an explicit pixel format
+(such as <code>rgb24</code> or <code>yuv420p</code>).</p>
+<p>Run the following command:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-re</span> <span class="at">-i</span> input.mp4 <span class="at">-f</span> rawvideo <span class="at">-pix_fmt</span> rgb24 <span class="at">-y</span> /tmp/video_pipe</span></code></pre></div>
+<h4 id="key-arguments-explained">Key Arguments Explained:</h4>
+<ul>
+<li><code>-re</code>: Reads the input at its native frame rate
+(real-time). Omit this flag if you want FFmpeg to process frames as fast
+as possible.</li>
+<li><code>-i input.mp4</code>: Specifies the input source (file, network
+stream, or device).</li>
+<li><code>-f rawvideo</code>: Forces the output format to be
+uncompressed raw video frames without headers, containers, or
+metadata.</li>
+<li><code>-pix_fmt rgb24</code>: Sets the color format.
+<code>rgb24</code> produces 3 bytes per pixel (Red, Green, Blue). You
+can also use formats like <code>yuv420p</code> or <code>bgr24</code>
+depending on what your consumer application expects.</li>
+<li><code>-y /tmp/video_pipe</code>: Overwrites the destination (opens
+the pipe for writing).</li>
+</ul>
+<h3 id="3-reading-the-frames">3. Reading the Frames</h3>
+<p>Because raw video contains no headers, the consuming application must
+know the exact frame width, height, and pixel format in advance to
+properly slice the byte stream.</p>
+<p>To determine frame size in bytes:</p>
+<ul>
+<li><strong>RGB24 / BGR24:</strong> <code>Width × Height × 3</code></li>
+<li><strong>RGBA / BGRA:</strong> <code>Width × Height × 4</code></li>
+<li><strong>YUV420p:</strong> <code>Width × Height × 1.5</code></li>
+</ul>
+<p>For a 1920×1080 video using <code>rgb24</code>: <span
+class="math display">\[\text{Frame Size} = 1920 \times 1080 \times 3 =
+6,220,800\text{ bytes}\]</span></p>
+<h4 id="python-reader-example">Python Reader Example</h4>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> os</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>pipe_path <span class="op">=</span> <span class="st">&quot;/tmp/video_pipe&quot;</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>width, height <span class="op">=</span> <span class="dv">1920</span>, <span class="dv">1080</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>frame_size <span class="op">=</span> width <span class="op">*</span> height <span class="op">*</span> <span class="dv">3</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a><span class="cf">with</span> <span class="bu">open</span>(pipe_path, <span class="st">&quot;rb&quot;</span>) <span class="im">as</span> pipe:</span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>    <span class="cf">while</span> <span class="va">True</span>:</span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>        raw_frame <span class="op">=</span> pipe.read(frame_size)</span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="bu">len</span>(raw_frame) <span class="op">&lt;</span> frame_size:</span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>            <span class="cf">break</span>  <span class="co"># End of stream</span></span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Process the frame (e.g., numpy.frombuffer(raw_frame, dtype=&#39;uint8&#39;))</span></span></code></pre></div>
+<p>Always launch your reader program <em>before</em> or <em>concurrently
+with</em> the FFmpeg writer command to avoid hanging terminal
+processes.</p>
+<h3 id="4-cleanup">4. Cleanup</h3>
+<p>When streaming is finished, remove the FIFO from the filesystem using
+<code>rm</code>:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="fu">rm</span> /tmp/video_pipe</span></code></pre></div></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spatial-Temporal Deinterlacing in FFmpeg with mcdeint - ffmpeg</title>
+    <meta name="description" content="This guide explains how to configure and apply the mcdeint (motion-compensating deinterlace) filter in FFmpeg to eliminate interlacing artifacts from video sources. It covers the required filterchain syntax, explains the primary parameters for controllin">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/spatial-temporal-deinterlacing-in-f-fmpeg-with-mcdeint">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Spatial-Temporal Deinterlacing in FFmpeg with mcdeint - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/spatial-temporal-deinterlacing-in-f-fmpeg-with-mcdeint" />
+    <meta property="og:image" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This guide explains how to configure and apply the mcdeint (motion-compensating deinterlace) filter in FFmpeg to eliminate interlacing artifacts from video sources. It covers the required filterchain syntax, explains the primary parameters for controllin" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1
+id="spatial-temporal-deinterlacing-in-ffmpeg-with-mcdeint">Spatial-Temporal
+Deinterlacing in FFmpeg with mcdeint</h1>
+<p>This guide explains how to configure and apply the
+<code>mcdeint</code> (motion-compensating deinterlace) filter in FFmpeg
+to eliminate interlacing artifacts from video sources. It covers the
+required filterchain syntax, explains the primary parameters for
+controlling quality and performance, addresses modern compatibility
+considerations, and details efficient alternative filters for
+spatial-temporal processing.</p>
+<h3 id="how-the-mcdeint-filter-works">How the mcdeint Filter Works</h3>
+<p>The <code>mcdeint</code> filter evaluates motion between adjacent
+fields across both space and time to reconstruct progressive frames.
+Unlike simple spatial deinterlacers that interpolate missing lines
+within a single field, motion-compensated deinterlacing tracks pixel
+movement across consecutive fields to preserve high-frequency edge
+detail without introducing heavy blurring or comb artifacts.</p>
+<p>Because <code>mcdeint</code> uses motion estimation algorithms
+originally derived from the Snow codec, it requires an initial
+deinterlacing pass to generate the base frames for motion analysis. It
+is almost always paired sequentially with a filter like
+<code>yadif</code> (Yet Another Deinterlacing Filter).</p>
+<h3 id="applying-mcdeint-in-an-ffmpeg-command">Applying mcdeint in an
+FFmpeg Command</h3>
+<p>To use <code>mcdeint</code>, construct a video filter graph
+(<code>-vf</code>) placing <code>yadif</code> before
+<code>mcdeint</code>.</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input_interlaced.ts <span class="at">-vf</span> <span class="st">&quot;yadif=0:-1:1,mcdeint=mode=fast:parity=tff:qp=1&quot;</span> <span class="at">-c:v</span> libx264 <span class="at">-preset</span> slow <span class="at">-crf</span> 18 <span class="at">-c:a</span> copy output_progressive.mp4</span></code></pre></div>
+<h4 id="parameter-breakdown">Parameter Breakdown</h4>
+<ul>
+<li><strong><code>yadif=0:-1:1</code></strong>:
+<ul>
+<li><code>0</code>: Outputs one progressive frame per frame (no frame
+doubling).</li>
+<li><code>-1</code>: Automatically detects field parity.</li>
+<li><code>1</code>: Deinterlaces only frames marked as interlaced.</li>
+</ul></li>
+<li><strong><code>mcdeint</code> options</strong>:
+<ul>
+<li><strong><code>mode</code></strong>: Controls motion estimation
+thoroughness. Available values are <code>fast</code>,
+<code>medium</code>, <code>slow</code>, and <code>extra_slow</code>.
+Higher modes yield better reconstruction around fast motion but
+significantly reduce encoding speed.</li>
+<li><strong><code>parity</code></strong>: Sets field dominance. Use
+<code>tff</code> for top-field-first material (common in 1080i
+broadcasts) or <code>bff</code> for bottom-field-first material (common
+in standard-definition DV). If omitted, it attempts auto-detection.</li>
+<li><strong><code>qp</code></strong>: Quantization parameter used
+internally for motion estimation. A value of <code>1</code> prioritizes
+precision.</li>
+</ul></li>
+</ul>
+<h3 id="compatibility-and-performance-notes">Compatibility and
+Performance Notes</h3>
+<p>The <code>mcdeint</code> filter is one of the most computationally
+demanding deinterlacers in FFmpeg. It operates strictly on the CPU and
+does not scale well across high core counts. Additionally, because it
+depends on legacy motion-estimation code, several modern FFmpeg
+distributions and minimal builds disable or omit <code>mcdeint</code> by
+default.</p>
+<h3 id="recommended-modern-alternatives">Recommended Modern
+Alternatives</h3>
+<p>If your FFmpeg binary does not support <code>mcdeint</code> or if
+encoding speed is a limiting factor, two modern alternatives provide
+comparable or superior spatial-temporal quality:</p>
+<h4 id="1-bwdif-bob-weaver-deinterlacing-filter">1. bwdif (Bob Weaver
+Deinterlacing Filter)</h4>
+<p><code>bwdif</code> is an advanced, motion-adaptive spatial-temporal
+filter that checks cubic interpolation against both previous and next
+fields:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input_interlaced.ts <span class="at">-vf</span> <span class="st">&quot;bwdif=mode=0:parity=-1:deint=1&quot;</span> <span class="at">-c:v</span> libx264 <span class="at">-crf</span> 18 <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<ul>
+<li>Use <code>mode=0</code> for one frame per frame, or
+<code>mode=1</code> for bob deinterlacing (50/60 progressive frames per
+second from 50i/60i content).</li>
+</ul>
+<h4 id="2-nnedi3">2. nnedi3</h4>
+<p>For complex edge preservation without ghosting artifacts, the
+neural-network-directed <code>nnedi</code> filter computes spatial
+interpolations with exceptional precision:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input_interlaced.ts <span class="at">-vf</span> <span class="st">&quot;nnedi=weights=nnedi3_weights.bin:deint=1&quot;</span> <span class="at">-c:v</span> libx264 <span class="at">-crf</span> 18 <span class="at">-c:a</span> copy output.mp4</span></code></pre></div></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

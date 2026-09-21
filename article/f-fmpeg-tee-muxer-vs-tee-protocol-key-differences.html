@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FFmpeg Tee Muxer vs Tee Protocol: Key Differences - ffmpeg</title>
+    <meta name="description" content="In FFmpeg, both the tee muxer and the tee protocol are designed to output content to multiple destinations simultaneously without re-encoding, but they operate at fundamentally different layers of the media pipeline. This article breaks down how the tee">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/f-fmpeg-tee-muxer-vs-tee-protocol-key-differences">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="FFmpeg Tee Muxer vs Tee Protocol: Key Differences - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/f-fmpeg-tee-muxer-vs-tee-protocol-key-differences" />
+    <meta property="og:image" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="In FFmpeg, both the tee muxer and the tee protocol are designed to output content to multiple destinations simultaneously without re-encoding, but they operate at fundamentally different layers of the media pipeline. This article breaks down how the tee" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="ffmpeg-tee-muxer-vs-tee-protocol-key-differences">FFmpeg Tee
+Muxer vs Tee Protocol: Key Differences</h1>
+<p>In FFmpeg, both the <code>tee</code> muxer and the <code>tee</code>
+protocol are designed to output content to multiple destinations
+simultaneously without re-encoding, but they operate at fundamentally
+different layers of the media pipeline. This article breaks down how the
+<code>tee</code> muxer works at the container level to send media
+streams to diverse formats and targets, how the <code>tee</code>
+protocol duplicates identical raw byte streams at the network and file
+I/O layer, and how to choose the right tool for your workflow.</p>
+<hr />
+<h2 id="operating-layers-container-vs-io">Operating Layers: Container
+vs. I/O</h2>
+<p>The core difference between the two approaches comes down to
+<strong>where</strong> in the FFmpeg pipeline the duplication
+occurs:</p>
+<ul>
+<li><strong><code>tee</code> muxer (<code>-f tee</code>)</strong>:
+Operates at the <strong>muxing (packet) layer</strong>. It receives
+encoded packets (video, audio, subtitles) from the encoder or demuxer
+and passes them into multiple, independent output muxers.</li>
+<li><strong><code>tee</code> protocol (<code>tee:</code>)</strong>:
+Operates at the <strong>protocol (byte/transport) layer</strong>. It
+receives a single, already-muxed byte stream and clones the exact byte
+sequence to multiple outputs.</li>
+</ul>
+<hr />
+<h2 id="ffmpeg-tee-muxer">FFmpeg <code>tee</code> Muxer</h2>
+<p>The <code>tee</code> muxer is invoked as an output format using the
+<code>-f tee</code> flag. Because it controls the muxing process for
+each destination, it provides significant flexibility.</p>
+<h3 id="key-capabilities">Key Capabilities</h3>
+<ul>
+<li><strong>Different Container Formats</strong>: You can write to an
+MP4 file locally while simultaneously packaging the same streams into an
+FLV container for an RTMP stream.</li>
+<li><strong>Per-Output Bitstream Filters (BSFs)</strong>: You can apply
+specific bitstream modifications (such as <code>h264_mp4toannexb</code>)
+to one destination without affecting another.</li>
+<li><strong>Per-Output Flags and Options</strong>: You can specify
+custom muxer options, metadata, or buffering behaviors for each
+individual target.</li>
+<li><strong>Stream Selection</strong>: You can selectively choose which
+streams (e.g., video, primary audio, secondary audio) go to which
+destination.</li>
+</ul>
+<h3 id="example-syntax">Example Syntax</h3>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-c:v</span> copy <span class="at">-c:a</span> copy <span class="dt">\</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>-f tee <span class="st">&quot;[f=flv]rtmp://live.example.com/app/stream|[movflags=+faststart]local_archive.mp4&quot;</span></span></code></pre></div>
+<p>In this command, the input stream is packaged into FLV for network
+streaming and MP4 with the <code>faststart</code> flag for local
+storage, all within a single encoding process.</p>
+<hr />
+<h2 id="ffmpeg-tee-protocol">FFmpeg <code>tee</code> Protocol</h2>
+<p>The <code>tee</code> protocol is an I/O wrapper invoked in the output
+URL rather than through the format flag. It takes a single output stream
+that has already been generated by a single muxer and mirrors the
+identical bytes to multiple destinations.</p>
+<h3 id="key-capabilities-1">Key Capabilities</h3>
+<ul>
+<li><strong>Exact Byte Duplication</strong>: Every destination receives
+the exact same bytes. There is no possibility to alter containers,
+bitstream filters, or packet headers between outputs.</li>
+<li><strong>Network and I/O Multiplexing</strong>: It is typically used
+to duplicate network streams (such as UDP, TCP, or HTTP) or write
+identical files to multiple storage locations.</li>
+<li><strong>Lower Overhead</strong>: Because it bypasses running
+multiple muxing instances, it incurs slightly less CPU and memory
+overhead compared to running multiple full muxers in the
+<code>tee</code> muxer.</li>
+</ul>
+<h3 id="example-syntax-1">Example Syntax</h3>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-c:v</span> copy <span class="at">-c:a</span> copy <span class="at">-f</span> mpegts <span class="dt">\</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="st">&quot;tee:udp://239.0.0.1:1234|udp://239.0.0.2:1234&quot;</span></span></code></pre></div>
+<p>In this command, FFmpeg creates a single MPEG-TS stream and writes
+the identical raw UDP payload to two different multicast IP
+addresses.</p>
+<hr />
+<h2 id="comparison-summary">Comparison Summary</h2>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">Feature</th>
+<th style="text-align: left;"><code>tee</code> Muxer
+(<code>-f tee</code>)</th>
+<th style="text-align: left;"><code>tee</code> Protocol
+(<code>tee:</code>)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><strong>Pipeline Level</strong></td>
+<td style="text-align: left;">Muxer / Container layer</td>
+<td style="text-align: left;">Transport / I/O layer</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Containers</strong></td>
+<td style="text-align: left;">Can be different for each target</td>
+<td style="text-align: left;">Must be identical for all targets</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Stream Mapping</strong></td>
+<td style="text-align: left;">Can select specific streams per
+target</td>
+<td style="text-align: left;">Identical across all targets</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Bitstream Filters</strong></td>
+<td style="text-align: left;">Configurable per target</td>
+<td style="text-align: left;">Applied globally or not at all</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Typical Use Cases</strong></td>
+<td style="text-align: left;">Live streaming + local archiving, writing
+HLS + MP4 simultaneously</td>
+<td style="text-align: left;">Duplicating UDP/RTP feeds, mirroring
+identical files</td>
+</tr>
+</tbody>
+</table>
+<p>Use the <strong><code>tee</code> muxer</strong> when your
+destinations require different file formats, protocols with specific
+container requirements, or separate stream mappings. Use the
+<strong><code>tee</code> protocol</strong> when you simply need to
+deliver an identical byte stream to two or more network endpoints or
+storage locations.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

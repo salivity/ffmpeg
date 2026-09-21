@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FFmpeg Serialize Filter Guide - ffmpeg</title>
+    <meta name="description" content="This guide explains how serialization works within the FFmpeg filtergraph ecosystem, addressing the common search for a native serialize filter. While FFmpeg does not include a standalone filter explicitly named serialize, developers frequently use seria">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/f-fmpeg-serialize-filter-guide">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="FFmpeg Serialize Filter Guide - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/f-fmpeg-serialize-filter-guide" />
+    <meta property="og:image" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This guide explains how serialization works within the FFmpeg filtergraph ecosystem, addressing the common search for a native serialize filter. While FFmpeg does not include a standalone filter explicitly named serialize, developers frequently use seria" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="ffmpeg-serialize-filter-guide">FFmpeg Serialize Filter
+Guide</h1>
+<p>This guide explains how serialization works within the FFmpeg
+filtergraph ecosystem, addressing the common search for a native
+<code>serialize</code> filter. While FFmpeg does not include a
+standalone filter explicitly named <code>serialize</code>, developers
+frequently use serialization workflows to export frame-level metadata,
+sequence filters in a serial pipeline, dynamically feed serial command
+instructions, or output serialized raw data streams for external
+processing. Below are the primary methods to implement serialization
+tasks using FFmpeg's built-in tools.</p>
+<h2 id="serializing-frame-metadata">Serializing Frame Metadata</h2>
+<p>To serialize frame-level metadata into a structured text stream or
+file, use the <code>metadata</code> and <code>showinfo</code> filters.
+This approach extracts internal frame attributes into key-value
+pairs.</p>
+<p>To print serialized metadata directly to the console or redirect it
+to a log file:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;showinfo&quot;</span> <span class="at">-f</span> null <span class="at">-</span></span></code></pre></div>
+<p>To serialize and print specific metadata tags using the
+<code>metadata</code> filter:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;metadata=mode=print:key=lavfi.signalstats.YAVG:file=metadata_output.txt&quot;</span> <span class="at">-f</span> null <span class="at">-</span></span></code></pre></div>
+<h2 id="serializing-filter-commands-with-sendcmd">Serializing Filter
+Commands with <code>sendcmd</code></h2>
+<p>When users refer to a "serialize filter" for executing a sequence of
+commands over time, FFmpeg provides the <code>sendcmd</code> (video) and
+<code>asendcmd</code> (audio) filters. These filters read serialized
+command lists from a file or text string to alter downstream filter
+properties dynamically at specific timestamps.</p>
+<h3 id="1-create-a-serialized-command-file-commandstxt">1. Create a
+serialized command file (<code>commands.txt</code>)</h3>
+<pre class="text"><code>0.0-5.0 drawtext reinit &#39;text=Part 1&#39;;
+5.0-10.0 drawtext reinit &#39;text=Part 2&#39;;</code></pre>
+<h3 id="2-execute-the-serialized-pipeline">2. Execute the serialized
+pipeline</h3>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;sendcmd=f=commands.txt,drawtext=fontfile=font.ttf:text=&#39;&#39;:fontsize=24:x=10:y=10&quot;</span> output.mp4</span></code></pre></div>
+<h2 id="serializing-multiple-inputs-with-concat">Serializing Multiple
+Inputs with <code>concat</code></h2>
+<p>If serialization refers to chaining video segments together
+sequentially rather than processing them in parallel, use the
+<code>concat</code> filter:</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> part1.mp4 <span class="at">-i</span> part2.mp4 <span class="at">-filter_complex</span> <span class="st">&quot;[0:v][0:a][1:v][1:a]concat=n=2:v=1:a=1[v][a]&quot;</span> <span class="at">-map</span> <span class="st">&quot;[v]&quot;</span> <span class="at">-map</span> <span class="st">&quot;[a]&quot;</span> output.mp4</span></code></pre></div>
+<p>This ensures that the two distinct streams are serialized into a
+single continuous stream.</p>
+<h2 id="serializing-video-frames-to-an-external-pipe">Serializing Video
+Frames to an External Pipe</h2>
+<p>To serialize raw video frame data into an external process (such as a
+Python script, machine learning model, or Node.js pipeline):</p>
+<div class="sourceCode" id="cb6"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-f</span> rawvideo <span class="at">-pix_fmt</span> rgb24 <span class="at">-</span> <span class="kw">|</span> <span class="ex">python3</span> process_stream.py</span></code></pre></div>
+<p>This serializes uncompressed pixel arrays sequentially across
+<code>stdout</code>, allowing external code to deserialize and read
+fixed-size frame buffers in real time.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FFmpeg Tee Muxer: Transcode and Copy Streams - ffmpeg</title>
+    <meta name="description" content="This guide explains how to configure FFmpeg's tee muxer to output a stream-copied feed to one target while simultaneously transcoding it for another. Because the tee muxer operates at the muxer level after encoding has already taken place, you cannot tra">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/f-fmpeg-tee-muxer-transcode-and-copy-streams">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="FFmpeg Tee Muxer: Transcode and Copy Streams - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/f-fmpeg-tee-muxer-transcode-and-copy-streams" />
+    <meta property="og:image" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This guide explains how to configure FFmpeg's tee muxer to output a stream-copied feed to one target while simultaneously transcoding it for another. Because the tee muxer operates at the muxer level after encoding has already taken place, you cannot tra" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="ffmpeg-tee-muxer-transcode-and-copy-streams">FFmpeg Tee Muxer:
+Transcode and Copy Streams</h1>
+<p>This guide explains how to configure FFmpeg's <code>tee</code> muxer
+to output a stream-copied feed to one target while simultaneously
+transcoding it for another. Because the <code>tee</code> muxer operates
+at the muxer level after encoding has already taken place, you cannot
+transcode directly inside the <code>tee</code> slave definition.
+Instead, you must map the source streams multiple times, set up both the
+copy and transcode operations in the main FFmpeg pipeline, and then use
+the <code>tee</code> muxer's <code>select</code> option to direct the
+respective streams to each destination.</p>
+<h3 id="the-configuration-command">The Configuration Command</h3>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="dt">\</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">-map</span> 0:v <span class="at">-c:v:0</span> copy <span class="dt">\</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">-map</span> 0:v <span class="at">-c:v:1</span> libx264 <span class="at">-preset</span> veryfast <span class="at">-b:v:1</span> 3000k <span class="dt">\</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">-map</span> 0:a <span class="at">-c:a</span> copy <span class="dt">\</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">-f</span> tee <span class="st">&quot;[select=\&#39;v:0,a:0\&#39;]backup.mp4|[select=\&#39;v:1,a:0\&#39;:f=flv]rtmp://live.example.com/app/stream&quot;</span></span></code></pre></div>
+<h3 id="breakdown-of-the-pipeline">Breakdown of the Pipeline</h3>
+<h4 id="1-stream-mapping-and-codec-setup">1. Stream Mapping and Codec
+Setup</h4>
+<ul>
+<li><strong><code>-map 0:v -c:v:0 copy</code></strong>: Takes the video
+stream from the first input (<code>0:v</code>) and assigns it to output
+video stream index <code>0</code> (<code>v:0</code>) without re-encoding
+(<code>copy</code>).</li>
+<li><strong><code>-map 0:v -c:v:1 libx264 -preset veryfast -b:v:1 3000k</code></strong>:
+Maps the same input video stream a second time to output video stream
+index <code>1</code> (<code>v:1</code>) and transcodes it using the
+<code>libx264</code> encoder.</li>
+<li><strong><code>-map 0:a -c:a copy</code></strong>: Maps the input
+audio stream to be copied directly without re-encoding. If transcoding
+audio is also required for the second output, map <code>0:a</code> twice
+with distinct codec configurations in the same manner as the video.</li>
+</ul>
+<h4 id="2-the-tee-muxer-configuration">2. The <code>tee</code> Muxer
+Configuration</h4>
+<p>The <code>-f tee</code> argument accepts pipe-separated
+(<code>|</code>) slave definitions wrapped in brackets:</p>
+<ul>
+<li><strong>Destination 1 (Stream Copy)</strong>:
+<code>[select=\'v:0,a:0\']backup.mp4</code> selects the stream-copied
+video (<code>v:0</code>) and the copied audio (<code>a:0</code>) and
+packages them into a local file. The file container is inferred from the
+<code>.mp4</code> extension.</li>
+<li><strong>Destination 2 (Transcoded Stream)</strong>:
+<code>[select=\'v:1,a:0\':f=flv]rtmp://live.example.com/app/stream</code>
+selects the transcoded video (<code>v:1</code>) along with the copied
+audio (<code>a:0</code>). Since RTMP targets do not use file extensions
+to determine the format, the container format is explicitly specified
+using <code>:f=flv</code>.</li>
+</ul>
+<h3 id="escaping-and-options">Escaping and Options</h3>
+<ul>
+<li><strong>Quoting <code>select</code> values</strong>: Commas and
+colons inside <code>tee</code> target parameters must be properly
+escaped. In standard Bash shells, wrap the entire slave block in quotes
+and escape the internal parameter quotes:
+<code>[select=\'v:0,a:0\']</code>.</li>
+<li><strong>Handling Connection Drops</strong>: For network
+destinations, append <code>:onfail=ignore</code> to the bracketed
+options (for example,
+<code>[select=\'v:1,a:0\':f=flv:onfail=ignore]</code>). This ensures
+that network failure on the transcoded live stream does not terminate
+the local file recording.</li>
+</ul></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

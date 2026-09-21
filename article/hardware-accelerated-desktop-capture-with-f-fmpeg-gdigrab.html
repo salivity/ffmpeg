@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hardware-Accelerated Desktop Capture with FFmpeg gdigrab - ffmpeg</title>
+    <meta name="description" content="This article explains how to capture your Windows desktop using FFmpeg's built-in gdigrab input device combined with GPU hardware acceleration. While the gdigrab module uses the Windows Graphics Device Interface to capture raw screen pixels, you can achi">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/hardware-accelerated-desktop-capture-with-f-fmpeg-gdigrab">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Hardware-Accelerated Desktop Capture with FFmpeg gdigrab - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/hardware-accelerated-desktop-capture-with-f-fmpeg-gdigrab" />
+    <meta property="og:image" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article explains how to capture your Windows desktop using FFmpeg's built-in gdigrab input device combined with GPU hardware acceleration. While the gdigrab module uses the Windows Graphics Device Interface to capture raw screen pixels, you can achi" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1
+id="hardware-accelerated-desktop-capture-with-ffmpeg-gdigrab">Hardware-Accelerated
+Desktop Capture with FFmpeg gdigrab</h1>
+<p>This article explains how to capture your Windows desktop using
+FFmpeg's built-in <code>gdigrab</code> input device combined with GPU
+hardware acceleration. While the <code>gdigrab</code> module uses the
+Windows Graphics Device Interface to capture raw screen pixels, you can
+achieve low CPU usage and high frame rates by offloading the video
+encoding to dedicated hardware encoders such as NVIDIA NVENC, Intel
+Quick Sync (QSV), or AMD AMF.</p>
+<h2 id="how-hardware-acceleration-works-with-gdigrab">How Hardware
+Acceleration Works with gdigrab</h2>
+<p>The <code>gdigrab</code> device captures the Windows desktop at the
+software/GDI layer. Because GDI captures raw frames into system memory
+(RAM), true end-to-end GPU capture is not native to
+<code>gdigrab</code>. However, the most resource-intensive phase of
+screen recording is video encoding. By piping frames from
+<code>gdigrab</code> directly into your GPU’s hardware encoder, you
+eliminate nearly all CPU encoding strain, allowing smooth 60 FPS
+recording.</p>
+<h2 id="nvidia-gpus-nvenc">NVIDIA GPUs (NVENC)</h2>
+<p>To capture the desktop using an NVIDIA graphics card, pair
+<code>gdigrab</code> with the <code>h264_nvenc</code> encoder:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-f</span> gdigrab <span class="at">-framerate</span> 60 <span class="at">-i</span> desktop <span class="at">-c:v</span> h264_nvenc <span class="at">-preset</span> p4 <span class="at">-tune</span> ll <span class="at">-b:v</span> 6M <span class="at">-pix_fmt</span> yuv420p output_nvenc.mp4</span></code></pre></div>
+<ul>
+<li><strong><code>-preset p4</code></strong>: Balanced performance and
+quality preset for modern NVENC.</li>
+<li><strong><code>-tune ll</code></strong>: Low-latency tuning to
+prevent frame buffer build-up.</li>
+<li><strong><code>-b:v 6M</code></strong>: Sets target bitrate to 6 Mbps
+(adjust based on resolution).</li>
+<li><strong><code>-pix_fmt yuv420p</code></strong>: Converts GDI's RGB
+output to standard YUV 4:2:0 for player compatibility and hardware
+encoder acceptance.</li>
+</ul>
+<h2 id="intel-gpus-quick-sync-video--qsv">Intel GPUs (Quick Sync Video /
+QSV)</h2>
+<p>For systems with integrated or discrete Intel graphics:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-f</span> gdigrab <span class="at">-framerate</span> 60 <span class="at">-i</span> desktop <span class="at">-c:v</span> h264_qsv <span class="at">-b:v</span> 6M <span class="at">-pix_fmt</span> nv12 output_qsv.mp4</span></code></pre></div>
+<ul>
+<li><strong><code>-c:v h264_qsv</code></strong>: Invokes the Intel Quick
+Sync H.264 encoder.</li>
+<li><strong><code>-pix_fmt nv12</code></strong>: Intel hardware encoders
+operate natively with the NV12 pixel format.</li>
+</ul>
+<h2 id="amd-gpus-amf">AMD GPUs (AMF)</h2>
+<p>For systems powered by AMD Radeon graphics:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-f</span> gdigrab <span class="at">-framerate</span> 60 <span class="at">-i</span> desktop <span class="at">-c:v</span> h264_amf <span class="at">-quality</span> speed <span class="at">-b:v</span> 6M <span class="at">-pix_fmt</span> yuv420p output_amf.mp4</span></code></pre></div>
+<ul>
+<li><strong><code>-c:v h264_amf</code></strong>: Invokes the AMD
+Advanced Media Framework encoder.</li>
+<li><strong><code>-quality speed</code></strong>: Prioritizes throughput
+to prevent dropped frames during active screen capture.</li>
+</ul>
+<h2 id="capturing-a-specific-window-or-region">Capturing a Specific
+Window or Region</h2>
+<p>You can apply hardware-accelerated encoding to specific regions or
+individual applications instead of the entire desktop:</p>
+<h3 id="region-capture">Region Capture</h3>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-f</span> gdigrab <span class="at">-framerate</span> 60 <span class="at">-offset_x</span> 100 <span class="at">-offset_y</span> 100 <span class="at">-video_size</span> 1280x720 <span class="at">-i</span> desktop <span class="at">-c:v</span> h264_nvenc <span class="at">-b:v</span> 4M <span class="at">-pix_fmt</span> yuv420p region.mp4</span></code></pre></div>
+<h3 id="specific-window-capture">Specific Window Capture</h3>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-f</span> gdigrab <span class="at">-framerate</span> 60 <span class="at">-i</span> title=<span class="st">&quot;Calculator&quot;</span> <span class="at">-c:v</span> h264_nvenc <span class="at">-b:v</span> 4M <span class="at">-pix_fmt</span> yuv420p window.mp4</span></code></pre></div>
+<h2 id="optimizing-performance-and-avoiding-stutter">Optimizing
+Performance and Avoiding Stutter</h2>
+<ol type="1">
+<li><strong>Match Refresh Rates</strong>: Ensure the
+<code>-framerate</code> value matches your monitor's display frequency
+(or an even fraction of it, such as 60 on a 120Hz display) to avoid
+stuttering.</li>
+<li><strong>Buffer Size</strong>: If you encounter frame drops, append
+<code>-probesize 32M -analyzeduration 0</code> before the
+<code>-i</code> flag to reduce initial pipeline latency.</li>
+<li><strong>True Hardware Capture Alternative</strong>: If
+<code>gdigrab</code> introduces high CPU overhead on 4K or
+high-refresh-rate setups, consider using FFmpeg's <code>ddagrab</code>
+(Desktop Duplication API) filter instead. Unlike <code>gdigrab</code>,
+<code>ddagrab</code> captures directly in GPU VRAM and pipes directly
+into hardware encoders without traversing system RAM.</li>
+</ol></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

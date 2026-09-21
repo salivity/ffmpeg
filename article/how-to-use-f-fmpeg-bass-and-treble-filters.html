@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Use FFmpeg Bass and Treble Filters - ffmpeg</title>
+    <meta name="description" content="Adjusting the equalization of an audio file is a common task that can be easily achieved using FFmpeg's built-in command-line tools. This article provides a quick and straightforward guide on how to use the bass and treble audio filters in FFmpeg to boos">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/how-to-use-f-fmpeg-bass-and-treble-filters">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Use FFmpeg Bass and Treble Filters - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/how-to-use-f-fmpeg-bass-and-treble-filters" />
+    <meta property="og:image" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Adjusting the equalization of an audio file is a common task that can be easily achieved using FFmpeg's built-in command-line tools. This article provides a quick and straightforward guide on how to use the bass and treble audio filters in FFmpeg to boos" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-to-use-ffmpeg-bass-and-treble-filters">How to Use FFmpeg
+Bass and Treble Filters</h1>
+<p>Adjusting the equalization of an audio file is a common task that can
+be easily achieved using FFmpeg's built-in command-line tools. This
+article provides a quick and straightforward guide on how to use the
+<code>bass</code> and <code>treble</code> audio filters in FFmpeg to
+boost or cut low and high frequencies, complete with practical command
+examples.</p>
+<h3 id="understanding-the-bass-and-treble-filters">Understanding the
+Bass and Treble Filters</h3>
+<p>FFmpeg provides two specific audio filters, <code>bass</code> and
+<code>treble</code>, which act as shelving equalizers. They allow you to
+boost (increase volume) or cut (decrease volume) frequencies below or
+above a specific limit.</p>
+<p>Both filters accept three primary parameters:</p>
+<ul>
+<li><strong>g (gain):</strong> The amount of boost or cut in decibels
+(dB). Positive numbers boost the frequency, while negative numbers cut
+it.</li>
+<li><strong>f (frequency):</strong> The central or shelf frequency in
+Hz.</li>
+<li><strong>w (width):</strong> The filter's bandwidth or slope (often
+left at its default value of 0.5).</li>
+</ul>
+<hr />
+<h3 id="how-to-use-the-bass-filter">How to Use the Bass Filter</h3>
+<p>The <code>bass</code> filter targets low-frequency sounds (typically
+below 300 Hz). By default, it operates at a center frequency of 100
+Hz.</p>
+<p>To boost the bass by 8 dB at the default frequency of 100 Hz, use the
+following command:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp3 <span class="at">-af</span> <span class="st">&quot;bass=g=8&quot;</span> output.mp3</span></code></pre></div>
+<p>To cut the bass by 5 dB at a custom frequency of 150 Hz to reduce
+muddiness, run:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp3 <span class="at">-af</span> <span class="st">&quot;bass=g=-5:f=150&quot;</span> output.mp3</span></code></pre></div>
+<hr />
+<h3 id="how-to-use-the-treble-filter">How to Use the Treble Filter</h3>
+<p>The <code>treble</code> filter targets high-frequency sounds. By
+default, it operates at a center frequency of 3000 Hz.</p>
+<p>To boost the treble by 6 dB to add brightness to a track, use:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp3 <span class="at">-af</span> <span class="st">&quot;treble=g=6&quot;</span> output.mp3</span></code></pre></div>
+<p>To cut harsh high frequencies by 10 dB at a custom frequency of 8000
+Hz (8 kHz), use:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp3 <span class="at">-af</span> <span class="st">&quot;treble=g=-10:f=8000&quot;</span> output.mp3</span></code></pre></div>
+<hr />
+<h3 id="combining-bass-and-treble-adjustments">Combining Bass and Treble
+Adjustments</h3>
+<p>You can apply both filters simultaneously in a single command by
+chaining them together with a comma inside the audio filter
+(<code>-af</code>) argument.</p>
+<p>To boost both the bass (by 6 dB at 80 Hz) and the treble (by 5 dB at
+10,000 Hz) for a classic "smile" EQ curve, run:</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp3 <span class="at">-af</span> <span class="st">&quot;bass=g=6:f=80,treble=g=5:f=10000&quot;</span> output.mp3</span></code></pre></div></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

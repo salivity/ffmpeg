@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Transcode Videos in React with ffmpeg.wasm - ffmpeg</title>
+    <meta name="description" content="Client-side video transcoding reduces server infrastructure costs, minimizes network bandwidth, and keeps sensitive media securely within the user's browser. This guide provides a direct implementation path for integrating ffmpeg.wasm into a React projec">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/transcode-videos-in-react-with-ffmpeg-wasm">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Transcode Videos in React with ffmpeg.wasm - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/transcode-videos-in-react-with-ffmpeg-wasm" />
+    <meta property="og:image" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Client-side video transcoding reduces server infrastructure costs, minimizes network bandwidth, and keeps sensitive media securely within the user's browser. This guide provides a direct implementation path for integrating ffmpeg.wasm into a React projec" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="transcode-videos-in-react-with-ffmpegwasm">Transcode Videos in
+React with ffmpeg.wasm</h1>
+<p>Client-side video transcoding reduces server infrastructure costs,
+minimizes network bandwidth, and keeps sensitive media securely within
+the user's browser. This guide provides a direct implementation path for
+integrating <code>ffmpeg.wasm</code> into a React project, configuring
+required browser security headers, and converting media files using
+WebAssembly.</p>
+<h3 id="1-configure-cross-origin-isolation">1. Configure Cross-Origin
+Isolation</h3>
+<p><code>ffmpeg.wasm</code> uses <code>SharedArrayBuffer</code> for
+multi-threading and high-performance memory operations. Modern web
+browsers require explicit HTTP response headers to enable this API.</p>
+<p>Add the following headers to your local development server and
+production deployment:</p>
+<pre class="http"><code>Cross-Origin-Opener-Policy: same-origin
+Cross-Origin-Embedder-Policy: require-corp</code></pre>
+<p>If you are using <strong>Vite</strong>, add this to your
+<code>vite.config.js</code>:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> { defineConfig } <span class="im">from</span> <span class="st">&#39;vite&#39;</span><span class="op">;</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> react <span class="im">from</span> <span class="st">&#39;@vitejs/plugin-react&#39;</span><span class="op">;</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="im">export</span> <span class="im">default</span> <span class="fu">defineConfig</span>({</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>  <span class="dt">plugins</span><span class="op">:</span> [<span class="fu">react</span>()]<span class="op">,</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>  <span class="dt">server</span><span class="op">:</span> {</span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>    <span class="dt">headers</span><span class="op">:</span> {</span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>      <span class="st">&#39;Cross-Origin-Opener-Policy&#39;</span><span class="op">:</span> <span class="st">&#39;same-origin&#39;</span><span class="op">,</span></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>      <span class="st">&#39;Cross-Origin-Embedder-Policy&#39;</span><span class="op">:</span> <span class="st">&#39;require-corp&#39;</span><span class="op">,</span></span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>    }<span class="op">,</span></span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>  }<span class="op">,</span></span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a>})<span class="op">;</span></span></code></pre></div>
+<h3 id="2-install-required-dependencies">2. Install Required
+Dependencies</h3>
+<p>Install the core <code>@ffmpeg/ffmpeg</code> package and its helper
+utilities:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">npm</span> install @ffmpeg/ffmpeg @ffmpeg/util</span></code></pre></div>
+<h3 id="3-implement-the-react-component">3. Implement the React
+Component</h3>
+<p>The modern version of <code>ffmpeg.wasm</code> (v0.12+) separates the
+execution logic from the core WebAssembly binary. You load the core
+binaries dynamically via Blob URLs to prevent cross-origin issues with
+standard CDNs.</p>
+<p>Below is a complete, minimal React component for transcoding a video
+to MP4:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode jsx"><code class="sourceCode javascriptreact"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> React<span class="op">,</span> { useState<span class="op">,</span> useRef } <span class="im">from</span> <span class="st">&#39;react&#39;</span><span class="op">;</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> { FFmpeg } <span class="im">from</span> <span class="st">&#39;@ffmpeg/ffmpeg&#39;</span><span class="op">;</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> { fetchFile<span class="op">,</span> toBlobURL } <span class="im">from</span> <span class="st">&#39;@ffmpeg/util&#39;</span><span class="op">;</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a><span class="im">export</span> <span class="im">default</span> <span class="kw">function</span> <span class="fu">VideoTranscoder</span>() {</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> [loaded<span class="op">,</span> setLoaded] <span class="op">=</span> <span class="fu">useState</span>(<span class="kw">false</span>)<span class="op">;</span></span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> [transcoding<span class="op">,</span> setTranscoding] <span class="op">=</span> <span class="fu">useState</span>(<span class="kw">false</span>)<span class="op">;</span></span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> [videoSrc<span class="op">,</span> setVideoSrc] <span class="op">=</span> <span class="fu">useState</span>(<span class="st">&#39;&#39;</span>)<span class="op">;</span></span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> [progress<span class="op">,</span> setProgress] <span class="op">=</span> <span class="fu">useState</span>(<span class="dv">0</span>)<span class="op">;</span></span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> ffmpegRef <span class="op">=</span> <span class="fu">useRef</span>(<span class="kw">new</span> <span class="fu">FFmpeg</span>())<span class="op">;</span></span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> messageRef <span class="op">=</span> <span class="fu">useRef</span>(<span class="kw">null</span>)<span class="op">;</span></span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> loadFFmpeg <span class="op">=</span> <span class="kw">async</span> () <span class="kw">=&gt;</span> {</span>
+<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a>    <span class="kw">const</span> baseURL <span class="op">=</span> <span class="st">&#39;https://unpkg.com/@ffmpeg/core@0.12.6/dist/esm&#39;</span><span class="op">;</span></span>
+<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a>    <span class="kw">const</span> ffmpeg <span class="op">=</span> ffmpegRef<span class="op">.</span><span class="at">current</span><span class="op">;</span></span>
+<span id="cb4-16"><a href="#cb4-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-17"><a href="#cb4-17" aria-hidden="true" tabindex="-1"></a>    ffmpeg<span class="op">.</span><span class="fu">on</span>(<span class="st">&#39;log&#39;</span><span class="op">,</span> ({ message }) <span class="kw">=&gt;</span> {</span>
+<span id="cb4-18"><a href="#cb4-18" aria-hidden="true" tabindex="-1"></a>      <span class="cf">if</span> (messageRef<span class="op">.</span><span class="at">current</span>) messageRef<span class="op">.</span><span class="at">current</span><span class="op">.</span><span class="at">innerText</span> <span class="op">=</span> message<span class="op">;</span></span>
+<span id="cb4-19"><a href="#cb4-19" aria-hidden="true" tabindex="-1"></a>    })<span class="op">;</span></span>
+<span id="cb4-20"><a href="#cb4-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-21"><a href="#cb4-21" aria-hidden="true" tabindex="-1"></a>    ffmpeg<span class="op">.</span><span class="fu">on</span>(<span class="st">&#39;progress&#39;</span><span class="op">,</span> ({ <span class="dt">progress</span><span class="op">:</span> prog }) <span class="kw">=&gt;</span> {</span>
+<span id="cb4-22"><a href="#cb4-22" aria-hidden="true" tabindex="-1"></a>      <span class="fu">setProgress</span>(<span class="bu">Math</span><span class="op">.</span><span class="fu">round</span>(prog <span class="op">*</span> <span class="dv">100</span>))<span class="op">;</span></span>
+<span id="cb4-23"><a href="#cb4-23" aria-hidden="true" tabindex="-1"></a>    })<span class="op">;</span></span>
+<span id="cb4-24"><a href="#cb4-24" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-25"><a href="#cb4-25" aria-hidden="true" tabindex="-1"></a>    <span class="co">// Load WebAssembly binaries</span></span>
+<span id="cb4-26"><a href="#cb4-26" aria-hidden="true" tabindex="-1"></a>    <span class="cf">await</span> ffmpeg<span class="op">.</span><span class="fu">load</span>({</span>
+<span id="cb4-27"><a href="#cb4-27" aria-hidden="true" tabindex="-1"></a>      <span class="dt">coreURL</span><span class="op">:</span> <span class="cf">await</span> <span class="fu">toBlobURL</span>(<span class="vs">`</span><span class="sc">${</span>baseURL<span class="sc">}</span><span class="vs">/ffmpeg-core.js`</span><span class="op">,</span> <span class="st">&#39;text/javascript&#39;</span>)<span class="op">,</span></span>
+<span id="cb4-28"><a href="#cb4-28" aria-hidden="true" tabindex="-1"></a>      <span class="dt">wasmURL</span><span class="op">:</span> <span class="cf">await</span> <span class="fu">toBlobURL</span>(<span class="vs">`</span><span class="sc">${</span>baseURL<span class="sc">}</span><span class="vs">/ffmpeg-core.wasm`</span><span class="op">,</span> <span class="st">&#39;application/wasm&#39;</span>)<span class="op">,</span></span>
+<span id="cb4-29"><a href="#cb4-29" aria-hidden="true" tabindex="-1"></a>    })<span class="op">;</span></span>
+<span id="cb4-30"><a href="#cb4-30" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-31"><a href="#cb4-31" aria-hidden="true" tabindex="-1"></a>    <span class="fu">setLoaded</span>(<span class="kw">true</span>)<span class="op">;</span></span>
+<span id="cb4-32"><a href="#cb4-32" aria-hidden="true" tabindex="-1"></a>  }<span class="op">;</span></span>
+<span id="cb4-33"><a href="#cb4-33" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-34"><a href="#cb4-34" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> transcode <span class="op">=</span> <span class="kw">async</span> (<span class="bu">event</span>) <span class="kw">=&gt;</span> {</span>
+<span id="cb4-35"><a href="#cb4-35" aria-hidden="true" tabindex="-1"></a>    <span class="kw">const</span> file <span class="op">=</span> <span class="bu">event</span><span class="op">.</span><span class="at">target</span><span class="op">.</span><span class="at">files</span><span class="op">?.</span>[<span class="dv">0</span>]<span class="op">;</span></span>
+<span id="cb4-36"><a href="#cb4-36" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> (<span class="op">!</span>file) <span class="cf">return</span><span class="op">;</span></span>
+<span id="cb4-37"><a href="#cb4-37" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-38"><a href="#cb4-38" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> (<span class="op">!</span>loaded) {</span>
+<span id="cb4-39"><a href="#cb4-39" aria-hidden="true" tabindex="-1"></a>      <span class="cf">await</span> <span class="fu">loadFFmpeg</span>()<span class="op">;</span></span>
+<span id="cb4-40"><a href="#cb4-40" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb4-41"><a href="#cb4-41" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-42"><a href="#cb4-42" aria-hidden="true" tabindex="-1"></a>    <span class="kw">const</span> ffmpeg <span class="op">=</span> ffmpegRef<span class="op">.</span><span class="at">current</span><span class="op">;</span></span>
+<span id="cb4-43"><a href="#cb4-43" aria-hidden="true" tabindex="-1"></a>    <span class="fu">setTranscoding</span>(<span class="kw">true</span>)<span class="op">;</span></span>
+<span id="cb4-44"><a href="#cb4-44" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-45"><a href="#cb4-45" aria-hidden="true" tabindex="-1"></a>    <span class="kw">const</span> inputName <span class="op">=</span> <span class="st">&#39;input_file&#39;</span><span class="op">;</span></span>
+<span id="cb4-46"><a href="#cb4-46" aria-hidden="true" tabindex="-1"></a>    <span class="kw">const</span> outputName <span class="op">=</span> <span class="st">&#39;output.mp4&#39;</span><span class="op">;</span></span>
+<span id="cb4-47"><a href="#cb4-47" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-48"><a href="#cb4-48" aria-hidden="true" tabindex="-1"></a>    <span class="co">// Write file into FFmpeg&#39;s virtual filesystem</span></span>
+<span id="cb4-49"><a href="#cb4-49" aria-hidden="true" tabindex="-1"></a>    <span class="cf">await</span> ffmpeg<span class="op">.</span><span class="fu">writeFile</span>(inputName<span class="op">,</span> <span class="cf">await</span> <span class="fu">fetchFile</span>(file))<span class="op">;</span></span>
+<span id="cb4-50"><a href="#cb4-50" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-51"><a href="#cb4-51" aria-hidden="true" tabindex="-1"></a>    <span class="co">// Execute the standard FFmpeg command</span></span>
+<span id="cb4-52"><a href="#cb4-52" aria-hidden="true" tabindex="-1"></a>    <span class="cf">await</span> ffmpeg<span class="op">.</span><span class="fu">exec</span>([<span class="st">&#39;-i&#39;</span><span class="op">,</span> inputName<span class="op">,</span> outputName])<span class="op">;</span></span>
+<span id="cb4-53"><a href="#cb4-53" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-54"><a href="#cb4-54" aria-hidden="true" tabindex="-1"></a>    <span class="co">// Read the result from the virtual filesystem</span></span>
+<span id="cb4-55"><a href="#cb4-55" aria-hidden="true" tabindex="-1"></a>    <span class="kw">const</span> data <span class="op">=</span> <span class="cf">await</span> ffmpeg<span class="op">.</span><span class="fu">readFile</span>(outputName)<span class="op">;</span></span>
+<span id="cb4-56"><a href="#cb4-56" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-57"><a href="#cb4-57" aria-hidden="true" tabindex="-1"></a>    <span class="co">// Convert output buffer to a downloadable/playable URL</span></span>
+<span id="cb4-58"><a href="#cb4-58" aria-hidden="true" tabindex="-1"></a>    <span class="kw">const</span> url <span class="op">=</span> URL<span class="op">.</span><span class="fu">createObjectURL</span>(</span>
+<span id="cb4-59"><a href="#cb4-59" aria-hidden="true" tabindex="-1"></a>      <span class="kw">new</span> <span class="bu">Blob</span>([data<span class="op">.</span><span class="at">buffer</span>]<span class="op">,</span> { <span class="dt">type</span><span class="op">:</span> <span class="st">&#39;video/mp4&#39;</span> })</span>
+<span id="cb4-60"><a href="#cb4-60" aria-hidden="true" tabindex="-1"></a>    )<span class="op">;</span></span>
+<span id="cb4-61"><a href="#cb4-61" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-62"><a href="#cb4-62" aria-hidden="true" tabindex="-1"></a>    <span class="fu">setVideoSrc</span>(url)<span class="op">;</span></span>
+<span id="cb4-63"><a href="#cb4-63" aria-hidden="true" tabindex="-1"></a>    <span class="fu">setTranscoding</span>(<span class="kw">false</span>)<span class="op">;</span></span>
+<span id="cb4-64"><a href="#cb4-64" aria-hidden="true" tabindex="-1"></a>  }<span class="op">;</span></span>
+<span id="cb4-65"><a href="#cb4-65" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-66"><a href="#cb4-66" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> (</span>
+<span id="cb4-67"><a href="#cb4-67" aria-hidden="true" tabindex="-1"></a>    <span class="kw">&lt;div</span> <span class="ot">style</span><span class="op">=</span><span class="va">{</span>{ <span class="dt">padding</span><span class="op">:</span> <span class="st">&#39;2rem&#39;</span> }<span class="va">}</span><span class="kw">&gt;</span></span>
+<span id="cb4-68"><a href="#cb4-68" aria-hidden="true" tabindex="-1"></a>      <span class="va">{</span><span class="op">!</span>loaded <span class="op">&amp;&amp;</span> (</span>
+<span id="cb4-69"><a href="#cb4-69" aria-hidden="true" tabindex="-1"></a>        <span class="kw">&lt;button</span> <span class="ot">onClick</span><span class="op">=</span><span class="va">{</span>loadFFmpeg<span class="va">}</span><span class="kw">&gt;</span>Initialize FFmpeg<span class="kw">&lt;/button&gt;</span></span>
+<span id="cb4-70"><a href="#cb4-70" aria-hidden="true" tabindex="-1"></a>      )<span class="va">}</span></span>
+<span id="cb4-71"><a href="#cb4-71" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-72"><a href="#cb4-72" aria-hidden="true" tabindex="-1"></a>      <span class="va">{</span>loaded <span class="op">&amp;&amp;</span> (</span>
+<span id="cb4-73"><a href="#cb4-73" aria-hidden="true" tabindex="-1"></a>        <span class="kw">&lt;div&gt;</span></span>
+<span id="cb4-74"><a href="#cb4-74" aria-hidden="true" tabindex="-1"></a>          <span class="kw">&lt;label&gt;</span>Select a video to transcode to MP4: <span class="kw">&lt;/label&gt;</span></span>
+<span id="cb4-75"><a href="#cb4-75" aria-hidden="true" tabindex="-1"></a>          <span class="kw">&lt;input</span> <span class="ot">type</span><span class="op">=</span><span class="st">&quot;file&quot;</span> <span class="ot">onChange</span><span class="op">=</span><span class="va">{</span>transcode<span class="va">}</span> <span class="ot">disabled</span><span class="op">=</span><span class="va">{</span>transcoding<span class="va">}</span> <span class="kw">/&gt;</span></span>
+<span id="cb4-76"><a href="#cb4-76" aria-hidden="true" tabindex="-1"></a>        <span class="kw">&lt;/div&gt;</span></span>
+<span id="cb4-77"><a href="#cb4-77" aria-hidden="true" tabindex="-1"></a>      )<span class="va">}</span></span>
+<span id="cb4-78"><a href="#cb4-78" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-79"><a href="#cb4-79" aria-hidden="true" tabindex="-1"></a>      <span class="va">{</span>transcoding <span class="op">&amp;&amp; </span><span class="kw">&lt;p&gt;</span>Transcoding: <span class="va">{</span>progress<span class="va">}</span>%<span class="kw">&lt;/p&gt;</span><span class="va">}</span></span>
+<span id="cb4-80"><a href="#cb4-80" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-81"><a href="#cb4-81" aria-hidden="true" tabindex="-1"></a>      <span class="va">{</span>videoSrc <span class="op">&amp;&amp;</span> (</span>
+<span id="cb4-82"><a href="#cb4-82" aria-hidden="true" tabindex="-1"></a>        <span class="kw">&lt;div</span> <span class="ot">style</span><span class="op">=</span><span class="va">{</span>{ <span class="dt">marginTop</span><span class="op">:</span> <span class="st">&#39;1rem&#39;</span> }<span class="va">}</span><span class="kw">&gt;</span></span>
+<span id="cb4-83"><a href="#cb4-83" aria-hidden="true" tabindex="-1"></a>          <span class="kw">&lt;h3&gt;</span>Output Video:<span class="kw">&lt;/h3&gt;</span></span>
+<span id="cb4-84"><a href="#cb4-84" aria-hidden="true" tabindex="-1"></a>          <span class="kw">&lt;video</span> <span class="ot">src</span><span class="op">=</span><span class="va">{</span>videoSrc<span class="va">}</span> <span class="ot">controls</span> <span class="ot">width</span><span class="op">=</span><span class="st">&quot;400&quot;</span> <span class="kw">/&gt;</span></span>
+<span id="cb4-85"><a href="#cb4-85" aria-hidden="true" tabindex="-1"></a>          <span class="kw">&lt;br</span> <span class="kw">/&gt;</span></span>
+<span id="cb4-86"><a href="#cb4-86" aria-hidden="true" tabindex="-1"></a>          <span class="kw">&lt;a</span> <span class="ot">href</span><span class="op">=</span><span class="va">{</span>videoSrc<span class="va">}</span> <span class="ot">download</span><span class="op">=</span><span class="st">&quot;transcoded.mp4&quot;</span><span class="kw">&gt;</span>Download Transcoded File<span class="kw">&lt;/a&gt;</span></span>
+<span id="cb4-87"><a href="#cb4-87" aria-hidden="true" tabindex="-1"></a>        <span class="kw">&lt;/div&gt;</span></span>
+<span id="cb4-88"><a href="#cb4-88" aria-hidden="true" tabindex="-1"></a>      )<span class="va">}</span></span>
+<span id="cb4-89"><a href="#cb4-89" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-90"><a href="#cb4-90" aria-hidden="true" tabindex="-1"></a>      <span class="kw">&lt;p</span> <span class="ot">ref</span><span class="op">=</span><span class="va">{</span>messageRef<span class="va">}</span> <span class="ot">style</span><span class="op">=</span><span class="va">{</span>{ <span class="dt">fontSize</span><span class="op">:</span> <span class="st">&#39;0.8rem&#39;</span><span class="op">,</span> <span class="dt">color</span><span class="op">:</span> <span class="st">&#39;#666&#39;</span> }<span class="va">}</span><span class="kw">&gt;&lt;/p&gt;</span></span>
+<span id="cb4-91"><a href="#cb4-91" aria-hidden="true" tabindex="-1"></a>    <span class="kw">&lt;/div&gt;</span></span>
+<span id="cb4-92"><a href="#cb4-92" aria-hidden="true" tabindex="-1"></a>  )<span class="op">;</span></span>
+<span id="cb4-93"><a href="#cb4-93" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<h3 id="4-technical-considerations-and-limitations">4. Technical
+Considerations and Limitations</h3>
+<ul>
+<li><strong>Memory Usage:</strong> Browser tabs typically have a memory
+limit (usually between 2GB and 4GB depending on the OS and
+architecture). Processing large files (over 500MB) can cause the tab to
+crash.</li>
+<li><strong>Execution Speed:</strong> While WebAssembly performs
+near-native speeds for basic computations, client-side transcoding is
+CPU-bound and lacks full hardware acceleration (GPU encoding).
+Transcoding long or 4K videos will cause noticeable device battery drain
+and thermal throttling.</li>
+<li><strong>Storage Clean-up:</strong> Always clear unused virtual files
+using <code>ffmpeg.deleteFile('filename')</code> when processing
+multiple files in the same session to avoid memory leaks within the
+WebAssembly heap.</li>
+</ul></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

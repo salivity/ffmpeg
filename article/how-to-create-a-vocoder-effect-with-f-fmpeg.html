@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Create a Vocoder Effect with FFmpeg - ffmpeg</title>
+    <meta name="description" content="Applying a classic vocoder effect requires merging the tonal characteristics of a carrier signal—such as a rich synthesizer pad—with the frequency envelope of a modulator signal, typically a speech or vocal recording. While FFmpeg does not include a">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/how-to-create-a-vocoder-effect-with-f-fmpeg">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Create a Vocoder Effect with FFmpeg - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/how-to-create-a-vocoder-effect-with-f-fmpeg" />
+    <meta property="og:image" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Applying a classic vocoder effect requires merging the tonal characteristics of a carrier signal—such as a rich synthesizer pad—with the frequency envelope of a modulator signal, typically a speech or vocal recording. While FFmpeg does not include a" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-to-create-a-vocoder-effect-with-ffmpeg">How to Create a
+Vocoder Effect with FFmpeg</h1>
+<p>Applying a classic vocoder effect requires merging the tonal
+characteristics of a carrier signal—such as a rich synthesizer pad—with
+the frequency envelope of a modulator signal, typically a speech or
+vocal recording. While FFmpeg does not include a standalone
+channel-vocoder filter by default, you can achieve authentic robotic
+cross-synthesis natively using FFmpeg's audio finite impulse response
+filter (<code>afir</code>) or by bridging standard LADSPA vocoder
+plugins. This guide explains how to set up your carrier and modulator
+audio tracks and run the exact commands required to produce the
+effect.</p>
+<h2 id="understanding-carrier-and-modulator-tracks">Understanding
+Carrier and Modulator Tracks</h2>
+<p>A classic vocoder relies on two distinct audio inputs:</p>
+<ul>
+<li><strong>The Carrier (Synth):</strong> This provides the pitch and
+tonal body. For best results, use a bright synthesizer sound rich in
+harmonics, such as a detuned sawtooth wave or a wide analog pad.</li>
+<li><strong>The Modulator (Vocal):</strong> This provides the rhythmic
+articulation and formant shape. The vocal should be dry (no reverb or
+delay), heavily compressed, and clearly spoken or sung.</li>
+</ul>
+<hr />
+<h2 id="method-1-native-convolution-vocoding-using-afir">Method 1:
+Native Convolution Vocoding Using <code>afir</code></h2>
+<p>FFmpeg includes the <code>afir</code> filter, which convolves one
+audio stream with another. Mathematically, convolving a harmonically
+rich synth with a vocal track imprints the spectral characteristics and
+vowels of the voice onto the synth tones.</p>
+<h3 id="basic-command">Basic Command</h3>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> synth.wav <span class="at">-i</span> vocal.wav <span class="at">-filter_complex</span> <span class="st">&quot;[0:a][1:a]afir=dry=0:wet=1:gtype=none[out]&quot;</span> <span class="at">-map</span> <span class="st">&quot;[out]&quot;</span> vocoded_output.wav</span></code></pre></div>
+<p>In this command:</p>
+<ul>
+<li><code>-i synth.wav</code> is input <code>0</code> (the carrier
+signal).</li>
+<li><code>-i vocal.wav</code> is input <code>1</code> (the modulator
+impulse).</li>
+<li><code>dry=0:wet=1</code> ensures that only the convolved sound is
+output.</li>
+<li><code>gtype=none</code> prevents unintended automatic gain
+compensation.</li>
+</ul>
+<h3 id="enhancing-vocal-intelligibility">Enhancing Vocal
+Intelligibility</h3>
+<p>Unprocessed vocals can sound muffled after convolution. Pre-filtering
+the vocal track with high-pass and high-shelf filters boosts the
+consonants (<span class="math inline">\(S\)</span>, <span
+class="math inline">\(T\)</span>, and <span
+class="math inline">\(K\)</span> sounds), drastically improving
+clarity:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> synth.wav <span class="at">-i</span> vocal.wav <span class="at">-filter_complex</span> <span class="dt">\</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="st">&quot;[1:a]highpass=f=150,treble=g=8:f=4000,compand=attacks=0.01:decays=0.1:points=-60/-60|-20/-6|0/0[mod]; </span><span class="dt">\</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="st"> [0:a][mod]afir=dry=0:wet=1:gtype=gn[out]&quot;</span> <span class="dt">\</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>-map <span class="st">&quot;[out]&quot;</span> vocoded_output.wav</span></code></pre></div>
+<hr />
+<h2 id="method-2-traditional-filterbank-vocoding-via-ladspa">Method 2:
+Traditional Filterbank Vocoding via LADSPA</h2>
+<p>If you require a traditional analog-style filterbank vocoder rather
+than spectral convolution, use FFmpeg's <code>ladspa</code> filter to
+load an external vocoder plugin, such as the open-source <strong>TAP
+Vocoder</strong> (<code>tap_vocoder.so</code>) or the <strong>LADSPA
+Vocoder</strong> (<code>vocoder.so</code>).</p>
+<h3 id="command-syntax">Command Syntax</h3>
+<p>Ensure your system has the LADSPA plugin installed, then specify the
+carrier and modulator channels into the plugin filter:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> synth.wav <span class="at">-i</span> vocal.wav <span class="at">-filter_complex</span> <span class="dt">\</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="st">&quot;[0:a][1:a]amerge=inputs=2[merged]; </span><span class="dt">\</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="st"> [merged]ladspa=file=vocoder:filter=vocoder:controls=16|0.5[out]&quot;</span> <span class="dt">\</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>-map <span class="st">&quot;[out]&quot;</span> vocoded_output.wav</span></code></pre></div>
+<ul>
+<li><code>amerge=inputs=2</code> combines the carrier and modulator into
+a single stereo stream where channel 1 is carrier and channel 2 is
+modulator.</li>
+<li><code>file=vocoder</code> loads the LADSPA library.</li>
+<li><code>controls=16|0.5</code> sets plugin parameters, such as the
+number of active filter bands and release time.</li>
+</ul>
+<hr />
+<h2 id="production-tips-for-better-results">Production Tips for Better
+Results</h2>
+<ol type="1">
+<li><strong>Avoid Sub-Bass on the Carrier:</strong> High-energy
+sub-frequencies overwhelm the convolution matrix. Add a high-pass filter
+around 100 Hz to the synth before processing.</li>
+<li><strong>Match Lengths:</strong> Ensure the synth track is sustained
+throughout the entire vocal duration. Any silent gaps in the carrier
+will result in silence in the output, even if the voice is active.</li>
+<li><strong>Blend with White Noise:</strong> Adding a quiet white-noise
+layer to the carrier synth track provides the high-frequency spectrum
+required for crisp sibilance and plosives.</li>
+</ol></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

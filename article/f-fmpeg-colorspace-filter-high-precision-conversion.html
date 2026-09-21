@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FFmpeg Colorspace Filter: High-Precision Conversion - ffmpeg</title>
+    <meta name="description" content="The FFmpeg colorspace filter provides mathematically accurate color conversions between various broadcast and digital standards, including BT.601, BT.709, and BT.2020. Unlike the standard scale filter, which primarily handles resolution and simple color">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/f-fmpeg-colorspace-filter-high-precision-conversion">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="FFmpeg Colorspace Filter: High-Precision Conversion - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/f-fmpeg-colorspace-filter-high-precision-conversion" />
+    <meta property="og:image" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="The FFmpeg colorspace filter provides mathematically accurate color conversions between various broadcast and digital standards, including BT.601, BT.709, and BT.2020. Unlike the standard scale filter, which primarily handles resolution and simple color" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="ffmpeg-colorspace-filter-high-precision-conversion">FFmpeg
+Colorspace Filter: High-Precision Conversion</h1>
+<p>The FFmpeg <code>colorspace</code> filter provides mathematically
+accurate color conversions between various broadcast and digital
+standards, including BT.601, BT.709, and BT.2020. Unlike the standard
+<code>scale</code> filter, which primarily handles resolution and simple
+color matrix shifts, the <code>colorspace</code> filter processes color
+primaries, transfer characteristics, and matrix coefficients using
+internal high-precision 14-bit to 16-bit arithmetic. This guide
+demonstrates how to configure the <code>colorspace</code> filter to
+perform high-precision conversions while preventing banding, clipping,
+and color shifts.</p>
+<h2 id="core-concepts-of-the-colorspace-filter">Core Concepts of the
+<code>colorspace</code> Filter</h2>
+<p>Accurate color conversion requires defining four distinct
+properties:</p>
+<ol type="1">
+<li><strong>Matrix Coefficients (<code>space</code>)</strong>: How color
+differences are derived from RGB (e.g., <code>bt709</code>,
+<code>bt601</code>, <code>bt2020nc</code>).</li>
+<li><strong>Color Primaries (<code>primaries</code>)</strong>: The
+chromaticity coordinates of the red, green, and blue reference points
+(e.g., <code>bt709</code>, <code>bt2020</code>,
+<code>smpte170m</code>).</li>
+<li><strong>Transfer Characteristics (<code>trc</code>)</strong>: The
+gamma curve or electro-optical transfer function (e.g.,
+<code>bt709</code>, <code>iec61966-2-1</code> for sRGB,
+<code>smpte2084</code> for PQ).</li>
+<li><strong>Range (<code>range</code>)</strong>: Limited/broadcast range
+(<code>tv</code>) or full range (<code>pc</code>).</li>
+</ol>
+<h2 id="enabling-high-precision-processing">Enabling High-Precision
+Processing</h2>
+<p>To maximize mathematical precision and avoid truncation artifacts,
+follow these rules:</p>
+<ul>
+<li><strong>Disable Fast Mode</strong>: By default, the filter may use
+approximate calculations. Setting <code>fast=0</code> forces
+full-precision calculations.</li>
+<li><strong>Enable High-Quality Dithering</strong>: When reducing bit
+depth, use <code>dither=fsb</code> (Floyd-Steinberg) to prevent
+banding.</li>
+<li><strong>Upsample Bit Depth Before Filtering</strong>: If your input
+is 8-bit, convert it to 10-bit or 16-bit planar format using the
+<code>format</code> filter before applying <code>colorspace</code>. This
+gives the filter extra mathematical headroom.</li>
+</ul>
+<h2 id="example-high-precision-bt601-sd-to-bt709-hd">Example:
+High-Precision BT.601 (SD) to BT.709 (HD)</h2>
+<p>Standard definition footage typically uses BT.601 colorimetry. When
+upscaling or remastering to BT.709, an accurate conversion is required
+to prevent green/red shifts.</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input_sd.mp4 <span class="at">-vf</span> <span class="st">&quot;</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="st">  format=yuv422p10le,</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="st">  colorspace=</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="st">    iall=bt601-6-625:</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="st">    all=bt709:</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="st">    fast=0:</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="st">    dither=fsb,</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="st">  format=yuv420p</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="st">&quot;</span> <span class="at">-c:v</span> libx264 <span class="at">-crf</span> 18 output_hd.mp4</span></code></pre></div>
+<h3 id="breakdown-of-the-filtergraph">Breakdown of the Filtergraph:</h3>
+<ul>
+<li><code>format=yuv422p10le</code>: Promotes the video to 10-bit 4:2:2
+to eliminate rounding errors during processing.</li>
+<li><code>iall=bt601-6-625</code>: Explicitly sets the input matrix,
+transfer curve, and primaries to PAL BT.601 (use <code>smpte170m</code>
+for NTSC).</li>
+<li><code>all=bt709</code>: Targets BT.709 matrix, transfer curve, and
+primaries.</li>
+<li><code>fast=0</code>: Disables approximations.</li>
+<li><code>dither=fsb</code>: Applies Floyd-Steinberg dithering during
+the internal conversion.</li>
+<li><code>format=yuv420p</code>: Safely downsamples back to 8-bit 4:2:0
+for delivery.</li>
+</ul>
+<h2 id="example-detailed-parameter-mapping">Example: Detailed Parameter
+Mapping</h2>
+<p>When the input metadata is incomplete or when converting specific
+components (e.g., keeping sRGB transfer characteristics but changing
+primaries), specify properties individually:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mov <span class="at">-vf</span> <span class="st">&quot;</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="st">  format=yuv444p16le,</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="st">  colorspace=</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="st">    ispace=bt2020nc:</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="st">    iprimaries=bt2020:</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a><span class="st">    itrc=arib-std-b67:</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a><span class="st">    irange=tv:</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a><span class="st">    space=bt709:</span></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a><span class="st">    primaries=bt709:</span></span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a><span class="st">    trc=bt709:</span></span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a><span class="st">    range=tv:</span></span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a><span class="st">    fast=0:</span></span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a><span class="st">    dither=fsb,</span></span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a><span class="st">  format=yuv420p10le</span></span>
+<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a><span class="st">&quot;</span> <span class="at">-c:v</span> libx265 <span class="at">-crf</span> 20 output_sdr.mp4</span></code></pre></div>
+<p>In this command:</p>
+<ul>
+<li><code>ispace</code>, <code>iprimaries</code>, <code>itrc</code>, and
+<code>irange</code> explicitly define the input as HLG BT.2020 limited
+range.</li>
+<li><code>space</code>, <code>primaries</code>, <code>trc</code>, and
+<code>range</code> define the output as BT.709 SDR limited range.</li>
+<li><code>format=yuv444p16le</code> ensures processing occurs at full
+4:4:4 chroma resolution and 16-bit depth.</li>
+</ul>
+<h2 id="metadata-flagging">Metadata Flagging</h2>
+<p>FFmpeg filters process raw pixel data, but players rely on container
+and bitstream metadata to read colors correctly. Always mirror your
+filter settings using encoder flags to ensure accurate playback:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;colorspace=all=bt709:fast=0&quot;</span> <span class="dt">\</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">-c:v</span> libx264 <span class="dt">\</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">-color_primaries</span> bt709 <span class="dt">\</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">-color_trc</span> bt709 <span class="dt">\</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">-colorspace</span> bt709 <span class="dt">\</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">-color_range</span> tv <span class="dt">\</span></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>  output.mp4</span></code></pre></div></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

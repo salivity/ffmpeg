@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Use the FFmpeg maskedclamp Filter - ffmpeg</title>
+    <meta name="description" content="The maskedclamp filter in FFmpeg is a multi-stream video filter that limits the pixel values of a primary video stream based on the pixel values of two auxiliary streams representing lower and upper thresholds. This guide provides a straightforward overv">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/how-to-use-the-f-fmpeg-maskedclamp-filter">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Use the FFmpeg maskedclamp Filter - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/how-to-use-the-f-fmpeg-maskedclamp-filter" />
+    <meta property="og:image" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="The maskedclamp filter in FFmpeg is a multi-stream video filter that limits the pixel values of a primary video stream based on the pixel values of two auxiliary streams representing lower and upper thresholds. This guide provides a straightforward overv" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-to-use-the-ffmpeg-maskedclamp-filter">How to Use the FFmpeg
+maskedclamp Filter</h1>
+<p>The <code>maskedclamp</code> filter in FFmpeg is a multi-stream video
+filter that limits the pixel values of a primary video stream based on
+the pixel values of two auxiliary streams representing lower and upper
+thresholds. This guide provides a straightforward overview of how the
+filter operates, its parameters, and practical command-line examples
+demonstrating how to clamp video dynamic range or reduce filtering
+artifacts like haloing and ringing.</p>
+<h2 id="what-does-maskedclamp-do">What Does maskedclamp Do?</h2>
+<p>The <code>maskedclamp</code> filter takes three video inputs of
+identical dimensions and pixel formats:</p>
+<ol type="1">
+<li><strong>Source stream (first input):</strong> The video stream you
+want to modify.</li>
+<li><strong>Lower bound stream (second input):</strong> Defines the
+minimum allowable pixel values.</li>
+<li><strong>Upper bound stream (third input):</strong> Defines the
+maximum allowable pixel values.</li>
+</ol>
+<p>For every pixel, the filter evaluates:</p>
+<ul>
+<li>If the source pixel is brighter than the upper limit (plus an
+optional overshoot), it is clamped down to the upper limit.</li>
+<li>If the source pixel is darker than the lower limit (minus an
+optional undershoot), it is clamped up to the lower limit.</li>
+<li>If the source pixel lies between the lower and upper bounds, it
+remains unchanged.</li>
+</ul>
+<h2 id="filter-syntax-and-parameters">Filter Syntax and Parameters</h2>
+<p>The basic filter signature is:</p>
+<pre class="text"><code>[base][lower][upper]maskedclamp=undershoot=0:overshoot=0:planes=15</code></pre>
+<h3 id="parameters">Parameters</h3>
+<ul>
+<li><strong><code>undershoot</code></strong>: An integer defining how
+far below the lower bound stream values a source pixel can go before
+being clamped. The default value is <code>0</code>.</li>
+<li><strong><code>overshoot</code></strong>: An integer defining how far
+above the upper bound stream values a source pixel can go before being
+clamped. The default value is <code>0</code>.</li>
+<li><strong><code>planes</code></strong>: A bitmask specifying which
+color planes to process. Defaults to <code>15</code> (all planes: Y, U,
+V, and A). To process only the luma channel (Y), set this to
+<code>1</code>.</li>
+</ul>
+<h2 id="basic-usage-with-three-video-files">Basic Usage with Three Video
+Files</h2>
+<p>When using separate video files for the base, lower limit, and upper
+limit, map all three inputs into a <code>filter_complex</code>
+graph:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> source.mp4 <span class="at">-i</span> min_limit.mp4 <span class="at">-i</span> max_limit.mp4 <span class="at">-filter_complex</span> <span class="dt">\</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="st">&quot;[0:v][1:v][2:v]maskedclamp=undershoot=0:overshoot=0[v]&quot;</span> <span class="dt">\</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>-map <span class="st">&quot;[v]&quot;</span> <span class="at">-map</span> 0:a<span class="pp">?</span> <span class="at">-c:v</span> libx264 <span class="at">-crf</span> 18 output.mp4</span></code></pre></div>
+<h2 id="practical-example-clamping-an-over-sharpened-stream">Practical
+Example: Clamping an Over-Sharpened Stream</h2>
+<p>A common use for <code>maskedclamp</code> is preventing edge
+overshoot or ringing caused by unsharp masking. You can generate the
+bounds directly within the filter graph using morphological operators
+like <code>erosion</code> (to create a dark/min bound) and
+<code>dilation</code> (to create a bright/max bound).</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-filter_complex</span> <span class="dt">\</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="st">&quot;[0:v]split=3[base][low_in][high_in]; </span><span class="dt">\</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="st"> [base]unsharp=5:5:1.5[sharp]; </span><span class="dt">\</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="st"> [low_in]erosion[low]; </span><span class="dt">\</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="st"> [high_in]dilation[high]; </span><span class="dt">\</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a><span class="st"> [sharp][low][high]maskedclamp=undershoot=2:overshoot=2[out]&quot;</span> <span class="dt">\</span></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>-map <span class="st">&quot;[out]&quot;</span> <span class="at">-c:v</span> libx264 <span class="at">-crf</span> 18 output.mp4</span></code></pre></div>
+<p>In this pipeline:</p>
+<ol type="1">
+<li>The input is split into three identical branches.</li>
+<li>The <code>sharp</code> branch applies strong sharpening, which risks
+creating halos.</li>
+<li>The <code>erosion</code> filter shrinks bright details, creating a
+minimum boundary.</li>
+<li>The <code>dilation</code> filter expands bright details, creating a
+maximum boundary.</li>
+<li><code>maskedclamp</code> forces the sharpened result to stay within
+the boundaries of the original image's local extremes, allowing a small
+<code>overshoot</code> and <code>undershoot</code> margin of 2 units to
+retain natural contrast.</li>
+</ol></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

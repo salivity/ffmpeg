@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Use the FFmpeg colorcontrast Filter - ffmpeg</title>
+    <meta name="description" content="This guide explains how to adjust the color contrast of video files using FFmpeg's built-in colorcontrast filter. By modifying contrast across complementary color axes, you can make video colors appear more vivid and distinct or soften them for a muted,">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/how-to-use-the-f-fmpeg-colorcontrast-filter">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Use the FFmpeg colorcontrast Filter - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/how-to-use-the-f-fmpeg-colorcontrast-filter" />
+    <meta property="og:image" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This guide explains how to adjust the color contrast of video files using FFmpeg's built-in colorcontrast filter. By modifying contrast across complementary color axes, you can make video colors appear more vivid and distinct or soften them for a muted," />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-to-use-the-ffmpeg-colorcontrast-filter">How to Use the
+FFmpeg colorcontrast Filter</h1>
+<p>This guide explains how to adjust the color contrast of video files
+using FFmpeg's built-in <code>colorcontrast</code> filter. By modifying
+contrast across complementary color axes, you can make video colors
+appear more vivid and distinct or soften them for a muted, flatter look.
+Below, you will find the filter syntax, explanations of its key
+parameters, and practical command-line examples for both increasing and
+decreasing color contrast.</p>
+<h2 id="understanding-the-colorcontrast-filter">Understanding the
+colorcontrast Filter</h2>
+<p>The <code>colorcontrast</code> filter adjusts color contrast by
+manipulating three primary opposing color axes:</p>
+<ul>
+<li><strong><code>rc</code></strong>: Red-Cyan contrast adjustment.</li>
+<li><strong><code>gm</code></strong>: Green-Magenta contrast
+adjustment.</li>
+<li><strong><code>by</code></strong>: Blue-Yellow contrast
+adjustment.</li>
+</ul>
+<p>Each of these parameters accepts a float value between
+<code>-1.0</code> and <code>1.0</code>, where the default value is
+<code>0.0</code> (no change).</p>
+<ul>
+<li><strong>Positive values (<code>0.1</code> to
+<code>1.0</code>)</strong>: Increase contrast, pushing opposing colors
+further apart and making them more saturated and distinct.</li>
+<li><strong>Negative values (<code>-0.1</code> to
+<code>-1.0</code>)</strong>: Decrease contrast, pulling colors closer
+together toward neutral gray.</li>
+</ul>
+<p>An optional parameter, <strong><code>pl</code></strong> (preserve
+lightness), accepts values from <code>0.0</code> to <code>1.0</code>
+(default is <code>0.0</code>). Increasing this value helps keep the
+overall perceived luminance stable while shifting colors.</p>
+<hr />
+<h2 id="how-to-increase-color-contrast">How to Increase Color
+Contrast</h2>
+<p>To boost contrast uniformly across the entire image, apply positive
+values to <code>rc</code>, <code>gm</code>, and <code>by</code>.</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;colorcontrast=rc=0.3:gm=0.3:by=0.3&quot;</span> <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<p>To enhance contrast while maintaining the original brightness levels
+of the scene, add the <code>pl</code> parameter:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;colorcontrast=rc=0.4:gm=0.4:by=0.4:pl=0.5&quot;</span> <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<hr />
+<h2 id="how-to-decrease-color-contrast">How to Decrease Color
+Contrast</h2>
+<p>To reduce contrast and give the video a flatter, more desaturated
+appearance, apply negative values to the color channels:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;colorcontrast=rc=-0.3:gm=-0.3:by=-0.3&quot;</span> <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<p>To create an extreme muted tone close to neutral tones, lower the
+values closer to <code>-1.0</code>:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;colorcontrast=rc=-0.7:gm=-0.7:by=-0.7&quot;</span> <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<hr />
+<h2 id="targeted-color-axis-adjustments">Targeted Color Axis
+Adjustments</h2>
+<p>You can adjust individual axes independently if you only want to
+affect specific color relationships.</p>
+<ul>
+<li><p><strong>Enhance warmth and skies:</strong> Increase
+<code>by</code> (Blue-Yellow) while leaving other channels
+untouched:</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;colorcontrast=by=0.5&quot;</span> <span class="at">-c:a</span> copy output.mp4</span></code></pre></div></li>
+<li><p><strong>Mute foliage and magentas:</strong> Lower <code>gm</code>
+(Green-Magenta) without altering red, cyan, blue, or yellow:</p>
+<div class="sourceCode" id="cb6"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;colorcontrast=gm=-0.4&quot;</span> <span class="at">-c:a</span> copy output.mp4</span></code></pre></div></li>
+</ul></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

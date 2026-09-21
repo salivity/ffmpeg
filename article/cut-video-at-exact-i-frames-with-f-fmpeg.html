@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cut Video at Exact I-Frames with FFmpeg - ffmpeg</title>
+    <meta name="description" content="Cutting video streams without re-encoding requires splitting precisely at I-frames (keyframes) to prevent corruption, black screens, or playback stutters. This article covers how to accurately cut videos at I-frame boundaries using FFmpeg, detailing how">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/cut-video-at-exact-i-frames-with-f-fmpeg">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Cut Video at Exact I-Frames with FFmpeg - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/cut-video-at-exact-i-frames-with-f-fmpeg" />
+    <meta property="og:image" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Cutting video streams without re-encoding requires splitting precisely at I-frames (keyframes) to prevent corruption, black screens, or playback stutters. This article covers how to accurately cut videos at I-frame boundaries using FFmpeg, detailing how" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="cut-video-at-exact-i-frames-with-ffmpeg">Cut Video at Exact
+I-Frames with FFmpeg</h1>
+<p>Cutting video streams without re-encoding requires splitting
+precisely at I-frames (keyframes) to prevent corruption, black screens,
+or playback stutters. This article covers how to accurately cut videos
+at I-frame boundaries using FFmpeg, detailing how to snap to keyframes
+automatically using stream copying, how to detect exact I-frame
+timestamps with FFprobe, and how to split an entire video into segments
+at every single keyframe.</p>
+<hr />
+<h3 id="understanding-i-frames-and-stream-copying">Understanding
+I-Frames and Stream Copying</h3>
+<p>Video compression relies on different frame types:</p>
+<ul>
+<li><strong>I-frames (Intra-coded frames):</strong> Complete standalone
+images (keyframes).</li>
+<li><strong>P-frames and B-frames:</strong> Predictive frames that rely
+on data from previous or subsequent frames.</li>
+</ul>
+<p>When using <code>-c copy</code> (stream copying), FFmpeg does not
+decode or re-encode the video. Because predictive frames cannot exist
+without their referenced I-frame, <strong>a lossless cut must start on
+an I-frame</strong>.</p>
+<hr />
+<h3 id="method-1-snapping-to-the-nearest-keyframe-automatically">Method
+1: Snapping to the Nearest Keyframe Automatically</h3>
+<p>To make FFmpeg automatically align your cut to the nearest preceding
+I-frame, place the <code>-ss</code> parameter <strong>before</strong>
+the input file (<code>-i</code>). This triggers "input seeking," which
+seeks directly via keyframes.</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-ss</span> 00:01:23.000 <span class="at">-i</span> input.mp4 <span class="at">-to</span> 00:02:45.000 <span class="at">-c</span> copy output.mp4</span></code></pre></div>
+<ul>
+<li><code>-ss 00:01:23.000</code>: Seeks to the nearest keyframe at or
+before 1 minute and 23 seconds.</li>
+<li><code>-i input.mp4</code>: Specifies the input source.</li>
+<li><code>-to 00:02:45.000</code>: Defines the end timestamp.</li>
+<li><code>-c copy</code>: Copies the audio and video streams directly
+without re-encoding.</li>
+</ul>
+<p><em>Note:</em> If you place <code>-ss</code> <em>after</em>
+<code>-i</code>, FFmpeg will decode the frames and re-encode up to the
+timestamp, which breaks lossless stream copying.</p>
+<hr />
+<h3 id="method-2-automatically-splitting-at-every-i-frame">Method 2:
+Automatically Splitting at Every I-Frame</h3>
+<p>If you need an automated process that breaks a video file into
+segments at <strong>every I-frame boundary</strong> without manually
+specifying timestamps, use the <code>segment</code> muxer with an
+impossibly small segment duration:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-c</span> copy <span class="at">-f</span> segment <span class="at">-segment_time</span> 0.00001 <span class="at">-reset_timestamps</span> 1 part_%04d.mp4</span></code></pre></div>
+<ul>
+<li><code>-f segment</code>: Activates the segmenter muxer.</li>
+<li><code>-segment_time 0.00001</code>: Instructs FFmpeg to split as
+frequently as possible. Because stream copying (<code>-c copy</code>)
+forbids splitting on non-keyframes, FFmpeg falls back to splitting
+exclusively when it encounters each new I-frame.</li>
+<li><code>-reset_timestamps 1</code>: Ensures each resulting clip starts
+with a timestamp of zero, preventing playback issues.</li>
+<li><code>part_%04d.mp4</code>: Outputs numbered files (e.g.,
+<code>part_0001.mp4</code>, <code>part_0002.mp4</code>).</li>
+</ul>
+<hr />
+<h3 id="method-3-finding-exact-i-frame-timestamps-with-ffprobe">Method
+3: Finding Exact I-Frame Timestamps with FFprobe</h3>
+<p>To cut at a specific, known I-frame rather than an approximation,
+extract the exact keyframe timestamps first using
+<code>ffprobe</code>:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffprobe</span> <span class="at">-select_streams</span> v <span class="at">-show_frames</span> <span class="at">-show_entries</span> frame=pkt_pts_time,pict_type <span class="at">-of</span> csv input.mp4 <span class="kw">|</span> <span class="fu">grep</span> <span class="st">&quot;,I&quot;</span></span></code></pre></div>
+<p>This outputs a list of every I-frame and its exact timestamp in
+seconds:</p>
+<pre class="text"><code>frame,12.512500,I
+frame,24.024000,I
+frame,36.536500,I</code></pre>
+<p>Once identified, insert the precise timestamp directly into your cut
+command:</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-ss</span> 12.512500 <span class="at">-to</span> 36.536500 <span class="at">-i</span> input.mp4 <span class="at">-c</span> copy output.mp4</span></code></pre></div>
+<p>This guarantees an accurate, clean, and lossless cut directly on
+native keyframe boundaries.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

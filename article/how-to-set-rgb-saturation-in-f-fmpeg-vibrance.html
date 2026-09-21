@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Set RGB Saturation in FFmpeg Vibrance - ffmpeg</title>
+    <meta name="description" content="This guide explains how to control color saturation thresholds using the FFmpeg vibrance filter. Unlike standard saturation filters that boost all colors linearly, the vibrance filter selectively enhances desaturated pixels while preserving already-satur">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/how-to-set-rgb-saturation-in-f-fmpeg-vibrance">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Set RGB Saturation in FFmpeg Vibrance - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/how-to-set-rgb-saturation-in-f-fmpeg-vibrance" />
+    <meta property="og:image" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This guide explains how to control color saturation thresholds using the FFmpeg vibrance filter. Unlike standard saturation filters that boost all colors linearly, the vibrance filter selectively enhances desaturated pixels while preserving already-satur" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-to-set-rgb-saturation-in-ffmpeg-vibrance">How to Set RGB
+Saturation in FFmpeg Vibrance</h1>
+<p>This guide explains how to control color saturation thresholds using
+the FFmpeg <code>vibrance</code> filter. Unlike standard saturation
+filters that boost all colors linearly, the <code>vibrance</code> filter
+selectively enhances desaturated pixels while preserving
+already-saturated tones. By configuring the dedicated red, green, and
+blue balance parameters (<code>rbal</code>, <code>gbal</code>, and
+<code>bbal</code>), you can precisely target and isolate which color
+ranges receive the boost and which are suppressed.</p>
+<h3 id="key-filter-parameters">Key Filter Parameters</h3>
+<p>The <code>vibrance</code> filter utilizes an overall intensity
+control combined with individual color channel balance controls:</p>
+<ul>
+<li><strong><code>intensity</code></strong>: Sets the overall strength
+of the vibrance effect. The valid range is <code>-2.0</code> to
+<code>2.0</code> (default is <code>0.0</code>). Positive values boost
+less-saturated colors, while negative values desaturate them.</li>
+<li><strong><code>rbal</code></strong>: Sets the saturation threshold
+balance for the red channel. Accepts values from <code>-10.0</code> to
+<code>10.0</code> (default is <code>1.0</code>).</li>
+<li><strong><code>gbal</code></strong>: Sets the saturation threshold
+balance for the green channel. Accepts values from <code>-10.0</code> to
+<code>10.0</code> (default is <code>1.0</code>).</li>
+<li><strong><code>bbal</code></strong>: Sets the saturation threshold
+balance for the blue channel. Accepts values from <code>-10.0</code> to
+<code>10.0</code> (default is <code>1.0</code>).</li>
+</ul>
+<h3 id="basic-command-syntax">Basic Command Syntax</h3>
+<p>To use the filter, apply the <code>-vf</code> (video filter) option
+in your FFmpeg command:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;vibrance=intensity=0.5:rbal=1.5:gbal=1.0:bbal=0.8&quot;</span> <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<p>In this command:</p>
+<ul>
+<li><code>intensity=0.5</code> enables a moderate saturation boost
+across muted areas.</li>
+<li><code>rbal=1.5</code> increases the saturation sensitivity for red
+tones.</li>
+<li><code>gbal=1.0</code> maintains standard vibrance scaling for
+greens.</li>
+<li><code>bbal=0.8</code> reduces the effect on blue tones, preventing
+over-saturation in skies or water.</li>
+</ul>
+<h3 id="targeted-saturation-examples">Targeted Saturation Examples</h3>
+<h4 id="1-boosting-warm-tones-reds-and-yellows">1. Boosting Warm Tones
+(Reds and Yellows)</h4>
+<p>To make skin tones or sunsets pop without oversaturating cooler
+background elements, increase the red balance while lowering green and
+blue:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;vibrance=intensity=0.8:rbal=2.0:gbal=0.5:bbal=0.2&quot;</span> <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<h4 id="2-enhancing-foliage-greens">2. Enhancing Foliage (Greens)</h4>
+<p>To bring out grass and foliage without altering skin tones:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;vibrance=intensity=0.6:rbal=0.2:gbal=2.5:bbal=0.5&quot;</span> <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<h4 id="3-enhancing-sky-and-ocean-blues">3. Enhancing Sky and Ocean
+(Blues)</h4>
+<p>To enrich skies or bodies of water without distorting surrounding
+landscape elements:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;vibrance=intensity=0.7:rbal=0.0:gbal=0.5:bbal=2.0&quot;</span> <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<h3 id="fine-tuning-luma-thresholds">Fine-Tuning Luma Thresholds</h3>
+<p>The <code>vibrance</code> filter calculates color saturation relative
+to perceived luminance. If the balance parameters do not achieve the
+desired separation between color thresholds, adjust the luma
+coefficients:</p>
+<ul>
+<li><strong><code>rlum</code></strong>: Red luma coefficient (default
+<code>0.072186</code>)</li>
+<li><strong><code>glum</code></strong>: Green luma coefficient (default
+<code>0.715158</code>)</li>
+<li><strong><code>blum</code></strong>: Blue luma coefficient (default
+<code>0.212656</code>)</li>
+</ul>
+<p>Adjusting these shifts the point at which the filter considers a
+pixel "bright" versus "saturated":</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;vibrance=intensity=1.0:rbal=1.5:gbal=1.0:bbal=1.0:rlum=0.1:glum=0.6:blum=0.3&quot;</span> <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<p>Using <code>rbal</code>, <code>gbal</code>, and <code>bbal</code>
+alongside <code>intensity</code> gives full control over color
+distribution, preventing clipping while enriching flat or washed-out
+video channels.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

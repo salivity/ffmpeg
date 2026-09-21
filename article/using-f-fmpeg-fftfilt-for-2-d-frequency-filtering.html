@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Using FFmpeg fftfilt for 2D Frequency Filtering - ffmpeg</title>
+    <meta name="description" content="The fftfilt filter in FFmpeg allows you to perform two-dimensional Fast Fourier Transform (2D FFT) filtering on video frames directly in the frequency domain. This article explains how the filter functions, details the mathematical coordinates and variab">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/using-f-fmpeg-fftfilt-for-2-d-frequency-filtering">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Using FFmpeg fftfilt for 2D Frequency Filtering - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/using-f-fmpeg-fftfilt-for-2-d-frequency-filtering" />
+    <meta property="og:image" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="The fftfilt filter in FFmpeg allows you to perform two-dimensional Fast Fourier Transform (2D FFT) filtering on video frames directly in the frequency domain. This article explains how the filter functions, details the mathematical coordinates and variab" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="using-ffmpeg-fftfilt-for-2d-frequency-filtering">Using FFmpeg
+fftfilt for 2D Frequency Filtering</h1>
+<p>The <code>fftfilt</code> filter in FFmpeg allows you to perform
+two-dimensional Fast Fourier Transform (2D FFT) filtering on video
+frames directly in the frequency domain. This article explains how the
+filter functions, details the mathematical coordinates and variables
+used by its expressions, and provides ready-to-run examples for
+low-pass, high-pass, and periodic noise-reduction filters.</p>
+<hr />
+<h3 id="how-fftfilt-works">How fftfilt Works</h3>
+<p>The <code>fftfilt</code> filter applies a 2D Real Discrete Fourier
+Transform to each plane (luminance and chrominance) of a frame, converts
+spatial pixel values into spatial frequency coefficients, applies
+user-defined weight expressions to these coefficients, and transforms
+the result back to the spatial domain using an Inverse FFT.</p>
+<p>Filtering in the frequency domain makes it straightforward to
+attenuate or isolate specific patterns, such as horizontal scan lines,
+moiré patterns, or general high/low frequencies, which can be
+computationally difficult with standard spatial convolution kernels.</p>
+<h3 id="filter-parameters-and-syntax">Filter Parameters and Syntax</h3>
+<p>The filter accepts distinct parameters for luminance (<code>Y</code>)
+and chrominance (<code>U</code>, <code>V</code>) planes:</p>
+<ul>
+<li><strong><code>weight_Y</code></strong>,
+<strong><code>weight_U</code></strong>,
+<strong><code>weight_V</code></strong>: Mathematical expressions
+evaluated for every frequency point <code>(X, Y)</code>. The resulting
+value multiplies the frequency coefficient at that position (a weight of
+<code>1</code> preserves the frequency; <code>0</code> eliminates
+it).</li>
+<li><strong><code>dc_Y</code></strong>,
+<strong><code>dc_U</code></strong>, <strong><code>dc_V</code></strong>:
+Explicit values to override the DC component (average brightness) of the
+plane. If left unset, the DC component is processed using the weight
+expression.</li>
+</ul>
+<h4 id="expression-variables">Expression Variables</h4>
+<p>When defining <code>weight_Y</code>, <code>weight_U</code>, or
+<code>weight_V</code>, the following variables are available:</p>
+<ul>
+<li><strong><code>X</code></strong>: Horizontal frequency index
+(<code>0</code> to <code>W - 1</code>).</li>
+<li><strong><code>Y</code></strong>: Vertical frequency index
+(<code>0</code> to <code>H - 1</code>).</li>
+<li><strong><code>W</code></strong>: Width of the frequency matrix.</li>
+<li><strong><code>H</code></strong>: Height of the frequency
+matrix.</li>
+</ul>
+<p>In an unshifted 2D FFT, the lowest frequencies (including the DC
+component at <code>(0, 0)</code>) reside in the four corners of the
+frequency plane: <code>(0, 0)</code>, <code>(W, 0)</code>,
+<code>(0, H)</code>, and <code>(W, H)</code>. High frequencies reside
+toward the center <code>(W/2, H/2)</code>.</p>
+<p>To calculate the radial distance <code>d</code> from the nearest
+low-frequency corner, use the Euclidean distance formula folded around
+the boundaries:</p>
+<pre class="text"><code>d = hypot(min(X, W-X), min(Y, H-Y))</code></pre>
+<hr />
+<h3 id="practical-examples">Practical Examples</h3>
+<h4 id="1-ideal-low-pass-filter-smoothing--blurring">1. Ideal Low-Pass
+Filter (Smoothing / Blurring)</h4>
+<p>To attenuate fine details and noise while retaining low-frequency
+base shapes, keep frequencies within a radius of <span
+class="math inline">\(R\)</span> pixels from the DC origin.</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;fftfilt=weight_Y=&#39;lte(hypot(min(X,W-X),min(Y,H-Y)),30)&#39;:weight_U=1:weight_V=1&quot;</span> <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<ul>
+<li>This command keeps all luminance frequencies where the radial
+distance is <span class="math inline">\(\le 30\)</span> and zeroes out
+everything higher.</li>
+<li><code>weight_U=1</code> and <code>weight_V=1</code> preserve the
+original color planes.</li>
+</ul>
+<h4 id="2-high-pass-filter-edge-isolation">2. High-Pass Filter (Edge
+Isolation)</h4>
+<p>A high-pass filter eliminates low frequencies and keeps edges, fine
+lines, and sharp transitions.</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;fftfilt=weight_Y=&#39;gte(hypot(min(X,W-X),min(Y,H-Y)),20)&#39;:weight_U=0:weight_V=0&quot;</span> <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<ul>
+<li>The expression retains luminance frequencies where distance is <span
+class="math inline">\(\ge 20\)</span>.</li>
+<li>Setting <code>weight_U=0</code> and <code>weight_V=0</code> removes
+color variations, generating a grayscale edge map.</li>
+</ul>
+<h4 id="3-gaussian-low-pass-filter-smooth-roll-off">3. Gaussian Low-Pass
+Filter (Smooth Roll-off)</h4>
+<p>A hard cutoff can introduce ringing artifacts (Gibbs phenomenon). A
+Gaussian function smooths the transition between retained and attenuated
+frequencies.</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;fftfilt=weight_Y=&#39;exp(-0.5*(pow(min(X,W-X),2)+pow(min(Y,H-Y),2))/pow(25,2))&#39;&quot;</span> <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<ul>
+<li>Adjust <code>25</code> to change the cutoff spread; higher values
+preserve more detail.</li>
+</ul>
+<h4 id="4-notch-filter-removing-periodic-horizontal-lines">4. Notch
+Filter (Removing Periodic Horizontal Lines)</h4>
+<p>Periodic horizontal interference manifests as concentrated energy
+along the vertical frequency axis (where horizontal frequency
+<code>min(X, W-X)</code> is close to zero, but vertical frequency
+<code>min(Y, H-Y)</code> is non-zero).</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;fftfilt=weight_Y=&#39;not(lte(min(X,W-X),2)*gte(min(Y,H-Y),15))&#39;&quot;</span> <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<ul>
+<li>This checks whether a coordinate lies within a strip close to the
+vertical axis (<code>X &lt;= 2</code>) at high vertical frequencies
+(<code>Y &gt;= 15</code>), setting its weight to <code>0</code> while
+leaving the rest of the spectrum at <code>1</code>.</li>
+</ul>
+<hr />
+<h3 id="performance-considerations">Performance Considerations</h3>
+<p>Because computing forward and inverse 2D Fast Fourier Transforms on
+every frame requires significant processing power, <code>fftfilt</code>
+is slower than spatial convolution alternatives like
+<code>boxblur</code> or <code>unsharp</code>. Limit its use to tasks
+where frequency-selective precision (such as narrow-band notch filtering
+or exact harmonic attenuation) is strictly required.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stream Video Over RTMPT Using FFmpeg - ffmpeg</title>
+    <meta name="description" content="This article provides a direct guide on how to stream live or pre-recorded video using RTMPT (Real-Time Messaging Protocol Tunneled) through FFmpeg. RTMPT encapsulates standard RTMP audio and video packets within HTTP requests, allowing streams to bypass">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/stream-video-over-rtmpt-using-f-fmpeg">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Stream Video Over RTMPT Using FFmpeg - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/stream-video-over-rtmpt-using-f-fmpeg" />
+    <meta property="og:image" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article provides a direct guide on how to stream live or pre-recorded video using RTMPT (Real-Time Messaging Protocol Tunneled) through FFmpeg. RTMPT encapsulates standard RTMP audio and video packets within HTTP requests, allowing streams to bypass" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="stream-video-over-rtmpt-using-ffmpeg">Stream Video Over RTMPT
+Using FFmpeg</h1>
+<p>This article provides a direct guide on how to stream live or
+pre-recorded video using RTMPT (Real-Time Messaging Protocol Tunneled)
+through FFmpeg. RTMPT encapsulates standard RTMP audio and video packets
+within HTTP requests, allowing streams to bypass strict firewalls and
+proxy servers that block standard RTMP ports like 1935. You will learn
+the command-line syntax required to encode, format, and push a video
+stream to an RTMPT-compatible media server.</p>
+<h3 id="understanding-rtmpt-in-ffmpeg">Understanding RTMPT in
+FFmpeg</h3>
+<p>RTMPT wraps standard RTMP data inside HTTP requests, typically
+transmitting over port 80. While it introduces additional latency
+compared to standard RTMP due to HTTP header overhead, it ensures
+connectivity in restricted network environments.</p>
+<p>FFmpeg supports RTMPT natively using the <code>rtmpt://</code> URL
+scheme, provided your FFmpeg build includes RTMP/RTMPT network protocol
+support (either through the native FFmpeg implementation or linked
+against <code>librtmp</code>).</p>
+<h3 id="basic-command-syntax">Basic Command Syntax</h3>
+<p>To stream an existing video file to an RTMPT server, use the
+following command template:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-re</span> <span class="at">-i</span> input.mp4 <span class="at">-c:v</span> libx264 <span class="at">-preset</span> veryfast <span class="at">-maxrate</span> 3000k <span class="at">-bufsize</span> 6000k <span class="at">-pix_fmt</span> yuv420p <span class="at">-g</span> 50 <span class="at">-c:a</span> aac <span class="at">-b:a</span> 128k <span class="at">-ar</span> 44100 <span class="at">-f</span> flv rtmpt://your_server_ip:80/live/stream_key</span></code></pre></div>
+<h3 id="parameter-breakdown">Parameter Breakdown</h3>
+<ul>
+<li><strong><code>-re</code></strong>: Reads the input at its native
+frame rate. This is required when streaming from a pre-recorded file to
+simulate a live broadcast. Omit this flag if capturing from a live
+device like a webcam.</li>
+<li><strong><code>-i input.mp4</code></strong>: Specifies the source
+video file or input capture device.</li>
+<li><strong><code>-c:v libx264</code></strong>: Encodes the video stream
+to H.264, which is the standard codec required for the FLV container
+used by RTMP/RTMPT.</li>
+<li><strong><code>-preset veryfast</code></strong>: Balances encoding
+speed and CPU utilization for live streaming.</li>
+<li><strong><code>-maxrate</code> and <code>-bufsize</code></strong>:
+Controls bitrate variability to ensure stream stability over HTTP
+tunneling.</li>
+<li><strong><code>-pix_fmt yuv420p</code></strong>: Ensures broad
+compatibility with video players and media servers.</li>
+<li><strong><code>-g 50</code></strong>: Sets the Group of Pictures
+(GOP) size or keyframe interval (typically set to 2 seconds; for a 25
+fps stream, use 50).</li>
+<li><strong><code>-c:a aac -b:a 128k -ar 44100</code></strong>: Encodes
+the audio stream using AAC at 128 kbps and a 44.1 kHz sample rate.</li>
+<li><strong><code>-f flv</code></strong>: Forces the output format into
+an FLV container, which is mandatory for RTMP/RTMPT streaming.</li>
+<li><strong><code>rtmpt://your_server_ip:80/live/stream_key</code></strong>:
+The target endpoint. Ensure the protocol is explicitly defined as
+<code>rtmpt://</code> and the port matches the HTTP/RTMPT port
+configured on the destination media server (usually port 80).</li>
+</ul>
+<h3 id="streaming-from-a-live-input-device">Streaming from a Live Input
+Device</h3>
+<p>To stream a live webcam or capture card on Linux using Video4Linux2
+(v4l2):</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-f</span> v4l2 <span class="at">-i</span> /dev/video0 <span class="at">-f</span> alsa <span class="at">-i</span> default <span class="at">-c:v</span> libx264 <span class="at">-preset</span> ultrafast <span class="at">-tune</span> zerolatency <span class="at">-c:a</span> aac <span class="at">-f</span> flv rtmpt://your_server_ip:80/live/stream_key</span></code></pre></div>
+<p>On Windows using DirectShow:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-f</span> dshow <span class="at">-i</span> video=<span class="st">&quot;Integrated Camera&quot;</span>:audio=<span class="st">&quot;Microphone&quot;</span> <span class="at">-c:v</span> libx264 <span class="at">-preset</span> ultrafast <span class="at">-tune</span> zerolatency <span class="at">-c:a</span> aac <span class="at">-f</span> flv rtmpt://your_server_ip:80/live/stream_key</span></code></pre></div>
+<h3 id="troubleshooting-and-verification">Troubleshooting and
+Verification</h3>
+<ul>
+<li><strong>Protocol Support</strong>: Verify your FFmpeg installation
+supports the protocol by running <code>ffmpeg -protocols</code>. Look
+for <code>rtmpt</code> under the "Output" section.</li>
+<li><strong>Firewalls</strong>: Confirm that the target server is
+listening for RTMPT traffic on the specified port and that outgoing
+traffic on that port is permitted by your local network.</li>
+<li><strong>Latency</strong>: RTMPT generates significant polling
+overhead. If latency is high, configure <code>-tune zerolatency</code>
+in your x264 parameters, but note that RTMPT will inherently be slower
+than standard RTMP.</li>
+</ul></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Capture Wayland Screen with FFmpeg - ffmpeg</title>
+    <meta name="description" content="This article provides a guide to recording your desktop screen on Linux under a Wayland session using FFmpeg. Because Wayland's security architecture restricts applications from reading the screen directly, traditional tools like x11grab do not work. Bel">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/how-to-capture-wayland-screen-with-f-fmpeg">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Capture Wayland Screen with FFmpeg - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/how-to-capture-wayland-screen-with-f-fmpeg" />
+    <meta property="og:image" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article provides a guide to recording your desktop screen on Linux under a Wayland session using FFmpeg. Because Wayland's security architecture restricts applications from reading the screen directly, traditional tools like x11grab do not work. Bel" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-to-capture-wayland-screen-with-ffmpeg">How to Capture
+Wayland Screen with FFmpeg</h1>
+<p>This article provides a guide to recording your desktop screen on
+Linux under a Wayland session using FFmpeg. Because Wayland's security
+architecture restricts applications from reading the screen directly,
+traditional tools like <code>x11grab</code> do not work. Below, you will
+learn the most direct methods to capture your Wayland display using
+FFmpeg: via Kernel Mode Setting (<code>kmsgrab</code>) for
+hardware-level capture, and by piping PipeWire streams into FFmpeg for
+desktop-integrated recording.</p>
+<hr />
+<h3 id="method-1-direct-hardware-capture-with-kmsgrab">Method 1: Direct
+Hardware Capture with <code>kmsgrab</code></h3>
+<p>The <code>kmsgrab</code> input device allows FFmpeg to capture raw
+frames directly from the Linux Direct Rendering Manager (DRM) / Kernel
+Mode Setting (KMS) interface. This bypasses Wayland compositor
+restrictions entirely.</p>
+<h4 id="1-grant-permissions">1. Grant Permissions</h4>
+<p><code>kmsgrab</code> requires administrative privileges to read the
+framebuffer. You can grant FFmpeg the necessary capabilities without
+running the entire command as root:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> setcap cap_sys_admin+ep <span class="va">$(</span><span class="fu">which</span> ffmpeg<span class="va">)</span></span></code></pre></div>
+<h4 id="2-record-the-screen-software-encoding">2. Record the Screen
+(Software Encoding)</h4>
+<p>Run the following command to record the entire display to an MP4
+container using the CPU:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-device</span> /dev/dri/card0 <span class="at">-f</span> kmsgrab <span class="at">-i</span> <span class="at">-</span> <span class="dt">\</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">-vf</span> <span class="st">&#39;hwdownload,format=bgr0&#39;</span> <span class="dt">\</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">-c:v</span> libx264 <span class="at">-preset</span> ultrafast <span class="at">-crf</span> 23 <span class="dt">\</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>  output.mp4</span></code></pre></div>
+<h4 id="3-record-the-screen-hardware-accelerated-via-va-api">3. Record
+the Screen (Hardware Accelerated via VA-API)</h4>
+<p>If you use an Intel or AMD GPU, you can keep the frames in GPU memory
+using VA-API to drastically reduce CPU usage:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-hwaccel</span> vaapi <span class="at">-hwaccel_device</span> /dev/dri/renderD128 <span class="dt">\</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">-device</span> /dev/dri/card0 <span class="at">-f</span> kmsgrab <span class="at">-i</span> <span class="at">-</span> <span class="dt">\</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">-vf</span> <span class="st">&#39;hwmap=derive_device=vaapi,scale_vaapi=format=nv12&#39;</span> <span class="dt">\</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">-c:v</span> h264_vaapi <span class="at">-b:v</span> 5M <span class="dt">\</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>  output.mp4</span></code></pre></div>
+<p><em>Note: Replace <code>/dev/dri/card0</code> and
+<code>/dev/dri/renderD128</code> with your system's corresponding
+graphics card and render nodes if different.</em></p>
+<hr />
+<h3 id="method-2-capture-via-pipewire-and-gstreamer-pipe">Method 2:
+Capture via PipeWire and GStreamer Pipe</h3>
+<p>Modern Wayland compositors (such as GNOME, KDE Plasma, and Sway) use
+PipeWire and the Desktop Portal framework
+(<code>xdg-desktop-portal</code>) to handle screen sharing. You can use
+GStreamer to request the Wayland video stream through PipeWire and pipe
+the raw output into FFmpeg.</p>
+<h4 id="1-install-dependencies">1. Install Dependencies</h4>
+<p>Ensure you have <code>pipewire</code>,
+<code>gstreamer1.0-pipewire</code>, and
+<code>gstreamer1.0-plugins-base</code> installed on your
+distribution.</p>
+<h4 id="2-pipe-the-stream-into-ffmpeg">2. Pipe the Stream into
+FFmpeg</h4>
+<p>Execute the following pipeline:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">gst-launch-1.0</span> <span class="at">-q</span> pipewiresrc capture-screen=true ! <span class="dt">\</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>  videoconvert ! <span class="dt">\</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>  video/x-raw,format=BGRx ! <span class="dt">\</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>  fdsink fd=1 <span class="kw">|</span> <span class="dt">\</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-f</span> rawvideo <span class="at">-pixel_format</span> bgr0 <span class="at">-video_size</span> 1920x1080 <span class="at">-framerate</span> 30 <span class="at">-i</span> pipe:0 <span class="dt">\</span></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">-c:v</span> libx264 <span class="at">-preset</span> veryfast <span class="at">-crf</span> 20 <span class="dt">\</span></span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>  output.mp4</span></code></pre></div>
+<p><em>Adjust <code>-video_size</code> and <code>-framerate</code> to
+match your display resolution and desired capture rate.</em></p>
+<hr />
+<h3 id="adding-audio-to-the-capture">Adding Audio to the Capture</h3>
+<p>To include desktop audio or microphone input alongside your screen
+recording, add the PulseAudio/PipeWire audio source using the
+<code>pulse</code> input format.</p>
+<h4 id="record-screen-and-desktop-audio">Record Screen and Desktop
+Audio:</h4>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-device</span> /dev/dri/card0 <span class="at">-f</span> kmsgrab <span class="at">-i</span> <span class="at">-</span> <span class="dt">\</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">-f</span> pulse <span class="at">-i</span> default <span class="dt">\</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">-vf</span> <span class="st">&#39;hwdownload,format=bgr0&#39;</span> <span class="dt">\</span></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">-c:v</span> libx264 <span class="at">-preset</span> ultrafast <span class="dt">\</span></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">-c:a</span> aac <span class="at">-b:a</span> 192k <span class="dt">\</span></span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>  output.mp4</span></code></pre></div>
+<p>To list available audio sources to replace <code>default</code>:</p>
+<div class="sourceCode" id="cb6"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="ex">pactl</span> list short sources</span></code></pre></div></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

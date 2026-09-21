@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fix Blank Corners After Rotating Video in FFmpeg - ffmpeg</title>
+    <meta name="description" content="Rotating a video at an arbitrary angle in FFmpeg using the rotate filter often creates empty black triangular corners because the rectangular frame twists away from the boundary of the canvas. This guide explains the primary methods for managing these bl">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/fix-blank-corners-after-rotating-video-in-f-fmpeg">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Fix Blank Corners After Rotating Video in FFmpeg - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/fix-blank-corners-after-rotating-video-in-f-fmpeg" />
+    <meta property="og:image" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Rotating a video at an arbitrary angle in FFmpeg using the rotate filter often creates empty black triangular corners because the rectangular frame twists away from the boundary of the canvas. This guide explains the primary methods for managing these bl" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="fix-blank-corners-after-rotating-video-in-ffmpeg">Fix Blank
+Corners After Rotating Video in FFmpeg</h1>
+<p>Rotating a video at an arbitrary angle in FFmpeg using the
+<code>rotate</code> filter often creates empty black triangular corners
+because the rectangular frame twists away from the boundary of the
+canvas. This guide explains the primary methods for managing these blank
+areas, including changing the background fill color, making the
+background transparent, cropping out the black borders, and filling the
+surrounding space with a blurred version of the video.</p>
+<h2 id="1-change-the-fill-color-or-make-it-transparent">1. Change the
+Fill Color or Make It Transparent</h2>
+<p>By default, the <code>rotate</code> filter fills the unoccupied areas
+with black. You can change this background using the
+<code>fillcolor</code> (or <code>c</code>) parameter.</p>
+<p>To fill the blank areas with a specific solid color (like white):</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;rotate=15*PI/180:c=white:ow=rotw(15*PI/180):oh=roth(15*PI/180)&quot;</span> <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<p>To create a transparent background (useful when creating an overlay
+for another video), set the color to <code>none</code> and use a format
+that supports an alpha channel, such as Apple ProRes 4444 or QuickTime
+Animation:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;rotate=15*PI/180:c=none:ow=rotw(15*PI/180):oh=roth(15*PI/180)&quot;</span> <span class="at">-c:v</span> prores_ks <span class="at">-profile:v</span> 4444 <span class="at">-c:a</span> copy output.mov</span></code></pre></div>
+<p><em>Note: <code>ow=rotw(...)</code> and <code>oh=roth(...)</code>
+dynamically resize the output canvas so the video corners do not get
+clipped.</em></p>
+<h2 id="2-crop-to-eliminate-the-blank-areas">2. Crop to Eliminate the
+Blank Areas</h2>
+<p>If you want to keep only the rotated image without any borders, you
+must crop the canvas into the largest rectangle that fits entirely
+within the rotated content.</p>
+<p>To rotate the video, zoom in to eliminate the borders, and crop back
+to the original aspect ratio:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;rotate=15*PI/180:ow=rotw(15*PI/180):oh=roth(15*PI/180),crop=iw*0.75:ih*0.75&quot;</span> <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<p>Adjust the crop multiplier (e.g., <code>0.75</code>) based on your
+rotation angle. Smaller rotation angles require less cropping to remove
+the black edges.</p>
+<p>If you want to keep the original frame dimensions without changing
+canvas size, you can zoom into the video before rotating:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;scale=1.3*iw:-1,rotate=15*PI/180:ow=iw:oh=ih,crop=iw/1.3:ih/1.3&quot;</span> <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<h2 id="3-fill-the-blank-areas-with-a-blurred-background">3. Fill the
+Blank Areas with a Blurred Background</h2>
+<p>A popular aesthetic solution is to place the rotated video on top of
+a scaled-up, heavily blurred version of itself. This eliminates harsh
+black borders without cropping out any parts of the rotated footage.</p>
+<p>You can achieve this using the <code>filter_complex</code>
+pipeline:</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-filter_complex</span> <span class="st">&quot;</span><span class="dt">\</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="st">[0:v]scale=iw*1.5:ih*1.5,boxblur=25:5[bg]; </span><span class="dt">\</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="st">[0:v]rotate=15*PI/180:c=none:ow=rotw(15*PI/180):oh=roth(15*PI/180)[fg]; </span><span class="dt">\</span></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a><span class="st">[bg][fg]overlay=(W-w)/2:(H-h)/2:shortest=1&quot;</span> <span class="dt">\</span></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>-c:a copy output.mp4</span></code></pre></div>
+<ul>
+<li><code>scale=iw*1.5:ih*1.5</code> zooms into the background stream to
+ensure it covers the canvas.</li>
+<li><code>boxblur=25:5</code> applies a smooth, deep blur to the
+enlarged background.</li>
+<li><code>rotate=15*PI/180:c=none:...</code> rotates the foreground
+footage and makes the outer corners transparent.</li>
+<li><code>overlay=(W-w)/2:(H-h)/2</code> centers the rotated foreground
+directly over the blurred background.</li>
+</ul></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Use FFmpeg vmaf_cuda for GPU Video Quality Evaluation - ffmpeg</title>
+    <meta name="description" content="This guide covers how to set up and execute hardware-accelerated video quality metrics using the vmafcuda filter in FFmpeg. By offloading computational workloads from the CPU to an NVIDIA GPU, vmafcuda drastically reduces the processing time required to">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/how-to-use-f-fmpeg-vmaf-cuda-for-gpu-video-quality-evaluation">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Use FFmpeg vmaf_cuda for GPU Video Quality Evaluation - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/how-to-use-f-fmpeg-vmaf-cuda-for-gpu-video-quality-evaluation" />
+    <meta property="og:image" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This guide covers how to set up and execute hardware-accelerated video quality metrics using the vmafcuda filter in FFmpeg. By offloading computational workloads from the CPU to an NVIDIA GPU, vmafcuda drastically reduces the processing time required to" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1
+id="how-to-use-ffmpeg-vmaf_cuda-for-gpu-video-quality-evaluation">How to
+Use FFmpeg vmaf_cuda for GPU Video Quality Evaluation</h1>
+<p>This guide covers how to set up and execute hardware-accelerated
+video quality metrics using the <code>vmaf_cuda</code> filter in FFmpeg.
+By offloading computational workloads from the CPU to an NVIDIA GPU,
+<code>vmaf_cuda</code> drastically reduces the processing time required
+to calculate Video Multi-Method Assessment Fusion (VMAF) scores. The
+following sections detail prerequisite requirements, pipeline
+architecture, and practical command-line examples.</p>
+<h3 id="prerequisites-and-requirements">Prerequisites and
+Requirements</h3>
+<p>To run <code>vmaf_cuda</code>, your environment must meet specific
+software and hardware criteria:</p>
+<ol type="1">
+<li><strong>NVIDIA GPU</strong>: A CUDA-compatible GPU (Pascal
+architecture or newer recommended) with up-to-date drivers.</li>
+<li><strong>CUDA Toolkit</strong>: CUDA 11.0 or higher installed on the
+host system.</li>
+<li><strong>libvmaf Built with CUDA</strong>: The underlying
+<code>libvmaf</code> library must be compiled with the
+<code>-Denable_cuda=true</code> flag using the Meson build system.</li>
+<li><strong>FFmpeg with CUDA Filters</strong>: FFmpeg must be built with
+<code>--enable-libvmaf</code>, <code>--enable-cuda-nvcc</code> (or
+<code>--enable-cuda-llvm</code>), <code>--enable-libnpp</code>, and
+<code>--enable-nonfree</code>.</li>
+</ol>
+<h3 id="how-the-vmaf_cuda-pipeline-works">How the <code>vmaf_cuda</code>
+Pipeline Works</h3>
+<p>The <code>vmaf_cuda</code> filter requires frames to reside in CUDA
+device memory (<code>AV_PIX_FMT_CUDA</code>). Passing standard host
+system frames (<code>yuv420p</code>) directly into
+<code>vmaf_cuda</code> without transferring them to GPU memory will
+result in an error.</p>
+<p>For optimal performance, the input streams should be decoded directly
+into CUDA memory using NVDEC, or uploaded to CUDA memory using the
+<code>hwupload_cuda</code> filter prior to reaching the evaluation
+step.</p>
+<h3 id="standard-command-line-syntax">Standard Command Line Syntax</h3>
+<p>The most efficient pipeline keeps decoding, scaling, and scoring
+entirely on the GPU:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="dt">\</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">-hwaccel</span> cuda <span class="at">-hwaccel_output_format</span> cuda <span class="at">-i</span> distorted.mp4 <span class="dt">\</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">-hwaccel</span> cuda <span class="at">-hwaccel_output_format</span> cuda <span class="at">-i</span> reference.mp4 <span class="dt">\</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">-filter_complex</span> <span class="st">&quot;[0:v][1:v]vmaf_cuda=model_path=/usr/local/share/model/vmaf_v0.6.1.json:log_fmt=json:log_path=vmaf_results.json&quot;</span> <span class="dt">\</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">-f</span> null <span class="at">-</span></span></code></pre></div>
+<h4 id="breakdown-of-options">Breakdown of Options:</h4>
+<ul>
+<li><code>-hwaccel cuda -hwaccel_output_format cuda</code>: Decodes the
+compressed video streams directly into NVIDIA VRAM, bypassing CPU
+bottlenecks.</li>
+<li><code>-filter_complex "[0:v][1:v]vmaf_cuda=..."</code>: Directs both
+GPU-resident video frames into the <code>vmaf_cuda</code> filter. The
+distorted stream must be the first input <code>[0:v]</code>, and the
+reference stream must be the second input <code>[1:v]</code>.</li>
+<li><code>model_path</code>: Points to the VMAF model file (JSON or
+binary format).</li>
+<li><code>log_fmt</code>: Sets the output report format
+(<code>json</code>, <code>xml</code>, or <code>csv</code>).</li>
+<li><code>log_path</code>: Specifies the file path for the evaluation
+output.</li>
+<li><code>-f null -</code>: Discards video output so FFmpeg only
+processes metrics without encoding an output file.</li>
+</ul>
+<h3 id="handling-mixed-inputs-and-scaling">Handling Mixed Inputs and
+Scaling</h3>
+<p>VMAF requires both the distorted and reference streams to have
+matching dimensions and pixel formats. If the two inputs differ in
+resolution, normalize them in CUDA memory using <code>scale_npp</code>
+or <code>scale_cuda</code>:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="dt">\</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">-hwaccel</span> cuda <span class="at">-hwaccel_output_format</span> cuda <span class="at">-i</span> distorted_720p.mp4 <span class="dt">\</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">-hwaccel</span> cuda <span class="at">-hwaccel_output_format</span> cuda <span class="at">-i</span> reference_1080p.mp4 <span class="dt">\</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">-filter_complex</span> <span class="st">&quot;[0:v]scale_cuda=1920:1080[dist_scaled]; </span><span class="dt">\</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="st">                   [dist_scaled][1:v]vmaf_cuda=model_path=/usr/local/share/model/vmaf_v0.6.1.json:log_fmt=json:log_path=vmaf_results.json&quot;</span> <span class="dt">\</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">-f</span> null <span class="at">-</span></span></code></pre></div>
+<h3 id="uploading-software-decoded-video">Uploading Software Decoded
+Video</h3>
+<p>If a codec is not supported by NVDEC hardware decoding, decode using
+the CPU and upload the frames to GPU memory inside the filter graph:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="dt">\</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">-i</span> distorted.mp4 <span class="dt">\</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">-i</span> reference.mp4 <span class="dt">\</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">-filter_complex</span> <span class="st">&quot;[0:v]hwupload_cuda[dist_gpu]; </span><span class="dt">\</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="st">                   [1:v]hwupload_cuda[ref_gpu]; </span><span class="dt">\</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a><span class="st">                   [dist_gpu][ref_gpu]vmaf_cuda=model_path=/usr/local/share/model/vmaf_v0.6.1.json:log_fmt=json:log_path=vmaf_results.json&quot;</span> <span class="dt">\</span></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">-f</span> null <span class="at">-</span></span></code></pre></div>
+<h3 id="verifying-the-output">Verifying the Output</h3>
+<p>Once processing completes, FFmpeg outputs summary statistics in the
+terminal:</p>
+<ul>
+<li><strong>VMAF score</strong>: The final mean harmonic score across
+all processed frames.</li>
+<li><strong>Log file</strong>: Detailed per-frame metrics written to the
+file defined in <code>log_path</code>.</li>
+</ul></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

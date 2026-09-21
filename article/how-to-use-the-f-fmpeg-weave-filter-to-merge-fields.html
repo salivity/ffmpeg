@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Use the FFmpeg Weave Filter to Merge Fields - ffmpeg</title>
+    <meta name="description" content="The weave filter in FFmpeg is designed to take field-based video input and combine alternating fields into full, interlaced video frames. This guide explains how the weave filter functions, breaks down its core configuration options, and provides practic">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/how-to-use-the-f-fmpeg-weave-filter-to-merge-fields">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Use the FFmpeg Weave Filter to Merge Fields - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/how-to-use-the-f-fmpeg-weave-filter-to-merge-fields" />
+    <meta property="og:image" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="The weave filter in FFmpeg is designed to take field-based video input and combine alternating fields into full, interlaced video frames. This guide explains how the weave filter functions, breaks down its core configuration options, and provides practic" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-to-use-the-ffmpeg-weave-filter-to-merge-fields">How to Use
+the FFmpeg Weave Filter to Merge Fields</h1>
+<p>The <code>weave</code> filter in FFmpeg is designed to take
+field-based video input and combine alternating fields into full,
+interlaced video frames. This guide explains how the <code>weave</code>
+filter functions, breaks down its core configuration options, and
+provides practical command-line examples for common processing
+workflows, such as reconstructing interlaced video after field-level
+filtering or converting high-framerate progressive content into an
+interlaced output.</p>
+<h3 id="understanding-the-weave-filter">Understanding the Weave
+Filter</h3>
+<p>Video fields represent half of an interlaced frame, containing either
+only odd (top) or even (bottom) scanlines. The <code>weave</code> filter
+takes two consecutive input frames—treated as individual fields—and
+interleaves their scanlines to create a single output frame. As a
+result, using <code>weave</code> halves the frame count and the
+framerate of your video while doubling the vertical resolution.</p>
+<h3 id="basic-syntax-and-parameters">Basic Syntax and Parameters</h3>
+<p>The basic syntax for applying the <code>weave</code> filter in an
+FFmpeg command is:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;weave=first_field=top&quot;</span> output.mp4</span></code></pre></div>
+<p>The filter accepts a single primary parameter:</p>
+<ul>
+<li><strong><code>first_field</code></strong> (or
+<strong><code>f</code></strong>): Specifies which field comes first in
+temporal order.
+<ul>
+<li><code>top</code> or <code>t</code> (Default): The first incoming
+slice of video is placed into the top field (lines 0, 2, 4...).</li>
+<li><code>bottom</code> or <code>b</code>: The first incoming slice of
+video is placed into the bottom field (lines 1, 3, 5...).</li>
+</ul></li>
+</ul>
+<h3 id="practical-use-cases">Practical Use Cases</h3>
+<h4 id="1-recombining-fields-after-filtering">1. Recombining Fields
+After Filtering</h4>
+<p>A standard workflow for processing interlaced video involves
+separating frames into individual fields using
+<code>separatefields</code>, applying a filter (such as a denoiser or
+scaler), and then reassembling the interlaced structure using
+<code>weave</code>:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> interlaced_input.mov <span class="at">-vf</span> <span class="st">&quot;separatefields,yadif=0:-1:0,weave=first_field=top&quot;</span> <span class="at">-c:v</span> libx264 output.mp4</span></code></pre></div>
+<p>In this pipeline:</p>
+<ol type="1">
+<li><code>separatefields</code> breaks each interlaced frame into two
+half-height frames, doubling the framerate.</li>
+<li>Intermediary processing is applied to each field independently.</li>
+<li><code>weave</code> merges the pairs back into standard full-height
+frames with top-field-first (TFF) ordering.</li>
+</ol>
+<h4 id="2-converting-60p50p-progressive-video-to-30i25i-interlaced">2.
+Converting 60p/50p Progressive Video to 30i/25i Interlaced</h4>
+<p>If you have high-framerate progressive video (e.g., 50 fps or 59.94
+fps) and need to deliver standard broadcast interlaced video (25 fps or
+29.97 fps), you can use <code>weave</code> in combination with vertical
+decimation to merge temporal frames:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input_60p.mp4 <span class="at">-vf</span> <span class="st">&quot;interlace=scan=tff:lowpass=off&quot;</span> <span class="at">-c:v</span> prores output_30i.mov</span></code></pre></div>
+<p>Alternatively, you can manually isolate lines and weave frames:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input_60p.mp4 <span class="at">-vf</span> <span class="st">&quot;select=&#39;not(mod(n,2))&#39;,weave=first_field=top&quot;</span> output_30i.mp4</span></code></pre></div>
+<h4 id="3-setting-bottom-field-first-bff">3. Setting Bottom-Field First
+(BFF)</h4>
+<p>For formats that natively utilize bottom-field-first ordering (such
+as standard-definition DV), set the <code>first_field</code> option to
+<code>bottom</code>:</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> dv_fields.mov <span class="at">-vf</span> <span class="st">&quot;weave=first_field=bottom&quot;</span> <span class="at">-c:v</span> rawvideo output_bff.mov</span></code></pre></div>
+<h3 id="verification">Verification</h3>
+<p>After generating the file, you can verify that the field order has
+been properly assigned by running <code>ffprobe</code>:</p>
+<div class="sourceCode" id="cb6"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffprobe</span> <span class="at">-v</span> error <span class="at">-select_streams</span> v:0 <span class="at">-show_entries</span> stream=field_order input.mp4</span></code></pre></div>
+<p>If the metadata does not reflect the output structure, explicitly set
+the field order flag using the <code>setfield</code> filter:</p>
+<div class="sourceCode" id="cb7"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;weave=first_field=top,setfield=tff&quot;</span> output.mp4</span></code></pre></div></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Compare FFmpeg Video Fingerprints for Copyright - ffmpeg</title>
+    <meta name="description" content="Perceptual video fingerprinting enables content owners and platforms to identify unauthorized re-uploads, even if the video has been re-encoded, scaled, or slightly compressed. FFmpeg provides a built-in signature filter that generates unique visual hash">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/compare-f-fmpeg-video-fingerprints-for-copyright">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Compare FFmpeg Video Fingerprints for Copyright - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/compare-f-fmpeg-video-fingerprints-for-copyright" />
+    <meta property="og:image" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Perceptual video fingerprinting enables content owners and platforms to identify unauthorized re-uploads, even if the video has been re-encoded, scaled, or slightly compressed. FFmpeg provides a built-in signature filter that generates unique visual hash" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="compare-ffmpeg-video-fingerprints-for-copyright">Compare FFmpeg
+Video Fingerprints for Copyright</h1>
+<p>Perceptual video fingerprinting enables content owners and platforms
+to identify unauthorized re-uploads, even if the video has been
+re-encoded, scaled, or slightly compressed. FFmpeg provides a built-in
+<code>signature</code> filter that generates unique visual hashes based
+on MPEG-7 video descriptors. This guide explains how to export video
+fingerprints using FFmpeg, how to compare two streams directly to detect
+copyright infringement, and how to analyze matching scores from the
+output.</p>
+<hr />
+<h3 id="1-direct-dual-stream-comparison">1. Direct Dual-Stream
+Comparison</h3>
+<p>The fastest way to determine whether a suspicious video infringes on
+a reference video is by running both through FFmpeg simultaneously. The
+<code>signature</code> filter accepts multiple inputs and evaluates
+their visual similarity frame-by-frame.</p>
+<p>Run the following command:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> candidate.mp4 <span class="at">-i</span> reference.mp4 <span class="at">-filter_complex</span> <span class="dt">\</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="st">&quot;[0:v][1:v]signature=nb_inputs=2:detectmode=full&quot;</span> <span class="at">-f</span> null <span class="at">-</span></span></code></pre></div>
+<h4 id="key-parameters">Key Parameters:</h4>
+<ul>
+<li><strong><code>nb_inputs=2</code></strong>: Tells the filter to
+accept two video streams.</li>
+<li><strong><code>detectmode=full</code></strong>: Enables complete
+matching across the entirety of both videos, searching for duplicated
+sequences regardless of position or minor time-shifts. Alternatively,
+<code>detectmode=fast</code> reduces processing overhead at the cost of
+detection sensitivity.</li>
+</ul>
+<h4 id="interpreting-the-log-output">Interpreting the Log Output:</h4>
+<p>FFmpeg outputs the detection results directly to the console stderr
+stream. Look for lines indicating matched intervals:</p>
+<pre class="text"><code>[Parsed_signature_0 @ 0x7fa890407a80] matching intervals:
+[Parsed_signature_0 @ 0x7fa890407a80] 1: 0.000000 - 14.500000 -&gt; 2: 3.200000 - 17.700000 (score: 98, whole: 98)</code></pre>
+<ul>
+<li><strong>Interval ranges</strong>: Identifies which timestamp range
+in Input 1 (<code>candidate.mp4</code>) matches an interval in Input 2
+(<code>reference.mp4</code>).</li>
+<li><strong>Score</strong>: A confidence metric (0–100) reflecting
+visual correlation. A high score (typically above 80–90) across multiple
+continuous seconds confirms that the content is visually identical,
+indicating copyright infringement.</li>
+</ul>
+<hr />
+<h3 id="2-exporting-signatures-for-database-storage">2. Exporting
+Signatures for Database Storage</h3>
+<p>If you run a pipeline where reference videos cannot be re-processed
+every time a query video arrives, export the reference fingerprint to
+disk during ingestion.</p>
+<p>To export a video's signature to a binary file:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> reference.mp4 <span class="at">-vf</span> <span class="st">&quot;signature=detectmode=full:format=bin:filename=reference.bin&quot;</span> <span class="at">-f</span> null <span class="at">-</span></span></code></pre></div>
+<p>To export the signature as a readable XML structure (ideal for
+debugging or custom matching algorithms):</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> reference.mp4 <span class="at">-vf</span> <span class="st">&quot;signature=detectmode=full:format=xml:filename=reference.xml&quot;</span> <span class="at">-f</span> null <span class="at">-</span></span></code></pre></div>
+<p>The resulting file contains the compressed visual descriptors
+(spatial and temporal luminance changes across a 3x3 block grid)
+representing the video's perceptual timeline.</p>
+<hr />
+<h3 id="3-comparing-a-query-video-against-stored-signatures">3.
+Comparing a Query Video Against Stored Signatures</h3>
+<p>You can load a pre-generated binary signature alongside an incoming
+query video to evaluate matching without loading the full reference
+video:</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> candidate.mp4 <span class="at">-vf</span> <span class="st">&quot;signature=detectmode=full:format=bin:filename=candidate.bin&quot;</span> <span class="at">-f</span> null <span class="at">-</span></span></code></pre></div>
+<p>Once you have both <code>.bin</code> files
+(<code>candidate.bin</code> and <code>reference.bin</code>), you can
+compare them by passing both signature files back to FFmpeg or by
+utilizing custom matching scripts. In FFmpeg, comparing pre-generated
+files is supported by initializing the filter with the reference
+signature:</p>
+<div class="sourceCode" id="cb6"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> candidate.mp4 <span class="at">-vf</span> <span class="st">&quot;signature=detectmode=full:nb_inputs=1:filename=candidate.bin&quot;</span> <span class="at">-f</span> null <span class="at">-</span></span></code></pre></div>
+<p><em>Note: For large-scale automated databases, read the exported XML
+or binary vector definitions into an indexing system (such as Milvus,
+FAISS, or custom database tables) to perform nearest-neighbor lookups
+across millions of stored frame descriptors.</em></p>
+<hr />
+<h3 id="4-fine-tuning-detection-sensitivity">4. Fine-Tuning Detection
+Sensitivity</h3>
+<p>Distorted, resized, or re-compressed videos might fall below default
+detection thresholds. You can adjust the internal evaluation metrics in
+the <code>signature</code> filter:</p>
+<ul>
+<li><strong><code>th_di</code> (Distance threshold)</strong>: Minimum
+distance between words to consider them distinct. Lower values result in
+stricter matches.</li>
+<li><strong><code>th_it</code> (Interval threshold)</strong>: Minimum
+duration (in frames) an identical sequence must maintain to trigger a
+match alert. Setting this prevents false positives caused by generic
+visual elements like blank black screens or common bumper intros.</li>
+<li><strong><code>th_score</code></strong>: The threshold ratio for
+accepted matches. Lowering this value catches heavily altered video
+(e.g., strong color grading, cropped borders), though it increases the
+risk of false positives.</li>
+</ul>
+<p>Example configuration for aggressive matching:</p>
+<div class="sourceCode" id="cb7"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> candidate.mp4 <span class="at">-i</span> reference.mp4 <span class="at">-filter_complex</span> <span class="dt">\</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="st">&quot;[0:v][1:v]signature=nb_inputs=2:detectmode=full:th_it=45:th_score=60&quot;</span> <span class="at">-f</span> null <span class="at">-</span></span></code></pre></div>
+<p>This ensures segments sharing at least 45 continuous matching frames
+with a correlation score of 60% or higher are flagged as copyright
+matches.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

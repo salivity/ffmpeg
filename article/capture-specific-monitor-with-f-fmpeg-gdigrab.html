@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Capture Specific Monitor with FFmpeg gdigrab - ffmpeg</title>
+    <meta name="description" content="Capturing a specific monitor on Windows using FFmpeg's gdigrab device requires targeting the virtual desktop using coordinate offsets and screen dimensions rather than selecting a monitor index. Because gdigrab treats all connected displays as a single u">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/capture-specific-monitor-with-f-fmpeg-gdigrab">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Capture Specific Monitor with FFmpeg gdigrab - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/capture-specific-monitor-with-f-fmpeg-gdigrab" />
+    <meta property="og:image" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Capturing a specific monitor on Windows using FFmpeg's gdigrab device requires targeting the virtual desktop using coordinate offsets and screen dimensions rather than selecting a monitor index. Because gdigrab treats all connected displays as a single u" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="capture-specific-monitor-with-ffmpeg-gdigrab">Capture Specific
+Monitor with FFmpeg gdigrab</h1>
+<p>Capturing a specific monitor on Windows using FFmpeg's
+<code>gdigrab</code> device requires targeting the virtual desktop using
+coordinate offsets and screen dimensions rather than selecting a monitor
+index. Because <code>gdigrab</code> treats all connected displays as a
+single unified desktop canvas, you must define the exact resolution and
+the horizontal and vertical starting positions of the display you wish
+to record.</p>
+<h3 id="understanding-virtual-screen-coordinates">Understanding Virtual
+Screen Coordinates</h3>
+<p>Windows positions multiple monitors along a continuous X and Y
+coordinate plane. The primary monitor typically starts at coordinate
+<code>(0,0)</code>. Additional monitors extend outward from this origin
+depending on how they are arranged in your Windows Display Settings:</p>
+<ul>
+<li>A monitor to the right of a 1920x1080 primary display starts at
+<code>X=1920, Y=0</code>.</li>
+<li>A monitor to the left of the primary display starts at negative
+coordinates, such as <code>X=-1920, Y=0</code>.</li>
+<li>A monitor above or below starts at negative or positive Y offsets,
+respectively.</li>
+</ul>
+<p>You can verify your monitor resolutions and layout by navigating to
+<strong>Settings &gt; System &gt; Display</strong> in Windows.</p>
+<h3 id="the-basic-command-structure">The Basic Command Structure</h3>
+<p>To record a specific display, combine the <code>-video_size</code>,
+<code>-offset_x</code>, and <code>-offset_y</code> flags before the
+input declaration <code>-i desktop</code>:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-f</span> gdigrab <span class="at">-framerate</span> 30 <span class="at">-offset_x</span> <span class="pp">[</span><span class="ss">X_OFFSET</span><span class="pp">]</span> <span class="at">-offset_y</span> <span class="pp">[</span><span class="ss">Y_OFFSET</span><span class="pp">]</span> <span class="at">-video_size</span> <span class="pp">[</span><span class="ss">WIDTHxHEIGHT</span><span class="pp">]</span> <span class="at">-i</span> desktop output.mp4</span></code></pre></div>
+<h3 id="examples">Examples</h3>
+<h4 id="capturing-the-primary-monitor-1080p">Capturing the Primary
+Monitor (1080p)</h4>
+<p>If your primary monitor is standard Full HD (1920x1080) located at
+the origin:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-f</span> gdigrab <span class="at">-framerate</span> 60 <span class="at">-offset_x</span> 0 <span class="at">-offset_y</span> 0 <span class="at">-video_size</span> 1920x1080 <span class="at">-i</span> desktop <span class="at">-c:v</span> libx264 <span class="at">-preset</span> ultrafast primary_output.mp4</span></code></pre></div>
+<h4 id="capturing-a-secondary-monitor-to-the-right">Capturing a
+Secondary Monitor to the Right</h4>
+<p>If your second monitor is a 1920x1080 screen positioned directly to
+the right of a 1920x1080 primary screen:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-f</span> gdigrab <span class="at">-framerate</span> 60 <span class="at">-offset_x</span> 1920 <span class="at">-offset_y</span> 0 <span class="at">-video_size</span> 1920x1080 <span class="at">-i</span> desktop <span class="at">-c:v</span> libx264 <span class="at">-preset</span> ultrafast secondary_output.mp4</span></code></pre></div>
+<h4 id="capturing-a-secondary-monitor-to-the-left">Capturing a Secondary
+Monitor to the Left</h4>
+<p>If your second monitor is positioned to the left of the primary
+screen:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-f</span> gdigrab <span class="at">-framerate</span> 60 <span class="at">-offset_x</span> <span class="at">-1920</span> <span class="at">-offset_y</span> 0 <span class="at">-video_size</span> 1920x1080 <span class="at">-i</span> desktop <span class="at">-c:v</span> libx264 <span class="at">-preset</span> ultrafast left_screen_output.mp4</span></code></pre></div>
+<h3 id="additional-configuration-options">Additional Configuration
+Options</h3>
+<ul>
+<li><strong>Hide or Show the Mouse Cursor:</strong> Control mouse
+visibility using the <code>-draw_mouse</code> flag. Set
+<code>-draw_mouse 0</code> to hide it, or <code>-draw_mouse 1</code> to
+include it in the recording.</li>
+<li><strong>Pixel Format:</strong> Many video players require YUV 4:2:0
+color. Add <code>-pix_fmt yuv420p</code> to your output parameters to
+ensure wide playback compatibility.</li>
+</ul></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

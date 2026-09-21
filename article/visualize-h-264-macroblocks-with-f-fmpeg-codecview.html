@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visualize H.264 Macroblocks with FFmpeg Codecview - ffmpeg</title>
+    <meta name="description" content="This guide explains how to use FFmpeg's codecview filter and the ffplay utility to inspect H.264 macroblock types directly during video playback. By rendering a color-coded visual overlay of intra- and inter-coded blocks, video engineers and analysts can">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/visualize-h-264-macroblocks-with-f-fmpeg-codecview">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Visualize H.264 Macroblocks with FFmpeg Codecview - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/visualize-h-264-macroblocks-with-f-fmpeg-codecview" />
+    <meta property="og:image" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This guide explains how to use FFmpeg's codecview filter and the ffplay utility to inspect H.264 macroblock types directly during video playback. By rendering a color-coded visual overlay of intra- and inter-coded blocks, video engineers and analysts can" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="visualize-h264-macroblocks-with-ffmpeg-codecview">Visualize
+H.264 Macroblocks with FFmpeg Codecview</h1>
+<p>This guide explains how to use FFmpeg's <code>codecview</code> filter
+and the <code>ffplay</code> utility to inspect H.264 macroblock types
+directly during video playback. By rendering a color-coded visual
+overlay of intra- and inter-coded blocks, video engineers and analysts
+can evaluate encoder decisions, prediction modes, and macroblock
+partitioning in real time.</p>
+<h2 id="running-the-ffplay-command">Running the FFplay Command</h2>
+<p>To display macroblock types during playback, run the following
+command in your terminal:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffplay</span> <span class="at">-debug</span> mb_type <span class="at">-vf</span> <span class="st">&quot;codecview=block_type=intra+inter&quot;</span> input.mp4</span></code></pre></div>
+<h3 id="parameter-breakdown">Parameter Breakdown</h3>
+<ul>
+<li><strong><code>ffplay</code></strong>: The built-in media player
+included with the FFmpeg suite.</li>
+<li><strong><code>-debug mb_type</code></strong>: Instructs the H.264
+software decoder to output macroblock type information to the video
+filter pipeline. Without this flag, the decoder may discard internal
+macroblock metadata.</li>
+<li><strong><code>-vf "codecview=..."</code></strong>: Applies the video
+filter responsible for drawing the visual analysis overlays onto the
+video frames.</li>
+<li><strong><code>block_type=intra+inter</code></strong>: Configures
+<code>codecview</code> to highlight both Intra-coded macroblocks
+(I-blocks) and Inter-coded macroblocks (P- and B-blocks). You can also
+use the shorthand <code>bt=intra+inter</code> or
+<code>bt=all</code>.</li>
+</ul>
+<h2 id="understanding-the-visual-overlay">Understanding the Visual
+Overlay</h2>
+<p>When enabled, the <code>codecview</code> filter outlines macroblocks
+and colors them based on their prediction method:</p>
+<ul>
+<li><strong>Intra Blocks (Red/Pink shades):</strong> These blocks are
+predicted entirely from adjacent pixels within the current frame,
+typical of I-frames or complex scenes in P/B-frames where temporal
+prediction fails.</li>
+<li><strong>Inter P-Blocks (Green shades):</strong> Forward-predicted
+blocks referencing previously decoded frames. Sub-partitions (e.g.,
+16x8, 8x16, 8x8) will be outlined to show how the encoder segmented the
+16x16 macroblock.</li>
+<li><strong>Inter B-Blocks (Blue shades):</strong> Bi-directionally
+predicted blocks referencing both past and future frames.</li>
+</ul>
+<h2 id="visualizing-macroblocks-alongside-motion-vectors">Visualizing
+Macroblocks Alongside Motion Vectors</h2>
+<p>To gain deeper insight into how the encoder moves and predicts data,
+you can combine macroblock visualization with motion vector
+tracking:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffplay</span> <span class="at">-flags2</span> +export_mvs <span class="at">-debug</span> mb_type <span class="at">-vf</span> <span class="st">&quot;codecview=block_type=intra+inter:mv=pf+bf+bb&quot;</span> input.mp4</span></code></pre></div>
+<ul>
+<li><strong><code>-flags2 +export_mvs</code></strong>: Forces the
+decoder to export motion vector structures.</li>
+<li><strong><code>mv=pf+bf+bb</code></strong>: Visualizes
+forward-predicted P-frame vectors (<code>pf</code>), forward-predicted
+B-frame vectors (<code>bf</code>), and backward-predicted B-frame
+vectors (<code>bb</code>) as overlaid arrows originating from each
+block's center.</li>
+</ul>
+<h2 id="technical-considerations">Technical Considerations</h2>
+<ul>
+<li><strong>Software Decoding Only:</strong> Hardware acceleration (such
+as NVDEC, VAAPI, or VideoToolbox) bypasses standard software decoding
+pipelines and will not expose macroblock metadata. Ensure no hardware
+decoding flags (<code>-hwaccel</code>) are active.</li>
+<li><strong>H.264 Support:</strong> The <code>mb_type</code> export
+mechanism relies on FFmpeg’s native H.264 decoder. Modern codecs such as
+H.265 (HEVC) or AV1 use dynamic coding tree units (CTUs) and blocks of
+varying sizes rather than standard macroblocks; their visualization
+through <code>codecview</code> is limited primarily to motion vectors
+rather than complete block-type maps.</li>
+</ul></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

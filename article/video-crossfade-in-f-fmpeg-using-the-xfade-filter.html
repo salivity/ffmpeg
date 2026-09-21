@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Video Crossfade in FFmpeg Using the xfade Filter - ffmpeg</title>
+    <meta name="description" content="This guide explains how to blend two separate video files using the xfade video filter in FFmpeg to create a smooth crossfade transition. You will learn the correct command-line syntax, how to calculate the transition offset time, how to synchronize audi">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/video-crossfade-in-f-fmpeg-using-the-xfade-filter">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Video Crossfade in FFmpeg Using the xfade Filter - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/video-crossfade-in-f-fmpeg-using-the-xfade-filter" />
+    <meta property="og:image" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This guide explains how to blend two separate video files using the xfade video filter in FFmpeg to create a smooth crossfade transition. You will learn the correct command-line syntax, how to calculate the transition offset time, how to synchronize audi" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="video-crossfade-in-ffmpeg-using-the-xfade-filter">Video
+Crossfade in FFmpeg Using the xfade Filter</h1>
+<p>This guide explains how to blend two separate video files using the
+<code>xfade</code> video filter in FFmpeg to create a smooth crossfade
+transition. You will learn the correct command-line syntax, how to
+calculate the transition offset time, how to synchronize audio
+transitions using <code>acrossfade</code>, and the prerequisite video
+properties required for the filter to work properly.</p>
+<h2 id="basic-syntax-and-the-offset-calculation">Basic Syntax and the
+Offset Calculation</h2>
+<p>The <code>xfade</code> filter requires three primary parameters:</p>
+<ul>
+<li><code>transition</code>: The style of the transition (e.g.,
+<code>fade</code>).</li>
+<li><code>duration</code>: The length of the transition in seconds.</li>
+<li><code>offset</code>: The timestamp (in seconds) in the first video
+where the transition begins.</li>
+</ul>
+<p>To ensure a seamless transition, calculate the <code>offset</code>
+using this formula:</p>
+<p><span class="math display">\[\text{offset} = \text{Duration of Video
+1} - \text{Transition Duration}\]</span></p>
+<p>For example, if your first video is 10 seconds long and you want a
+1-second crossfade, the transition must begin at the 9-second mark
+(<code>offset=9</code>).</p>
+<h2 id="video-only-crossfade-command">Video-Only Crossfade Command</h2>
+<p>To apply a standard crossfade transition between two video streams
+without processing audio, run:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> video1.mp4 <span class="at">-i</span> video2.mp4 <span class="at">-filter_complex</span> <span class="st">&quot;[0:v][1:v]xfade=transition=fade:duration=1:offset=9[v]&quot;</span> <span class="at">-map</span> <span class="st">&quot;[v]&quot;</span> output.mp4</span></code></pre></div>
+<p>In this command:</p>
+<ul>
+<li><code>[0:v]</code> and <code>[1:v]</code> take the video streams
+from the first and second input files.</li>
+<li><code>xfade=transition=fade:duration=1:offset=9</code> starts fading
+between the two clips at second 9 for a duration of 1 second.</li>
+<li><code>[v]</code> names the resulting output video stream.</li>
+</ul>
+<h2 id="crossfading-both-video-and-audio">Crossfading Both Video and
+Audio</h2>
+<p>Because <code>xfade</code> only handles video streams, the audio will
+cut abruptly unless you crossfade it simultaneously. Use the
+<code>acrossfade</code> audio filter alongside <code>xfade</code>:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> video1.mp4 <span class="at">-i</span> video2.mp4 <span class="at">-filter_complex</span> <span class="dt">\</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="st">&quot;[0:v][1:v]xfade=transition=fade:duration=1:offset=9[v]; </span><span class="dt">\</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="st"> [0:a][1:a]acrossfade=d=1[a]&quot;</span> <span class="dt">\</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>-map <span class="st">&quot;[v]&quot;</span> <span class="at">-map</span> <span class="st">&quot;[a]&quot;</span> <span class="at">-c:v</span> libx264 <span class="at">-c:a</span> aac output.mp4</span></code></pre></div>
+<p>Here, <code>acrossfade=d=1</code> creates a 1-second audio overlap,
+aligning the audio transition with the video fade.</p>
+<h2 id="technical-requirements-for-inputs">Technical Requirements for
+Inputs</h2>
+<p>For the <code>xfade</code> filter to function without errors, both
+video clips must share the same:</p>
+<ol type="1">
+<li><strong>Dimensions (Width and Height)</strong></li>
+<li><strong>Frame Rate (FPS)</strong></li>
+<li><strong>Time Base</strong></li>
+</ol>
+<p>If your input videos have different formats or resolutions, normalize
+them within the filtergraph before applying the transition:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> video1.mp4 <span class="at">-i</span> video2.mp4 <span class="at">-filter_complex</span> <span class="dt">\</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="st">&quot;[0:v]scale=1920:1080,fps=30,settb=AVTB[v0]; </span><span class="dt">\</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="st"> [1:v]scale=1920:1080,fps=30,settb=AVTB[v1]; </span><span class="dt">\</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="st"> [v0][v1]xfade=transition=fade:duration=1:offset=9[v]; </span><span class="dt">\</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="st"> [0:a][1:a]acrossfade=d=1[a]&quot;</span> <span class="dt">\</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>-map <span class="st">&quot;[v]&quot;</span> <span class="at">-map</span> <span class="st">&quot;[a]&quot;</span> <span class="at">-c:v</span> libx264 <span class="at">-c:a</span> aac output.mp4</span></code></pre></div>
+<h2 id="alternative-transition-types">Alternative Transition Types</h2>
+<p>FFmpeg supports numerous transition effects using the same syntax.
+Replace <code>transition=fade</code> with other supported values, such
+as:</p>
+<ul>
+<li><code>transition=wipeleft</code></li>
+<li><code>transition=slideright</code></li>
+<li><code>transition=circlecrop</code></li>
+<li><code>transition=dissolve</code></li>
+</ul></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

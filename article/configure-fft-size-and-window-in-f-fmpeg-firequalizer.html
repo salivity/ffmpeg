@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Configure FFT Size and Window in FFmpeg firequalizer - ffmpeg</title>
+    <meta name="description" content="The firequalizer filter in FFmpeg uses finite impulse response (FIR) filtering via Fast Fourier Transform (FFT) convolution to shape audio frequencies. This article explains how to select the FFT window function using the wfunc option and how to control">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/configure-fft-size-and-window-in-f-fmpeg-firequalizer">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Configure FFT Size and Window in FFmpeg firequalizer - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/configure-fft-size-and-window-in-f-fmpeg-firequalizer" />
+    <meta property="og:image" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="The firequalizer filter in FFmpeg uses finite impulse response (FIR) filtering via Fast Fourier Transform (FFT) convolution to shape audio frequencies. This article explains how to select the FFT window function using the wfunc option and how to control" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="configure-fft-size-and-window-in-ffmpeg-firequalizer">Configure
+FFT Size and Window in FFmpeg firequalizer</h1>
+<p>The <code>firequalizer</code> filter in FFmpeg uses finite impulse
+response (FIR) filtering via Fast Fourier Transform (FFT) convolution to
+shape audio frequencies. This article explains how to select the FFT
+window function using the <code>wfunc</code> option and how to control
+the effective FFT size using the <code>accuracy</code> parameter to
+balance frequency resolution against processing latency.</p>
+<h3 id="understanding-fft-size-in-firequalizer">Understanding FFT Size
+in <code>firequalizer</code></h3>
+<p>Unlike some frequency filters that accept an explicit sample count
+for the FFT buffer, <code>firequalizer</code> manages its FFT size
+indirectly using the <code>accuracy</code> parameter. The
+<code>accuracy</code> parameter defines the frequency resolution in
+Hertz (Hz).</p>
+<p>FFmpeg calculates the required FFT length based on the audio sample
+rate divided by the target accuracy:</p>
+<p><span class="math display">\[\text{FFT Size} \approx
+\frac{\text{Sample Rate}}{\text{Accuracy}}\]</span></p>
+<ul>
+<li><strong>Default Value:</strong> <code>accuracy=5</code> (5 Hz
+resolution).</li>
+<li><strong>Smaller Values (e.g., <code>accuracy=1</code>):</strong>
+Produce a larger FFT size, giving fine-grained control over low
+frequencies at the cost of higher latency and increased CPU usage.</li>
+<li><strong>Larger Values (e.g., <code>accuracy=20</code>):</strong>
+Produce a smaller FFT size, lowering latency and CPU load, but reducing
+low-frequency precision.</li>
+</ul>
+<p>For a 48,000 Hz audio stream, an accuracy of <code>5</code> results
+in an internal FFT size of approximately 16,384 samples (rounded to the
+nearest power of two suitable for convolution).</p>
+<h3 id="selecting-the-window-function">Selecting the Window
+Function</h3>
+<p>The <code>wfunc</code> parameter dictates the spectral leakage and
+dynamic range of the filter by specifying which mathematical window to
+apply to the FIR coefficients.</p>
+<p>Supported values for <code>wfunc</code> include:</p>
+<ul>
+<li><code>rectangular</code>: No smoothing; offers the narrowest main
+lobe but high spectral leakage.</li>
+<li><code>hann</code>: Default option; offers a good balance between
+transition bandwidth and sidelobe suppression.</li>
+<li><code>hamming</code>: Similar to Hann, optimized to cancel the first
+sidelobe.</li>
+<li><code>blackman</code>: Higher attenuation of sidelobes, minimizing
+frequency bleed between adjacent equalization bands.</li>
+<li><code>nuttall</code>: Very low sidelobe levels for high dynamic
+range precision.</li>
+<li><code>flattop</code>: Best amplitude accuracy, commonly used for
+calibration.</li>
+<li><code>kaiser</code>: Tunable tradeoff between resolution and dynamic
+range.</li>
+<li><code>tukey</code>: Tapered cosine window.</li>
+</ul>
+<h3 id="configuration-examples">Configuration Examples</h3>
+<h4 id="example-1-high-resolution-mastering-filter">Example 1:
+High-Resolution Mastering Filter</h4>
+<p>To create an equalization curve with a Blackman window and a fine 2
+Hz frequency resolution (translating to a large FFT size for precise
+low-end adjustments):</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.wav <span class="at">-af</span> <span class="st">&quot;firequalizer=gain=&#39;if(lt(f,100), 4, 0)&#39;:wfunc=blackman:accuracy=2&quot;</span> output.wav</span></code></pre></div>
+<h4 id="example-2-low-latency-fast-processing">Example 2: Low-Latency,
+Fast Processing</h4>
+<p>To minimize delay and resource usage, increase the
+<code>accuracy</code> value (yielding a smaller FFT size) and use a
+standard Hann window:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.wav <span class="at">-af</span> <span class="st">&quot;firequalizer=gain=&#39;gain_interpolate(f)&#39;:gain_entry=&#39;0 0, 1000 -3, 8000 2&#39;:wfunc=hann:accuracy=20&quot;</span> output.wav</span></code></pre></div>
+<h4 id="example-3-flat-top-window-for-linear-calibration">Example 3:
+Flat-Top Window for Linear Calibration</h4>
+<p>If maintaining flat band responses without ripple is critical:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.wav <span class="at">-af</span> <span class="st">&quot;firequalizer=gain=&#39;0&#39;:wfunc=flattop:accuracy=4&quot;</span> output.wav</span></code></pre></div>
+<h3 id="trade-offs-to-consider">Trade-Offs to Consider</h3>
+<ol type="1">
+<li><strong>Pre-Echo and Delay:</strong> Lowering <code>accuracy</code>
+increases FFT length, which introduces higher processing latency and
+potential time-domain pre-ringing (pre-echo) around sharp
+transients.</li>
+<li><strong>Frequency Smearing:</strong> Raising <code>accuracy</code>
+too high results in coarse frequency bins, causing narrow equalization
+curves (like notch filters) to spread wider than intended.</li>
+</ol></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

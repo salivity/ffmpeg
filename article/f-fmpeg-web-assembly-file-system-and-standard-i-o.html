@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FFmpeg WebAssembly File System and Standard I/O - ffmpeg</title>
+    <meta name="description" content="Running FFmpeg inside a web browser via WebAssembly (Wasm) requires bridging the gap between native POSIX system calls and the browser's sandboxed environment. Because WebAssembly cannot directly access the local hard drive or standard operating system s">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/f-fmpeg-web-assembly-file-system-and-standard-i-o">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="FFmpeg WebAssembly File System and Standard I/O - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/f-fmpeg-web-assembly-file-system-and-standard-i-o" />
+    <meta property="og:image" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Running FFmpeg inside a web browser via WebAssembly (Wasm) requires bridging the gap between native POSIX system calls and the browser's sandboxed environment. Because WebAssembly cannot directly access the local hard drive or standard operating system s" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="ffmpeg-webassembly-file-system-and-standard-io">FFmpeg
+WebAssembly File System and Standard I/O</h1>
+<p>Running FFmpeg inside a web browser via WebAssembly (Wasm) requires
+bridging the gap between native POSIX system calls and the browser's
+sandboxed environment. Because WebAssembly cannot directly access the
+local hard drive or standard operating system streams, it relies on an
+in-memory virtual file system and redirected I/O streams provided by
+Emscripten. This guide explains how to write input data into virtual
+storage, capture standard output and error streams for logging and
+progress tracking, read generated media files back into JavaScript, and
+properly manage memory.</p>
+<h3 id="the-virtual-file-system-memfs">The Virtual File System
+(MEMFS)</h3>
+<p>WebAssembly implementations of FFmpeg typically use Emscripten’s
+default in-memory file system (<code>MEMFS</code>). This system maps
+paths (such as <code>/input.mp4</code> or <code>/output.mp3</code>)
+directly into the WebAssembly instance’s linear memory heap. FFmpeg
+operates on these virtual paths as if they were real files on a physical
+disk.</p>
+<h4 id="writing-files-to-the-virtual-file-system">Writing Files to the
+Virtual File System</h4>
+<p>Before executing an FFmpeg command, you must convert your media data
+into a typed array (<code>Uint8Array</code>) and write it to the virtual
+file system.</p>
+<p>Using the raw Emscripten <code>FS</code> API:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co">// Load your source media into an ArrayBuffer</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> response <span class="op">=</span> <span class="cf">await</span> <span class="fu">fetch</span>(<span class="st">&#39;video.mp4&#39;</span>)<span class="op">;</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> arrayBuffer <span class="op">=</span> <span class="cf">await</span> response<span class="op">.</span><span class="fu">arrayBuffer</span>()<span class="op">;</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> data <span class="op">=</span> <span class="kw">new</span> <span class="bu">Uint8Array</span>(arrayBuffer)<span class="op">;</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="co">// Write to the Emscripten virtual file system</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>Module<span class="op">.</span><span class="at">FS</span><span class="op">.</span><span class="fu">writeFile</span>(<span class="st">&#39;/input.mp4&#39;</span><span class="op">,</span> data)<span class="op">;</span></span></code></pre></div>
+<p>Using the popular <code>@ffmpeg/ffmpeg</code> wrapper:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> { FFmpeg } <span class="im">from</span> <span class="st">&#39;@ffmpeg/ffmpeg&#39;</span><span class="op">;</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> { fetchFile } <span class="im">from</span> <span class="st">&#39;@ffmpeg/util&#39;</span><span class="op">;</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> ffmpeg <span class="op">=</span> <span class="kw">new</span> <span class="fu">FFmpeg</span>()<span class="op">;</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="cf">await</span> ffmpeg<span class="op">.</span><span class="fu">load</span>()<span class="op">;</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a><span class="co">// Write file directly into FFmpeg&#39;s virtual FS</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a><span class="cf">await</span> ffmpeg<span class="op">.</span><span class="fu">writeFile</span>(<span class="st">&#39;input.mp4&#39;</span><span class="op">,</span> <span class="cf">await</span> <span class="fu">fetchFile</span>(<span class="st">&#39;video.mp4&#39;</span>))<span class="op">;</span></span></code></pre></div>
+<h4 id="reading-output-files">Reading Output Files</h4>
+<p>Once the transcoding process finishes, read the output file from the
+virtual file system back into JavaScript memory to generate a blob URL
+or trigger a download:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co">// Raw Emscripten FS</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> outputData <span class="op">=</span> Module<span class="op">.</span><span class="at">FS</span><span class="op">.</span><span class="fu">readFile</span>(<span class="st">&#39;/output.mp3&#39;</span>)<span class="op">;</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> audioBlob <span class="op">=</span> <span class="kw">new</span> <span class="bu">Blob</span>([outputData<span class="op">.</span><span class="at">buffer</span>]<span class="op">,</span> { <span class="dt">type</span><span class="op">:</span> <span class="st">&#39;audio/mp3&#39;</span> })<span class="op">;</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> audioUrl <span class="op">=</span> URL<span class="op">.</span><span class="fu">createObjectURL</span>(audioBlob)<span class="op">;</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a><span class="co">// Using @ffmpeg/ffmpeg</span></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> outputData <span class="op">=</span> <span class="cf">await</span> ffmpeg<span class="op">.</span><span class="fu">readFile</span>(<span class="st">&#39;output.mp3&#39;</span>)<span class="op">;</span></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> audioBlob <span class="op">=</span> <span class="kw">new</span> <span class="bu">Blob</span>([outputData<span class="op">.</span><span class="at">buffer</span>]<span class="op">,</span> { <span class="dt">type</span><span class="op">:</span> <span class="st">&#39;audio/mp3&#39;</span> })<span class="op">;</span></span></code></pre></div>
+<h3 id="handling-standard-io-stdout-stderr-and-stdin">Handling Standard
+I/O (stdout, stderr, and stdin)</h3>
+<p>FFmpeg communicates operational logs, metadata, and progress via
+standard streams. Capturing these streams is essential for debugging and
+providing user feedback.</p>
+<h4 id="intercepting-stdout-and-stderr">Intercepting stdout and
+stderr</h4>
+<p>By default, FFmpeg writes its diagnostic information and command-line
+output to <code>stderr</code>, not <code>stdout</code>.</p>
+<p>With raw Emscripten, intercept standard output and standard error by
+configuring the <code>print</code> and <code>printErr</code> hooks on
+the <code>Module</code> object before initialization:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> Module <span class="op">=</span> {</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>  <span class="dt">print</span><span class="op">:</span> (text) <span class="kw">=&gt;</span> {</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>    <span class="bu">console</span><span class="op">.</span><span class="fu">log</span>(<span class="st">&#39;stdout:&#39;</span><span class="op">,</span> text)<span class="op">;</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>  }<span class="op">,</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>  <span class="dt">printErr</span><span class="op">:</span> (text) <span class="kw">=&gt;</span> {</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>    <span class="bu">console</span><span class="op">.</span><span class="fu">warn</span>(<span class="st">&#39;stderr:&#39;</span><span class="op">,</span> text)<span class="op">;</span></span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>    <span class="fu">parseProgress</span>(text)<span class="op">;</span></span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>}<span class="op">;</span></span></code></pre></div>
+<p>With <code>@ffmpeg/ffmpeg</code>, register event listeners:</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>ffmpeg<span class="op">.</span><span class="fu">on</span>(<span class="st">&#39;log&#39;</span><span class="op">,</span> ({ message }) <span class="kw">=&gt;</span> {</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>  <span class="bu">console</span><span class="op">.</span><span class="fu">log</span>(message)<span class="op">;</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>})<span class="op">;</span></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>ffmpeg<span class="op">.</span><span class="fu">on</span>(<span class="st">&#39;progress&#39;</span><span class="op">,</span> ({ progress<span class="op">,</span> time }) <span class="kw">=&gt;</span> {</span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>  <span class="bu">console</span><span class="op">.</span><span class="fu">log</span>(<span class="vs">`Completion: </span><span class="sc">${</span>(progress <span class="op">*</span> <span class="dv">100</span>)<span class="op">.</span><span class="fu">toFixed</span>(<span class="dv">2</span>)<span class="sc">}</span><span class="vs">%`</span>)<span class="op">;</span></span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>})<span class="op">;</span></span></code></pre></div>
+<h4 id="real-time-progress-monitoring-via-stderr">Real-Time Progress
+Monitoring via stderr</h4>
+<p>To parse fine-grained progress from FFmpeg, instruct it to write
+machine-readable progress indicators to standard output or standard
+error by passing <code>-progress pipe:1</code> or
+<code>-progress pipe:2</code>:</p>
+<div class="sourceCode" id="cb6"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="cf">await</span> ffmpeg<span class="op">.</span><span class="fu">exec</span>([</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>  <span class="st">&#39;-i&#39;</span><span class="op">,</span> <span class="st">&#39;input.mp4&#39;</span><span class="op">,</span></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>  <span class="st">&#39;-progress&#39;</span><span class="op">,</span> <span class="st">&#39;pipe:2&#39;</span><span class="op">,</span></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>  <span class="st">&#39;output.mp4&#39;</span></span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>])<span class="op">;</span></span></code></pre></div>
+<p>The redirected output will emit key-value pairs (such as
+<code>frame=</code>, <code>fps=</code>, and <code>out_time_us=</code>)
+that can be parsed line-by-line inside your log callback.</p>
+<h4 id="handling-standard-input-stdin">Handling Standard Input
+(stdin)</h4>
+<p>Direct standard input streaming is possible by passing
+<code>-i pipe:0</code> in the FFmpeg arguments. In raw Emscripten, you
+define <code>Module.FS.init()</code> with an input callback, but in a
+browser context, processing piped streaming can cause thread-blocking
+issues.</p>
+<p>For optimal performance in browser environments, chunk-based writing
+directly to MEMFS or passing whole files via virtual paths is
+significantly more stable than relying on interactive
+<code>stdin</code>.</p>
+<h3 id="memory-management-and-cleanup">Memory Management and
+Cleanup</h3>
+<p>Because <code>MEMFS</code> stores all file contents inside the
+WebAssembly heap, uncompressed video frames and large files can quickly
+exhaust browser memory limits.</p>
+<p>Always delete input and output files from the virtual file system as
+soon as you have finished processing them:</p>
+<div class="sourceCode" id="cb7"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="co">// Raw Emscripten</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>Module<span class="op">.</span><span class="at">FS</span><span class="op">.</span><span class="fu">unlink</span>(<span class="st">&#39;/input.mp4&#39;</span>)<span class="op">;</span></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>Module<span class="op">.</span><span class="at">FS</span><span class="op">.</span><span class="fu">unlink</span>(<span class="st">&#39;/output.mp3&#39;</span>)<span class="op">;</span></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a><span class="co">// Using @ffmpeg/ffmpeg</span></span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a><span class="cf">await</span> ffmpeg<span class="op">.</span><span class="fu">deleteFile</span>(<span class="st">&#39;input.mp4&#39;</span>)<span class="op">;</span></span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a><span class="cf">await</span> ffmpeg<span class="op">.</span><span class="fu">deleteFile</span>(<span class="st">&#39;output.mp3&#39;</span>)<span class="op">;</span></span></code></pre></div>
+<p>Unlinking files releases the allocated memory in the virtual file
+system, preventing <code>Out of Memory</code> (OOM) exceptions during
+subsequent operations.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

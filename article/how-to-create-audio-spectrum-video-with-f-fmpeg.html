@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Create Audio Spectrum Video with FFmpeg - ffmpeg</title>
+    <meta name="description" content="This article provides a step-by-step guide on how to convert an audio file into a visually appealing, real-time animated spectrum video using the FFmpeg showspectrum filter. You will learn the basic command structure, how to customize the visual output,">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/how-to-create-audio-spectrum-video-with-f-fmpeg">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Create Audio Spectrum Video with FFmpeg - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/how-to-create-audio-spectrum-video-with-f-fmpeg" />
+    <meta property="og:image" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article provides a step-by-step guide on how to convert an audio file into a visually appealing, real-time animated spectrum video using the FFmpeg showspectrum filter. You will learn the basic command structure, how to customize the visual output," />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-to-create-audio-spectrum-video-with-ffmpeg">How to Create
+Audio Spectrum Video with FFmpeg</h1>
+<p>This article provides a step-by-step guide on how to convert an audio
+file into a visually appealing, real-time animated spectrum video using
+the FFmpeg <code>showspectrum</code> filter. You will learn the basic
+command structure, how to customize the visual output, and how to
+combine the generated video with the original audio track for a
+complete, shareable media file.</p>
+<p>The <code>showspectrum</code> filter in FFmpeg converts input audio
+into a video stream that represents the audio frequency spectrum in
+real-time. This is highly useful for creating music visualizers for
+platforms like YouTube.</p>
+<h3 id="the-basic-command">The Basic Command</h3>
+<p>To generate a simple audio spectrum video with default settings, use
+the following basic command:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp3 <span class="at">-filter_complex</span> <span class="st">&quot;[0:a]showspectrum=s=1280x720[v]&quot;</span> <span class="at">-map</span> <span class="st">&quot;[v]&quot;</span> <span class="at">-map</span> 0:a output.mp4</span></code></pre></div>
+<p>Here is a breakdown of what this command does:</p>
+<ul>
+<li><code>-i input.mp3</code>: Specifies your input audio file.</li>
+<li><code>-filter_complex</code>: Invokes FFmpeg's complex filtergraph,
+which is required when handling multiple stream types or generating
+video from audio.</li>
+<li><code>[0:a]showspectrum=s=1280x720[v]</code>: Takes the audio stream
+from the first input (<code>[0:a]</code>), applies the
+<code>showspectrum</code> filter with a resolution size (<code>s</code>)
+of 1280x720 pixels, and outputs the resulting video stream labeled as
+<code>[v]</code>.</li>
+<li><code>-map "[v]"</code>: Maps the newly generated video stream to
+the final output file.</li>
+<li><code>-map 0:a</code>: Maps the original audio stream from the input
+file to the final output file so the video has sound.</li>
+<li><code>output.mp4</code>: The final output video file.</li>
+</ul>
+<hr />
+<h3 id="customizing-the-visuals">Customizing the Visuals</h3>
+<p>The <code>showspectrum</code> filter comes with several parameters
+that allow you to customize the appearance of the animation.</p>
+<h4 id="1-color-schemes-color">1. Color Schemes
+(<code>color</code>)</h4>
+<p>You can change the color palette of the spectrum using the
+<code>color</code> option. Available presets include
+<code>channel</code>, <code>mby</code>, <code>rainbow</code>,
+<code>cool</code>, <code>fiery</code>, and <code>intensity</code>.</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp3 <span class="at">-filter_complex</span> <span class="st">&quot;[0:a]showspectrum=s=1280x720:color=fiery[v]&quot;</span> <span class="at">-map</span> <span class="st">&quot;[v]&quot;</span> <span class="at">-map</span> 0:a output.mp4</span></code></pre></div>
+<h4 id="2-frequency-scale-scale">2. Frequency Scale
+(<code>scale</code>)</h4>
+<p>The scale option determines how frequencies are spaced visually.
+Options include <code>linear</code>, <code>sqrt</code> (square root),
+<code>cbrt</code> (cubic root), and <code>log</code> (logarithmic).
+Logarithmic or cubic scales often look best for musical tracks.</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp3 <span class="at">-filter_complex</span> <span class="st">&quot;[0:a]showspectrum=s=1280x720:scale=log[v]&quot;</span> <span class="at">-map</span> <span class="st">&quot;[v]&quot;</span> <span class="at">-map</span> 0:a output.mp4</span></code></pre></div>
+<h4 id="3-display-mode-mode">3. Display Mode (<code>mode</code>)</h4>
+<p>You can choose how the channels are displayed.</p>
+<ul>
+<li><code>combined</code>: Overlaps all channels into a single
+display.</li>
+<li><code>separate</code>: Separates channels into distinct rows (ideal
+for stereo audio).</li>
+</ul>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp3 <span class="at">-filter_complex</span> <span class="st">&quot;[0:a]showspectrum=s=1280x720:mode=separate[v]&quot;</span> <span class="at">-map</span> <span class="st">&quot;[v]&quot;</span> <span class="at">-map</span> 0:a output.mp4</span></code></pre></div>
+<h4 id="4-slide-mode-slide">4. Slide Mode (<code>slide</code>)</h4>
+<p>This control how the spectrum animation moves across the screen.
+Options include <code>flow</code>, <code>scroll</code>,
+<code>pitch</code>, and <code>replace</code>.</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp3 <span class="at">-filter_complex</span> <span class="st">&quot;[0:a]showspectrum=s=1280x720:slide=scroll[v]&quot;</span> <span class="at">-map</span> <span class="st">&quot;[v]&quot;</span> <span class="at">-map</span> 0:a output.mp4</span></code></pre></div>
+<hr />
+<h3 id="high-quality-render-example">High-Quality Render Example</h3>
+<p>To ensure the output video is highly compatible with web browsers and
+social media platforms, you should specify the H.264 video codec
+(<code>libx264</code>) and set the pixel format to
+<code>yuv420p</code>.</p>
+<p>Below is an optimized, production-ready command that combines
+multiple customization options:</p>
+<div class="sourceCode" id="cb6"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp3 <span class="at">-filter_complex</span> <span class="st">&quot;[0:a]showspectrum=s=1920x1080:color=rainbow:scale=cbrt:slide=scroll[v]&quot;</span> <span class="at">-map</span> <span class="st">&quot;[v]&quot;</span> <span class="at">-map</span> 0:a <span class="at">-c:v</span> libx264 <span class="at">-pix_fmt</span> yuv420p <span class="at">-c:a</span> aac <span class="at">-b:a</span> 320k output.mp4</span></code></pre></div>
+<p>In this optimized command:</p>
+<ul>
+<li><code>s=1920x1080</code>: Renders the video in Full HD.</li>
+<li><code>color=rainbow</code>: Uses a vibrant, multi-colored
+spectrum.</li>
+<li><code>scale=cbrt</code>: Emphasizes mid-and-low frequencies
+visually.</li>
+<li><code>-c:v libx264</code>: Encodes the video using H.264.</li>
+<li><code>-pix_fmt yuv420p</code>: Ensures maximum playback
+compatibility across devices.</li>
+<li><code>-c:a aac -b:a 320k</code>: Re-encodes the audio to
+high-quality AAC at 320 kbps.</li>
+</ul></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

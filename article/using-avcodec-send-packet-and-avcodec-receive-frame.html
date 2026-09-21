@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Using avcodec_send_packet and avcodec_receive_frame - ffmpeg</title>
+    <meta name="description" content="This article explains how to decode compressed multimedia streams using FFmpeg's modern decoding API. By utilizing avcodecsendpacket and avcodecreceiveframe, developers can implement a decoupled, push-and-pull decoding loop that correctly handles variabl">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/using-avcodec-send-packet-and-avcodec-receive-frame">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Using avcodec_send_packet and avcodec_receive_frame - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/using-avcodec-send-packet-and-avcodec-receive-frame" />
+    <meta property="og:image" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article explains how to decode compressed multimedia streams using FFmpeg's modern decoding API. By utilizing avcodecsendpacket and avcodecreceiveframe, developers can implement a decoupled, push-and-pull decoding loop that correctly handles variabl" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="using-avcodec_send_packet-and-avcodec_receive_frame">Using
+avcodec_send_packet and avcodec_receive_frame</h1>
+<p>This article explains how to decode compressed multimedia streams
+using FFmpeg's modern decoding API. By utilizing
+<code>avcodec_send_packet</code> and <code>avcodec_receive_frame</code>,
+developers can implement a decoupled, push-and-pull decoding loop that
+correctly handles variable frame outputs, internal buffering, and
+end-of-stream flushing.</p>
+<h3 id="the-push-pull-decoding-model">The Push-Pull Decoding Model</h3>
+<p>FFmpeg separates the input of compressed packets from the output of
+raw frames because the relationship between packets and frames is rarely
+one-to-one. A single video packet containing a B-frame might require
+additional packets before it can be decoded, or a single audio packet
+might produce multiple decoded audio frames.</p>
+<p>To handle this, you "push" an <code>AVPacket</code> into the decoder
+context using <code>avcodec_send_packet()</code>, and then "pull"
+available <code>AVFrame</code> instances using
+<code>avcodec_receive_frame()</code> until the decoder requires more
+input.</p>
+<h3 id="step-by-step-implementation">Step-by-Step Implementation</h3>
+<p>The decoding loop consists of reading packets from an input format
+context, sending each packet to the codec context, and reading back all
+available frames.</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode c"><code class="sourceCode c"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;libavcodec/avcodec.h&gt;</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="dt">int</span> decode_packet<span class="op">(</span>AVCodecContext <span class="op">*</span>codec_ctx<span class="op">,</span> AVPacket <span class="op">*</span>pkt<span class="op">,</span> AVFrame <span class="op">*</span>frame<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>    <span class="co">// 1. Send the packet to the decoder</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>    <span class="dt">int</span> ret <span class="op">=</span> avcodec_send_packet<span class="op">(</span>codec_ctx<span class="op">,</span> pkt<span class="op">);</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="op">(</span>ret <span class="op">&lt;</span> <span class="dv">0</span><span class="op">)</span> <span class="op">{</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>        <span class="co">// Failed to send packet</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> ret<span class="op">;</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>    <span class="co">// 2. Retrieve all available frames from the decoder</span></span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>    <span class="cf">while</span> <span class="op">(</span>ret <span class="op">&gt;=</span> <span class="dv">0</span><span class="op">)</span> <span class="op">{</span></span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>        ret <span class="op">=</span> avcodec_receive_frame<span class="op">(</span>codec_ctx<span class="op">,</span> frame<span class="op">);</span></span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="op">(</span>ret <span class="op">==</span> AVERROR<span class="op">(</span>EAGAIN<span class="op">)</span> <span class="op">||</span> ret <span class="op">==</span> AVERROR_EOF<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>            <span class="co">// EAGAIN: Decoder needs more packets to produce a frame</span></span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a>            <span class="co">// AVERROR_EOF: The decoder has been fully flushed</span></span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span> <span class="dv">0</span><span class="op">;</span></span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span> <span class="cf">else</span> <span class="cf">if</span> <span class="op">(</span>ret <span class="op">&lt;</span> <span class="dv">0</span><span class="op">)</span> <span class="op">{</span></span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a>            <span class="co">// An actual decoding error occurred</span></span>
+<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span> ret<span class="op">;</span></span>
+<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
+<span id="cb1-22"><a href="#cb1-22" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-23"><a href="#cb1-23" aria-hidden="true" tabindex="-1"></a>        <span class="co">// Process the decoded frame (e.g., render, save, or convert)</span></span>
+<span id="cb1-24"><a href="#cb1-24" aria-hidden="true" tabindex="-1"></a>        <span class="co">// Note: Remember to unreference the frame buffer after using it</span></span>
+<span id="cb1-25"><a href="#cb1-25" aria-hidden="true" tabindex="-1"></a>        av_frame_unref<span class="op">(</span>frame<span class="op">);</span></span>
+<span id="cb1-26"><a href="#cb1-26" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb1-27"><a href="#cb1-27" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-28"><a href="#cb1-28" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="dv">0</span><span class="op">;</span></span>
+<span id="cb1-29"><a href="#cb1-29" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<h3 id="understanding-return-values">Understanding Return Values</h3>
+<p>Both functions communicate the decoder's state through specific
+integer return codes:</p>
+<ul>
+<li><strong><code>0</code> (Success):</strong> The operation succeeded.
+For <code>avcodec_send_packet</code>, the packet was accepted. For
+<code>avcodec_receive_frame</code>, a valid frame was populated.</li>
+<li><strong><code>AVERROR(EAGAIN)</code>:</strong>
+<ul>
+<li>In <code>avcodec_send_packet</code>: The decoder's internal buffer
+is full. You must drain frames using <code>avcodec_receive_frame</code>
+before sending new packets.</li>
+<li>In <code>avcodec_receive_frame</code>: The decoder has exhausted its
+current output and requires new input packets before it can output
+another frame.</li>
+</ul></li>
+<li><strong><code>AVERROR_EOF</code>:</strong> The decoder has been
+flushed, and no more frames will be produced.</li>
+<li><strong>Negative Values (Other errors):</strong> Indicates a fatal
+decoding or memory error.</li>
+</ul>
+<h3 id="flushing-the-decoder">Flushing the Decoder</h3>
+<p>When you reach the end of the input stream
+(<code>av_read_frame</code> returns <code>AVERROR_EOF</code>), delayed
+frames may still be cached inside the decoder. You must flush the
+decoder to retrieve them:</p>
+<ol type="1">
+<li>Call <code>avcodec_send_packet(codec_ctx, NULL)</code> to enter
+draining mode.</li>
+<li>Run your <code>avcodec_receive_frame()</code> loop repeatedly until
+it returns <code>AVERROR_EOF</code>.</li>
+<li>If you intend to reuse the codec context for seeking, call
+<code>avcodec_flush_buffers(codec_ctx)</code> to reset internal
+states.</li>
+</ol></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

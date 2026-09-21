@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Fix FFprobe No Such File or Directory Error - ffmpeg</title>
+    <meta name="description" content="The "No such file or directory" error in ffprobe typically occurs when the tool cannot locate the target media file or the ffprobe binary itself. This guide covers the most common causes of this issue—including incorrect path formatting, missing quotes">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/how-to-fix-f-fprobe-no-such-file-or-directory-error">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Fix FFprobe No Such File or Directory Error - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/how-to-fix-f-fprobe-no-such-file-or-directory-error" />
+    <meta property="og:image" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="The "No such file or directory" error in ffprobe typically occurs when the tool cannot locate the target media file or the ffprobe binary itself. This guide covers the most common causes of this issue—including incorrect path formatting, missing quotes" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-to-fix-ffprobe-no-such-file-or-directory-error">How to Fix
+FFprobe No Such File or Directory Error</h1>
+<p>The "No such file or directory" error in <code>ffprobe</code>
+typically occurs when the tool cannot locate the target media file or
+the <code>ffprobe</code> binary itself. This guide covers the most
+common causes of this issue—including incorrect path formatting, missing
+quotes around spaces, relative path confusion, and environment variable
+problems—and provides straightforward solutions to resolve it.</p>
+<h3 id="1-verify-the-file-path-and-file-name">1. Verify the File Path
+and File Name</h3>
+<p>The most frequent cause is a simple typo in the file name or file
+extension. Ensure that the file exists and that the extension matches
+the actual file on disk.</p>
+<ul>
+<li><strong>Case Sensitivity:</strong> On Linux and macOS systems, file
+names are case-sensitive. <code>video.MP4</code> is not the same as
+<code>video.mp4</code>.</li>
+<li><strong>Hidden Extensions:</strong> Operating systems like Windows
+often hide known file extensions by default. A file named
+<code>video.mp4.mp4</code> might appear as <code>video.mp4</code> in
+File Explorer, causing <code>ffprobe video.mp4</code> to fail.</li>
+</ul>
+<h3 id="2-wrap-paths-containing-spaces-in-quotes">2. Wrap Paths
+Containing Spaces in Quotes</h3>
+<p>If your directory or file name contains spaces or special characters,
+command-line shells will treat the space as a separator between
+arguments, causing <code>ffprobe</code> to look for a non-existent
+truncated path.</p>
+<p>Wrap the entire path in double quotation marks:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffprobe</span> <span class="at">-i</span> <span class="st">&quot;C:\Users\Name\My Videos\sample video.mp4&quot;</span></span></code></pre></div>
+<p>On Linux or macOS, you can also escape spaces with a backslash:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffprobe</span> <span class="at">-i</span> /home/user/My\ Videos/sample\ video.mp4</span></code></pre></div>
+<h3 id="3-use-absolute-paths-instead-of-relative-paths">3. Use Absolute
+Paths Instead of Relative Paths</h3>
+<p>When running <code>ffprobe</code> with a relative path (such as
+<code>ffprobe -i input.mp4</code>), the shell assumes the file is in
+your current working directory.</p>
+<p>To fix this:</p>
+<ul>
+<li>Check your current directory using <code>pwd</code> (Linux/macOS) or
+<code>cd</code> (Windows).</li>
+<li>Alternatively, supply the full absolute path directly to
+<code>ffprobe</code>:</li>
+</ul>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Windows</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="ex">ffprobe</span> <span class="at">-i</span> <span class="st">&quot;C:\media\input.mp4&quot;</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Linux / macOS</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="ex">ffprobe</span> <span class="at">-i</span> <span class="st">&quot;/var/media/input.mp4&quot;</span></span></code></pre></div>
+<h3 id="4-check-scripting-and-subprocess-environments">4. Check
+Scripting and Subprocess Environments</h3>
+<p>If you are calling <code>ffprobe</code> from Python, Node.js, or
+another programming language, the script's execution directory might
+differ from where the file is stored.</p>
+<ul>
+<li><strong>Python:</strong> Avoid relative paths in
+<code>subprocess.run()</code>. Use <code>os.path.abspath()</code> or
+Python's <code>pathlib</code> module to build the full path before
+passing it to the command.</li>
+<li><strong>Working Directory:</strong> Set the explicit working
+directory in your execution call (e.g., using
+<code>cwd="/path/to/media"</code> in Python's
+<code>subprocess</code>).</li>
+</ul>
+<h3 id="5-confirm-the-ffprobe-executable-is-in-your-path">5. Confirm the
+FFprobe Executable is in Your PATH</h3>
+<p>If the error specifically states
+<code>ffprobe: No such file or directory</code> (or
+<code>command not found</code>), your shell cannot locate the
+<code>ffprobe</code> binary itself.</p>
+<ul>
+<li><strong>Verify Installation:</strong> Run <code>which ffprobe</code>
+(Linux/macOS) or <code>where ffprobe</code> (Windows) to see if the
+system finds it.</li>
+<li><strong>Update PATH:</strong> Add the directory containing
+<code>ffprobe</code> to your system's <code>PATH</code> environment
+variable.</li>
+<li><strong>Direct Execution:</strong> Alternatively, specify the full
+path to the executable:</li>
+</ul>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">/usr/local/bin/ffprobe</span> <span class="at">-i</span> input.mp4</span></code></pre></div>
+<h3 id="6-verify-file-permissions">6. Verify File Permissions</h3>
+<p>On Unix-based operating systems, ensure the user running the command
+has read permissions for the file and execute permissions for every
+parent directory in the path:</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="fu">chmod</span> +r /path/to/video.mp4</span></code></pre></div></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

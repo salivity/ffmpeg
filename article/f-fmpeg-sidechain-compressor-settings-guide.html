@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FFmpeg Sidechain Compressor Settings Guide - ffmpeg</title>
+    <meta name="description" content="This article provides an overview of configuring the sidechaincompress audio filter in FFmpeg to create dynamic audio ducking, such as lowering background music beneath a voiceover. By adjusting the threshold, ratio, attack, and release parameters, you c">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/f-fmpeg-sidechain-compressor-settings-guide">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="FFmpeg Sidechain Compressor Settings Guide - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/f-fmpeg-sidechain-compressor-settings-guide" />
+    <meta property="og:image" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article provides an overview of configuring the sidechaincompress audio filter in FFmpeg to create dynamic audio ducking, such as lowering background music beneath a voiceover. By adjusting the threshold, ratio, attack, and release parameters, you c" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="ffmpeg-sidechain-compressor-settings-guide">FFmpeg Sidechain
+Compressor Settings Guide</h1>
+<p>This article provides an overview of configuring the
+<code>sidechaincompress</code> audio filter in FFmpeg to create dynamic
+audio ducking, such as lowering background music beneath a voiceover. By
+adjusting the threshold, ratio, attack, and release parameters, you can
+control precisely when gain reduction triggers, how heavily the sound is
+compressed, and how quickly the volume ducks and returns to normal.</p>
+<h3 id="understanding-the-filter-syntax">Understanding the Filter
+Syntax</h3>
+<p>FFmpeg uses the <code>sidechaincompress</code> filter inside a
+<code>-filter_complex</code> graph. The filter takes two audio inputs:
+the first stream (input 0) is the audio you want to compress (e.g.,
+background music), and the second stream (input 1) is the control signal
+that triggers the compression (e.g., speech).</p>
+<p>A standard command template looks like this:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> music.mp3 <span class="at">-i</span> voice.mp3 <span class="at">-filter_complex</span> <span class="st">&quot;[0:a][1:a]sidechaincompress=threshold=0.03:ratio=4:attack=20:release=300[aout]&quot;</span> <span class="at">-map</span> <span class="st">&quot;[aout]&quot;</span> output.mp3</span></code></pre></div>
+<h3 id="configuring-the-key-parameters">Configuring the Key
+Parameters</h3>
+<h4 id="1-threshold-threshold">1. Threshold
+(<code>threshold</code>)</h4>
+<p>The <code>threshold</code> determines the input volume level of the
+control signal that must be reached before compression is activated.</p>
+<ul>
+<li><strong>Format:</strong> Expressed as a linear amplitude between
+<code>0.0</code> and <code>1.0</code> (default is <code>0.125</code>),
+or in decibels by appending <code>dB</code> (e.g.,
+<code>-20dB</code>).</li>
+<li><strong>Configuration:</strong> Lower values make the compressor
+more sensitive, triggering gain reduction even on quiet sounds. Higher
+values ensure that only loud peaks in the voiceover trigger ducking. A
+typical starting point for spoken voice is between <code>0.03</code> and
+<code>0.1</code> (roughly <code>-30dB</code> to
+<code>-20dB</code>).</li>
+</ul>
+<h4 id="2-ratio-ratio">2. Ratio (<code>ratio</code>)</h4>
+<p>The <code>ratio</code> sets the strength of the gain reduction
+applied to the target track once the threshold is exceeded.</p>
+<ul>
+<li><strong>Format:</strong> A number from <code>1.0</code> to
+<code>20.0</code> (default is <code>2.0</code>), representing the
+compression ratio (e.g., <code>4</code> means a 4:1 ratio).</li>
+<li><strong>Configuration:</strong> A ratio of <code>2:1</code> to
+<code>3:1</code> offers subtle, natural ducking. Ratios between
+<code>4:1</code> and <code>6:1</code> provide standard broadcasting
+ducking, making dialogue clearly audible over loud music. Ratios above
+<code>10:1</code> act closer to a limiter, aggressively muting the
+background track whenever the key track is active.</li>
+</ul>
+<h4 id="3-attack-attack">3. Attack (<code>attack</code>)</h4>
+<p>The <code>attack</code> parameter defines how long it takes for the
+gain reduction to fully engage once the trigger signal crosses the
+threshold.</p>
+<ul>
+<li><strong>Format:</strong> Expressed in milliseconds, ranging from
+<code>0.01</code> to <code>2000</code> (default is
+<code>20ms</code>).</li>
+<li><strong>Configuration:</strong> For voice ducking, set the attack
+fast enough that the initial syllables of speech are not obscured by
+loud music, but not so fast that it causes an audible click or unnatural
+drop. Values between <code>10ms</code> and <code>50ms</code> are ideal
+for speech.</li>
+</ul>
+<h4 id="4-release-release">4. Release (<code>release</code>)</h4>
+<p>The <code>release</code> parameter sets the time it takes for the
+compressed audio to restore to its original volume after the trigger
+signal falls below the threshold.</p>
+<ul>
+<li><strong>Format:</strong> Expressed in milliseconds, ranging from
+<code>0.01</code> to <code>9000</code> (default is
+<code>250ms</code>).</li>
+<li><strong>Configuration:</strong> If the release is too short (under
+<code>100ms</code>), the music will noticeably swell between words,
+creating a distracting "pumping" artifact. If it is too long (over
+<code>1000ms</code>), the music will take too long to return to its
+standard volume after speaking finishes. For natural speech pauses,
+values between <code>250ms</code> and <code>500ms</code> yield the best
+balance.</li>
+</ul>
+<h3 id="recommended-baseline-configurations">Recommended Baseline
+Configurations</h3>
+<ul>
+<li><p><strong>Voiceover Ducking (Standard):</strong>
+<code>sidechaincompress=threshold=0.03:ratio=4:attack=20:release=350</code>
+<em>Drops music smoothly behind speech and maintains consistent
+background level between words.</em></p></li>
+<li><p><strong>Aggressive Podcast Ducking:</strong>
+<code>sidechaincompress=threshold=0.02:ratio=8:attack=10:release=400</code>
+<em>Ensures heavy music instantly drops out of the way of soft-spoken
+dialogue.</em></p></li>
+<li><p><strong>Subtle Ambient Ducking:</strong>
+<code>sidechaincompress=threshold=0.08:ratio=2.5:attack=50:release=250</code>
+<em>Gently nudges audio down without an obvious change in overall mix
+volume.</em></p></li>
+</ul></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

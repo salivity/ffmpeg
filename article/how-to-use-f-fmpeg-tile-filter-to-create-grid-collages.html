@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Use FFmpeg Tile Filter to Create Grid Collages - ffmpeg</title>
+    <meta name="description" content="This guide explains how to use FFmpeg's native tile filter to assemble video frames and multiple video streams into custom grid collages. You will learn the core syntax of the filter, how to control dimensions, margins, and padding, and how to create bot">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/how-to-use-f-fmpeg-tile-filter-to-create-grid-collages">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Use FFmpeg Tile Filter to Create Grid Collages - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/how-to-use-f-fmpeg-tile-filter-to-create-grid-collages" />
+    <meta property="og:image" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This guide explains how to use FFmpeg's native tile filter to assemble video frames and multiple video streams into custom grid collages. You will learn the core syntax of the filter, how to control dimensions, margins, and padding, and how to create bot" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-to-use-ffmpeg-tile-filter-to-create-grid-collages">How to
+Use FFmpeg Tile Filter to Create Grid Collages</h1>
+<p>This guide explains how to use FFmpeg's native <code>tile</code>
+filter to assemble video frames and multiple video streams into custom
+grid collages. You will learn the core syntax of the filter, how to
+control dimensions, margins, and padding, and how to create both static
+contact sheets and dynamic multi-video video collages.</p>
+<hr />
+<h3 id="understanding-the-tile-filter">Understanding the
+<code>tile</code> Filter</h3>
+<p>The <code>tile</code> filter processes sequential frames from a
+single incoming video stream and arranges them into a single output
+frame laid out in a grid. By default, it operates on successive frames
+of one input, but it can also be combined with the
+<code>interleave</code> filter to assemble multiple distinct video files
+into a simultaneous grid.</p>
+<h3 id="basic-syntax-and-core-parameters">Basic Syntax and Core
+Parameters</h3>
+<p>The base syntax inside the <code>-vf</code> or
+<code>-filter_complex</code> flag is:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="va">tile</span><span class="op">=</span>NxM</span></code></pre></div>
+<ul>
+<li><code>N</code> represents the number of columns (horizontal).</li>
+<li><code>M</code> represents the number of rows (vertical).</li>
+</ul>
+<p>Common parameters include:</p>
+<ul>
+<li><strong><code>layout</code></strong>: Grid dimensions specified as
+<code>columns x rows</code> (e.g., <code>3x2</code>).</li>
+<li><strong><code>nb_frames</code></strong>: Number of frames to render
+per output tile. Defaults to <code>0</code> (fills the whole grid
+<code>N x M</code>).</li>
+<li><strong><code>margin</code></strong>: Outer border width in
+pixels.</li>
+<li><strong><code>padding</code></strong>: Space between individual
+tiles in pixels.</li>
+<li><strong><code>color</code></strong>: Background color used for
+margins, padding, or empty tiles (e.g., <code>black</code>,
+<code>white</code>, <code>0x00FF00</code>).</li>
+<li><strong><code>init_padding</code></strong>: Number of empty frames
+before rendering the first frame.</li>
+</ul>
+<hr />
+<h3 id="generating-an-image-contact-sheet-single-video">Generating an
+Image Contact Sheet (Single Video)</h3>
+<p>To generate an image thumbnail grid representing moments across a
+single video, sample frames using the <code>fps</code> or
+<code>select</code> filter before passing them to <code>tile</code>.</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-ss</span> 00:00:10 <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;select=&#39;not(mod(n\,100))&#39;,scale=320:180,tile=3x3&quot;</span> <span class="at">-frames:v</span> 1 collage.png</span></code></pre></div>
+<ul>
+<li><code>select='not(mod(n\,100))'</code>: Picks every 100th
+frame.</li>
+<li><code>scale=320:180</code>: Resizes each frame so the final 3x3
+output is manageable (<code>960x540</code>).</li>
+<li><code>tile=3x3</code>: Arranges 9 selected frames into a 3-column,
+3-row grid.</li>
+<li><code>-frames:v 1</code>: Stops processing after one complete tiled
+output frame is written.</li>
+</ul>
+<hr />
+<h3 id="adding-borders-margins-and-padding">Adding Borders, Margins, and
+Padding</h3>
+<p>To create separation between images and add an outer border, use
+<code>margin</code>, <code>padding</code>, and <code>color</code>:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;fps=1/5,scale=320:180,tile=4x2:padding=10:margin=20:color=white&quot;</span> <span class="at">-frames:v</span> 1 output_styled.png</span></code></pre></div>
+<ul>
+<li><code>fps=1/5</code>: Samples one frame every 5 seconds.</li>
+<li><code>tile=4x2</code>: Places 8 frames in 4 columns and 2 rows.</li>
+<li><code>padding=10</code>: Inserts 10 pixels of white space between
+tiles.</li>
+<li><code>margin=20</code>: Inserts a 20-pixel white border around the
+entire collage.</li>
+<li><code>color=white</code>: Sets the fill color for borders and
+gaps.</li>
+</ul>
+<hr />
+<h3 id="creating-a-real-time-multi-video-grid">Creating a Real-Time
+Multi-Video Grid</h3>
+<p>Because <code>tile</code> operates sequentially on a single stream,
+playing multiple separate video files simultaneously in a grid requires
+synchronizing and interleaving their frames into one stream before
+piping them into <code>tile</code>.</p>
+<h4 id="2x2-simultaneous-video-collage">2x2 Simultaneous Video
+Collage</h4>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input1.mp4 <span class="at">-i</span> input2.mp4 <span class="at">-i</span> input3.mp4 <span class="at">-i</span> input4.mp4 <span class="at">-filter_complex</span> <span class="dt">\</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="st">&quot;[0:v]scale=640:360[v0]; </span><span class="dt">\</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="st"> [1:v]scale=640:360[v1]; </span><span class="dt">\</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a><span class="st"> [2:v]scale=640:360[v2]; </span><span class="dt">\</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a><span class="st"> [3:v]scale=640:360[v3]; </span><span class="dt">\</span></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a><span class="st"> [v0][v1][v2][v3]interleave=4,tile=2x2[outv]&quot;</span> <span class="dt">\</span></span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>-map <span class="st">&quot;[outv]&quot;</span> <span class="at">-c:v</span> libx264 <span class="at">-crf</span> 23 output_grid.mp4</span></code></pre></div>
+<ol type="1">
+<li><strong><code>scale=640:360</code></strong>: Normalizes all four
+inputs to identical resolutions (required for consistent grid
+alignment).</li>
+<li><strong><code>interleave=4</code></strong>: Takes one frame
+cyclically from each of the 4 inputs (<code>v0</code>, <code>v1</code>,
+<code>v2</code>, <code>v3</code>) in order.</li>
+<li><strong><code>tile=2x2</code></strong>: Consumes the 4 interleaved
+frames and stitches them into a single 1280x720 video frame.</li>
+<li><strong><code>-map "[outv]"</code></strong>: Directs the filtered
+video output into the destination file.</li>
+</ol></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

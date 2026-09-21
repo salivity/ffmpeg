@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FFmpeg Format Filter: Force Intermediate Pixel Format - ffmpeg</title>
+    <meta name="description" content="When building complex FFmpeg filtergraphs, FFmpeg automatically negotiates pixel formats between connected filters, which can sometimes result in unintended chroma subsampling, loss of color depth, or performance drops. This article explains how to use t">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/f-fmpeg-format-filter-force-intermediate-pixel-format">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="FFmpeg Format Filter: Force Intermediate Pixel Format - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/f-fmpeg-format-filter-force-intermediate-pixel-format" />
+    <meta property="og:image" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="When building complex FFmpeg filtergraphs, FFmpeg automatically negotiates pixel formats between connected filters, which can sometimes result in unintended chroma subsampling, loss of color depth, or performance drops. This article explains how to use t" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="ffmpeg-format-filter-force-intermediate-pixel-format">FFmpeg
+Format Filter: Force Intermediate Pixel Format</h1>
+<p>When building complex FFmpeg filtergraphs, FFmpeg automatically
+negotiates pixel formats between connected filters, which can sometimes
+result in unintended chroma subsampling, loss of color depth, or
+performance drops. This article explains how to use the
+<code>format</code> filter to explicitly force an intermediate pixel
+format within a filtergraph, ensuring precise color fidelity,
+compatibility, and control over every stage of your video processing
+pipeline.</p>
+<h3 id="why-force-an-intermediate-pixel-format">Why Force an
+Intermediate Pixel Format?</h3>
+<p>By default, FFmpeg selects the most convenient common pixel format
+supported by adjacent filters. However, this automatic negotiation can
+cause issues:</p>
+<ul>
+<li><strong>Precision Loss:</strong> Multi-stage filtering might
+inadvertently convert a 10-bit stream to 8-bit midway through
+processing.</li>
+<li><strong>Color Degradation:</strong> Colorspace shifts (such as YUV
+to RGB) might occur prematurely, causing conversion artifacts.</li>
+<li><strong>Filter Incompatibility:</strong> Some filters, such as
+certain color grading or drawing filters, work exclusively or yield
+better precision in RGB or planar YUV spaces.</li>
+</ul>
+<p>Inserting the <code>format</code> filter acts as an explicit contract
+between stages, forcing FFmpeg to convert the stream to your target
+pixel format at that exact point in the pipeline.</p>
+<h3 id="basic-syntax">Basic Syntax</h3>
+<p>The <code>format</code> filter accepts a list of one or more pixel
+formats separated by <code>|</code>:</p>
+<pre class="text"><code>format=pix_fmts=&lt;format_name&gt;</code></pre>
+<p>Shorthand syntax:</p>
+<pre class="text"><code>format=&lt;format_name&gt;</code></pre>
+<p>To view all available pixel formats supported by your FFmpeg build,
+run:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-pix_fmts</span></span></code></pre></div>
+<h3 id="using-format-in-a-simple-video-filter--vf">Using
+<code>format</code> in a Simple Video Filter (<code>-vf</code>)</h3>
+<p>In a linear filterchain defined with <code>-vf</code>, filters are
+separated by commas. You can place <code>format</code> between two
+operations to enforce the format passed to the subsequent filter.</p>
+<h4 id="example-enforcing-high-bit-depth-during-scaling">Example:
+Enforcing High Bit-Depth During Scaling</h4>
+<p>If you are downscaling or applying blur to an 8-bit file, converting
+to a 10-bit intermediate format minimizes banding artifacts:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;format=yuv420p10le,scale=1280:720,format=yuv420p&quot;</span> <span class="at">-c:v</span> libx264 <span class="at">-crf</span> 18 output.mp4</span></code></pre></div>
+<p>In this pipeline:</p>
+<ol type="1">
+<li><code>format=yuv420p10le</code> upgrades the input to 10-bit planar
+YUV.</li>
+<li><code>scale=1280:720</code> executes its resizing algorithms in
+10-bit precision.</li>
+<li><code>format=yuv420p</code> converts the stream back to standard
+8-bit YUV for maximum playback compatibility before passing frames to
+the encoder.</li>
+</ol>
+<h3 id="using-format-in-complex-filtergraphs--filter_complex">Using
+<code>format</code> in Complex Filtergraphs
+(<code>-filter_complex</code>)</h3>
+<p>In non-linear workflows with multiple inputs or outputs, place the
+<code>format</code> filter directly on named streams.</p>
+<h4
+id="example-forcing-an-rgb-intermediate-format-for-color-curves">Example:
+Forcing an RGB Intermediate Format for Color Curves</h4>
+<p>Certain visual manipulation filters, like <code>curves</code> or
+<code>colorbalance</code>, perform predictably in RGB space:</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-filter_complex</span> <span class="dt">\</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="st">&quot;[0:v]format=gbrp,curves=vintage,format=yuv420p[v_out]&quot;</span> <span class="dt">\</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>-map <span class="st">&quot;[v_out]&quot;</span> <span class="at">-c:v</span> libx264 <span class="at">-crf</span> 20 output.mp4</span></code></pre></div>
+<p>Here:</p>
+<ul>
+<li><code>[0:v]</code> takes the primary video stream.</li>
+<li><code>format=gbrp</code> forces the video into planar RGB
+(GBRP).</li>
+<li><code>curves=vintage</code> executes in RGB without triggering
+automatic conversion guesses.</li>
+<li><code>format=yuv420p</code> returns the stream to standard YUV prior
+to H.264 encoding.</li>
+</ul>
+<h3 id="allowing-multiple-acceptable-intermediate-formats">Allowing
+Multiple Acceptable Intermediate Formats</h3>
+<p>If you want to restrict the pipeline to a specific family of formats
+without locking it to a single one, pass multiple choices separated by
+the pipe (<code>|</code>) character:</p>
+<div class="sourceCode" id="cb6"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;format=yuv420p10le|yuv422p10le|yuv444p10le,scale=1920:1080&quot;</span> <span class="at">-c:v</span> libx265 output.mp4</span></code></pre></div>
+<p>FFmpeg will evaluate the list from left to right and choose the first
+format that the downstream filter natively supports, preventing
+unnecessary color conversions while maintaining high bit-depth.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

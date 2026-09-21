@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Boost Unsaturated Colors Using FFmpeg Vibrance - ffmpeg</title>
+    <meta name="description" content="The FFmpeg vibrance filter is a powerful color-grading tool designed to boost muted, unsaturated colors in a video stream without oversaturating tones that are already vivid. Unlike a generic saturation boost, which uniformly amplifies all colors and oft">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/boost-unsaturated-colors-using-f-fmpeg-vibrance">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Boost Unsaturated Colors Using FFmpeg Vibrance - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/boost-unsaturated-colors-using-f-fmpeg-vibrance" />
+    <meta property="og:image" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="The FFmpeg vibrance filter is a powerful color-grading tool designed to boost muted, unsaturated colors in a video stream without oversaturating tones that are already vivid. Unlike a generic saturation boost, which uniformly amplifies all colors and oft" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="boost-unsaturated-colors-using-ffmpeg-vibrance">Boost
+Unsaturated Colors Using FFmpeg Vibrance</h1>
+<p>The FFmpeg <code>vibrance</code> filter is a powerful color-grading
+tool designed to boost muted, unsaturated colors in a video stream
+without oversaturating tones that are already vivid. Unlike a generic
+saturation boost, which uniformly amplifies all colors and often ruins
+natural skin tones, the vibrance filter intelligently targets only
+low-saturation pixels. This guide explains how the filter works,
+demonstrates practical command-line examples, and covers how to
+fine-tune individual color balances for balanced, natural-looking
+results.</p>
+<h2 id="understanding-the-vibrance-filter">Understanding the Vibrance
+Filter</h2>
+<p>The <code>vibrance</code> filter operates by analyzing the current
+saturation level of each pixel and applying a non-linear boost:</p>
+<ul>
+<li><strong>Low-saturation areas</strong> receive the strongest
+enhancement.</li>
+<li><strong>High-saturation areas</strong> receive minimal to no boost,
+preventing color clipping.</li>
+<li><strong>Skin tones</strong> remain relatively natural compared to
+using the standard <code>eq</code> or <code>hue</code> filters.</li>
+</ul>
+<p>The core parameter is <code>intensity</code>, which accepts values
+from <code>-2.0</code> to <code>2.0</code>. A positive value increases
+vibrance, <code>0.0</code> leaves the image unchanged, and negative
+values desaturate the image.</p>
+<h2 id="basic-vibrance-command">Basic Vibrance Command</h2>
+<p>To apply a moderate vibrance boost to an input video, specify the
+<code>-vf</code> (video filter) option with the <code>vibrance</code>
+filter and your desired <code>intensity</code>.</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;vibrance=intensity=0.5&quot;</span> <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<p>In this command:</p>
+<ul>
+<li><code>-i input.mp4</code> defines the source video.</li>
+<li><code>-vf "vibrance=intensity=0.5"</code> increases the saturation
+of muted colors by 50%.</li>
+<li><code>-c:a copy</code> copies the audio stream directly without
+re-encoding to save time and preserve audio quality.</li>
+</ul>
+<h2 id="adjusting-individual-color-channels">Adjusting Individual Color
+Channels</h2>
+<p>The <code>vibrance</code> filter also allows you to adjust how
+strongly specific color spectrums are boosted using the balance
+parameters: <code>rbal</code> (red balance), <code>gbal</code> (green
+balance), and <code>bbal</code> (blue balance). The default value for
+each balance parameter is <code>1.0</code>.</p>
+<h3 id="protecting-skin-tones-lowering-red-vibrance">Protecting Skin
+Tones (Lowering Red Vibrance)</h3>
+<p>If human subjects in the video look overly red or orange after
+applying vibrance, reduce the red balance while maintaining the overall
+boost:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;vibrance=intensity=0.6:rbal=0.5:gbal=1.0:bbal=1.0&quot;</span> <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<h3 id="enhancing-landscapes-targeting-greens-and-blues">Enhancing
+Landscapes (Targeting Greens and Blues)</h3>
+<p>To make foliage and skies pop in outdoor footage without distorting
+warm highlights:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;vibrance=intensity=0.7:rbal=0.3:gbal=1.2:bbal=1.4&quot;</span> <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<h2 id="available-parameters-reference">Available Parameters
+Reference</h2>
+<ul>
+<li><strong><code>intensity</code></strong>: Strength of the boost.
+Range: <code>-2.0</code> to <code>2.0</code> (Default:
+<code>0.0</code>).</li>
+<li><strong><code>rbal</code></strong>: Red balance coefficient. Range:
+<code>-10.0</code> to <code>10.0</code> (Default:
+<code>1.0</code>).</li>
+<li><strong><code>gbal</code></strong>: Green balance coefficient.
+Range: <code>-10.0</code> to <code>10.0</code> (Default:
+<code>1.0</code>).</li>
+<li><strong><code>bbal</code></strong>: Blue balance coefficient. Range:
+<code>-10.0</code> to <code>10.0</code> (Default:
+<code>1.0</code>).</li>
+<li><strong><code>rlum</code> / <code>glum</code> /
+<code>blum</code></strong>: Luma weighting factors for calculating pixel
+intensity (Defaults: <code>0.072186</code>, <code>0.715158</code>,
+<code>0.212656</code>).</li>
+</ul>
+<h2 id="combining-vibrance-with-other-filters">Combining Vibrance with
+Other Filters</h2>
+<p>For comprehensive color correction, chain the <code>vibrance</code>
+filter with standard contrast or exposure controls using a comma inside
+the filter graph:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;eq=contrast=1.05:brightness=0.02,vibrance=intensity=0.4&quot;</span> <span class="at">-c:v</span> libx264 <span class="at">-crf</span> 18 <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<p>This sequence slightly lifts the brightness and contrast via
+<code>eq</code> before applying the <code>vibrance</code> filter,
+producing a punchy, professional look without blowing out saturation
+limits.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

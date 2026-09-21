@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Use Vulkan Hardware Decoding in FFmpeg - ffmpeg</title>
+    <meta name="description" content="This guide explains how to enable and utilize Vulkan-based hardware acceleration for video decoding in FFmpeg. You will learn the system prerequisites, how to verify hardware and software compatibility, the exact command-line syntax for basic and advance">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/how-to-use-vulkan-hardware-decoding-in-f-fmpeg">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Use Vulkan Hardware Decoding in FFmpeg - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/how-to-use-vulkan-hardware-decoding-in-f-fmpeg" />
+    <meta property="og:image" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This guide explains how to enable and utilize Vulkan-based hardware acceleration for video decoding in FFmpeg. You will learn the system prerequisites, how to verify hardware and software compatibility, the exact command-line syntax for basic and advance" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-to-use-vulkan-hardware-decoding-in-ffmpeg">How to Use Vulkan
+Hardware Decoding in FFmpeg</h1>
+<p>This guide explains how to enable and utilize Vulkan-based hardware
+acceleration for video decoding in FFmpeg. You will learn the system
+prerequisites, how to verify hardware and software compatibility, the
+exact command-line syntax for basic and advanced decoding pipelines, and
+how to target specific graphics devices using standard Vulkan Video API
+extensions.</p>
+<hr />
+<h3 id="prerequisites">Prerequisites</h3>
+<p>To decode video using Vulkan in FFmpeg, ensure your system meets the
+following requirements:</p>
+<ol type="1">
+<li><strong>FFmpeg 6.1 or Later</strong>: Vulkan Video decoding APIs
+were stabilized and integrated into FFmpeg starting with version
+6.1.</li>
+<li><strong>Compatible Hardware and Drivers</strong>: A GPU and driver
+supporting the Vulkan 1.3 standard alongside the official Vulkan Video
+decoding extensions:
+<ul>
+<li><code>VK_KHR_video_queue</code></li>
+<li><code>VK_KHR_video_decode_queue</code></li>
+<li><code>VK_KHR_video_decode_h264</code></li>
+<li><code>VK_KHR_video_decode_h265</code></li>
+<li><code>VK_KHR_video_decode_av1</code> (for AV1 playback)</li>
+<li><em>NVIDIA:</em> Driver 525+ or newer.</li>
+<li><em>AMD/Intel on Linux:</em> Mesa 23.1+ (built with video codec
+support enabled).</li>
+</ul></li>
+</ol>
+<hr />
+<h3 id="step-1-verify-hardware-and-build-support">Step 1: Verify
+Hardware and Build Support</h3>
+<p>Verify that your installed build of FFmpeg was compiled with Vulkan
+support:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-hwaccels</span></span></code></pre></div>
+<p>Look for <code>vulkan</code> in the printed list. If it is missing,
+install an FFmpeg build configured with <code>--enable-vulkan</code> and
+<code>--enable-libdrm</code> (on Linux).</p>
+<p>Next, confirm your graphics driver exposes the required Vulkan Video
+extensions:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">vulkaninfo</span> <span class="kw">|</span> <span class="fu">grep</span> VK_KHR_video_decode</span></code></pre></div>
+<p>If no output appears, update your graphics drivers or check
+distribution-specific codec enablement flags (e.g., Mesa codec flags on
+Fedora/openSUSE).</p>
+<hr />
+<h3 id="step-2-basic-video-decoding">Step 2: Basic Video Decoding</h3>
+<p>To decode a video using the Vulkan hardware accelerator and re-encode
+it in software, use the <code>-hwaccel vulkan</code> flag:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-hwaccel</span> vulkan <span class="at">-i</span> input.mp4 <span class="at">-c:v</span> libx264 <span class="at">-crf</span> 20 output.mp4</span></code></pre></div>
+<p>In this command:</p>
+<ul>
+<li><code>-hwaccel vulkan</code> forces FFmpeg to decode the stream on
+the GPU via Vulkan.</li>
+<li>The decoded frames are automatically copied back to system memory
+(RAM) for the software encoder (<code>libx264</code>).</li>
+</ul>
+<hr />
+<h3 id="step-3-high-performance-decoding-benchmark-or-discard">Step 3:
+High-Performance Decoding (Benchmark or Discard)</h3>
+<p>To test decoding performance without the bottleneck of writing an
+output file to disk or copying frames back to CPU memory, output
+directly to null:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-hwaccel</span> vulkan <span class="at">-hwaccel_output_format</span> vulkan <span class="at">-i</span> input.mp4 <span class="at">-f</span> null <span class="at">-</span></span></code></pre></div>
+<ul>
+<li><code>-hwaccel_output_format vulkan</code> keeps the decoded frames
+inside GPU video memory (VRAM) as Vulkan textures, eliminating the CPU
+copy overhead.</li>
+</ul>
+<hr />
+<h3 id="step-4-device-selection-in-multi-gpu-systems">Step 4: Device
+Selection in Multi-GPU Systems</h3>
+<p>If your system contains multiple GPUs (such as an integrated GPU and
+a dedicated card), explicitly declare which device FFmpeg should
+initialize:</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-init_hw_device</span> vulkan=vk:0 <span class="at">-hwaccel</span> vulkan <span class="at">-hwaccel_device</span> vk <span class="at">-i</span> input.mp4 output.mkv</span></code></pre></div>
+<p>To list device indices or target a device via index, change
+<code>0</code> to the target GPU index (<code>0</code>, <code>1</code>,
+etc.) as reported by <code>vulkaninfo</code>.</p>
+<p>On Linux, you can also select the render node directly:</p>
+<div class="sourceCode" id="cb6"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-init_hw_device</span> vulkan=vk:/dev/dri/renderD128 <span class="at">-hwaccel</span> vulkan <span class="at">-hwaccel_device</span> vk <span class="at">-i</span> input.mp4 output.mkv</span></code></pre></div>
+<hr />
+<h3 id="step-5-applying-vulkan-gpu-filters">Step 5: Applying Vulkan GPU
+Filters</h3>
+<p>To decode the video, apply hardware-accelerated processing (such as
+scaling), and keep the data in VRAM, use Vulkan filter graphs:</p>
+<div class="sourceCode" id="cb7"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-hwaccel</span> vulkan <span class="at">-hwaccel_output_format</span> vulkan <span class="at">-i</span> input.mp4 <span class="dt">\</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>-vf <span class="st">&quot;scale_vulkan=1920:1080,hwdownload,format=nv12&quot;</span> <span class="dt">\</span></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>-c:v libx264 output.mp4</span></code></pre></div>
+<ul>
+<li><code>scale_vulkan=1920:1080</code>: Scales the frame directly
+within the Vulkan hardware context.</li>
+<li><code>hwdownload,format=nv12</code>: Copies the processed frame back
+to system memory in the <code>nv12</code> pixel format for final
+encoding.</li>
+</ul></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

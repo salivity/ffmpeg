@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Set sndbuf and rcvbuf in FFmpeg SRT URLs - ffmpeg</title>
+    <meta name="description" content="This guide explains how to configure the send (sndbuf) and receive (rcvbuf) socket buffer sizes when streaming with the Secure Reliable Transport (SRT) protocol in FFmpeg. Properly sizing these buffers helps prevent UDP buffer overflow, mitigates packet">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/how-to-set-sndbuf-and-rcvbuf-in-f-fmpeg-srt-ur-ls">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Set sndbuf and rcvbuf in FFmpeg SRT URLs - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/how-to-set-sndbuf-and-rcvbuf-in-f-fmpeg-srt-ur-ls" />
+    <meta property="og:image" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This guide explains how to configure the send (sndbuf) and receive (rcvbuf) socket buffer sizes when streaming with the Secure Reliable Transport (SRT) protocol in FFmpeg. Properly sizing these buffers helps prevent UDP buffer overflow, mitigates packet" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-to-set-sndbuf-and-rcvbuf-in-ffmpeg-srt-urls">How to Set
+sndbuf and rcvbuf in FFmpeg SRT URLs</h1>
+<p>This guide explains how to configure the send (<code>sndbuf</code>)
+and receive (<code>rcvbuf</code>) socket buffer sizes when streaming
+with the Secure Reliable Transport (SRT) protocol in FFmpeg. Properly
+sizing these buffers helps prevent UDP buffer overflow, mitigates packet
+drops over jittery connections, and ensures stable high-bitrate video
+transmission.</p>
+<h3 id="srt-buffer-parameter-syntax">SRT Buffer Parameter Syntax</h3>
+<p>In FFmpeg, SRT options are passed directly as query parameters
+appended to the SRT URL. Both <code>sndbuf</code> and
+<code>rcvbuf</code> accept integer values representing the buffer size
+in <strong>bytes</strong>.</p>
+<p>The URL structure is formatted as:</p>
+<pre class="text"><code>srt://&lt;ip_or_hostname&gt;:&lt;port&gt;?&lt;parameter&gt;=&lt;value&gt;&amp;&lt;parameter&gt;=&lt;value&gt;</code></pre>
+<p>Always enclose the SRT URL in double quotation marks to prevent shell
+interpretation of the <code>?</code> and <code>&amp;</code>
+characters.</p>
+<hr />
+<h3 id="setting-the-send-buffer-sndbuf">Setting the Send Buffer
+(<code>sndbuf</code>)</h3>
+<p>The <code>sndbuf</code> parameter controls the operating system's
+send buffer size for the underlying UDP socket. This is primarily used
+on the sending (transmitting) side of an FFmpeg pipeline.</p>
+<h4 id="example-streaming-out-as-caller">Example: Streaming Out as
+Caller</h4>
+<p>To set the send buffer to 2 MB (2,097,152 bytes) while pushing an
+MPEG-TS stream to a remote receiver:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-re</span> <span class="at">-i</span> input.mp4 <span class="at">-c:v</span> libx264 <span class="at">-b:v</span> 4000k <span class="at">-c:a</span> aac <span class="at">-f</span> mpegts <span class="dt">\</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  <span class="st">&quot;srt://receiver.example.com:9000?mode=caller&amp;sndbuf=2097152&quot;</span></span></code></pre></div>
+<hr />
+<h3 id="setting-the-receive-buffer-rcvbuf">Setting the Receive Buffer
+(<code>rcvbuf</code>)</h3>
+<p>The <code>rcvbuf</code> parameter controls the operating system's
+receive buffer size for the underlying UDP socket. This is primarily
+used on the receiving (ingesting) side to prevent the OS kernel from
+dropping incoming packets before FFmpeg reads them.</p>
+<h4 id="example-listening-for-an-incoming-stream">Example: Listening for
+an Incoming Stream</h4>
+<p>To set the receive buffer to 4 MB (4,194,304 bytes) while listening
+for an incoming stream:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> <span class="st">&quot;srt://0.0.0.0:9000?mode=listener&amp;rcvbuf=4194304&quot;</span> <span class="dt">\</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">-c</span> copy output.mp4</span></code></pre></div>
+<hr />
+<h3 id="using-both-parameters-simultaneously">Using Both Parameters
+Simultaneously</h3>
+<p>Both options can be combined on either input or output URLs if
+bidirectional data exchange or symmetric buffer sizing is required:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-re</span> <span class="at">-i</span> input.mp4 <span class="at">-c</span> copy <span class="at">-f</span> mpegts <span class="dt">\</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>  <span class="st">&quot;srt://receiver.example.com:9000?mode=caller&amp;sndbuf=2097152&amp;rcvbuf=2097152&quot;</span></span></code></pre></div>
+<hr />
+<h3 id="important-considerations">Important Considerations</h3>
+<ol type="1">
+<li><strong>Operating System Limits</strong>: The values specified in
+<code>sndbuf</code> and <code>rcvbuf</code> cannot exceed the maximum
+socket buffer sizes permitted by the host operating system. On Linux,
+check and adjust the system limits if FFmpeg fails to allocate the
+requested size:
+<ul>
+<li>View max receive buffer: <code>sysctl net.core.rmem_max</code></li>
+<li>View max send buffer: <code>sysctl net.core.wmem_max</code></li>
+<li>Temporarily increase limits:
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> sysctl <span class="at">-w</span> net.core.rmem_max=4194304</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> sysctl <span class="at">-w</span> net.core.wmem_max=4194304</span></code></pre></div></li>
+</ul></li>
+<li><strong>Distinction from SRT Latency Buffers</strong>: The
+<code>sndbuf</code> and <code>rcvbuf</code> parameters configure
+OS-level socket buffers. They are distinct from the SRT internal
+transmission buffers, which are governed by parameters such as
+<code>latency</code>, <code>rcvlatency</code>, and
+<code>peerlatency</code>.</li>
+</ol></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

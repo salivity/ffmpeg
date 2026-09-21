@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add Real-Time Date and Time to Video Using FFmpeg - ffmpeg</title>
+    <meta name="description" content="Burning a real-time timestamp onto a video stream is a common requirement for security surveillance, legal documentation, and live broadcasting. This article demonstrates how to use FFmpeg’s built-in drawtext video filter to overlay the current system">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/add-real-time-date-and-time-to-video-using-f-fmpeg">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Add Real-Time Date and Time to Video Using FFmpeg - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/add-real-time-date-and-time-to-video-using-f-fmpeg" />
+    <meta property="og:image" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Burning a real-time timestamp onto a video stream is a common requirement for security surveillance, legal documentation, and live broadcasting. This article demonstrates how to use FFmpeg’s built-in drawtext video filter to overlay the current system" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="add-real-time-date-and-time-to-video-using-ffmpeg">Add Real-Time
+Date and Time to Video Using FFmpeg</h1>
+<p>Burning a real-time timestamp onto a video stream is a common
+requirement for security surveillance, legal documentation, and live
+broadcasting. This article demonstrates how to use FFmpeg’s built-in
+<code>drawtext</code> video filter to overlay the current system date
+and time onto any active video feed or recorded file. You will learn the
+exact syntax required for time formatting, text styling, and
+positioning, as well as how to avoid common escaping errors in FFmpeg
+commands.</p>
+<h2 id="prerequisites">Prerequisites</h2>
+<p>To use the <code>drawtext</code> filter, your FFmpeg build must be
+compiled with the <code>--enable-libfreetype</code> flag (standard in
+most official distributions). You also need access to a TrueType
+(<code>.ttf</code>) or OpenType (<code>.otf</code>) font file on your
+system.</p>
+<h2 id="the-basic-command">The Basic Command</h2>
+<p>FFmpeg provides the <code>%{localtime}</code> function within the
+<code>drawtext</code> filter to pull the current system clock during
+processing.</p>
+<p>Here is the standard command to burn the current date and time onto a
+video stream:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;drawtext=fontfile=/path/to/font.ttf:text=&#39;%{localtime\:%Y-%m-%d %H</span><span class="dt">\\\\</span><span class="st">\:%M</span><span class="dt">\\\\</span><span class="st">\:%S}&#39;:x=20:y=20:fontsize=24:fontcolor=white:box=1:boxcolor=black@0.6:boxborderw=5&quot;</span> <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<h3 id="parameter-breakdown">Parameter Breakdown</h3>
+<ul>
+<li><strong><code>fontfile</code></strong>: The absolute path to a valid
+font on your system (for example,
+<code>/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf</code> on Linux,
+or <code>C\\:/Windows/Fonts/arial.ttf</code> on Windows).</li>
+<li><strong><code>text</code></strong>: Formats the date and time using
+standard <code>strftime</code> syntax.
+<ul>
+<li><code>%Y-%m-%d</code>: Outputs Year-Month-Day (e.g.,
+2023-10-25).</li>
+<li><code>%H\\\\\:%M\\\\\:%S</code>: Outputs Hours:Minutes:Seconds.</li>
+<li><em>Note on Escaping:</em> Colons (<code>:</code>) are delimiters in
+FFmpeg filters. Colons inside the text string must be escaped with a
+backslash (<code>\:</code>), and colons inside time formats often
+require multiple backslashes (e.g., <code>\\\\\:</code>) depending on
+your shell to prevent parsing conflicts. Alternatively, you can use
+<code>%T</code> for time if your system's <code>strftime</code> supports
+it: <code>text='%{localtime\:%Y-%m-%d %T}'</code>.</li>
+</ul></li>
+<li><strong><code>x</code> and <code>y</code></strong>: Coordinates for
+text placement, measured in pixels from the top-left corner.</li>
+<li><strong><code>fontsize</code></strong>: Size of the text in
+pixels.</li>
+<li><strong><code>fontcolor</code></strong>: Color of the font (e.g.,
+<code>white</code>, <code>yellow</code>, <code>0xFFFFFF</code>).</li>
+<li><strong><code>box</code></strong>: Enables a background bounding box
+(<code>1</code> for enabled) to make the text legible against varying
+video backgrounds.</li>
+<li><strong><code>boxcolor</code></strong>: The color and opacity of the
+background box. <code>black@0.6</code> creates a semi-transparent black
+background with 60% opacity.</li>
+<li><strong><code>boxborderw</code></strong>: The padding around the
+text inside the box in pixels.</li>
+</ul>
+<h2 id="burning-timestamps-into-a-live-stream">Burning Timestamps into a
+Live Stream</h2>
+<p>When working with live input devices—such as a webcam, capture card,
+or RTSP stream—add the live capture input flags.</p>
+<h3 id="example-linux-webcam-v4l2">Example: Linux Webcam (V4L2)</h3>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-f</span> v4l2 <span class="at">-framerate</span> 30 <span class="at">-video_size</span> 1280x720 <span class="at">-i</span> /dev/video0 <span class="dt">\</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>-vf <span class="st">&quot;drawtext=fontfile=/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf:text=&#39;%{localtime\:%Y-%m-%d %T}&#39;:x=10:y=10:fontsize=20:fontcolor=white:box=1:boxcolor=black@0.5&quot;</span> <span class="dt">\</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>-c:v libx264 <span class="at">-preset</span> veryfast <span class="at">-f</span> mp4 live_output.mp4</span></code></pre></div>
+<h3 id="example-windows-directshow-device">Example: Windows DirectShow
+Device</h3>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode cmd"><code class="sourceCode dosbat"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>ffmpeg <span class="at">-f</span> dshow <span class="at">-i</span> video=<span class="st">&quot;Integrated Camera&quot;</span> <span class="at">-vf</span> <span class="st">&quot;drawtext=fontfile=&#39;C\:/Windows/Fonts/arial.ttf&#39;:text=&#39;%{localtime\:%Y-%m-%d %T}&#39;:x=10:y=10:fontsize=22:fontcolor=white:box=1:boxcolor=black@0.5&quot;</span> <span class="at">-c:</span>v libx264 <span class="at">-f</span> mp4 output.mp4</span></code></pre></div>
+<h2 id="positioning-options">Positioning Options</h2>
+<p>You can adjust the <code>x</code> and <code>y</code> parameters using
+FFmpeg expressions:</p>
+<ul>
+<li><strong>Top-Left</strong>: <code>x=20:y=20</code></li>
+<li><strong>Top-Right</strong>: <code>x=w-tw-20:y=20</code>
+(<code>w</code> is video width, <code>tw</code> is text width)</li>
+<li><strong>Bottom-Left</strong>: <code>x=20:y=h-th-20</code>
+(<code>h</code> is video height, <code>th</code> is text height)</li>
+<li><strong>Bottom-Right</strong>: <code>x=w-tw-20:y=h-th-20</code></li>
+</ul></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

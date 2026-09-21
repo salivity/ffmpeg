@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Custom Morphological Grids in FFmpeg Neighbor Filters - ffmpeg</title>
+    <meta name="description" content="FFmpeg provides morphological processing through its neighborhood filter family, primarily implemented as erosion and dilation. This article explains how to define a custom morphological operations grid by manipulating the 3×3 structuring element using">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/custom-morphological-grids-in-f-fmpeg-neighbor-filters">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Custom Morphological Grids in FFmpeg Neighbor Filters - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/custom-morphological-grids-in-f-fmpeg-neighbor-filters" />
+    <meta property="og:image" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="FFmpeg provides morphological processing through its neighborhood filter family, primarily implemented as erosion and dilation. This article explains how to define a custom morphological operations grid by manipulating the 3×3 structuring element using" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="custom-morphological-grids-in-ffmpeg-neighbor-filters">Custom
+Morphological Grids in FFmpeg Neighbor Filters</h1>
+<p>FFmpeg provides morphological processing through its neighborhood
+filter family, primarily implemented as <code>erosion</code> and
+<code>dilation</code>. This article explains how to define a custom
+morphological operations grid by manipulating the 3×3 structuring
+element using the <code>coordinates</code> bitmask parameter to target
+specific neighboring pixels.</p>
+<h3 id="understanding-the-33-neighborhood-bitmask">Understanding the 3×3
+Neighborhood Bitmask</h3>
+<p>In FFmpeg, morphological filters evaluate a 3×3 window centered
+around each pixel. The shape of this structuring grid is controlled by
+the <code>coordinates</code> parameter, which accepts an 8-bit integer
+mask ranging from <code>0</code> to <code>255</code>.</p>
+<p>Each bit in the mask represents one of the eight adjacent neighbors
+surrounding the target pixel:</p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">Position</th>
+<th style="text-align: left;">Bit</th>
+<th style="text-align: left;">Decimal Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;">Top-Left</td>
+<td style="text-align: left;">Bit 0</td>
+<td style="text-align: left;">1</td>
+</tr>
+<tr>
+<td style="text-align: left;">Top-Center</td>
+<td style="text-align: left;">Bit 1</td>
+<td style="text-align: left;">2</td>
+</tr>
+<tr>
+<td style="text-align: left;">Top-Right</td>
+<td style="text-align: left;">Bit 2</td>
+<td style="text-align: left;">4</td>
+</tr>
+<tr>
+<td style="text-align: left;">Center-Left</td>
+<td style="text-align: left;">Bit 3</td>
+<td style="text-align: left;">8</td>
+</tr>
+<tr>
+<td style="text-align: left;">Center-Right</td>
+<td style="text-align: left;">Bit 4</td>
+<td style="text-align: left;">16</td>
+</tr>
+<tr>
+<td style="text-align: left;">Bottom-Left</td>
+<td style="text-align: left;">Bit 5</td>
+<td style="text-align: left;">32</td>
+</tr>
+<tr>
+<td style="text-align: left;">Bottom-Center</td>
+<td style="text-align: left;">Bit 6</td>
+<td style="text-align: left;">64</td>
+</tr>
+<tr>
+<td style="text-align: left;">Bottom-Right</td>
+<td style="text-align: left;">Bit 7</td>
+<td style="text-align: left;">128</td>
+</tr>
+</tbody>
+</table>
+<p>The center pixel itself is the value being evaluated and is not
+included in the bitmask. By combining the decimal values of the desired
+positions, you construct a custom structuring element.</p>
+<h3 id="calculating-grid-shapes">Calculating Grid Shapes</h3>
+<p>To activate specific directions in the morphological grid, sum their
+corresponding values:</p>
+<ul>
+<li><strong>Full 3×3 Box (Default):</strong> Evaluates all 8
+neighbors.<br />
+<code>1 + 2 + 4 + 8 + 16 + 32 + 64 + 128 = 255</code></li>
+<li><strong>Cross / Plus Shape:</strong> Evaluates only cardinal
+directions (up, down, left, right).<br />
+<code>2 + 8 + 16 + 64 = 90</code></li>
+<li><strong>Diagonal / X Shape:</strong> Evaluates only corner
+neighbors.<br />
+<code>1 + 4 + 32 + 128 = 165</code></li>
+<li><strong>Horizontal Line:</strong> Evaluates only immediate left and
+right neighbors.<br />
+<code>8 + 16 = 24</code></li>
+<li><strong>Vertical Line:</strong> Evaluates only top and bottom
+neighbors.<br />
+<code>2 + 64 = 66</code></li>
+</ul>
+<h3 id="applying-the-filter-in-ffmpeg">Applying the Filter in
+FFmpeg</h3>
+<p>Pass the calculated integer to the <code>coordinates</code> option of
+either <code>erosion</code> (local minimum calculation) or
+<code>dilation</code> (local maximum calculation).</p>
+<h4 id="cross-shaped-dilation">Cross-Shaped Dilation</h4>
+<p>To dilate bright features strictly horizontally and vertically:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;dilation=coordinates=90&quot;</span> <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<h4 id="horizontal-only-erosion">Horizontal-Only Erosion</h4>
+<p>To erode edges strictly along the horizontal axis:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;erosion=coordinates=24&quot;</span> <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<h3 id="implementing-morphological-opening-and-closing">Implementing
+Morphological Opening and Closing</h3>
+<p>Compound morphological operations can be formed by chaining filters
+with matching custom coordinate grids.</p>
+<ul>
+<li><p><strong>Opening (Erosion followed by Dilation):</strong> Removes
+small bright noise while preserving the general shape determined by the
+grid.</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;erosion=coordinates=90,dilation=coordinates=90&quot;</span> <span class="at">-c:a</span> copy output.mp4</span></code></pre></div></li>
+<li><p><strong>Closing (Dilation followed by Erosion):</strong> Fills
+small dark holes and gaps along the orientation defined by the grid.</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;dilation=coordinates=66,erosion=coordinates=66&quot;</span> <span class="at">-c:a</span> copy output.mp4</span></code></pre></div></li>
+</ul>
+<h3 id="plane-specific-thresholding">Plane-Specific Thresholding</h3>
+<p>The neighborhood filters also support fine-tuning sensitivity per
+plane using the threshold options (<code>threshold0</code>,
+<code>threshold1</code>, <code>threshold2</code>, and
+<code>threshold3</code> for Y, U, V, and Alpha respectively). Setting a
+threshold limits the maximum pixel difference applied during the
+morphological pass:</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;dilation=coordinates=90:threshold0=30:threshold1=0:threshold2=0&quot;</span> <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<p>In this command, the custom cross-shaped dilation affects only the
+luminance (Y) channel with a maximum intensity shift of 30, leaving the
+chroma channels untouched.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

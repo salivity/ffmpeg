@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FFmpeg -copyts and Stream Synchronization Explained - ffmpeg</title>
+    <meta name="description" content="The -copyts (copy timestamps) flag in FFmpeg forces the demuxer and muxer to preserve the original Presentation Timestamps (PTS) and Decode Timestamps (DTS) from the input file rather than resetting them to zero. By keeping the absolute timestamps intact">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/f-fmpeg-copyts-and-stream-synchronization-explained">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="FFmpeg -copyts and Stream Synchronization Explained - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/f-fmpeg-copyts-and-stream-synchronization-explained" />
+    <meta property="og:image" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="The -copyts (copy timestamps) flag in FFmpeg forces the demuxer and muxer to preserve the original Presentation Timestamps (PTS) and Decode Timestamps (DTS) from the input file rather than resetting them to zero. By keeping the absolute timestamps intact" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="ffmpeg--copyts-and-stream-synchronization-explained">FFmpeg
+-copyts and Stream Synchronization Explained</h1>
+<p>The <code>-copyts</code> (copy timestamps) flag in FFmpeg forces the
+demuxer and muxer to preserve the original Presentation Timestamps (PTS)
+and Decode Timestamps (DTS) from the input file rather than resetting
+them to zero. By keeping the absolute timestamps intact,
+<code>-copyts</code> directly impacts stream synchronization by
+preserving the exact time offsets between audio, video, and subtitle
+tracks, preventing audio/video (A/V) drift and misalignments that
+frequently occur during seeking, stream extraction, or segmenting.</p>
+<h3 id="default-ffmpeg-behavior-vs--copyts">Default FFmpeg Behavior vs.
+-copyts</h3>
+<p>By default, FFmpeg adjusts timestamps so that the output stream
+begins cleanly at <code>t = 0</code>. When processing a media
+container:</p>
+<ul>
+<li>FFmpeg reads the earliest packet's timestamp.</li>
+<li>It subtracts that initial offset from all subsequent audio and video
+packets.</li>
+<li>This creates an output file where playback begins immediately at
+timestamp zero.</li>
+</ul>
+<p>When <code>-copyts</code> is enabled, FFmpeg bypasses this
+zero-offset recalculation. If an input video stream starts at
+<code>00:01:30.500</code> and its corresponding audio stream starts at
+<code>00:01:30.520</code>, the output will reflect those exact
+timestamps rather than mapping both back to zero.</p>
+<h3 id="impact-on-audio-and-video-av-synchronization">Impact on Audio
+and Video (A/V) Synchronization</h3>
+<p>The primary benefit of <code>-copyts</code> is the preservation of
+relative track timing, particularly when using seeking options:</p>
+<ol type="1">
+<li><strong>Preventing Independent Track Resets:</strong> In many
+containers, audio and video packets do not start at the exact same
+millisecond. If FFmpeg independently normalizes the video stream to zero
+and the audio stream to zero during a seek or transcode, the slight
+offset between them can collapse. This leads to subtle A/V
+desynchronization (lip-sync errors). Using <code>-copyts</code>
+maintains the initial inter-stream gap.</li>
+<li><strong>Accurate Input Seeking (<code>-ss</code> with
+<code>-copyts</code>):</strong> When performing an input seek
+(<code>ffmpeg -ss ... -i ...</code>), FFmpeg normally discards frames
+before the seek point and resets the remaining frames to start at zero.
+Adding <code>-copyts</code> ensures that the retained audio and video
+packets retain their native timeline alignment relative to one
+another.</li>
+</ol>
+<h3 id="use-with--start_at_zero">Use with
+<code>-start_at_zero</code></h3>
+<p>A common issue with using <code>-copyts</code> alone is that many
+media players and hardware decoders cannot handle non-zero start times
+properly, causing frozen frames, black screens, or playback failures
+until the playhead reaches the initial timestamp.</p>
+<p>To fix this while maintaining synchronization, FFmpeg provides the
+<code>-start_at_zero</code> option. When used in tandem:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-ss</span> 00:02:00 <span class="at">-copyts</span> <span class="at">-start_at_zero</span> <span class="at">-i</span> input.mp4 <span class="at">-c</span> copy output.mp4</span></code></pre></div>
+<p>In this pipeline:</p>
+<ul>
+<li><code>-copyts</code> preserves the micro-offsets and synchronization
+between the separate streams.</li>
+<li><code>-start_at_zero</code> shifts the entire synchronized package
+backward uniformly so that the earliest track begins at
+<code>00:00:00.000</code>.</li>
+</ul>
+<h3 id="behavior-in-multi-stream-and-broadcast-workflows">Behavior in
+Multi-Stream and Broadcast Workflows</h3>
+<p>In MPEG-TS, HLS, or multi-camera setups, streams rely on absolute
+Program Clock Reference (PCR) or wall-clock timestamps. Stripping these
+timestamps disrupts downstream multiplexers or chunk-slicing
+mechanisms.</p>
+<ul>
+<li><strong>Chunked Streaming (HLS/DASH):</strong> <code>-copyts</code>
+ensures that contiguous segments share an uninterrupted timeline,
+preventing media players from stalling or losing audio sync across
+segment boundaries.</li>
+<li><strong>Concatenation and Splicing:</strong> When merging segmented
+recordings, copying original timestamps prevents audio packets from
+bleeding across cuts or overlapping adjacent video frames.</li>
+</ul>
+<h3 id="potential-synchronization-pitfalls">Potential Synchronization
+Pitfalls</h3>
+<p>While <code>-copyts</code> solves alignment issues, it also
+replicates timing defects present in the source material:</p>
+<ul>
+<li><strong>Timestamp Gaps:</strong> If the original file has missing
+packets or time jumps, <code>-copyts</code> replicates that gap in the
+output timeline, which can cause decoders to pause video while waiting
+for audio to catch up.</li>
+<li><strong>Negative Timestamps:</strong> If an input uses negative
+presentation timestamps (common with B-frame reordering),
+<code>-copyts</code> retains them unless explicitly shifted with the
+<code>setpts</code> or <code>asetpts</code> filters, which can cause
+issues in older player environments.</li>
+</ul></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

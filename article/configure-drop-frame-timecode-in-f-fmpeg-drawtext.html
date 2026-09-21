@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Configure Drop-Frame Timecode in FFmpeg Drawtext - ffmpeg</title>
+    <meta name="description" content="This guide explains how to properly configure the FFmpeg drawtext video filter to render drop-frame timecodes for NTSC-standard frame rates such as 29.97 fps and 59.94 fps. You will learn the correct delimiter syntax required by FFmpeg to enable drop-fra">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/configure-drop-frame-timecode-in-f-fmpeg-drawtext">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Configure Drop-Frame Timecode in FFmpeg Drawtext - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/configure-drop-frame-timecode-in-f-fmpeg-drawtext" />
+    <meta property="og:image" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This guide explains how to properly configure the FFmpeg drawtext video filter to render drop-frame timecodes for NTSC-standard frame rates such as 29.97 fps and 59.94 fps. You will learn the correct delimiter syntax required by FFmpeg to enable drop-fra" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="configure-drop-frame-timecode-in-ffmpeg-drawtext">Configure
+Drop-Frame Timecode in FFmpeg Drawtext</h1>
+<p>This guide explains how to properly configure the FFmpeg
+<code>drawtext</code> video filter to render drop-frame timecodes for
+NTSC-standard frame rates such as 29.97 fps and 59.94 fps. You will
+learn the correct delimiter syntax required by FFmpeg to enable
+drop-frame counting, how to set the precise framerate fraction, and how
+to escape special characters inside your terminal to prevent filter
+parsing errors.</p>
+<h3 id="the-drop-frame-syntax-in-drawtext">The Drop-Frame Syntax in
+<code>drawtext</code></h3>
+<p>FFmpeg determines whether a timecode is non-drop-frame (NDF) or
+drop-frame (DF) based on the delimiter used between seconds and frames
+in the <code>timecode</code> parameter:</p>
+<ul>
+<li><strong>Colon (<code>:</code>)</strong>: Specifies non-drop-frame
+(e.g., <code>01:00:00:00</code>).</li>
+<li><strong>Semicolon (<code>;</code>) or Period
+(<code>.</code>)</strong>: Specifies drop-frame (e.g.,
+<code>01:00:00;00</code>).</li>
+</ul>
+<p>When configured with a semicolon or period and paired with an NTSC
+fractional framerate, FFmpeg drops frame numbers 00 and 01 at the start
+of every minute, except for every tenth minute, keeping the counter
+aligned with real-world clock time.</p>
+<h3 id="required-filter-parameters">Required Filter Parameters</h3>
+<p>To generate a valid drop-frame timecode, you must supply at least two
+core parameters to the <code>drawtext</code> filter:</p>
+<ol type="1">
+<li><strong><code>timecode</code></strong>: The starting timecode string
+using <code>;</code> or <code>.</code> before the frame number.</li>
+<li><strong><code>rate</code> (or <code>r</code>)</strong>: The exact
+framerate expressed as a fraction. Always use <code>30000/1001</code>
+for 29.97 fps or <code>60000/1001</code> for 59.94 fps rather than
+decimal values to avoid rounding and drift errors.</li>
+</ol>
+<h3 id="escaping-the-semicolon">Escaping the Semicolon</h3>
+<p>The semicolon is a reserved separator in both terminal shells (like
+Bash and Zsh) and within FFmpeg's filtergraph parser. To prevent FFmpeg
+or your shell from misinterpreting the timecode, you must escape the
+semicolon with a backslash (<code>\;</code>) or properly quote the
+entire filtergraph argument.</p>
+<h3 id="complete-command-example">Complete Command Example</h3>
+<p>The following command overlays a drop-frame timecode starting at
+<code>01:00:00;00</code> onto a 29.97 fps video:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;drawtext=fontfile=/path/to/font.ttf:timecode=&#39;01\:00\:00\;00&#39;:rate=30000/1001:x=(w-text_w)/2:y=h-text_h-20:fontsize=36:fontcolor=white:box=1:boxcolor=black@0.6:boxborderw=5&quot;</span> <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<h3 id="key-parameter-breakdown">Key Parameter Breakdown</h3>
+<ul>
+<li><strong><code>timecode='01\:00\:00\;00'</code></strong>: Sets the
+starting point to hour 1 in drop-frame format. The colons and semicolons
+are backslash-escaped to avoid filter string parsing conflicts.</li>
+<li><strong><code>rate=30000/1001</code></strong>: Sets the exact NTSC
+29.97 fps timebase required for standard drop-frame math.</li>
+<li><strong><code>box=1:boxcolor=black@0.6:boxborderw=5</code></strong>:
+Generates a semi-transparent black background behind the text to ensure
+the timecode remains legible against any footage.</li>
+<li><strong><code>x=(w-text_w)/2:y=h-text_h-20</code></strong>: Centers
+the timecode horizontally and places it 20 pixels above the bottom edge
+of the frame.</li>
+</ul></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

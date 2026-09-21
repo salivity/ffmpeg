@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Stream SRT in Listener Mode Using FFmpeg - ffmpeg</title>
+    <meta name="description" content="Streaming video over Secure Reliable Transport (SRT) provides low-latency, packet-loss-resilient video transmission across unpredictable public networks. While most streaming setups use SRT in caller mode to push data to an external server, FFmpeg also s">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/how-to-stream-srt-in-listener-mode-using-f-fmpeg">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Stream SRT in Listener Mode Using FFmpeg - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/how-to-stream-srt-in-listener-mode-using-f-fmpeg" />
+    <meta property="og:image" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Streaming video over Secure Reliable Transport (SRT) provides low-latency, packet-loss-resilient video transmission across unpredictable public networks. While most streaming setups use SRT in caller mode to push data to an external server, FFmpeg also s" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-to-stream-srt-in-listener-mode-using-ffmpeg">How to Stream
+SRT in Listener Mode Using FFmpeg</h1>
+<p>Streaming video over Secure Reliable Transport (SRT) provides
+low-latency, packet-loss-resilient video transmission across
+unpredictable public networks. While most streaming setups use SRT in
+caller mode to push data to an external server, FFmpeg also supports
+listener mode, allowing your FFmpeg instance to act as a server that
+waits for incoming connections. This guide covers how to configure
+FFmpeg to stream or receive video over SRT in listener mode, along with
+the essential flags and testing procedures.</p>
+<h3 id="prerequisites">Prerequisites</h3>
+<p>Your FFmpeg installation must be compiled with the
+<code>libsrt</code> library. You can verify this by running:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-protocols</span> <span class="kw">|</span> <span class="fu">grep</span> srt</span></code></pre></div>
+<p>If <code>srt</code> appears in the list under both Input and Output,
+your build is ready.</p>
+<hr />
+<h3 id="streaming-as-a-server-sending-video-to-a-caller">Streaming as a
+Server (Sending Video to a Caller)</h3>
+<p>In this scenario, FFmpeg encodes a video source (such as a local
+file, test pattern, or capture card) and waits on a specified port for a
+remote player or receiver to connect and pull the stream.</p>
+<p>Run the following command:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-re</span> <span class="at">-i</span> input.mp4 <span class="at">-c:v</span> libx264 <span class="at">-preset</span> veryfast <span class="at">-b:v</span> 3000k <span class="at">-maxrate</span> 3000k <span class="at">-bufsize</span> 6000k <span class="at">-c:a</span> aac <span class="at">-b:a</span> 128k <span class="at">-f</span> mpegts <span class="st">&quot;srt://0.0.0.0:9000?mode=listener&quot;</span></span></code></pre></div>
+<h4 id="parameter-breakdown">Parameter Breakdown:</h4>
+<ul>
+<li><strong><code>-re</code></strong>: Reads the input file at native
+frame rate (omit this if capturing live input).</li>
+<li><strong><code>-c:v libx264</code> &amp;
+<code>-c:a aac</code></strong>: Encodes the stream using H.264 video and
+AAC audio.</li>
+<li><strong><code>-f mpegts</code></strong>: Packages the stream into
+the MPEG-TS container, which is standard for SRT.</li>
+<li><strong><code>srt://0.0.0.0:9000</code></strong>: Binds the SRT
+server to port <code>9000</code> across all available network
+interfaces.</li>
+<li><strong><code>?mode=listener</code></strong>: Instructs the SRT
+protocol handler to wait for an incoming connection instead of trying to
+initiate one.</li>
+</ul>
+<hr />
+<h3 id="ingesting-as-a-server-receiving-video-from-a-caller">Ingesting
+as a Server (Receiving Video from a Caller)</h3>
+<p>If an external encoder (such as OBS Studio or a hardware camera) is
+sending a stream to your machine, FFmpeg can listen for that incoming
+stream and record or process it.</p>
+<p>Run the following command to record an incoming SRT caller
+stream:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> <span class="st">&quot;srt://0.0.0.0:9000?mode=listener&quot;</span> <span class="at">-c</span> copy output.mp4</span></code></pre></div>
+<p>FFmpeg will open port <code>9000</code>, wait until the remote
+encoder connects, and then mux the incoming packets directly to
+<code>output.mp4</code> without re-encoding.</p>
+<hr />
+<h3 id="essential-srt-parameters">Essential SRT Parameters</h3>
+<p>You can append additional query parameters to the SRT URL to
+fine-tune network performance:</p>
+<ul>
+<li><strong><code>latency</code></strong>: Sets the buffer latency in
+microseconds. For example, <code>latency=200000</code> sets the latency
+to 200 milliseconds to compensate for jitter and packet loss.</li>
+<li><strong><code>pkt_size</code></strong>: Specifies the maximum
+payload size (typically <code>1316</code> for standard MPEG-TS packets
+over Ethernet).</li>
+<li><strong><code>passphrase</code></strong>: Enables AES encryption. A
+client must supply the same passphrase to connect.</li>
+<li><strong><code>pbkeylen</code></strong>: Sets the encryption key
+length (e.g., <code>16</code>, <code>24</code>, or <code>32</code> bytes
+for AES-128, AES-192, or AES-256).</li>
+</ul>
+<p><strong>Example with tuning:</strong></p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-re</span> <span class="at">-i</span> input.mp4 <span class="at">-c:v</span> libx264 <span class="at">-f</span> mpegts <span class="st">&quot;srt://0.0.0.0:9000?mode=listener&amp;latency=200000&amp;pkt_size=1316&quot;</span></span></code></pre></div>
+<hr />
+<h3 id="connecting-to-the-listener-stream">Connecting to the Listener
+Stream</h3>
+<p>Once FFmpeg is running in listener mode, any SRT client can connect
+in caller mode.</p>
+<p>To play the stream on another machine using <code>ffplay</code>:</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffplay</span> <span class="st">&quot;srt://&lt;LISTENER_IP&gt;:9000?mode=caller&quot;</span></span></code></pre></div>
+<p>Replace <code>&lt;LISTENER_IP&gt;</code> with the local or public IP
+address of the machine running the FFmpeg listener. Ensure that UDP port
+<code>9000</code> is open on your firewall and properly forwarded if
+connecting across routers.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

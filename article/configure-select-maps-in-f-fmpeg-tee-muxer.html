@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Configure Select Maps in FFmpeg Tee Muxer - ffmpeg</title>
+    <meta name="description" content="The FFmpeg tee muxer allows you to write the same network stream or file to multiple outputs simultaneously without re-encoding the content multiple times. By default, the tee muxer passes all mapped input streams to every defined output, which can cause">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/configure-select-maps-in-f-fmpeg-tee-muxer">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Configure Select Maps in FFmpeg Tee Muxer - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/configure-select-maps-in-f-fmpeg-tee-muxer" />
+    <meta property="og:image" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="The FFmpeg tee muxer allows you to write the same network stream or file to multiple outputs simultaneously without re-encoding the content multiple times. By default, the tee muxer passes all mapped input streams to every defined output, which can cause" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="configure-select-maps-in-ffmpeg-tee-muxer">Configure Select Maps
+in FFmpeg Tee Muxer</h1>
+<p>The FFmpeg <code>tee</code> muxer allows you to write the same
+network stream or file to multiple outputs simultaneously without
+re-encoding the content multiple times. By default, the <code>tee</code>
+muxer passes all mapped input streams to every defined output, which can
+cause failures if an output format does not support certain codecs or if
+you intend to split streams. You can control which streams are routed to
+which output by using the <code>select</code> slave option within the
+<code>tee</code> muxer string.</p>
+<h3 id="understanding-the-select-option">Understanding the
+<code>select</code> Option</h3>
+<p>When using the <code>tee</code> muxer, slave outputs are separated by
+a pipe (<code>|</code>) character, and per-output options are placed
+inside square brackets <code>[...]</code> before the output
+destination.</p>
+<p>The <code>select</code> slave option filters the streams forwarded to
+that specific output. It takes a comma-separated list of stream
+specifiers or zero-based stream indices relative to the streams
+delivered to the muxer.</p>
+<h3 id="escaping-rules">Escaping Rules</h3>
+<p>Because FFmpeg uses colons (<code>:</code>) and commas
+(<code>,</code>) as internal option delimiters, and shells (like Bash)
+treat characters like <code>|</code>, <code>[</code>, <code>]</code>,
+and <code>'</code> specially, you must escape the <code>select</code>
+string properly:</p>
+<ul>
+<li>Wrap the entire <code>-f tee</code> argument in double quotes.</li>
+<li>Enclose the <code>select</code> parameter value in escaped single
+quotes: <code>[select=\'...\']</code>.</li>
+</ul>
+<h3 id="basic-syntax-and-examples">Basic Syntax and Examples</h3>
+<h4 id="example-1-selecting-by-stream-type-and-index">Example 1:
+Selecting by Stream Type and Index</h4>
+<p>Suppose you have an input with one video stream and two audio streams
+(such as English and Spanish), and you want to write:</p>
+<ul>
+<li>Output 1: Video and Audio 0</li>
+<li>Output 2: Video and Audio 1</li>
+</ul>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mkv <span class="at">-map</span> 0:v <span class="at">-map</span> 0:a:0 <span class="at">-map</span> 0:a:1 <span class="dt">\</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>-c copy <span class="dt">\</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>-f tee <span class="st">&quot;[select=\&#39;v:0,a:0\&#39;]output_en.mp4|[select=\&#39;v:0,a:1\&#39;]output_es.mp4&quot;</span></span></code></pre></div>
+<p>In this example:</p>
+<ul>
+<li><code>-map 0:v -map 0:a:0 -map 0:a:1</code> feeds three streams to
+the <code>tee</code> muxer.</li>
+<li><code>[select=\'v:0,a:0\']</code> forwards the video and the first
+audio stream to <code>output_en.mp4</code>.</li>
+<li><code>[select=\'v:0,a:1\']</code> forwards the video and the second
+audio stream to <code>output_es.mp4</code>.</li>
+</ul>
+<h4 id="example-2-selecting-by-global-stream-indices">Example 2:
+Selecting by Global Stream Indices</h4>
+<p>Instead of type-based specifiers, you can reference the zero-based
+indices of the streams as mapped into the <code>tee</code> muxer:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="dt">\</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>-map 0:v:0 <span class="at">-map</span> 0:a:0 <span class="at">-map</span> 0:a:1 <span class="dt">\</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>-c copy <span class="dt">\</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>-f tee <span class="st">&quot;[select=\&#39;0,1\&#39;]main.mp4|[select=\&#39;0,2\&#39;]secondary.mp4&quot;</span></span></code></pre></div>
+<p>Here:</p>
+<ul>
+<li>Index <code>0</code> refers to <code>-map 0:v:0</code></li>
+<li>Index <code>1</code> refers to <code>-map 0:a:0</code></li>
+<li>Index <code>2</code> refers to <code>-map 0:a:1</code></li>
+</ul>
+<h4 id="example-3-applying-bitstream-filters-alongside-select">Example
+3: Applying Bitstream Filters Alongside <code>select</code></h4>
+<p>Slave options can be chained together inside the brackets by
+separating them with colons. If an output requires a specific bitstream
+filter (such as <code>h264_mp4toannexb</code> for an MPEG-TS output),
+place it alongside the <code>select</code> option:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="dt">\</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>-c copy <span class="dt">\</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>-f tee <span class="st">&quot;[select=\&#39;v,a\&#39;:bsfs/v=h264_mp4toannexb]stream.ts|[select=\&#39;v,a\&#39;]local.mp4&quot;</span></span></code></pre></div>
+<h3 id="common-pitfalls">Common Pitfalls</h3>
+<ul>
+<li><strong>Empty Streams</strong>: If a <code>select</code> query does
+not match any stream, the muxer may throw an error indicating that an
+output contains no streams.</li>
+<li><strong>Transcoding Configurations</strong>: The <code>select</code>
+option only routes streams that have already been generated and mapped
+by the main FFmpeg pipeline. All stream transformations (filtering,
+encoding) must be fully established with <code>-map</code> before
+reaching the <code>tee</code> muxer.</li>
+</ul></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

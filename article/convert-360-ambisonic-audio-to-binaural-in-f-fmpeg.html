@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Convert 360 Ambisonic Audio to Binaural in FFmpeg - ffmpeg</title>
+    <meta name="description" content="This guide explains how to extract 4-channel first-order Ambisonics (AmbiX) spatial audio from a 360-degree video file and decode it into a standard binaural stereo track using FFmpeg. By decoding the spherical soundfield into virtual speaker positions a">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/convert-360-ambisonic-audio-to-binaural-in-f-fmpeg">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Convert 360 Ambisonic Audio to Binaural in FFmpeg - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/convert-360-ambisonic-audio-to-binaural-in-f-fmpeg" />
+    <meta property="og:image" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This guide explains how to extract 4-channel first-order Ambisonics (AmbiX) spatial audio from a 360-degree video file and decode it into a standard binaural stereo track using FFmpeg. By decoding the spherical soundfield into virtual speaker positions a" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="convert-360-ambisonic-audio-to-binaural-in-ffmpeg">Convert 360
+Ambisonic Audio to Binaural in FFmpeg</h1>
+<p>This guide explains how to extract 4-channel first-order Ambisonics
+(AmbiX) spatial audio from a 360-degree video file and decode it into a
+standard binaural stereo track using FFmpeg. By decoding the spherical
+soundfield into virtual speaker positions and processing them through a
+Head-Related Transfer Function (HRTF) using FFmpeg’s
+<code>sofalizer</code> filter, you can produce a realistic 3D headphone
+listening experience from any Ambisonic source.</p>
+<hr />
+<h3 id="step-1-identify-the-spatial-audio-stream">Step 1: Identify the
+Spatial Audio Stream</h3>
+<p>Most 360-degree videos (such as YouTube 360 or spatial video from
+omnidirectional cameras) store audio in first-order Ambisonics (FOA)
+using the AmbiX format (ACN channel ordering, SN3D normalization) across
+four channels:</p>
+<ul>
+<li><strong>Channel 0 (W):</strong> Omni-directional pressure</li>
+<li><strong>Channel 1 (Y):</strong> Left / Right dipole</li>
+<li><strong>Channel 2 (Z):</strong> Up / Down dipole</li>
+<li><strong>Channel 3 (X):</strong> Front / Back dipole</li>
+</ul>
+<p>Check the audio stream details of your file using
+<code>ffprobe</code>:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffprobe</span> <span class="at">-i</span> input_360.mp4</span></code></pre></div>
+<p>Look for an audio stream showing <code>4 channels</code> or
+<code>quad</code> layout.</p>
+<hr />
+<h3 id="step-2-obtain-an-hrtf-profile-sofa">Step 2: Obtain an HRTF
+Profile (<code>.sofa</code>)</h3>
+<p>FFmpeg uses the <code>sofalizer</code> audio filter to create
+binaural audio. This filter requires a SOFA (Spatially Oriented Format
+for Acoustics) file containing HRTF measurements.</p>
+<p>You can download standard, free SOFA measurement files (such as
+<code>ClubFritz12.sofa</code> or public IRCAM datasets) directly from
+the official <a href="https://www.sofaconventions.org/">SOFA
+Conventions</a> repository or open acoustic research archives. Place the
+<code>.sofa</code> file in your working directory.</p>
+<hr />
+<h3
+id="step-3-decode-ambisonics-to-virtual-speakers-and-apply-binauralization">Step
+3: Decode Ambisonics to Virtual Speakers and Apply Binauralization</h3>
+<p>Because Ambisonic channels represent directional coefficients rather
+than discrete speaker feeds, they must first be decoded into a virtual
+loudspeaker array (such as an 8-point virtual cube around the listener)
+before passing through the HRTF filter.</p>
+<p>Run the following command to decode 4-channel AmbiX to an 8-speaker
+virtual array via matrix math, then render it to binaural stereo:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input_360.mp4 <span class="at">-vn</span> <span class="at">-filter_complex</span> <span class="dt">\</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="st">&quot;[0:a]pan=8c|</span><span class="dt">\</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="st">c0=0.3535*c0 + 0.2041*c1 + 0.2041*c2 + 0.2041*c3|</span><span class="dt">\</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="st">c1=0.3535*c0 - 0.2041*c1 + 0.2041*c2 + 0.2041*c3|</span><span class="dt">\</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="st">c2=0.3535*c0 + 0.2041*c1 - 0.2041*c2 + 0.2041*c3|</span><span class="dt">\</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a><span class="st">c3=0.3535*c0 - 0.2041*c1 - 0.2041*c2 + 0.2041*c3|</span><span class="dt">\</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a><span class="st">c4=0.3535*c0 + 0.2041*c1 + 0.2041*c2 - 0.2041*c3|</span><span class="dt">\</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a><span class="st">c5=0.3535*c0 - 0.2041*c1 + 0.2041*c2 - 0.2041*c3|</span><span class="dt">\</span></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a><span class="st">c6=0.3535*c0 + 0.2041*c1 - 0.2041*c2 - 0.2041*c3|</span><span class="dt">\</span></span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a><span class="st">c7=0.3535*c0 - 0.2041*c1 - 0.2041*c2 - 0.2041*c3,</span><span class="dt">\</span></span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a><span class="st">sofalizer=sofa=ClubFritz12.sofa:type=freq:speakers=45 35|315 35|135 35|225 35|45 -35|315 -35|135 -35|225 -35[out]&quot;</span> <span class="dt">\</span></span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a>-map <span class="st">&quot;[out]&quot;</span> <span class="at">-c:a</span> pcm_s16le output_binaural.wav</span></code></pre></div>
+<h4 id="how-the-command-works">How the Command Works:</h4>
+<ul>
+<li><code>-vn</code>: Disables video processing to speed up
+extraction.</li>
+<li><code>pan=8c|...</code>: Projects the 4-channel B-format signal into
+an 8-point cube representing virtual speakers at azimuths <span
+class="math inline">\(45^\circ\)</span>, <span
+class="math inline">\(135^\circ\)</span>, <span
+class="math inline">\(225^\circ\)</span>, and <span
+class="math inline">\(315^\circ\)</span>, each elevated at <span
+class="math inline">\(+35^\circ\)</span> and <span
+class="math inline">\(-35^\circ\)</span>.</li>
+<li><code>sofalizer=sofa=...</code>: Loads the HRTF dataset.</li>
+<li><code>speakers=...</code>: Defines the exact coordinates (azimuth
+and elevation) for each of the 8 virtual speakers to match the decoded
+signals.</li>
+<li><code>type=freq</code>: Uses frequency-domain processing for faster
+performance.</li>
+<li><code>-c:a pcm_s16le</code>: Outputs an uncompressed 16-bit stereo
+WAV file.</li>
+</ul>
+<hr />
+<h3 id="step-4-optional-mux-the-binaural-track-back-to-video">Step 4:
+(Optional) Mux the Binaural Track Back to Video</h3>
+<p>If you want to create a standard 2D flat video containing the
+binaural audio:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input_360.mp4 <span class="at">-i</span> output_binaural.wav <span class="at">-map</span> 0:v <span class="at">-map</span> 1:a <span class="at">-c:v</span> copy <span class="at">-c:a</span> aac <span class="at">-b:a</span> 320k output_video_binaural.mp4</span></code></pre></div>
+<p>This retains the original video stream without re-encoding while
+replacing the 4-channel spatial track with a headphone-ready AAC stereo
+track.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

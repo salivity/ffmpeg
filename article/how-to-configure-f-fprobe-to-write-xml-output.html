@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Configure FFprobe to Write XML Output - ffmpeg</title>
+    <meta name="description" content="This guide explains how to configure FFprobe to generate structured XML output for media file analysis and automation workflows. FFprobe includes a built-in writer system that can serialize container and stream metadata into multiple formats, including X">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/how-to-configure-f-fprobe-to-write-xml-output">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Configure FFprobe to Write XML Output - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/how-to-configure-f-fprobe-to-write-xml-output" />
+    <meta property="og:image" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This guide explains how to configure FFprobe to generate structured XML output for media file analysis and automation workflows. FFprobe includes a built-in writer system that can serialize container and stream metadata into multiple formats, including X" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-to-configure-ffprobe-to-write-xml-output">How to Configure
+FFprobe to Write XML Output</h1>
+<p>This guide explains how to configure FFprobe to generate structured
+XML output for media file analysis and automation workflows. FFprobe
+includes a built-in writer system that can serialize container and
+stream metadata into multiple formats, including XML. By using the
+<code>-print_format</code> (or <code>-of</code>) flag along with output
+redirection, you can extract comprehensive audio and video details into
+standard XML files suitable for automated ingestion pipelines,
+databases, or archival systems.</p>
+<h2 id="the-basic-xml-output-command">The Basic XML Output Command</h2>
+<p>FFprobe uses the <code>-print_format</code> option (aliased as
+<code>-of</code>) to specify the output serialization type. To print
+metadata in XML format to the console, set the writer to
+<code>xml</code>:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffprobe</span> <span class="at">-v</span> quiet <span class="at">-print_format</span> xml <span class="at">-show_format</span> <span class="at">-show_streams</span> input.mp4</span></code></pre></div>
+<p>In this command:</p>
+<ul>
+<li><code>-v quiet</code>: Suppresses redundant FFmpeg header logs,
+banner text, and warnings so that only the XML payload is
+generated.</li>
+<li><code>-print_format xml</code> (or <code>-of xml</code>): Tells
+FFprobe to output the metadata structured as XML.</li>
+<li><code>-show_format</code>: Gathers container-level metadata
+(duration, bitrate, tags).</li>
+<li><code>-show_streams</code>: Gathers stream-level metadata (codecs,
+resolutions, frame rates, audio channels).</li>
+</ul>
+<h2 id="saving-xml-output-directly-to-a-file">Saving XML Output Directly
+to a File</h2>
+<p>FFprobe prints its structured output to standard output
+(<code>stdout</code>). To save this data to an XML file, redirect the
+output using the shell redirection operator (<code>&gt;</code>):</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffprobe</span> <span class="at">-v</span> quiet <span class="at">-print_format</span> xml <span class="at">-show_format</span> <span class="at">-show_streams</span> input.mp4 <span class="op">&gt;</span> output.xml</span></code></pre></div>
+<p>This ensures the generated file contains pure XML without extraneous
+command-line logs.</p>
+<h2 id="customizing-the-xml-structure">Customizing the XML
+Structure</h2>
+<p>FFprobe's XML writer supports specific options to control the schema
+definition and qualification of tags. You can pass options by appending
+<code>=key=value</code> pairs to the <code>xml</code> argument,
+separated by colons (<code>:</code>).</p>
+<h3 id="1-fully-qualified-xml-fully_qualified-or-q">1. Fully Qualified
+XML (<code>fully_qualified</code> or <code>q</code>)</h3>
+<p>By default, FFprobe writes compact tags without namespaces. Setting
+<code>fully_qualified=1</code> (or <code>q=1</code>) generates complete,
+namespace-prefixed tags based on FFprobe's schema definitions:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffprobe</span> <span class="at">-v</span> quiet <span class="at">-print_format</span> xml=q=1 <span class="at">-show_format</span> input.mp4 <span class="op">&gt;</span> output.xml</span></code></pre></div>
+<h3 id="2-include-xml-schema-definition-xsd-or-x">2. Include XML Schema
+Definition (<code>xsd</code> or <code>x</code>)</h3>
+<p>To make the XML output self-validating against the FFprobe XML Schema
+Definition (XSD), enable the <code>xsd</code> flag:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffprobe</span> <span class="at">-v</span> quiet <span class="at">-print_format</span> xml=q=1:x=1 <span class="at">-show_format</span> input.mp4 <span class="op">&gt;</span> output.xml</span></code></pre></div>
+<p>When enabled, the root element will include the
+<code>xmlns:xsi</code> and <code>xsi:noNamespaceSchemaLocation</code>
+attributes pointing to the official FFprobe schema specification.</p>
+<h2 id="practical-examples">Practical Examples</h2>
+<h3 id="extract-container-and-stream-details">Extract Container and
+Stream Details</h3>
+<p>To produce a well-formed XML file containing all stream
+specifications and format information:</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffprobe</span> <span class="at">-v</span> error <span class="at">-of</span> xml=q=1 <span class="at">-show_entries</span> stream:format input.mkv <span class="op">&gt;</span> metadata.xml</span></code></pre></div>
+<h3 id="extract-frame-level-data">Extract Frame-Level Data</h3>
+<p>To analyze every video or audio frame and save the timecodes, frame
+types (I, P, B), and sizes into XML:</p>
+<div class="sourceCode" id="cb6"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffprobe</span> <span class="at">-v</span> error <span class="at">-of</span> xml <span class="at">-show_frames</span> <span class="at">-select_streams</span> v:0 input.mp4 <span class="op">&gt;</span> frames.xml</span></code></pre></div>
+<h3 id="extract-packet-information">Extract Packet Information</h3>
+<p>To log individual packet sizes and timestamps into XML:</p>
+<div class="sourceCode" id="cb7"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffprobe</span> <span class="at">-v</span> error <span class="at">-of</span> xml <span class="at">-show_packets</span> <span class="at">-select_streams</span> a:0 input.mp4 <span class="op">&gt;</span> audio_packets.xml</span></code></pre></div></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

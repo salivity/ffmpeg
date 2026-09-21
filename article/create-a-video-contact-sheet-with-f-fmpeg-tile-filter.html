@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create a Video Contact Sheet with FFmpeg Tile Filter - ffmpeg</title>
+    <meta name="description" content="This guide explains how to use the FFmpeg tile video filter to generate a contact sheet or image grid from video frames. By combining the tile filter with frame extraction filters like fps or select, and optional scaling, you can quickly produce thumbnai">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/create-a-video-contact-sheet-with-f-fmpeg-tile-filter">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Create a Video Contact Sheet with FFmpeg Tile Filter - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/create-a-video-contact-sheet-with-f-fmpeg-tile-filter" />
+    <meta property="og:image" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This guide explains how to use the FFmpeg tile video filter to generate a contact sheet or image grid from video frames. By combining the tile filter with frame extraction filters like fps or select, and optional scaling, you can quickly produce thumbnai" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="create-a-video-contact-sheet-with-ffmpeg-tile-filter">Create a
+Video Contact Sheet with FFmpeg Tile Filter</h1>
+<p>This guide explains how to use the FFmpeg <code>tile</code> video
+filter to generate a contact sheet or image grid from video frames. By
+combining the <code>tile</code> filter with frame extraction filters
+like <code>fps</code> or <code>select</code>, and optional scaling, you
+can quickly produce thumbnail galleries summarizing an entire video into
+a single image.</p>
+<h3 id="basic-tile-filter-command">Basic Tile Filter Command</h3>
+<p>The <code>tile</code> filter takes sequential video frames and
+arranges them into a grid defined as <code>ColumnsxRows</code>. Because
+a standard video contains thousands of frames, you must downsample the
+frame rate before tiling so the resulting sheet covers the desired
+duration of the video.</p>
+<p>The standard command structure is:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;fps=1/60,scale=320:-1,tile=4x4&quot;</span> <span class="at">-frames:v</span> 1 contact_sheet.png</span></code></pre></div>
+<h3 id="breakdown-of-the-parameters">Breakdown of the Parameters</h3>
+<ul>
+<li><code>-i input.mp4</code>: Specifies the input video file.</li>
+<li><code>-vf</code>: Defines the video filtergraph containing a chain
+of three operations:
+<ul>
+<li><code>fps=1/60</code>: Samples one frame every 60 seconds. Adjust
+this interval based on your video length and desired coverage.</li>
+<li><code>scale=320:-1</code>: Resizes each extracted thumbnail to a
+width of 320 pixels while preserving the original aspect ratio
+(<code>-1</code>). Scaling down is critical to keep memory usage low and
+output dimensions manageable.</li>
+<li><code>tile=4x4</code>: Arranges the thumbnails into a grid of 4
+columns and 4 rows (16 frames total).</li>
+</ul></li>
+<li><code>-frames:v 1</code>: Tells FFmpeg to stop processing after
+outputting one single image frame.</li>
+<li><code>contact_sheet.png</code>: The destination image file.</li>
+</ul>
+<h3 id="adding-margins-padding-and-colors">Adding Margins, Padding, and
+Colors</h3>
+<p>You can customize the layout of the contact sheet by adding borders
+between images and setting a background color:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;fps=1/30,scale=300:-1,tile=3x3:nb_frames=9:padding=10:margin=20:color=white&quot;</span> <span class="at">-frames:v</span> 1 contact_sheet.jpg</span></code></pre></div>
+<ul>
+<li><code>nb_frames=9</code>: Explicitly tells the tile filter to finish
+the grid after rendering 9 frames, ensuring it stops even if the video
+ends early.</li>
+<li><code>padding=10</code>: Inserts a 10-pixel gap between each
+thumbnail.</li>
+<li><code>margin=20</code>: Inserts a 20-pixel outer border around the
+entire grid.</li>
+<li><code>color=white</code>: Sets the background, margin, and padding
+color (accepts color names or hex codes like
+<code>0x000000</code>).</li>
+</ul>
+<h3
+id="generating-a-contact-sheet-for-a-specific-video-duration">Generating
+a Contact Sheet for a Specific Video Duration</h3>
+<p>If you want an evenly spaced contact sheet regardless of the file
+length, calculate the <code>fps</code> value based on total video
+duration:</p>
+<p><span class="math display">\[\text{fps} = \frac{\text{Total Frames
+Needed}}{\text{Video Duration in Seconds}}\]</span></p>
+<p>For example, to fit 25 frames (<code>5x5</code> grid) across a
+500-second video:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;fps=25/500,scale=320:-1,tile=5x5&quot;</span> <span class="at">-frames:v</span> 1 output.png</span></code></pre></div></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

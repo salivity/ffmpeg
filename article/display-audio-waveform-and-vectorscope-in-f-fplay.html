@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Display Audio Waveform and Vectorscope in FFplay - ffmpeg</title>
+    <meta name="description" content="This guide demonstrates how to monitor audio visually during playback using FFplay, FFmpeg's built-in media player. You will learn how to use native command-line options and keyboard shortcuts to display real-time audio waveforms, as well as how to rende">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/display-audio-waveform-and-vectorscope-in-f-fplay">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Display Audio Waveform and Vectorscope in FFplay - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/display-audio-waveform-and-vectorscope-in-f-fplay" />
+    <meta property="og:image" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This guide demonstrates how to monitor audio visually during playback using FFplay, FFmpeg's built-in media player. You will learn how to use native command-line options and keyboard shortcuts to display real-time audio waveforms, as well as how to rende" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="display-audio-waveform-and-vectorscope-in-ffplay">Display Audio
+Waveform and Vectorscope in FFplay</h1>
+<p>This guide demonstrates how to monitor audio visually during playback
+using FFplay, FFmpeg's built-in media player. You will learn how to use
+native command-line options and keyboard shortcuts to display real-time
+audio waveforms, as well as how to render an audio vectorscope
+(lissajous or phase meter) using FFmpeg's audio-to-video multimedia
+filters.</p>
+<h3 id="using-the-built-in-audio-waveform-monitor">Using the Built-In
+Audio Waveform Monitor</h3>
+<p>FFplay includes a native visualizer that renders a waveform monitor
+without requiring complex filter chains.</p>
+<h4 id="via-command-line">Via Command Line</h4>
+<p>To launch an audio or video file directly with the waveform monitor
+enabled, use the <code>-showmode</code> parameter set to
+<code>1</code>:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffplay</span> <span class="at">-showmode</span> 1 input.mp3</span></code></pre></div>
+<ul>
+<li><code>-showmode 0</code>: Shows video (default if video is
+present).</li>
+<li><code>-showmode 1</code>: Shows the audio waveform.</li>
+<li><code>-showmode 2</code>: Shows the RDFT-based audio frequency
+spectrum.</li>
+</ul>
+<h4 id="via-keyboard-shortcut">Via Keyboard Shortcut</h4>
+<p>If playback has already started, press the
+<strong><code>w</code></strong> key in the FFplay window to cycle
+through the display modes: Video <span
+class="math inline">\(\rightarrow\)</span> Audio Waves <span
+class="math inline">\(\rightarrow\)</span> Frequency Spectrum.</p>
+<hr />
+<h3 id="displaying-an-audio-vectorscope-goniometer">Displaying an Audio
+Vectorscope (Goniometer)</h3>
+<p>FFplay does not have a native vectorscope hotkey, but you can display
+one using the <code>avectorscope</code> filter through the
+<code>lavfi</code> (Libavfilter) virtual device. This plots stereo
+channels against each other (Lissajous graph) to analyze stereo imaging,
+phase alignment, and mono compatibility.</p>
+<p>Run the following command in your terminal:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffplay</span> <span class="at">-f</span> lavfi <span class="st">&quot;amovie=&#39;input.mp3&#39;,asplit=2[out1][a];[a]avectorscope=s=800x800:m=lissajous:rc=0:gc=255:bc=0[out0]&quot;</span></span></code></pre></div>
+<h4 id="breakdown-of-parameters">Breakdown of Parameters:</h4>
+<ul>
+<li><code>amovie='input.mp3'</code>: Loads your audio file as a filter
+input.</li>
+<li><code>asplit=2[out1][a]</code>: Duplicates the audio stream so one
+copy plays to your speakers (<code>[out1]</code>) and the other feeds
+into the visualizer (<code>[a]</code>).</li>
+<li><code>avectorscope</code>: Generates the vector display
+(<code>[out0]</code>).
+<ul>
+<li><code>s=800x800</code>: Sets the resolution of the output
+window.</li>
+<li><code>m=lissajous</code>: Sets the display mode
+(<code>lissajous</code>, <code>polar</code>, or
+<code>lissajous_xy</code>).</li>
+<li><code>rc=0:gc=255:bc=0</code>: Sets the beam color using red, green,
+and blue values (in this case, green).</li>
+</ul></li>
+</ul>
+<hr />
+<h3
+id="displaying-a-customized-audio-waveform-monitor-via-filter">Displaying
+a Customized Audio Waveform Monitor via Filter</h3>
+<p>If you need more control over the waveform appearance than the
+standard <code>-showmode 1</code> allows, use the <code>showwaves</code>
+filter via <code>lavfi</code>:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffplay</span> <span class="at">-f</span> lavfi <span class="st">&quot;amovie=&#39;input.mp3&#39;,asplit=2[out1][a];[a]showwaves=s=1280x720:mode=line:colors=cyan[out0]&quot;</span></span></code></pre></div>
+<h4 id="key-options-for-showwaves">Key Options for
+<code>showwaves</code>:</h4>
+<ul>
+<li><code>mode</code>: Defines the waveform rendering style
+(<code>point</code>, <code>line</code>, <code>p2p</code>, or
+<code>cline</code>).</li>
+<li><code>colors</code>: Sets the waveform color (e.g.,
+<code>cyan</code>, <code>yellow</code>, <code>white</code>).</li>
+<li><code>scale</code>: Adjusts the scale (<code>lin</code> for linear,
+<code>log</code> for logarithmic, or <code>sqrt</code>).</li>
+</ul></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

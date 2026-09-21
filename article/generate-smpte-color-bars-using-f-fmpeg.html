@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generate SMPTE Color Bars Using FFmpeg - ffmpeg</title>
+    <meta name="description" content="This article explains how to generate a standard SMPTE color bars test pattern with custom resolution, frame rate, and duration using FFmpeg. By utilizing FFmpeg’s built-in lavfi (Libavfilter) virtual input device and test source filters, you can rende">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/generate-smpte-color-bars-using-f-fmpeg">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Generate SMPTE Color Bars Using FFmpeg - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/generate-smpte-color-bars-using-f-fmpeg" />
+    <meta property="og:image" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article explains how to generate a standard SMPTE color bars test pattern with custom resolution, frame rate, and duration using FFmpeg. By utilizing FFmpeg’s built-in lavfi (Libavfilter) virtual input device and test source filters, you can rende" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="generate-smpte-color-bars-using-ffmpeg">Generate SMPTE Color
+Bars Using FFmpeg</h1>
+<p>This article explains how to generate a standard SMPTE color bars
+test pattern with custom resolution, frame rate, and duration using
+FFmpeg. By utilizing FFmpeg’s built-in <code>lavfi</code> (Libavfilter)
+virtual input device and test source filters, you can render
+calibration-ready video files directly from the command line without
+needing external media assets.</p>
+<h3 id="basic-command-syntax">Basic Command Syntax</h3>
+<p>FFmpeg provides the <code>smptebars</code> filter for
+standard-definition color bars and <code>smptehdbars</code> for
+high-definition color bars compliant with SMPTE RP 219.</p>
+<p>To generate a 10-second MP4 video at 1920x1080 resolution and 30
+frames per second, run:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-f</span> lavfi <span class="at">-i</span> smptebars=size=1920x1080:rate=30 <span class="at">-t</span> 10 <span class="at">-c:v</span> libx264 <span class="at">-pix_fmt</span> yuv420p output.mp4</span></code></pre></div>
+<h3 id="command-breakdown">Command Breakdown</h3>
+<ul>
+<li><code>-f lavfi</code>: Specifies the Libavfilter virtual input
+framework.</li>
+<li><code>-i smptebars=...</code>: Calls the SMPTE color bars source
+filter.
+<ul>
+<li><code>size=WIDTHxHEIGHT</code> (or <code>s=WIDTHxHEIGHT</code>):
+Sets the video frame dimensions (e.g., <code>1920x1080</code>,
+<code>1280x720</code>, <code>3840x2160</code>).</li>
+<li><code>rate=FPS</code> (or <code>r=FPS</code>): Sets the frame rate.
+You can use whole numbers (e.g., <code>30</code>, <code>60</code>) or
+fractional standards (e.g., <code>29.97</code>,
+<code>24000/1001</code>).</li>
+</ul></li>
+<li><code>-t 10</code>: Sets the total duration to 10 seconds. Without
+this parameter, FFmpeg generates an infinite stream.</li>
+<li><code>-c:v libx264</code>: Encodes the video using the H.264 video
+codec.</li>
+<li><code>-pix_fmt yuv420p</code>: Sets the pixel format to YUV 4:2:0 to
+ensure playback compatibility across standard media players.</li>
+<li><code>output.mp4</code>: The name of the final rendered file.</li>
+</ul>
+<h3 id="generating-hd-smpte-color-bars-smpte-rp-219">Generating HD SMPTE
+Color Bars (SMPTE RP 219)</h3>
+<p>For modern HD workflows, use the <code>smptehdbars</code> source
+filter instead. This filter includes the 0% black, -2% black, and +2%
+black pluge pulses designed for HD monitoring setup:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-f</span> lavfi <span class="at">-i</span> smptehdbars=size=1920x1080:rate=29.97 <span class="at">-t</span> 15 <span class="at">-c:v</span> libx264 <span class="at">-pix_fmt</span> yuv420p smpte_hd.mp4</span></code></pre></div>
+<h3 id="adding-a-1-khz-calibration-tone">Adding a 1 kHz Calibration
+Tone</h3>
+<p>To create a full reference file with standard 1 kHz reference audio
+matching the video duration, combine the color bars source with the
+<code>sine</code> audio source:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-f</span> lavfi <span class="at">-i</span> smptehdbars=size=1920x1080:rate=25 <span class="at">-f</span> lavfi <span class="at">-i</span> sine=frequency=1000:sample_rate=48000 <span class="at">-t</span> 10 <span class="at">-c:v</span> libx264 <span class="at">-pix_fmt</span> yuv420p <span class="at">-c:a</span> aac output_with_audio.mp4</span></code></pre></div></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Set Luma and Chroma Strength in FFmpeg owdenoise - ffmpeg</title>
+    <meta name="description" content="This guide explains how to control luma and chroma noise reduction using the owdenoise (Overcomplete Wavelet Denoiser) filter in FFmpeg. You will learn the exact parameter syntax for both brightness and color planes, their default behaviors, recommended">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/how-to-set-luma-and-chroma-strength-in-f-fmpeg-owdenoise">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Set Luma and Chroma Strength in FFmpeg owdenoise - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/how-to-set-luma-and-chroma-strength-in-f-fmpeg-owdenoise" />
+    <meta property="og:image" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This guide explains how to control luma and chroma noise reduction using the owdenoise (Overcomplete Wavelet Denoiser) filter in FFmpeg. You will learn the exact parameter syntax for both brightness and color planes, their default behaviors, recommended" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-to-set-luma-and-chroma-strength-in-ffmpeg-owdenoise">How to
+Set Luma and Chroma Strength in FFmpeg owdenoise</h1>
+<p>This guide explains how to control luma and chroma noise reduction
+using the <code>owdenoise</code> (Overcomplete Wavelet Denoiser) filter
+in FFmpeg. You will learn the exact parameter syntax for both brightness
+and color planes, their default behaviors, recommended value ranges, and
+practical command-line examples to reduce noise without over-softening
+your video.</p>
+<h3 id="understanding-owdenoise-strength-parameters">Understanding
+owdenoise Strength Parameters</h3>
+<p>The <code>owdenoise</code> filter reduces noise by breaking down
+video frames into wavelet components. It provides independent controls
+for the brightness (luma) and color (chroma) channels using the
+following parameters:</p>
+<ul>
+<li><strong><code>luma_strength</code> (alias <code>ls</code>)</strong>:
+Sets the denoising intensity for the luma (<span
+class="math inline">\(Y\)</span>) plane. The value is a double-precision
+float ranging from <code>0.0</code> to <code>1000.0</code>. The default
+value is <code>1.0</code>.</li>
+<li><strong><code>chroma_strength</code> (alias
+<code>cs</code>)</strong>: Sets the denoising intensity for the chroma
+(<span class="math inline">\(U\)</span> and <span
+class="math inline">\(V\)</span>) planes. The value is a
+double-precision float ranging from <code>0.0</code> to
+<code>1000.0</code>. The default value is <code>1.0</code>.</li>
+</ul>
+<p>Setting either value to <code>0</code> disables denoising for that
+specific plane. Increasing the values results in stronger smoothing, but
+excessively high values will blur fine details and cause watercolor-like
+artifacts.</p>
+<h3 id="basic-syntax">Basic Syntax</h3>
+<p>To apply the filter with custom strengths, use the <code>-vf</code>
+(video filter) option:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;owdenoise=ls=1.5:cs=1.0&quot;</span> <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<p>You can also use the full parameter names interchangeably:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;owdenoise=luma_strength=1.5:chroma_strength=1.0&quot;</span> <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<h3 id="common-configuration-scenarios">Common Configuration
+Scenarios</h3>
+<h4 id="1-moderate-balanced-denoising">1. Moderate Balanced
+Denoising</h4>
+<p>For footage with mild high-ISO grain across both color and
+brightness:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;owdenoise=ls=1.2:cs=1.2&quot;</span> <span class="at">-c:v</span> libx264 <span class="at">-crf</span> 18 <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<h4 id="2-removing-chroma-color-noise-only">2. Removing Chroma (Color)
+Noise Only</h4>
+<p>Digital camera sensors often produce colored speckles in low light
+while the underlying image details remain sharp. To target color noise
+without blurring edge details on the luma plane, set <code>ls</code> to
+<code>0</code>:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;owdenoise=ls=0:cs=2.5&quot;</span> <span class="at">-c:v</span> libx264 <span class="at">-crf</span> 18 <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<h4 id="3-heavy-denoising-with-wavelet-depth-adjustment">3. Heavy
+Denoising with Wavelet Depth Adjustment</h4>
+<p>The <code>owdenoise</code> filter also includes a <code>depth</code>
+parameter (ranging from <code>8</code> to <code>16</code>, default
+<code>8</code>) that controls the number of decomposition levels. Higher
+depth values allow the filter to target coarser noise patterns alongside
+the strength parameters:</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;owdenoise=depth=10:ls=3.0:cs=2.5&quot;</span> <span class="at">-c:v</span> libx264 <span class="at">-crf</span> 18 <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<h3 id="tuning-recommendations">Tuning Recommendations</h3>
+<ul>
+<li><strong>Values between <code>0.5</code> and
+<code>2.0</code></strong>: Best for general preservation of sharp lines
+and micro-textures.</li>
+<li><strong>Values between <code>2.0</code> and
+<code>5.0</code></strong>: Suitable for heavily degraded, grainy, or
+low-light video clips.</li>
+<li><strong>Values above <code>5.0</code></strong>: Rarely needed and
+usually result in severe loss of detail.</li>
+</ul></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

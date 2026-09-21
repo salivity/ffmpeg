@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FFmpeg Showwaves: Create Video from Audio - ffmpeg</title>
+    <meta name="description" content="This guide explains how to convert an audio file into a video waveform using FFmpeg's built-in showwaves filter. You will learn the basic command structure, the key parameters available for customizing the visual style (including dimensions, rendering mo">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/f-fmpeg-showwaves-create-video-from-audio">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="FFmpeg Showwaves: Create Video from Audio - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/f-fmpeg-showwaves-create-video-from-audio" />
+    <meta property="og:image" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This guide explains how to convert an audio file into a video waveform using FFmpeg's built-in showwaves filter. You will learn the basic command structure, the key parameters available for customizing the visual style (including dimensions, rendering mo" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="ffmpeg-showwaves-create-video-from-audio">FFmpeg Showwaves:
+Create Video from Audio</h1>
+<p>This guide explains how to convert an audio file into a video
+waveform using FFmpeg's built-in <code>showwaves</code> filter. You will
+learn the basic command structure, the key parameters available for
+customizing the visual style (including dimensions, rendering modes,
+colors, and framerates), and practical examples for generating
+standalone visualizers or overlaying waveforms on background images.</p>
+<h2 id="basic-syntax-and-core-command">Basic Syntax and Core
+Command</h2>
+<p>The <code>showwaves</code> audio filter converts audio input into a
+video stream representing the waveform. The most straightforward command
+takes an audio file, generates the waveform video, and combines it with
+the original audio stream into an MP4 container.</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp3 <span class="at">-filter_complex</span> <span class="st">&quot;[0:a]showwaves=s=1280x720:mode=line:r=30[v]&quot;</span> <span class="at">-map</span> <span class="st">&quot;[v]&quot;</span> <span class="at">-map</span> 0:a <span class="at">-c:v</span> libx264 <span class="at">-pix_fmt</span> yuv420p <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<p>In this command:</p>
+<ul>
+<li><code>-i input.mp3</code>: Specifies the input audio source.</li>
+<li><code>-filter_complex</code>: Invokes the filter graph.</li>
+<li><code>[0:a]showwaves=...[v]</code>: Takes the first audio stream,
+converts it to video labeled <code>[v]</code>.</li>
+<li><code>-map "[v]" -map 0:a</code>: Ensures both the newly created
+video stream and the original audio stream are included in the
+output.</li>
+<li><code>-c:v libx264 -pix_fmt yuv420p</code>: Encodes the video to
+H.264 using standard pixel formatting for maximum playback
+compatibility.</li>
+<li><code>-c:a copy</code>: Copies the audio stream without
+re-encoding.</li>
+</ul>
+<h2 id="key-showwaves-parameters">Key <code>showwaves</code>
+Parameters</h2>
+<p>You can adjust several options within the filter to customize the
+output:</p>
+<ul>
+<li><strong><code>size</code> or <code>s</code></strong>: Sets the video
+resolution (e.g., <code>s=1920x1080</code>). The default is
+<code>600x240</code>.</li>
+<li><strong><code>mode</code></strong>: Defines how the waveform samples
+are drawn:
+<ul>
+<li><code>point</code>: Draws individual sample points.</li>
+<li><code>line</code>: Draws continuous lines connecting consecutive
+samples (default).</li>
+<li><code>p2p</code>: Draws point-to-point lines between samples.</li>
+<li><code>cline</code>: Draws centered lines from the middle axis to the
+peak, creating a traditional audio visualizer look.</li>
+</ul></li>
+<li><strong><code>r</code> or <code>rate</code></strong>: Sets the
+output video frame rate (e.g., <code>r=25</code>, <code>r=60</code>).
+The default is 25 fps.</li>
+<li><strong><code>colors</code></strong>: Sets the color of the
+waveform. You can specify named colors (such as <code>white</code>,
+<code>red</code>, <code>cyan</code>) or hexadecimal values (e.g.,
+<code>0x00FF00</code> or <code>#FF0055</code>). Multiple channels can
+have distinct colors separated by <code>|</code> (e.g.,
+<code>colors=red|blue</code>).</li>
+<li><strong><code>scale</code></strong>: Defines the amplitude scaling
+method. Options include <code>lin</code> (linear, default),
+<code>log</code> (logarithmic), <code>sqrt</code> (square root), and
+<code>cbrt</code> (cubic root).</li>
+</ul>
+<h2 id="practical-examples">Practical Examples</h2>
+<h3 id="centered-waveform-with-custom-colors">Centered Waveform with
+Custom Colors</h3>
+<p>To create a 1080p, 60fps video with a centered waveform style and
+custom coloration:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.wav <span class="at">-filter_complex</span> <span class="st">&quot;[0:a]showwaves=s=1920x1080:mode=cline:r=60:colors=#00FFAA:scale=cbrt[v]&quot;</span> <span class="at">-map</span> <span class="st">&quot;[v]&quot;</span> <span class="at">-map</span> 0:a <span class="at">-c:v</span> libx264 <span class="at">-pix_fmt</span> yuv420p <span class="at">-c:a</span> aac output.mp4</span></code></pre></div>
+<h3 id="overlaying-a-waveform-onto-a-background-image">Overlaying a
+Waveform onto a Background Image</h3>
+<p>To place a transparent waveform on top of a static background image,
+generate the waveform with transparency and use the <code>overlay</code>
+filter:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-loop</span> 1 <span class="at">-i</span> background.jpg <span class="at">-i</span> input.mp3 <span class="at">-filter_complex</span> <span class="st">&quot;[1:a]showwaves=s=1280x300:mode=cline:r=30:colors=white[wave];[0:v][wave]overlay=(W-w)/2:(H-h)/2:shortest=1[v]&quot;</span> <span class="at">-map</span> <span class="st">&quot;[v]&quot;</span> <span class="at">-map</span> 1:a <span class="at">-c:v</span> libx264 <span class="at">-pix_fmt</span> yuv420p <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<p>In this setup:</p>
+<ul>
+<li><code>-loop 1 -i background.jpg</code>: Loops the background image
+indefinitely.</li>
+<li><code>overlay=(W-w)/2:(H-h)/2</code>: Centers the 1280x300 waveform
+over the background image.</li>
+<li><code>shortest=1</code>: Stops encoding when the audio stream
+ends.</li>
+</ul></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/ffmpeg'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>
