@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Dynamically Adjust Video Exposure in FFmpeg - ffmpeg</title>
+    <meta name="description" content="This article explains how to dynamically adjust and correct video exposure in FFmpeg using built-in video filters. It covers automatic frame-by-frame lighting normalization with temporal smoothing, time-based exposure animations using mathematical express">
+    <link rel="canonical" href="https://salivity.github.io/ffmpeg/article/how-to-dynamically-adjust-video-exposure-in-f-fmpeg">
+    <link rel="search" type="application/opensearchdescription+xml" title="ffmpeg" href="/ffmpeg/opensearch.xml">
+    <link rel="icon" href="/ffmpeg/favicon.ico">
+    <link rel="stylesheet" href="/ffmpeg/css/style.css">
+    <link media="print" rel="stylesheet" href="/ffmpeg/css/print.css">
+    <script src="/ffmpeg/js/fuse.min.js"></script>
+    <script src="/ffmpeg/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Dynamically Adjust Video Exposure in FFmpeg - ffmpeg" />
+    <meta property="og:url" content="https://salivity.github.io/ffmpeg/article/how-to-dynamically-adjust-video-exposure-in-f-fmpeg" />
+    <meta property="og:image" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/ffmpeg/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article explains how to dynamically adjust and correct video exposure in FFmpeg using built-in video filters. It covers automatic frame-by-frame lighting normalization with temporal smoothing, time-based exposure animations using mathematical express" />
+    <link rel="manifest" href="/ffmpeg/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/ffmpeg/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>ffmpeg</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/ffmpeg/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-to-dynamically-adjust-video-exposure-in-ffmpeg">How to
+Dynamically Adjust Video Exposure in FFmpeg</h1>
+<p>This article explains how to dynamically adjust and correct video
+exposure in FFmpeg using built-in video filters. It covers automatic
+frame-by-frame lighting normalization with temporal smoothing,
+time-based exposure animations using mathematical expressions, targeted
+exposure value (EV) adjustments across specific timestamps, and
+luminance smoothing for flickering footage.</p>
+<h2
+id="automatic-exposure-balancing-with-the-normalize-filter">Automatic
+Exposure Balancing with the Normalize Filter</h2>
+<p>When dealing with video footage that moves between bright and dark
+environments, a static exposure adjustment will either blow out the
+highlights or crush the shadows. The <code>normalize</code> filter
+solves this by analyzing the color and luminance histogram of every
+frame and stretching it to fill the full dynamic range.</p>
+<p>By adding the <code>smoothing</code> parameter, FFmpeg calculates a
+rolling average across multiple frames. This mimics the smooth
+auto-exposure behavior of a physical camera sensor rather than causing
+abrupt frame-to-frame brightness jumps.</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;normalize=blackpt=black:whitept=white:smoothing=50:independence=0&quot;</span> <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<p>Key parameters for the <code>normalize</code> filter include:</p>
+<ul>
+<li><strong>blackpt and whitept:</strong> Define the output colors to
+which the darkest and brightest input pixels are mapped. Setting these
+to <code>black</code> and <code>white</code> maximizes the dynamic
+range.</li>
+<li><strong>smoothing:</strong> Controls the number of previous frames
+used for temporal smoothing. A value between <code>30</code> and
+<code>60</code> generally provides a natural transition across changing
+lighting conditions.</li>
+<li><strong>independence:</strong> Controls the ratio of independent
+channel stretching versus linked luminance stretching. Setting this to
+<code>0.0</code> preserves the original color cast while only adjusting
+overall exposure, whereas <code>1.0</code> normalizes red, green, and
+blue channels independently (which also performs automatic white
+balance).</li>
+<li><strong>strength:</strong> Limits the overall intensity of the
+filter on a scale from <code>0.0</code> to <code>1.0</code>. If full
+normalization looks artificial, setting <code>strength=0.7</code> blends
+the normalized result with the original exposure.</li>
+</ul>
+<h2 id="adjusting-exposure-values-over-specific-time-ranges">Adjusting
+Exposure Values Over Specific Time Ranges</h2>
+<p>If your video only suffers from poor exposure during specific
+segments, you can use the dedicated <code>exposure</code> filter paired
+with FFmpeg timeline editing. Unlike basic brightness filters that
+simply add a constant offset to all pixels, the <code>exposure</code>
+filter operates in photographic Exposure Value (EV) stops.</p>
+<p>Using the <code>enable</code> option, you can activate the exposure
+correction only during designated timestamps:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;exposure=exposure=1.2:black=-0.02:enable=&#39;between(t,10,25)&#39;&quot;</span> <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<p>How the parameters work in this command:</p>
+<ul>
+<li><strong>exposure:</strong> Adjusts the exposure correction in EV
+stops, ranging from <code>-3.0</code> to <code>3.0</code>. A positive
+value brightens the image, while a negative value darkens it.</li>
+<li><strong>black:</strong> Sets the black level correction from
+<code>-1.0</code> to <code>1.0</code>, helping recover shadow detail or
+prevent washed-out blacks when boosting exposure.</li>
+<li><strong>enable='between(t,10,25)':</strong> Instructs FFmpeg to
+apply the filter only between the 10-second and 25-second marks of the
+video.</li>
+</ul>
+<p>If you need multiple exposure adjustments across different scenes in
+a single pass, you can chain multiple <code>exposure</code> filters
+together or pass timestamped commands using the <code>sendcmd</code>
+filter:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;sendcmd=c=&#39;0.0 exposure exposure 0.0; 10.0 exposure exposure 1.5; 25.0 exposure exposure -0.5&#39;,exposure&quot;</span> <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<h2
+id="programmatic-exposure-ramping-with-frame-expressions">Programmatic
+Exposure Ramping with Frame Expressions</h2>
+<p>When a video transitions gradually from a dark room to a bright
+outdoor scene, an instant exposure toggle at a specific timestamp will
+look jarring. To create a smooth, gradual ramp in exposure, use the
+<code>eq</code> (equalizer) filter with frame-level evaluation
+enabled.</p>
+<p>The <code>eq</code> filter accepts mathematical expressions
+containing the variable <code>t</code> (time in seconds) or
+<code>n</code> (frame number) when <code>eval=frame</code> is
+specified.</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;eq=brightness=&#39;if(between(t,5,10), (t-5)*0.04, if(gt(t,10), 0.2, 0))&#39;:eval=frame&quot;</span> <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<p>In this command:</p>
+<ol type="1">
+<li>Before 5 seconds, the brightness offset remains at
+<code>0</code>.</li>
+<li>Between 5 and 10 seconds, <code>(t-5)*0.04</code> linearly ramps the
+brightness from <code>0.0</code> up to <code>0.2</code>.</li>
+<li>After 10 seconds, <code>gt(t,10)</code> holds the brightness steady
+at <code>0.2</code> for the remainder of the video.</li>
+<li><code>eval=frame</code> forces FFmpeg to recalculate the brightness
+equation on every single frame rather than only once at the start of the
+stream.</li>
+</ol>
+<p>You can apply the same dynamic expression logic to the
+<code>gamma</code> parameter inside the <code>eq</code> filter, which
+often yields more natural midtone exposure adjustments than linear
+brightness shifts:</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;eq=gamma=&#39;if(between(t,5,10), 1+(t-5)*0.1, 1)&#39;:eval=frame&quot;</span> <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<h2 id="smoothing-erratic-exposure-shifts-with-deflicker">Smoothing
+Erratic Exposure Shifts with Deflicker</h2>
+<p>Time-lapse videos, older film transfers, and footage recorded under
+artificial lighting often suffer from rapid micro-fluctuations in
+exposure. The <code>deflicker</code> filter dynamically adjusts frame
+luminance by calculating an average brightness across a moving window of
+frames.</p>
+<div class="sourceCode" id="cb6"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;deflicker=size=15:mode=pm&quot;</span> <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<p>Key configuration options for <code>deflicker</code>:</p>
+<ul>
+<li><strong>size:</strong> Sets the number of frames in the moving
+average window (from <code>2</code> to <code>129</code>). Smaller values
+(<code>5</code> to <code>15</code>) remove high-frequency flicker
+without affecting intentional lighting transitions, while larger values
+(<code>30</code> or more) smooth out slower auto-exposure stepping.</li>
+<li><strong>mode:</strong> Determines the averaging algorithm used to
+calculate the target luminance. Common modes include <code>am</code>
+(arithmetic mean), <code>gm</code> (geometric mean), <code>pm</code>
+(power mean), and <code>median</code>.</li>
+</ul>
+<h2
+id="dynamic-contrast-and-exposure-recovery-with-histogram-equalization">Dynamic
+Contrast and Exposure Recovery with Histogram Equalization</h2>
+<p>For footage with severe uneven exposure where both deep shadows and
+bright highlights exist simultaneously across changing scenes, the
+<code>histeq</code> filter performs global histogram equalization on a
+per-frame basis. It redistributes pixel intensities dynamically so that
+tonal details remain visible regardless of sudden lighting shifts.</p>
+<div class="sourceCode" id="cb7"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ffmpeg</span> <span class="at">-i</span> input.mp4 <span class="at">-vf</span> <span class="st">&quot;histeq=strength=0.15:intensity=0.20:antibanding=strong&quot;</span> <span class="at">-c:a</span> copy output.mp4</span></code></pre></div>
+<ul>
+<li><strong>strength:</strong> Determines the amount of equalization to
+apply, from <code>0.0</code> to <code>1.0</code>. Keeping this value low
+(<code>0.1</code> to <code>0.25</code>) prevents unnatural contrast
+distortion.</li>
+<li><strong>intensity:</strong> Sets the maximum intensity that can be
+generated and scales the output values appropriately.</li>
+<li><strong>antibanding:</strong> Adds controlled random noise
+(<code>none</code>, <code>weak</code>, or <code>strong</code>) to
+prevent visible color banding in smooth gradients like skies or walls
+when stretching underexposed regions.</li>
+</ul></article>
+        <div id='disqus_thread'></div>
+        <script>
+
+            var disqus_config = function () {
+                this.page.url =         'https://salivity.github.io/ffmpeg/article/how-to-dynamically-adjust-video-exposure-in-f-fmpeg';  
+                //this.page.identifier =  PAGE_IDENTIFIER; 
+            };
+            
+            (function() {
+                var d = document, s = d.createElement('script');
+                s.src = 'https://salivity-github-io.disqus.com/embed.js';
+                s.setAttribute('data-timestamp', +new Date());
+                (d.head || d.body).appendChild(s);
+            })();
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/ffmpeg/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/ffmpeg/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>
